@@ -10,14 +10,15 @@ import (
 	"time"
 
 	"integin/internal/domain/device_trust"
+	"integin/internal/domain/workpackage"
 	"integin/internal/security"
 )
 
 const (
 	// DeviceProofProtocolVersion is the only accepted proof envelope version.
-	DeviceProofProtocolVersion = "device-proof/v1"
+	DeviceProofProtocolVersion = workpackage.ManifestProofProtocolVersion
 	// WorkPackageManifestReadPurpose scopes a proof to package-manifest retrieval.
-	WorkPackageManifestReadPurpose = "work_package_manifest.read"
+	WorkPackageManifestReadPurpose = workpackage.ManifestProofPurpose
 	proofMaximumLifetime           = 5 * time.Minute
 	proofFutureSkew                = 30 * time.Second
 )
@@ -89,7 +90,7 @@ func (p *Processor) VerifyDeviceProof(
 	if issuedAt.After(now.Add(proofFutureSkew)) || !expiresAt.After(now) || !expiresAt.After(issuedAt) || expiresAt.Sub(issuedAt) > proofMaximumLifetime {
 		return VerifiedDeviceContext{}, errors.New("device proof is outside its permitted lifetime")
 	}
-	if proof.SignatureAlgorithm != "Ed25519" || strings.TrimSpace(proof.KeyID) == "" || strings.TrimSpace(proof.Signature) == "" {
+	if proof.SignatureAlgorithm != workpackage.ManifestProofSignatureAlgorithm || strings.TrimSpace(proof.KeyID) == "" || strings.TrimSpace(proof.Signature) == "" {
 		return VerifiedDeviceContext{}, errors.New("device proof requires Ed25519 signature metadata")
 	}
 
@@ -139,17 +140,14 @@ func (p *Processor) VerifyDeviceProof(
 }
 
 func canonicalDeviceProof(proof DeviceProof) string {
-	return strings.Join([]string{
-		proof.ProtocolVersion,
-		proof.Purpose,
+	return workpackage.CanonicalManifestReadProof(
 		proof.RequestID,
 		proof.DeviceID,
 		proof.AuthorityID,
-		fmt.Sprintf("%d", proof.AuthorityEpoch),
+		proof.AuthorityEpoch,
 		proof.InspectionID,
-		proof.IssuedAt.UTC().Format(time.RFC3339Nano),
-		proof.ExpiresAt.UTC().Format(time.RFC3339Nano),
-		proof.SignatureAlgorithm,
+		proof.IssuedAt,
+		proof.ExpiresAt,
 		proof.KeyID,
-	}, "|")
+	)
 }
