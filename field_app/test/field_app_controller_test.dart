@@ -43,6 +43,10 @@ InspectionWorkPack _workPack() => InspectionWorkPack(
       rootAssetId: 'asset-1',
       inspectionType: 'test',
       procedureVersion: 'test',
+      packageId: 'test-work-package',
+      packageVersion: 1,
+      schemaVersion: 1,
+      packageHash: 'sha256:test-work-package-hash',
       scheduledDate: DateTime.now().toUtc(),
       items: const [
         ChecklistItem(

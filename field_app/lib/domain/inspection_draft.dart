@@ -22,6 +22,10 @@ class InspectionWorkPack {
     required this.rootAssetId,
     required this.inspectionType,
     required this.procedureVersion,
+    required this.packageId,
+    required this.packageVersion,
+    required this.schemaVersion,
+    required this.packageHash,
     required this.scheduledDate,
     required this.items,
   });
@@ -30,6 +34,10 @@ class InspectionWorkPack {
   final String rootAssetId;
   final String inspectionType;
   final String procedureVersion;
+  final String packageId;
+  final int packageVersion;
+  final int schemaVersion;
+  final String packageHash;
   final DateTime scheduledDate;
   final List<ChecklistItem> items;
 }
@@ -83,7 +91,8 @@ class InspectionDraft {
 
   LocalCompletenessResult validateLocally() {
     final missing = workPack.items
-        .where((item) => item.required && (findings[item.id]?.response ?? '').isEmpty)
+        .where((item) =>
+            item.required && (findings[item.id]?.response ?? '').isEmpty)
         .map((item) => item.id)
         .toList(growable: false);
     return LocalCompletenessResult(missingItemIds: missing);
@@ -94,6 +103,10 @@ class InspectionDraft {
         'root_asset_id': workPack.rootAssetId,
         'inspection_type': workPack.inspectionType,
         'procedure_version': workPack.procedureVersion,
+        'work_package_id': workPack.packageId,
+        'work_package_version': workPack.packageVersion,
+        'work_package_schema_version': workPack.schemaVersion,
+        'work_package_hash': workPack.packageHash,
         'scheduled_date': workPack.scheduledDate.toUtc().toIso8601String(),
         'status': status.name.toUpperCase(),
         'notes': notes,

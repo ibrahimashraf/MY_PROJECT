@@ -13,15 +13,21 @@ import 'package:integin_field_app/security/transaction_signer.dart';
 import 'package:integin_field_app/sync/http_sync_transport.dart';
 import 'package:integin_field_app/sync/sync_client.dart';
 
-const _provisionEndpoint = String.fromEnvironment('INTEGIN_LIVE_PROVISIONING_ENDPOINT');
+const _provisionEndpoint =
+    String.fromEnvironment('INTEGIN_LIVE_PROVISIONING_ENDPOINT');
 const _syncEndpoint = String.fromEnvironment('INTEGIN_LIVE_SYNC_ENDPOINT');
-const _evidenceEndpoint = String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT');
+const _evidenceEndpoint =
+    String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT');
 
 InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
       inspectionId: inspectionID,
       rootAssetId: 'live-asset',
       inspectionType: 'live-acceptance',
       procedureVersion: 'integin-local-provision-v1',
+      packageId: 'live-work-package',
+      packageVersion: 1,
+      schemaVersion: 1,
+      packageHash: 'sha256:live-work-package-hash',
       scheduledDate: DateTime.now().toUtc(),
       items: const [
         ChecklistItem(
@@ -72,7 +78,10 @@ void main() {
         item: workPack.items.single,
         response: 'acceptable',
       );
-      expect(await controller.queueForSync(notes: 'provisioned Flutter acceptance'), isTrue);
+      expect(
+          await controller.queueForSync(
+              notes: 'provisioned Flutter acceptance'),
+          isTrue);
       expect(await controller.flushOutbox(), [SyncOutcome.applied]);
 
       final ciphertext = utf8.encode('Flutter provisioned evidence ciphertext');
@@ -103,6 +112,8 @@ void main() {
       expect(duplicate.statusCode, 200);
       expect(jsonDecode(duplicate.body)['outcome'], 'DUPLICATE');
     },
-    skip: shouldRun ? false : 'Set all INTEGIN_LIVE_* endpoints to run live acceptance.',
+    skip: shouldRun
+        ? false
+        : 'Set all INTEGIN_LIVE_* endpoints to run live acceptance.',
   );
 }

@@ -27,6 +27,10 @@ class _FieldHomePageState extends State<FieldHomePage> {
       rootAssetId: 'assigned-asset',
       inspectionType: 'Lifting equipment inspection',
       procedureVersion: 'prepared-work-pack',
+      packageId: 'assigned-work-package',
+      packageVersion: 1,
+      schemaVersion: 1,
+      packageHash: 'sha256:assigned-package-hash-pending-authority',
       scheduledDate: DateTime.now().toUtc(),
       items: const [
         ChecklistItem(
