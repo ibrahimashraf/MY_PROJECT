@@ -4,6 +4,10 @@ import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' hide Hmac;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+const manifestReadProofProtocolVersion = 'device-proof/v1';
+const manifestReadProofPurpose = 'work_package_manifest.read';
+const manifestReadProofSignatureAlgorithm = 'Ed25519';
+
 String canonicalTransaction({
   required String transactionId,
   required String tenantId,
@@ -39,7 +43,8 @@ String canonicalTimestamp(DateTime value) {
   final iso = value.toUtc().toIso8601String();
   if (!iso.contains('.')) return iso;
   final parts = iso.split('.');
-  final fraction = parts[1].replaceFirst('Z', '').replaceFirst(RegExp(r'0+$'), '');
+  final fraction =
+      parts[1].replaceFirst('Z', '').replaceFirst(RegExp(r'0+$'), '');
   return fraction.isEmpty ? '${parts[0]}Z' : '${parts[0]}.${fraction}Z';
 }
 
@@ -67,6 +72,22 @@ String signTransaction({
       .toString();
 }
 
+/// Canonical bytes for the server-verified manifest-read device proof.
+String canonicalManifestProof({
+  required String requestId,
+  required String deviceId,
+  required String authorityId,
+  required int authorityEpoch,
+  required String inspectionId,
+  required DateTime issuedAt,
+  required DateTime expiresAt,
+  required String keyId,
+}) =>
+    '$manifestReadProofProtocolVersion|$manifestReadProofPurpose|$requestId|$deviceId|'
+    '$authorityId|$authorityEpoch|$inspectionId|'
+    '${canonicalTimestamp(issuedAt)}|${canonicalTimestamp(expiresAt)}|'
+    '$manifestReadProofSignatureAlgorithm|$keyId';
+
 class DeviceSigner {
   DeviceSigner(this.keyPair, {this.keyId});
 
@@ -76,6 +97,41 @@ class DeviceSigner {
   Future<String> publicKeyBase64() async {
     final publicKey = await keyPair.extractPublicKey();
     return base64Encode(publicKey.bytes);
+  }
+
+  /// Signs a purpose-scoped proof for one manifest-read request.
+  ///
+  /// This proof contains no tenant or organization claims: the server derives
+  /// that scope exclusively from registered device and authority state.
+  Future<String> signManifestProof({
+    required String requestId,
+    required String deviceId,
+    required String authorityId,
+    required int authorityEpoch,
+    required String inspectionId,
+    required DateTime issuedAt,
+    required DateTime expiresAt,
+    String? keyId,
+  }) async {
+    final resolvedKeyId = keyId ?? this.keyId;
+    if (resolvedKeyId == null || resolvedKeyId.isEmpty) {
+      throw StateError('device key id is required for Ed25519 signing');
+    }
+    final canonical = canonicalManifestProof(
+      requestId: requestId,
+      deviceId: deviceId,
+      authorityId: authorityId,
+      authorityEpoch: authorityEpoch,
+      inspectionId: inspectionId,
+      issuedAt: issuedAt,
+      expiresAt: expiresAt,
+      keyId: resolvedKeyId,
+    );
+    final signature = await Ed25519().sign(
+      utf8.encode(canonical),
+      keyPair: keyPair,
+    );
+    return base64Encode(signature.bytes);
   }
 
   Future<String> signV1({
@@ -130,7 +186,8 @@ abstract interface class SecretValueStore {
 }
 
 class FlutterSecretValueStore implements SecretValueStore {
-  FlutterSecretValueStore({FlutterSecureStorage? storage}) : storage = storage ?? const FlutterSecureStorage();
+  FlutterSecretValueStore({FlutterSecureStorage? storage})
+      : storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage storage;
 
@@ -138,24 +195,29 @@ class FlutterSecretValueStore implements SecretValueStore {
   Future<String?> read(String key) => storage.read(key: key);
 
   @override
-  Future<void> write(String key, String value) => storage.write(key: key, value: value);
+  Future<void> write(String key, String value) =>
+      storage.write(key: key, value: value);
 }
 
 class SecureDeviceKeyStore {
-  SecureDeviceKeyStore({SecretValueStore? storage}) : storage = storage ?? FlutterSecretValueStore();
+  SecureDeviceKeyStore({SecretValueStore? storage})
+      : storage = storage ?? FlutterSecretValueStore();
 
   final SecretValueStore storage;
   final Ed25519 algorithm = Ed25519();
 
   Future<DeviceSigner> loadOrCreate(String deviceId) async {
-    if (deviceId.trim().isEmpty) throw ArgumentError.value(deviceId, 'deviceId');
+    if (deviceId.trim().isEmpty) {
+      throw ArgumentError.value(deviceId, 'deviceId');
+    }
     final key = 'integin.device.$deviceId.ed25519.seed';
     final storedSeed = await storage.read(key);
     final keyPair = storedSeed == null
         ? await algorithm.newKeyPair()
         : await algorithm.newKeyPairFromSeed(base64Decode(storedSeed));
     if (storedSeed == null) {
-      await storage.write(key, base64Encode(await keyPair.extractPrivateKeyBytes()));
+      await storage.write(
+          key, base64Encode(await keyPair.extractPrivateKeyBytes()));
     }
     final publicKey = await keyPair.extractPublicKey();
     return DeviceSigner(
