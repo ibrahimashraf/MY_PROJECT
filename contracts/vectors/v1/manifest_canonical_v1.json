@@ -1,0 +1,30 @@
+{
+  "vector_set_version": 1,
+  "vector_id": "package-manifest-canonical-valid-001",
+  "family": "work_package_manifest_canonical",
+  "manifest_version": "work-package-manifest/v1",
+  "tenant_id": "tenant-vector-a",
+  "organization_id": "org-vector-a",
+  "inspection_id": "inspection-vector-a",
+  "device_id": "device-vector-a",
+  "package_id": "package-vector-a",
+  "package_version": 2,
+  "package_hash": "sha256:package-vector-hash",
+  "assignment_context": {
+    "root_asset_id": "asset-root-a",
+    "inspection_type": "crane-inspection",
+    "procedure_version": "procedure-3",
+    "scheduled_at": "2026-08-17T12:00:00Z",
+    "field_asset_ids": {
+      "field-z": "asset-z",
+      "field-a": "asset-a"
+    }
+  },
+  "schema_version": 3,
+  "authority_epoch": 7,
+  "issued_at": "2026-08-17T12:00:00Z",
+  "expires_at": "2026-08-17T12:30:00Z",
+  "signature_algorithm": "Ed25519",
+  "key_id": "manifest-key-1",
+  "canonical_utf8": "work-package-manifest/v1|tenant-vector-a|org-vector-a|inspection-vector-a|device-vector-a|package-vector-a|2|sha256:package-vector-hash|asset-root-a|crane-inspection|procedure-3|2026-08-17T12:00:00Z|field-a=asset-a,field-z=asset-z|3|7|2026-08-17T12:00:00Z|2026-08-17T12:30:00Z|Ed25519|manifest-key-1"
+}

@@ -36,7 +36,7 @@ class PackageManifestVerifier {
     }
     final signature = base64Decode(json['signature'] as String);
     final verified = await Ed25519().verify(
-      utf8.encode(_canonicalManifest(json)),
+      utf8.encode(PackageManifestVerifier.canonicalManifest(json)),
       signature: Signature(signature, publicKey: authorityPublicKey),
     );
     if (!verified) throw StateError('package manifest signature is invalid');
@@ -63,7 +63,7 @@ class PackageManifestVerifier {
     return bound;
   }
 
-  String _canonicalManifest(Map<String, dynamic> json) {
+  static String canonicalManifest(Map<String, dynamic> json) {
     final context =
         Map<String, dynamic>.from(json['assignment_context'] as Map);
     final fields = Map<String, dynamic>.from(

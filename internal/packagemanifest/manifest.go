@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 
 const (
 	// ManifestProtocolVersion identifies this signed manifest grammar.
-	ManifestProtocolVersion = "work-package-manifest/v1"
+	ManifestProtocolVersion = workpackage.ManifestProtocolVersion
 	// ManifestSignatureAlgorithm is the only signature scheme emitted by this issuer.
 	ManifestSignatureAlgorithm = "Ed25519"
 )
@@ -213,36 +212,21 @@ func earliest(values ...time.Time) time.Time {
 }
 
 func canonicalManifest(manifest PackageManifest) string {
-	return strings.Join([]string{
-		manifest.ManifestVersion,
-		manifest.TenantID,
-		manifest.OrganizationID,
-		manifest.InspectionID,
-		manifest.DeviceID,
-		manifest.PackageID,
-		fmt.Sprintf("%d", manifest.PackageVersion),
-		manifest.PackageHash,
-		canonicalAssignmentContext(manifest.AssignmentContext),
-		fmt.Sprintf("%d", manifest.SchemaVersion),
-		fmt.Sprintf("%d", manifest.AuthorityEpoch),
-		manifest.IssuedAt.UTC().Format(time.RFC3339Nano),
-		manifest.ExpiresAt.UTC().Format(time.RFC3339Nano),
-		manifest.SignatureAlgorithm,
-		manifest.KeyID,
-	}, "|")
-}
-
-func canonicalAssignmentContext(context workpackage.AssignmentContext) string {
-	pairs := make([]string, 0, len(context.FieldAssetIDs))
-	for fieldID, assetID := range context.FieldAssetIDs {
-		pairs = append(pairs, fieldID+"="+assetID)
-	}
-	sort.Strings(pairs)
-	return strings.Join([]string{
-		context.RootAssetID,
-		context.InspectionType,
-		context.ProcedureVersion,
-		context.ScheduledAt.UTC().Format(time.RFC3339Nano),
-		strings.Join(pairs, ","),
-	}, "|")
+	return workpackage.CanonicalManifest(workpackage.ManifestCanonicalInput{
+		ManifestVersion:    manifest.ManifestVersion,
+		TenantID:           manifest.TenantID,
+		OrganizationID:     manifest.OrganizationID,
+		InspectionID:       manifest.InspectionID,
+		DeviceID:           manifest.DeviceID,
+		PackageID:          manifest.PackageID,
+		PackageVersion:     manifest.PackageVersion,
+		PackageHash:        manifest.PackageHash,
+		AssignmentContext:  manifest.AssignmentContext,
+		SchemaVersion:      manifest.SchemaVersion,
+		AuthorityEpoch:     manifest.AuthorityEpoch,
+		IssuedAt:           manifest.IssuedAt,
+		ExpiresAt:          manifest.ExpiresAt,
+		SignatureAlgorithm: manifest.SignatureAlgorithm,
+		KeyID:              manifest.KeyID,
+	})
 }
