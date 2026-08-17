@@ -10,6 +10,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/workpackageenforcement"
 )
 
 type request struct {
@@ -45,9 +46,10 @@ type response struct {
 // Go sync processor. Authority packages are resolved server-side and are never
 // accepted from client-provided authority fields.
 type Handler struct {
-	Processor   *domainsync.Processor
-	Authorities *AuthorityRegistry
-	Now         func() time.Time
+	Processor        *domainsync.Processor
+	Authorities      *AuthorityRegistry
+	PackageValidator *workpackageenforcement.Validator
+	Now              func() time.Time
 }
 
 type AuthorityRegistry struct {
@@ -124,6 +126,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		SignatureAlgorithm: incoming.SignatureAlgorithm,
 		KeyID:              incoming.KeyID,
 		Signature:          incoming.Signature,
+	}
+	if h.PackageValidator != nil && transaction.Operation == "InspectionSubmitted" {
+		if err := h.PackageValidator.ValidateInspectionPayload(r.Context(), transaction.TenantID, transaction.OrganizationID, transaction.EntityID, transaction.Payload); err != nil {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
 	}
 	result := h.Processor.SubmitContext(r.Context(), transaction, authority, h.Now().UTC())
 	writeJSON(w, http.StatusOK, response{Outcome: result.Outcome, Reason: result.Reason, TransactionID: result.TransactionID, ExpectedSequence: result.ExpectedSequence, PayloadHash: result.PayloadHash})
