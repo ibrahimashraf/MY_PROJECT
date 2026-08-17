@@ -16,106 +16,308 @@
     }
   ],
   "tags": [
-    { "name": "Operational", "description": "Health and readiness probes." },
-    { "name": "Field sync", "description": "Signed, server-authoritative field transactions." },
-    { "name": "Evidence", "description": "Encrypted evidence-object submission." },
-    { "name": "Local provisioning", "description": "Explicitly local-only integration bridge." },
-    { "name": "Identity", "description": "Optional pilot-only OIDC session boundary." }
+    {
+      "name": "Operational",
+      "description": "Health and readiness probes."
+    },
+    {
+      "name": "Field sync",
+      "description": "Signed, server-authoritative field transactions."
+    },
+    {
+      "name": "Evidence",
+      "description": "Encrypted evidence-object submission."
+    },
+    {
+      "name": "Local provisioning",
+      "description": "Explicitly local-only integration bridge."
+    },
+    {
+      "name": "Identity",
+      "description": "Optional pilot-only OIDC session boundary."
+    }
   ],
   "paths": {
     "/healthz": {
       "get": {
-        "tags": ["Operational"],
+        "tags": [
+          "Operational"
+        ],
         "operationId": "getHealth",
         "summary": "Return process liveness",
         "responses": {
-          "200": { "description": "Service is alive", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthStatus" } } } }
+          "200": {
+            "description": "Service is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          }
         }
       }
     },
     "/readyz": {
       "get": {
-        "tags": ["Operational"],
+        "tags": [
+          "Operational"
+        ],
         "operationId": "getReadiness",
         "summary": "Return dependency readiness",
         "responses": {
-          "200": { "description": "Service is ready", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthStatus" } } } },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+          "200": {
+            "description": "Service is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
         }
       }
     },
     "/sync": {
       "post": {
-        "tags": ["Field sync"],
+        "tags": [
+          "Field sync"
+        ],
         "operationId": "submitSignedTransaction",
         "summary": "Submit a signed field transaction",
         "description": "The server validates device trust, authority package, signature, sequencing, tenant context, and workflow rules. A 200 response can carry an application-level rejected or held outcome; clients must inspect `outcome` and must not assume success solely from HTTP status.",
-        "parameters": [ { "$ref": "#/components/parameters/CorrelationId" } ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignedTransaction" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignedTransaction"
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "Transaction outcome", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncOutcome" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+          "200": {
+            "description": "Transaction outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncOutcome"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
         }
       }
     },
     "/evidence": {
       "post": {
-        "tags": ["Evidence"],
+        "tags": [
+          "Evidence"
+        ],
         "operationId": "submitEncryptedEvidence",
         "summary": "Submit an encrypted evidence object",
         "description": "The request supplies encrypted bytes and integrity metadata. INTEGIN validates tenant-scoped object handling; plaintext evidence must not be logged or placed in telemetry.",
-        "parameters": [ { "$ref": "#/components/parameters/CorrelationId" } ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvidenceSubmission" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceSubmission"
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "Evidence outcome", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EvidenceOutcome" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "503": { "$ref": "#/components/responses/ServiceUnavailable" }
+          "200": {
+            "description": "Evidence outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceOutcome"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
         }
       }
     },
     "/local/provision": {
       "post": {
-        "tags": ["Local provisioning"],
+        "tags": [
+          "Local provisioning"
+        ],
         "operationId": "localProvisionDevice",
         "summary": "Provision a device through the local integration bridge",
         "description": "Available only when local provisioning is explicitly enabled for local integration. This endpoint is not a production enrollment mechanism and must be disabled in production-like deployment.",
         "x-integin-enabled-when": "INTEGIN_LOCAL_PROVISIONING_ENABLED=true",
-        "parameters": [ { "$ref": "#/components/parameters/CorrelationId" } ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LocalProvisionRequest" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalProvisionRequest"
+              }
+            }
+          }
         },
         "responses": {
-          "200": { "description": "Provisioned authority package", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LocalProvisionResponse" } } } },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "404": { "description": "Local provisioning is disabled and the route is not mounted" }
+          "200": {
+            "description": "Provisioned authority package",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalProvisionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "description": "Local provisioning is disabled and the route is not mounted"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          }
         }
       }
     },
     "/identity/session": {
       "get": {
-        "tags": ["Identity"],
+        "tags": [
+          "Identity"
+        ],
         "operationId": "getLocallyAuthorizedSession",
         "summary": "Return local tenant and organization context for an authenticated OIDC subject",
         "description": "Pilot-only optional route. Keycloak validates identity; the local PostgreSQL resolver determines membership and `identity.session.read` capability. No token, claims, or capabilities are exposed in the response.",
         "x-integin-enabled-when": "INTEGIN_OIDC_ENABLED=true in the isolated pilot only",
-        "security": [ { "bearerAuth": [] } ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
-          "200": { "description": "Locally authorized session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IdentitySession" } } } },
-          "401": { "$ref": "#/components/responses/AuthenticationFailed" },
-          "403": { "$ref": "#/components/responses/AuthorizationFailed" },
-          "404": { "description": "OIDC is disabled and the optional route is not mounted" },
-          "503": { "$ref": "#/components/responses/AuthorizationUnavailable" }
+          "200": {
+            "description": "Locally authorized session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentitySession"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationFailed"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationFailed"
+          },
+          "404": {
+            "description": "OIDC is disabled and the optional route is not mounted"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthorizationUnavailable"
+          }
+        }
+      }
+    },
+    "/work-package-manifest": {
+      "post": {
+        "summary": "Retrieve a signed approved work-package manifest",
+        "description": "Pilot-only field delivery endpoint. It requires a short-lived Ed25519 device proof, is disabled unless isolated-pilot composition explicitly enables it, and does not activate package enforcement.",
+        "operationId": "readWorkPackageManifest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "proof"
+                ],
+                "properties": {
+                  "proof": {
+                    "type": "object",
+                    "description": "Signed device proof; clients must never include tenant or organization authority claims.",
+                    "required": [
+                      "purpose",
+                      "request_id",
+                      "device_id",
+                      "authority_id",
+                      "authority_epoch",
+                      "inspection_id",
+                      "issued_at",
+                      "expires_at",
+                      "signature_algorithm",
+                      "key_id",
+                      "signature"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed approved work-package manifest."
+          },
+          "400": {
+            "description": "Malformed or invalid proof request."
+          },
+          "401": {
+            "description": "Device proof did not authenticate."
+          },
+          "404": {
+            "description": "No current approved assignment is available."
+          },
+          "409": {
+            "description": "Device proof request identifier was replayed."
+          },
+          "503": {
+            "description": "Pilot manifest delivery is unavailable."
+          }
         }
       }
     }
@@ -127,7 +329,10 @@
         "in": "header",
         "required": false,
         "description": "Optional caller correlation value. INTEGIN supplies a correlation ID when absent.",
-        "schema": { "type": "string", "maxLength": 256 }
+        "schema": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "securitySchemes": {
@@ -139,111 +344,389 @@
       }
     },
     "responses": {
-      "BadRequest": { "description": "Malformed or invalid request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "MethodNotAllowed": { "description": "Unsupported HTTP method", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "ServiceUnavailable": { "description": "A required runtime dependency is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "AuthenticationFailed": { "description": "Bearer authentication failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "AuthorizationFailed": { "description": "Local authorization failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "AuthorizationUnavailable": { "description": "The local identity resolver is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+      "BadRequest": {
+        "description": "Malformed or invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "Unsupported HTTP method",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "A required runtime dependency is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AuthenticationFailed": {
+        "description": "Bearer authentication failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AuthorizationFailed": {
+        "description": "Local authorization failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "AuthorizationUnavailable": {
+        "description": "The local identity resolver is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
     },
     "schemas": {
       "HealthStatus": {
         "type": "object",
-        "required": ["status", "service"],
-        "properties": { "status": { "type": "string", "example": "ok" }, "service": { "type": "string", "example": "integin" } }
+        "required": [
+          "status",
+          "service"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "service": {
+            "type": "string",
+            "example": "integin"
+          }
+        }
       },
       "ErrorResponse": {
         "type": "object",
-        "required": ["error"],
-        "properties": { "error": { "type": "string" } }
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
       },
       "SignedTransaction": {
         "type": "object",
-        "required": ["protocol_version", "transaction_id", "tenant_id", "organization_id", "environment", "device_id", "user_id", "sequence_number", "operation", "entity_id", "payload", "payload_hash", "captured_at", "authority_id", "authority_epoch", "signature_algorithm", "key_id", "signature"],
+        "required": [
+          "protocol_version",
+          "transaction_id",
+          "tenant_id",
+          "organization_id",
+          "environment",
+          "device_id",
+          "user_id",
+          "sequence_number",
+          "operation",
+          "entity_id",
+          "payload",
+          "payload_hash",
+          "captured_at",
+          "authority_id",
+          "authority_epoch",
+          "signature_algorithm",
+          "key_id",
+          "signature"
+        ],
         "properties": {
-          "protocol_version": { "type": "string", "example": "v1" },
-          "transaction_id": { "type": "string" },
-          "tenant_id": { "type": "string" },
-          "organization_id": { "type": "string" },
-          "environment": { "type": "string" },
-          "device_id": { "type": "string" },
-          "user_id": { "type": "string" },
-          "sequence_number": { "type": "integer", "format": "uint64", "minimum": 0 },
-          "operation": { "type": "string" },
-          "entity_id": { "type": "string" },
-          "payload": { "type": "object", "additionalProperties": true },
-          "payload_hash": { "type": "string", "description": "SHA-256 digest of canonical payload bytes." },
-          "captured_at": { "type": "string", "format": "date-time" },
-          "authority_id": { "type": "string" },
-          "authority_epoch": { "type": "integer", "format": "uint64", "minimum": 0 },
-          "signature_algorithm": { "type": "string", "example": "Ed25519" },
-          "key_id": { "type": "string" },
-          "signature": { "type": "string" }
+          "protocol_version": {
+            "type": "string",
+            "example": "v1"
+          },
+          "transaction_id": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "sequence_number": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "operation": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "payload_hash": {
+            "type": "string",
+            "description": "SHA-256 digest of canonical payload bytes."
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "authority_id": {
+            "type": "string"
+          },
+          "authority_epoch": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "signature_algorithm": {
+            "type": "string",
+            "example": "Ed25519"
+          },
+          "key_id": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
         }
       },
       "SyncOutcome": {
         "type": "object",
-        "required": ["outcome"],
+        "required": [
+          "outcome"
+        ],
         "properties": {
-          "outcome": { "type": "string", "description": "Server-authoritative transaction outcome." },
-          "reason": { "type": "string" },
-          "transaction_id": { "type": "string" },
-          "expected_sequence": { "type": "integer", "format": "uint64", "minimum": 0 },
-          "payload_hash": { "type": "string" }
+          "outcome": {
+            "type": "string",
+            "description": "Server-authoritative transaction outcome."
+          },
+          "reason": {
+            "type": "string"
+          },
+          "transaction_id": {
+            "type": "string"
+          },
+          "expected_sequence": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "payload_hash": {
+            "type": "string"
+          }
         }
       },
       "EvidenceSubmission": {
         "type": "object",
-        "required": ["tenant_id", "organization_id", "evidence_id", "inspection_id", "content_type", "plaintext_sha256", "ciphertext_sha256", "base64_blob"],
+        "required": [
+          "tenant_id",
+          "organization_id",
+          "evidence_id",
+          "inspection_id",
+          "content_type",
+          "plaintext_sha256",
+          "ciphertext_sha256",
+          "base64_blob"
+        ],
         "properties": {
-          "tenant_id": { "type": "string" },
-          "organization_id": { "type": "string" },
-          "evidence_id": { "type": "string" },
-          "inspection_id": { "type": "string" },
-          "content_type": { "type": "string" },
-          "sha256": { "type": "string", "description": "Legacy compatible digest field." },
-          "plaintext_sha256": { "type": "string" },
-          "ciphertext_sha256": { "type": "string" },
-          "base64_blob": { "type": "string", "contentEncoding": "base64" }
+          "tenant_id": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "evidence_id": {
+            "type": "string"
+          },
+          "inspection_id": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Legacy compatible digest field."
+          },
+          "plaintext_sha256": {
+            "type": "string"
+          },
+          "ciphertext_sha256": {
+            "type": "string"
+          },
+          "base64_blob": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
         }
       },
       "EvidenceOutcome": {
         "type": "object",
-        "required": ["outcome"],
+        "required": [
+          "outcome"
+        ],
         "properties": {
-          "outcome": { "type": "string" },
-          "evidence_id": { "type": "string" },
-          "object_key": { "type": "string" },
-          "reason": { "type": "string" },
-          "sha256": { "type": "string" },
-          "plaintext_sha256": { "type": "string" },
-          "ciphertext_sha256": { "type": "string" }
+          "outcome": {
+            "type": "string"
+          },
+          "evidence_id": {
+            "type": "string"
+          },
+          "object_key": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "plaintext_sha256": {
+            "type": "string"
+          },
+          "ciphertext_sha256": {
+            "type": "string"
+          }
         }
       },
       "LocalProvisionRequest": {
         "type": "object",
-        "required": ["device_id", "key_id", "public_key"],
-        "properties": { "device_id": { "type": "string" }, "key_id": { "type": "string" }, "public_key": { "type": "string" } }
+        "required": [
+          "device_id",
+          "key_id",
+          "public_key"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string"
+          },
+          "key_id": {
+            "type": "string"
+          },
+          "public_key": {
+            "type": "string"
+          }
+        }
       },
       "LocalProvisionResponse": {
         "type": "object",
-        "required": ["tenant_id", "organization_id", "environment", "device_id", "user_id", "authority"],
+        "required": [
+          "tenant_id",
+          "organization_id",
+          "environment",
+          "device_id",
+          "user_id",
+          "authority"
+        ],
         "properties": {
-          "tenant_id": { "type": "string" }, "organization_id": { "type": "string" }, "environment": { "type": "string" }, "device_id": { "type": "string" }, "user_id": { "type": "string" },
-          "authority": { "$ref": "#/components/schemas/AuthorityPackage" }
+          "tenant_id": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "authority": {
+            "$ref": "#/components/schemas/AuthorityPackage"
+          }
         }
       },
       "AuthorityPackage": {
         "type": "object",
-        "required": ["authority_id", "authority_epoch", "scopes", "procedure_version", "issued_at", "expires_at", "signature"],
+        "required": [
+          "authority_id",
+          "authority_epoch",
+          "scopes",
+          "procedure_version",
+          "issued_at",
+          "expires_at",
+          "signature"
+        ],
         "properties": {
-          "authority_id": { "type": "string" }, "authority_epoch": { "type": "integer", "format": "uint64", "minimum": 0 }, "scopes": { "type": "array", "items": { "type": "string" } }, "procedure_version": { "type": "string" }, "issued_at": { "type": "string", "format": "date-time" }, "expires_at": { "type": "string", "format": "date-time" }, "signature": { "type": "string" }
+          "authority_id": {
+            "type": "string"
+          },
+          "authority_epoch": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "procedure_version": {
+            "type": "string"
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signature": {
+            "type": "string"
+          }
         }
       },
       "IdentitySession": {
         "type": "object",
-        "required": ["tenant_id", "organization_id"],
-        "properties": { "tenant_id": { "type": "string" }, "organization_id": { "type": "string" } }
+        "required": [
+          "tenant_id",
+          "organization_id"
+        ],
+        "properties": {
+          "tenant_id": {
+            "type": "string"
+          },
+          "organization_id": {
+            "type": "string"
+          }
+        }
       }
     }
   }

@@ -98,6 +98,10 @@ func main() {
 		return nil
 	}
 	address := os.Getenv("INTEGIN_HTTP_ADDR")
+	pilotManifestHandler, pilotAuthorityRegistry, err := server.PilotManifestHandlerFromEnvironment(processor, authorities, database, address)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if address == "" {
 		address = ":8080"
 	}
@@ -153,8 +157,10 @@ func main() {
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities))
 	httpServer := &http.Server{
-		Addr:              address,
-		Handler:           server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, Readiness: readiness}),
+		Addr: address,
+		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler,
+			PilotManifestHandler: pilotManifestHandler,
+			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

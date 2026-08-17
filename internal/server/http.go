@@ -12,18 +12,21 @@ import (
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/evidenceapi"
+	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
 )
 
 type Dependencies struct {
-	SyncProcessor      *domainsync.Processor
-	Devices            []device_trust.Device
-	Authorities        []device_trust.AuthorityPackage
-	EvidenceStore      storage.Store
-	LocalProvisioning  http.Handler
-	OIDCSessionHandler http.Handler
-	Readiness          func(context.Context) error
+	SyncProcessor        *domainsync.Processor
+	Devices              []device_trust.Device
+	Authorities          []device_trust.AuthorityPackage
+	EvidenceStore        storage.Store
+	LocalProvisioning    http.Handler
+	OIDCSessionHandler   http.Handler
+	PilotManifestHandler *packagemanifestapi.Handler
+	AuthorityRegistry    *syncapi.AuthorityRegistry
+	Readiness            func(context.Context) error
 }
 
 // NewMux composes the HTTP boundary without creating global state. Runtime
@@ -36,6 +39,9 @@ func NewMux(dependencies Dependencies) http.Handler {
 		}
 	}
 	syncHandler := syncapi.NewHandler(dependencies.SyncProcessor)
+	if dependencies.AuthorityRegistry != nil {
+		syncHandler.Authorities = dependencies.AuthorityRegistry
+	}
 	for _, authority := range dependencies.Authorities {
 		syncHandler.RegisterAuthority(authority)
 	}
@@ -47,6 +53,9 @@ func NewMux(dependencies Dependencies) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.Handle("/sync", syncHandler)
+	if dependencies.PilotManifestHandler != nil {
+		mux.Handle("/work-package-manifest", dependencies.PilotManifestHandler)
+	}
 
 	if dependencies.OIDCSessionHandler != nil {
 		mux.Handle("/identity/session", dependencies.OIDCSessionHandler)
