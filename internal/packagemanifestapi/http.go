@@ -80,7 +80,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
-	if err := h.ReplayStore.Consume(r.Context(), verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
+	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
 		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
 			writeError(w, http.StatusConflict, "manifest proof was already used")
 			return
