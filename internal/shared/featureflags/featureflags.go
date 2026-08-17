@@ -8,9 +8,11 @@ const (
 	FlagAIAdvisory       Key = "ai_advisory"
 	FlagClientPortal     Key = "client_portal"
 	FlagCalibration      Key = "calibration"
-	FlagPressureTesting  Key = "pressure_testing"
-	FlagHullGauging      Key = "hull_gauging"
-	FlagFeatureConsole   Key = "feature_console"
+	// FlagPilotManifestRetrieval is restricted to the isolated pilot and never implies enforcement.
+	FlagPilotManifestRetrieval Key = "pilot_manifest_retrieval"
+	FlagPressureTesting        Key = "pressure_testing"
+	FlagHullGauging            Key = "hull_gauging"
+	FlagFeatureConsole         Key = "feature_console"
 )
 
 type State string
