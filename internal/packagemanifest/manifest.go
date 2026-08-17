@@ -45,21 +45,22 @@ type Repository interface {
 // PackageManifest is an immutable, server-signed description of one device assignment.
 // The recipient must verify Signature before treating its package binding as current.
 type PackageManifest struct {
-	ManifestVersion    string    `json:"manifest_version"`
-	TenantID           string    `json:"tenant_id"`
-	OrganizationID     string    `json:"organization_id"`
-	InspectionID       string    `json:"inspection_id"`
-	DeviceID           string    `json:"device_id"`
-	PackageID          string    `json:"package_id"`
-	PackageVersion     int       `json:"package_version"`
-	PackageHash        string    `json:"package_hash"`
-	SchemaVersion      int       `json:"schema_version"`
-	AuthorityEpoch     uint64    `json:"authority_epoch"`
-	IssuedAt           time.Time `json:"issued_at"`
-	ExpiresAt          time.Time `json:"expires_at"`
-	SignatureAlgorithm string    `json:"signature_algorithm"`
-	KeyID              string    `json:"key_id"`
-	Signature          string    `json:"signature"`
+	ManifestVersion    string              `json:"manifest_version"`
+	TenantID           string              `json:"tenant_id"`
+	OrganizationID     string              `json:"organization_id"`
+	InspectionID       string              `json:"inspection_id"`
+	DeviceID           string              `json:"device_id"`
+	PackageID          string              `json:"package_id"`
+	PackageVersion     int                 `json:"package_version"`
+	PackageHash        string              `json:"package_hash"`
+	Package            workpackage.Package `json:"package"`
+	SchemaVersion      int                 `json:"schema_version"`
+	AuthorityEpoch     uint64              `json:"authority_epoch"`
+	IssuedAt           time.Time           `json:"issued_at"`
+	ExpiresAt          time.Time           `json:"expires_at"`
+	SignatureAlgorithm string              `json:"signature_algorithm"`
+	KeyID              string              `json:"key_id"`
+	Signature          string              `json:"signature"`
 }
 
 // ManifestIssuer resolves the persisted assignment after device scope has been verified,
