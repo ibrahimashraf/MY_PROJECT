@@ -1,0 +1,24 @@
+{
+  "contract_version": "local-provisioning-boundary/v1",
+  "status": "test-only-boundary-freeze",
+  "local_provisioning": {
+    "required_enablement_variable": "INTEGIN_LOCAL_PROVISIONING_ENABLED",
+    "default_enabled": false,
+    "scope": "development-and-pilot-loopback-only",
+    "loopback_required_when_enabled": true
+  },
+  "production_device_enrollment": {
+    "implementation_status": "NOT_IMPLEMENTED",
+    "authority": "EXPLICIT_HUMAN_APPROVAL_REQUIRED",
+    "local_provisioning_mutual_exclusion": true
+  },
+  "production_image_defaults": {
+    "INTEGIN_LOCAL_PROVISIONING_ENABLED": false
+  },
+  "prohibited_changes": [
+    "enabling local provisioning in production",
+    "using local provisioning as a production enrollment mechanism",
+    "adding production enrollment workflow without approved authority design",
+    "changing acceptance or pilot environment files through this contract"
+  ]
+}

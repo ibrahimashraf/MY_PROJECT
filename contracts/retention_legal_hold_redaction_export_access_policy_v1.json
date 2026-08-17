@@ -1,0 +1,102 @@
+{
+  "policy_version": "retention-legal-hold-redaction-export-access/v1",
+  "status": "design-baseline-not-enforced",
+  "scope": {
+    "tenant_scope_requirement": "exactly-one-tenant-per-policy-instance",
+    "organization_scope_requirement": "organization context is required when the governed record is organization-bound",
+    "environment_scope_requirement": "policy activation and exceptions are environment-specific",
+    "policy_activation_requirement": "requires Product and Safety Authority plus Platform Operator approval before enforcement"
+  },
+  "retention": {
+    "retention_profile_reference_required": true,
+    "duration_decision_status": "requires-accountable-approval",
+    "disposition_state": "not-implemented",
+    "disposition_preconditions": [
+      "The tenant-scoped retention profile reference is active and approved.",
+      "No active legal hold applies to the source record or linked evidence.",
+      "The required approval, audit, recovery, and exception references are present.",
+      "A future authoritative Go workflow has evaluated the policy server-side."
+    ],
+    "prohibited_behavior": [
+      "No client, advisory service, object-store lifecycle rule, or background worker may delete authoritative evidence or audit state without the future server-authoritative disposition workflow.",
+      "No retention duration is implied by this baseline artifact."
+    ]
+  },
+  "legal_hold": {
+    "hold_state_model": ["not-enforced", "active", "released"],
+    "precedence_rule": "An active legal hold blocks disposition and any transformation that would impair preservation of the held source record.",
+    "activation_requirement": "requires accountable hold authority, reason reference, scope reference, created timestamp, and audit record",
+    "release_requirement": "requires accountable release authority, release reason reference, timestamp, and immutable audit record",
+    "prohibited_behavior": [
+      "No automated retention job may release or bypass an active hold.",
+      "No redaction may overwrite a held source evidence object."
+    ]
+  },
+  "redaction": {
+    "source_immutability_rule": "The original authoritative evidence object and digest remain immutable; a redacted result is a separately identified derivative with lineage and its own digest.",
+    "redaction_policy_reference_required": true,
+    "transformation_state": "not-implemented",
+    "approval_requirement": "requires applicable tenant authority and, where safety/recovery evidence is affected, Product and Safety Authority review",
+    "required_derivative_metadata": [
+      "source evidence reference",
+      "redaction policy reference",
+      "transformation tool/version reference",
+      "redacted derivative digest",
+      "approval reference",
+      "audit reference"
+    ],
+    "prohibited_behavior": [
+      "No in-place modification of source evidence.",
+      "No redaction may erase audit or recovery lineage."
+    ]
+  },
+  "export_access": {
+    "access_state": "not-implemented",
+    "export_approval_reference_required": true,
+    "minimum_approval_metadata": [
+      "tenant scope",
+      "requesting local membership reference",
+      "approved scope and purpose reference",
+      "classification and redaction policy reference",
+      "retention and hold-state snapshot",
+      "approval timestamp and expiry",
+      "audit correlation reference"
+    ],
+    "manifest_requirement": "Every future portable export must contain an evidence export manifest referencing the approved policy snapshot and approval record.",
+    "prohibited_behavior": [
+      "No Keycloak claim alone grants export access.",
+      "No export endpoint may return an object outside local Go/PostgreSQL authorization and tenant scope."
+    ]
+  },
+  "audit_and_recovery": {
+    "audit_event_requirements": [
+      "tenant and organization scope where applicable",
+      "local membership reference",
+      "action and policy version",
+      "reason/approval/exception reference",
+      "correlation reference",
+      "outcome",
+      "no evidence bytes, secret values, tokens, private keys, or unbounded raw payloads"
+    ],
+    "recovery_requirement": "A recovery/export drill preserves the policy version, retention profile reference, hold-state snapshot, redaction lineage, approval reference, source/restored checksums, exceptions, operator, and reviewer references.",
+    "immutability_requirement": "A verification, recovery, or export failure must not silently modify authoritative record state."
+  },
+  "conflict_resolution": {
+    "rule": "The most restrictive applicable legal, safety, contractual, or tenant requirement governs until an accountable authority records a resolution.",
+    "automatic_resolution": "prohibited",
+    "required_decision_record": [
+      "conflicting policy references",
+      "scope",
+      "accountable authority",
+      "reason",
+      "effective window",
+      "review date",
+      "audit correlation reference"
+    ]
+  },
+  "implementation_deferrals": [
+    "No retention duration, scheduler, lifecycle rule, deletion operation, legal-hold table, legal-hold API, redaction service, export API, export approval workflow, or database migration is implemented by this contract.",
+    "No RustFS object is read, copied, redacted, archived, deleted, or lifecycle-configured by this contract.",
+    "No acceptance or pilot runtime configuration changes are made by this contract."
+  ]
+}

@@ -1,0 +1,28 @@
+# Local secrets and credentials 
+.env 
+.env.* 
+!.env.example 
+*.pem 
+*.key 
+*.p12 
+*.pfx 
+ 
+# Local runtime and protected artifacts 
+operations/pilot/runtime/ 
+private/ 
+evidence/ 
+ 
+# Build and dependency output 
+**/build/ 
+**/.dart_tool/ 
+**/.venv/ 
+**/.verification-venv/ 
+**/__pycache__/ 
+**/node_modules/ 
+*.log 
+ 
+# IDE and operating-system state 
+.idea/ 
+.vscode/ 
+.DS_Store 
+Thumbs.db 

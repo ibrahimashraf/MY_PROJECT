@@ -1,0 +1,30 @@
+{
+  "valid": {
+    "vector_set_version": 1,
+    "vector_id": "signed-transaction-valid-001",
+    "family": "signed_transaction",
+    "canonicalization_version": "integin-c14n-1",
+    "test_only_private_seed_base64url": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    "public_key_base64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "key_id_sha256": "56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "canonical_utf8": "v1|txn-vector-001|tenant-vector-a|org-vector-a|TESTING|device-vector-a|user-vector-a|7|inspection.complete|asset-vector-a|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|authority-vector-a|3|2026-08-15T00:00:00Z|Ed25519|56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "canonical_bytes_base64url": "djF8dHhuLXZlY3Rvci0wMDF8dGVuYW50LXZlY3Rvci1hfG9yZy12ZWN0b3ItYXxURVNUSU5HfGRldmljZS12ZWN0b3ItYXx1c2VyLXZlY3Rvci1hfDd8aW5zcGVjdGlvbi5jb21wbGV0ZXxhc3NldC12ZWN0b3ItYXxlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1fGF1dGhvcml0eS12ZWN0b3ItYXwzfDIwMjYtMDgtMTVUMDA6MDA6MDBafEVkMjU1MTl8NTY0NzVhYTc1NDYzNDc0YzAyODVkZjVkYmYyYmNhYjczZGE2NTEzNTg4MzllOWI3NzQ4MWIyZWFiMTA3NzA4Yw",
+    "signature_base64": "vAJt+oJ50MT0nWLegUK6L38/Ld8bt5hj4PpAuIHcFGDhBGQxNj31ROP7Khn97M2pAMrFI3SbpSgvBXxGrl9bDQ==",
+    "expected_accepted": true,
+    "expected_reason_code": ""
+  },
+  "byte_altered": {
+    "vector_set_version": 1,
+    "vector_id": "signed-transaction-byte-altered-001",
+    "family": "signed_transaction",
+    "canonicalization_version": "integin-c14n-1",
+    "test_only_private_seed_base64url": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+    "public_key_base64": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "key_id_sha256": "56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "canonical_utf8": "v1|txn-vector-001|tenant-vector-a|org-vector-a|TESTING|device-vector-a|user-vector-a|7|inspection.rejected|asset-vector-a|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|authority-vector-a|3|2026-08-15T00:00:00Z|Ed25519|56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "canonical_bytes_base64url": "djF8dHhuLXZlY3Rvci0wMDF8dGVuYW50LXZlY3Rvci1hfG9yZy12ZWN0b3ItYXxURVNUSU5HfGRldmljZS12ZWN0b3ItYXx1c2VyLXZlY3Rvci1hfDd8aW5zcGVjdGlvbi5yZWplY3RlZHxhc3NldC12ZWN0b3ItYXxlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1fGF1dGhvcml0eS12ZWN0b3ItYXwzfDIwMjYtMDgtMTVUMDA6MDA6MDBafEVkMjU1MTl8NTY0NzVhYTc1NDYzNDc0YzAyODVkZjVkYmYyYmNhYjczZGE2NTEzNTg4MzllOWI3NzQ4MWIyZWFiMTA3NzA4Yw",
+    "signature_base64": "vAJt+oJ50MT0nWLegUK6L38/Ld8bt5hj4PpAuIHcFGDhBGQxNj31ROP7Khn97M2pAMrFI3SbpSgvBXxGrl9bDQ==",
+    "expected_accepted": false,
+    "expected_reason_code": "SIGNATURE_INVALID"
+  }
+}

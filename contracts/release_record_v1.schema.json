@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integin.local/contracts/release-record/v1",
+  "title": "INTEGIN Release Record v1",
+  "description": "A non-secret evidence record for an approved deployment decision. This schema does not deploy, migrate, or approve a release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_version", "record_status", "release", "migrations", "dependency_lock", "verification", "recovery", "approval", "rollback", "post_release_reconciliation", "no_secret_material_embedded"],
+  "properties": {
+    "record_version": { "const": "release-record/v1" },
+    "record_status": { "enum": ["DRAFT", "APPROVED", "RELEASED", "ROLLED_BACK", "STOPPED"] },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release_id", "target_environment", "source_revision", "artifact_sha256", "artifact_reference"],
+      "properties": {
+        "release_id": { "type": "string", "minLength": 1 },
+        "target_environment": { "enum": ["PILOT", "ACCEPTANCE", "PRODUCTION"] },
+        "source_revision": { "type": "string", "minLength": 1 },
+        "artifact_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "artifact_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "migrations": { "type": "array", "items": { "$ref": "#/$defs/versionedEvidence" } },
+    "dependency_lock": { "$ref": "#/$defs/versionedEvidence" },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_evidence", "race_evidence", "static_analysis_evidence", "security_review_evidence"],
+      "properties": {
+        "test_evidence": { "$ref": "#/$defs/evidence" },
+        "race_evidence": { "$ref": "#/$defs/evidence" },
+        "static_analysis_evidence": { "$ref": "#/$defs/evidence" },
+        "security_review_evidence": { "$ref": "#/$defs/evidence" }
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pre_release_backup", "restore_rehearsal"],
+      "properties": {
+        "pre_release_backup": { "$ref": "#/$defs/evidence" },
+        "restore_rehearsal": { "$ref": "#/$defs/evidence" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "accountable_approver_id", "approved_at_utc", "approval_evidence_reference"],
+      "properties": {
+        "decision": { "enum": ["APPROVED", "STOPPED"] },
+        "accountable_approver_id": { "type": "string", "minLength": 1 },
+        "approved_at_utc": { "type": "string", "format": "date-time" },
+        "approval_evidence_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triggers", "approved_rollback_target", "rollback_owner_id", "rollback_evidence_reference"],
+      "properties": {
+        "triggers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "approved_rollback_target": { "type": "string", "minLength": 1 },
+        "rollback_owner_id": { "type": "string", "minLength": 1 },
+        "rollback_evidence_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "post_release_reconciliation": { "$ref": "#/$defs/evidence" },
+    "no_secret_material_embedded": { "const": true }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_reference"],
+      "properties": {
+        "status": { "enum": ["PASSED", "FAILED", "NOT_RUN", "NOT_APPLICABLE", "PLANNED"] },
+        "evidence_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "versionedEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "sha256", "evidence_reference"],
+      "properties": {
+        "identifier": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "evidence_reference": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

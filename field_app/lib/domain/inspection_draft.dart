@@ -1,0 +1,102 @@
+import 'models.dart';
+
+class ChecklistItem {
+  const ChecklistItem({
+    required this.id,
+    required this.sectionId,
+    required this.prompt,
+    required this.assetId,
+    this.required = true,
+  });
+
+  final String id;
+  final String sectionId;
+  final String prompt;
+  final String assetId;
+  final bool required;
+}
+
+class InspectionWorkPack {
+  const InspectionWorkPack({
+    required this.inspectionId,
+    required this.rootAssetId,
+    required this.inspectionType,
+    required this.procedureVersion,
+    required this.scheduledDate,
+    required this.items,
+  });
+
+  final String inspectionId;
+  final String rootAssetId;
+  final String inspectionType;
+  final String procedureVersion;
+  final DateTime scheduledDate;
+  final List<ChecklistItem> items;
+}
+
+class LocalCompletenessResult {
+  const LocalCompletenessResult({required this.missingItemIds});
+
+  final List<String> missingItemIds;
+
+  bool get isComplete => missingItemIds.isEmpty;
+}
+
+class InspectionDraft {
+  InspectionDraft({
+    required this.context,
+    required this.workPack,
+    required this.recordedBy,
+    required this.createdAt,
+  });
+
+  final TenantContext context;
+  final InspectionWorkPack workPack;
+  final String recordedBy;
+  final DateTime createdAt;
+  final Map<String, FindingDraft> findings = {};
+  InspectionStatus status = InspectionStatus.inProgress;
+  String? notes;
+
+  void recordResponse({
+    required ChecklistItem item,
+    required String response,
+    String? note,
+    Severity? severity,
+  }) {
+    final existing = findings[item.id];
+    findings[item.id] = FindingDraft(
+      id: existing?.id ?? '${workPack.inspectionId}-${item.id}',
+      inspectionId: workPack.inspectionId,
+      assetId: item.assetId,
+      sectionId: item.sectionId,
+      itemId: item.id,
+      itemPrompt: item.prompt,
+      response: response.trim(),
+      recordedBy: recordedBy,
+      recordedAt: existing?.recordedAt ?? DateTime.now().toUtc(),
+      severity: severity,
+      notes: note?.trim(),
+      evidence: existing?.evidence,
+    );
+  }
+
+  LocalCompletenessResult validateLocally() {
+    final missing = workPack.items
+        .where((item) => item.required && (findings[item.id]?.response ?? '').isEmpty)
+        .map((item) => item.id)
+        .toList(growable: false);
+    return LocalCompletenessResult(missingItemIds: missing);
+  }
+
+  Map<String, Object?> toPayload() => {
+        'inspection_id': workPack.inspectionId,
+        'root_asset_id': workPack.rootAssetId,
+        'inspection_type': workPack.inspectionType,
+        'procedure_version': workPack.procedureVersion,
+        'scheduled_date': workPack.scheduledDate.toUtc().toIso8601String(),
+        'status': status.name.toUpperCase(),
+        'notes': notes,
+        'findings': findings.values.map((finding) => finding.toJson()).toList(),
+      };
+}

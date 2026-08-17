@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integin.local/contracts/evidence-export-manifest/v1",
+  "title": "INTEGIN Evidence Export Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_version", "export_id", "tenant_id", "organization_id", "created_at", "exporter", "procedure_version", "evidence", "object_count", "recovery", "privacy", "approval", "manifest_checksum"],
+  "properties": {
+    "manifest_version": { "const": "evidence-export-manifest/v1" },
+    "export_id": { "type": "string", "minLength": 1 },
+    "tenant_id": { "type": "string", "minLength": 1 },
+    "organization_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "exporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_reference", "membership_reference"],
+      "properties": {
+        "subject_reference": { "type": "string", "minLength": 1 },
+        "membership_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "procedure_version": { "type": "string", "minLength": 1 },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_record" }
+    },
+    "object_count": { "type": "integer", "minimum": 0 },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["missing_object_ids", "restore_verification_result"],
+      "properties": {
+        "missing_object_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "restore_verification_result": { "type": "string", "minLength": 1 }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "retention_reference", "hold_state", "redaction_policy_reference"],
+      "properties": {
+        "classification": { "type": "string", "minLength": 1 },
+        "retention_reference": { "type": "string", "minLength": 1 },
+        "hold_state": { "type": "string", "minLength": 1 },
+        "redaction_policy_reference": { "type": "string", "minLength": 1 }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["export_approval_reference"],
+      "properties": { "export_approval_reference": { "type": "string", "minLength": 1 } }
+    },
+    "manifest_checksum": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "evidence_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "object_key", "content_type", "captured_at", "inspection_reference", "entity_reference", "plaintext_sha256", "ciphertext_sha256", "ciphertext_bytes", "encryption_algorithm", "encryption_key_reference", "device_id", "authority_id", "authority_epoch", "transaction_id", "receipt_id", "signature_algorithm", "key_id"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "object_key": { "type": "string", "minLength": 1 },
+        "content_type": { "type": "string", "minLength": 1 },
+        "captured_at": { "type": "string", "format": "date-time" },
+        "inspection_reference": { "type": "string", "minLength": 1 },
+        "entity_reference": { "type": "string", "minLength": 1 },
+        "plaintext_sha256": { "type": "string", "minLength": 1 },
+        "ciphertext_sha256": { "type": "string", "minLength": 1 },
+        "ciphertext_bytes": { "type": "integer", "minimum": 0 },
+        "encryption_algorithm": { "type": "string", "minLength": 1 },
+        "encryption_key_reference": { "type": "string", "minLength": 1 },
+        "device_id": { "type": "string", "minLength": 1 },
+        "authority_id": { "type": "string", "minLength": 1 },
+        "authority_epoch": { "type": "integer", "minimum": 0 },
+        "transaction_id": { "type": "string", "minLength": 1 },
+        "receipt_id": { "type": "string", "minLength": 1 },
+        "signature_algorithm": { "type": "string", "minLength": 1 },
+        "key_id": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
