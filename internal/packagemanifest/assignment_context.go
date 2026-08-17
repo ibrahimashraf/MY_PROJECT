@@ -20,3 +20,24 @@ type AssignmentContextResolver interface {
 		now time.Time,
 	) (workpackage.AssignmentContext, error)
 }
+
+// StaticAssignmentContextResolver is deterministic test and controlled-source
+// composition support. It must not be used as a substitute for PostgreSQL
+// assignment-context persistence in a mounted runtime.
+type StaticAssignmentContextResolver struct {
+	Context workpackage.AssignmentContext
+}
+
+func (r StaticAssignmentContextResolver) GetAssignmentContext(
+	_ context.Context,
+	_ string,
+	_ string,
+	_ string,
+	_ string,
+	_ time.Time,
+) (workpackage.AssignmentContext, error) {
+	if err := r.Context.Validate(); err != nil {
+		return workpackage.AssignmentContext{}, err
+	}
+	return r.Context, nil
+}

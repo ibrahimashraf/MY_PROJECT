@@ -32,3 +32,10 @@ func TestAssignmentContextResolverContractUsesServerScope(t *testing.T) {
 		t.Fatal("resolver scope was not preserved")
 	}
 }
+
+func TestStaticAssignmentContextResolverRejectsIncompleteContext(t *testing.T) {
+	resolver := StaticAssignmentContextResolver{}
+	if _, err := resolver.GetAssignmentContext(context.Background(), "tenant-1", "organization-1", "inspection-1", "device-1", time.Now()); err == nil {
+		t.Fatal("expected incomplete context rejection")
+	}
+}
