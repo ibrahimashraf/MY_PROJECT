@@ -91,13 +91,14 @@ type Result struct {
 }
 
 type Processor struct {
-	mu           syncpkg.RWMutex
-	secret       string
-	devices      map[string]device_trust.Device
-	lastSequence map[string]uint64
-	transactions map[string]string
-	held         map[string]Transaction
-	state        syncstate.SyncStateRepository
+	mu                  syncpkg.RWMutex
+	secret              string
+	devices             map[string]device_trust.Device
+	lastSequence        map[string]uint64
+	transactions        map[string]string
+	held                map[string]Transaction
+	state               syncstate.SyncStateRepository
+	preAcceptancePolicy PreAcceptancePolicy
 }
 
 func NewProcessor(secret string) (*Processor, error) {
@@ -214,6 +215,11 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	}
 	if transaction.SequenceNumber < expected {
 		return p.fail(result, types.ErrConflict, Conflict, fmt.Sprintf("stale sequence: expected %d", expected))
+	}
+	if p.preAcceptancePolicy != nil {
+		if err := p.preAcceptancePolicy.ValidatePreAcceptance(ctx, transaction); err != nil {
+			return p.fail(result, types.ErrRejected, Rejected, err.Error())
+		}
 	}
 	result.Outcome, result.Reason = Applied, "transaction applied"
 	if err := p.persistReceipt(ctx, transaction, result, at); err != nil {
