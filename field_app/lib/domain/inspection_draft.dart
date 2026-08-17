@@ -1,5 +1,7 @@
 import 'models.dart';
 
+enum ChecklistResponseType { text, number, boolean, choice, passFailNA }
+
 class ChecklistItem {
   const ChecklistItem({
     required this.id,
@@ -7,6 +9,8 @@ class ChecklistItem {
     required this.prompt,
     required this.assetId,
     this.required = true,
+    this.responseType = ChecklistResponseType.text,
+    this.options = const [],
   });
 
   final String id;
@@ -14,6 +18,8 @@ class ChecklistItem {
   final String prompt;
   final String assetId;
   final bool required;
+  final ChecklistResponseType responseType;
+  final List<String> options;
 }
 
 class InspectionWorkPack {

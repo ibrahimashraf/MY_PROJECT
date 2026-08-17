@@ -63,6 +63,8 @@ class CachedApprovedWorkPackage {
                     'prompt': item.prompt,
                     'asset_id': item.assetId,
                     'required': item.required,
+                    'response_type': item.responseType.name,
+                    'options': item.options,
                   })
               .toList(),
         },
@@ -91,6 +93,11 @@ class CachedApprovedWorkPackage {
             prompt: item['prompt'] as String,
             assetId: item['asset_id'] as String,
             required: item['required'] as bool? ?? true,
+            responseType: ChecklistResponseType.values.firstWhere(
+              (type) => type.name == item['response_type'],
+              orElse: () => ChecklistResponseType.text,
+            ),
+            options: List<String>.from(item['options'] as List? ?? const []),
           );
         }).toList(growable: false),
       ),

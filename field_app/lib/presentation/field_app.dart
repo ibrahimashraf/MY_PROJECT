@@ -209,11 +209,7 @@ class _CaptureCard extends StatelessWidget {
             const SizedBox(height: 16),
             Text(item.prompt),
             const SizedBox(height: 12),
-            TextField(
-                controller: responseController,
-                decoration: const InputDecoration(
-                    labelText: 'Observation or measurement',
-                    border: OutlineInputBorder())),
+            _TypedResponseInput(item: item, controller: responseController),
             const SizedBox(height: 12),
             TextField(
                 controller: notesController,
@@ -331,5 +327,76 @@ class _PilotOperatorReviewCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _TypedResponseInput extends StatelessWidget {
+  const _TypedResponseInput({required this.item, required this.controller});
+
+  final ChecklistItem item;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (item.responseType) {
+      case ChecklistResponseType.number:
+        return TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Measurement',
+            border: OutlineInputBorder(),
+          ),
+        );
+      case ChecklistResponseType.boolean:
+        return CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Confirmed'),
+          value: controller.text == 'true',
+          onChanged: (value) =>
+              controller.text = value == true ? 'true' : 'false',
+        );
+      case ChecklistResponseType.choice:
+        return DropdownButtonFormField<String>(
+          initialValue:
+              item.options.contains(controller.text) ? controller.text : null,
+          decoration: const InputDecoration(
+            labelText: 'Select approved value',
+            border: OutlineInputBorder(),
+          ),
+          items: item.options
+              .map((option) =>
+                  DropdownMenuItem(value: option, child: Text(option)))
+              .toList(growable: false),
+          onChanged: (value) => controller.text = value ?? '',
+        );
+      case ChecklistResponseType.passFailNA:
+        const options = <String, String>{
+          'pass': 'Pass',
+          'fail': 'Fail',
+          'not_applicable': 'Not applicable',
+        };
+        return DropdownButtonFormField<String>(
+          initialValue:
+              options.containsKey(controller.text) ? controller.text : null,
+          decoration: const InputDecoration(
+            labelText: 'Assessment',
+            border: OutlineInputBorder(),
+          ),
+          items: options.entries
+              .map((entry) =>
+                  DropdownMenuItem(value: entry.key, child: Text(entry.value)))
+              .toList(growable: false),
+          onChanged: (value) => controller.text = value ?? '',
+        );
+      case ChecklistResponseType.text:
+        return TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Observation or measurement',
+            border: OutlineInputBorder(),
+          ),
+        );
+    }
   }
 }
