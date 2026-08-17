@@ -1,38 +1,45 @@
-// Package packagemanifest contains replay controls for the future package-manifest route.
-package packagemanifest
+// Package workpackagepg persists approved INTEGIN work packages under tenant RLS.
+package workpackagepg
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
-// PostgresProofReplayStore durably consumes verified manifest proofs under the
-// tenant and organization RLS scope supplied by the already-verified device.
-// It is safe to compose only after its additive migration is applied.
-type PostgresProofReplayStore struct {
-	db  *sql.DB
-	now func() time.Time
+var (
+	// ErrManifestProofReplayAlreadyConsumed identifies a duplicate active proof.
+	ErrManifestProofReplayAlreadyConsumed = errors.New("proof replay already consumed")
+	// ErrManifestProofReplayExpired identifies a proof that cannot be consumed.
+	ErrManifestProofReplayExpired = errors.New("proof replay is expired")
+)
+
+// ManifestProofReplayStore durably consumes verified manifest proofs through a
+// Repository’s tenant-RLS transaction helper. It is safe to compose only after
+// the additive replay migration is applied.
+type ManifestProofReplayStore struct {
+	repository *Repository
+	now        func() time.Time
 }
 
-// NewPostgresProofReplayStore creates a durable replay store. Passing nil is
-// permitted for construction tests but Consume will refuse to operate.
-func NewPostgresProofReplayStore(db *sql.DB) *PostgresProofReplayStore {
-	return &PostgresProofReplayStore{db: db, now: time.Now}
+// NewManifestProofReplayStore creates the narrowly scoped adapter required by
+// a future pilot-only manifest composition. It does not apply schema, mount
+// routes, or expose the repository database handle.
+func NewManifestProofReplayStore(repository *Repository) *ManifestProofReplayStore {
+	return &ManifestProofReplayStore{repository: repository, now: time.Now}
 }
 
 // Consume atomically removes an expired matching record and inserts the current
 // verified proof. The full tenant/organization/device/purpose/request identity
 // is unique, so concurrent use of a request yields exactly one success.
-func (s *PostgresProofReplayStore) Consume(
+func (s *ManifestProofReplayStore) Consume(
 	ctx context.Context,
 	tenantID, organizationID, deviceID, purpose, requestID string,
 	expiresAt time.Time,
 ) error {
-	if s == nil {
+	if s == nil || s.repository == nil {
 		return errors.New("proof replay store is not configured")
 	}
 	if strings.TrimSpace(tenantID) == "" || strings.TrimSpace(organizationID) == "" || strings.TrimSpace(deviceID) == "" || strings.TrimSpace(purpose) == "" || strings.TrimSpace(requestID) == "" {
@@ -44,24 +51,17 @@ func (s *PostgresProofReplayStore) Consume(
 	}
 	now := clock().UTC()
 	if !expiresAt.After(now) {
-		return ErrReplayExpired
+		return ErrManifestProofReplayExpired
 	}
-	if s.db == nil {
+	if s.repository.db == nil {
 		return errors.New("proof replay store is not configured")
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err := s.repository.scopedTx(ctx, tenantID, organizationID)
 	if err != nil {
 		return fmt.Errorf("begin proof replay transaction: %w", err)
 	}
 	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, `
-		SELECT set_config('integin.tenant_id', $1, true),
-		       set_config('integin.organization_id', $2, true)
-	`, tenantID, organizationID); err != nil {
-		return fmt.Errorf("scope proof replay transaction: %w", err)
-	}
-
 	if _, err := tx.ExecContext(ctx, `
 		DELETE FROM manifest_proof_replay
 		WHERE tenant_id = $1
@@ -88,7 +88,7 @@ func (s *PostgresProofReplayStore) Consume(
 		return fmt.Errorf("read proof replay insert result: %w", err)
 	}
 	if inserted != 1 {
-		return ErrReplayAlreadyConsumed
+		return ErrManifestProofReplayAlreadyConsumed
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit proof replay transaction: %w", err)
