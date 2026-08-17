@@ -50,42 +50,42 @@ func (r *PostgresRepository) GetDevice(ctx context.Context, tenantID, deviceID s
 			return DeviceRecord{}, ErrNotFound
 		}
 		return DeviceRecord{}, err
+	}
+	device.State = DeviceState(state)
+	return device, tx.Commit()
+}
+
+func (r *PostgresRepository) ListDevices(ctx context.Context, tenantID string) ([]DeviceRecord, error) {
+	tx, err := r.beginTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT device_id, tenant_id, organization_id, user_id, key_id, public_key, state, authority_epoch, enrolled_at, updated_at, revoked_at, COALESCE(revocation_reason, '') FROM device_registry WHERE tenant_id = $1 ORDER BY device_id`, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	devices := make([]DeviceRecord, 0)
+	for rows.Next() {
+		var device DeviceRecord
+		var state string
+		if err := rows.Scan(&device.DeviceID, &device.TenantID, &device.OrganizationID, &device.UserID, &device.KeyID, &device.PublicKey, &state, &device.AuthorityEpoch, &device.EnrolledAt, &device.UpdatedAt, &device.RevokedAt, &device.RevocationReason); err != nil {
+			return nil, err
 		}
 		device.State = DeviceState(state)
-		return device, tx.Commit()
+		devices = append(devices, device)
 	}
-
-	func (r *PostgresRepository) ListDevices(ctx context.Context, tenantID string) ([]DeviceRecord, error) {
-		tx, err := r.beginTenant(ctx, tenantID)
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-		rows, err := tx.QueryContext(ctx, `SELECT device_id, tenant_id, organization_id, user_id, key_id, public_key, state, authority_epoch, enrolled_at, updated_at, revoked_at, COALESCE(revocation_reason, '') FROM device_registry WHERE tenant_id = $1 ORDER BY device_id`, tenantID)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		devices := make([]DeviceRecord, 0)
-		for rows.Next() {
-			var device DeviceRecord
-			var state string
-			if err := rows.Scan(&device.DeviceID, &device.TenantID, &device.OrganizationID, &device.UserID, &device.KeyID, &device.PublicKey, &state, &device.AuthorityEpoch, &device.EnrolledAt, &device.UpdatedAt, &device.RevokedAt, &device.RevocationReason); err != nil {
-				return nil, err
-			}
-			device.State = DeviceState(state)
-			devices = append(devices, device)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return devices, nil
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return devices, nil
+}
 
-	func (r *PostgresRepository) SaveDevice(ctx context.Context, device DeviceRecord) error {
+func (r *PostgresRepository) SaveDevice(ctx context.Context, device DeviceRecord) error {
 	if err := ValidateDeviceRecord(device); err != nil {
 		return err
 	}
@@ -118,46 +118,46 @@ func (r *PostgresRepository) GetAuthority(ctx context.Context, tenantID, authori
 			return AuthorityRecord{}, ErrNotFound
 		}
 		return AuthorityRecord{}, err
+	}
+	if err := json.Unmarshal(scopesJSON, &authority.Scopes); err != nil {
+		return AuthorityRecord{}, fmt.Errorf("decode authority scopes: %w", err)
+	}
+	return authority, tx.Commit()
+}
+
+func (r *PostgresRepository) ListAuthorities(ctx context.Context, tenantID string) ([]AuthorityRecord, error) {
+	tx, err := r.beginTenant(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT authority_id, tenant_id, organization_id, device_id, user_id, authority_epoch, scopes, procedure_version, issued_at, expires_at, signature, revoked_at FROM authority_package WHERE tenant_id = $1 AND revoked_at IS NULL ORDER BY authority_id`, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	authorities := make([]AuthorityRecord, 0)
+	for rows.Next() {
+		var authority AuthorityRecord
+		var scopesJSON []byte
+		if err := rows.Scan(&authority.AuthorityID, &authority.TenantID, &authority.OrganizationID, &authority.DeviceID, &authority.UserID, &authority.AuthorityEpoch, &scopesJSON, &authority.ProcedureVersion, &authority.IssuedAt, &authority.ExpiresAt, &authority.Signature, &authority.RevokedAt); err != nil {
+			return nil, err
 		}
 		if err := json.Unmarshal(scopesJSON, &authority.Scopes); err != nil {
-			return AuthorityRecord{}, fmt.Errorf("decode authority scopes: %w", err)
+			return nil, fmt.Errorf("decode authority scopes: %w", err)
 		}
-		return authority, tx.Commit()
+		authorities = append(authorities, authority)
 	}
-
-	func (r *PostgresRepository) ListAuthorities(ctx context.Context, tenantID string) ([]AuthorityRecord, error) {
-		tx, err := r.beginTenant(ctx, tenantID)
-		if err != nil {
-			return nil, err
-		}
-		defer tx.Rollback()
-		rows, err := tx.QueryContext(ctx, `SELECT authority_id, tenant_id, organization_id, device_id, user_id, authority_epoch, scopes, procedure_version, issued_at, expires_at, signature, revoked_at FROM authority_package WHERE tenant_id = $1 AND revoked_at IS NULL ORDER BY authority_id`, tenantID)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		authorities := make([]AuthorityRecord, 0)
-		for rows.Next() {
-			var authority AuthorityRecord
-			var scopesJSON []byte
-			if err := rows.Scan(&authority.AuthorityID, &authority.TenantID, &authority.OrganizationID, &authority.DeviceID, &authority.UserID, &authority.AuthorityEpoch, &scopesJSON, &authority.ProcedureVersion, &authority.IssuedAt, &authority.ExpiresAt, &authority.Signature, &authority.RevokedAt); err != nil {
-				return nil, err
-			}
-			if err := json.Unmarshal(scopesJSON, &authority.Scopes); err != nil {
-				return nil, fmt.Errorf("decode authority scopes: %w", err)
-			}
-			authorities = append(authorities, authority)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		if err := tx.Commit(); err != nil {
-			return nil, err
-		}
-		return authorities, nil
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return authorities, nil
+}
 
-	func (r *PostgresRepository) SaveAuthority(ctx context.Context, authority AuthorityRecord) error {
+func (r *PostgresRepository) SaveAuthority(ctx context.Context, authority AuthorityRecord) error {
 	if authority.AuthorityID == "" || authority.TenantID == "" || authority.OrganizationID == "" || authority.DeviceID == "" || authority.UserID == "" || authority.AuthorityEpoch == 0 || authority.ProcedureVersion == "" || authority.IssuedAt.IsZero() || authority.ExpiresAt.IsZero() || !authority.ExpiresAt.After(authority.IssuedAt) || len(authority.Signature) == 0 {
 		return errors.New("authority identity, scope, validity, and signature are required")
 	}

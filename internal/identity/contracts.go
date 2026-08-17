@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrUnknownSubject     = errors.New("identity subject is not locally mapped")
+	ErrUnknownSubject      = errors.New("identity subject is not locally mapped")
 	ErrAmbiguousMembership = errors.New("identity subject has ambiguous active memberships")
 )
 

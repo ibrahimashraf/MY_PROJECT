@@ -19,14 +19,14 @@ const (
 // Config contains only the verification policy for an external authentication assertion.
 // INTEGIN authorization is resolved separately from a validated issuer-subject pair.
 type Config struct {
-	Enabled                    bool
-	Issuer                     string
-	Audience                   string
-	AuthorizedParty            string
-	RequiredAMR                []string
-	ClockSkew                  time.Duration
-	MaxTokenAge                time.Duration
-	JWKSRefresh                time.Duration
+	Enabled                     bool
+	Issuer                      string
+	Audience                    string
+	AuthorizedParty             string
+	RequiredAMR                 []string
+	ClockSkew                   time.Duration
+	MaxTokenAge                 time.Duration
+	JWKSRefresh                 time.Duration
 	AllowInsecureLoopbackIssuer bool
 }
 

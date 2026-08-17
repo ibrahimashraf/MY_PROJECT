@@ -24,11 +24,11 @@ func TestLoadConfigRequiresIssuerAndAudienceWhenEnabled(t *testing.T) {
 
 func TestLoadConfigAllowsHTTPOnlyForExplicitLoopbackPilot(t *testing.T) {
 	values := map[string]string{
-		"INTEGIN_OIDC_ENABLED":                     "true",
-		"INTEGIN_OIDC_ISSUER":                      "http://127.0.0.1:18180/realms/integin-pilot",
-		"INTEGIN_OIDC_AUDIENCE":                    "integin-api-pilot",
-		"INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK":     "true",
-		"INTEGIN_OIDC_REQUIRED_AMR":                "pwd, otp, pwd",
+		"INTEGIN_OIDC_ENABLED":                 "true",
+		"INTEGIN_OIDC_ISSUER":                  "http://127.0.0.1:18180/realms/integin-pilot",
+		"INTEGIN_OIDC_AUDIENCE":                "integin-api-pilot",
+		"INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK": "true",
+		"INTEGIN_OIDC_REQUIRED_AMR":            "pwd, otp, pwd",
 	}
 	config, err := LoadConfig(func(name string) string { return values[name] })
 	if err != nil {
