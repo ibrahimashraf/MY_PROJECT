@@ -116,7 +116,7 @@ func newHandler(t *testing.T, verifier DeviceProofVerifier, store testStore, rep
 	if err != nil {
 		t.Fatalf("generate key: %v", err)
 	}
-	issuer, err := packagemanifest.NewManifestIssuer(store, privateKey, "manifest-key-1", 30*time.Minute)
+	issuer, err := packagemanifest.NewManifestIssuer(store, packagemanifest.StaticAssignmentContextResolver{Context: workpackage.AssignmentContext{RootAssetID: "asset-1", InspectionType: "thorough-inspection", ProcedureVersion: "v1", ScheduledAt: time.Date(2026, time.August, 17, 9, 0, 0, 0, time.UTC)}}, privateKey, "manifest-key-1", 30*time.Minute)
 	if err != nil {
 		t.Fatalf("new issuer: %v", err)
 	}

@@ -87,7 +87,7 @@ func newTestIssuerWithKey(t *testing.T, store manifestStore) (ed25519.PrivateKey
 	if err != nil {
 		t.Fatalf("generate key: %v", err)
 	}
-	issuer, err := NewManifestIssuer(store, privateKey, "manifest-key-1", 30*time.Minute)
+	issuer, err := NewManifestIssuer(store, StaticAssignmentContextResolver{Context: workpackage.AssignmentContext{RootAssetID: "asset-1", InspectionType: "thorough-inspection", ProcedureVersion: "v1", ScheduledAt: time.Date(2026, time.August, 17, 9, 0, 0, 0, time.UTC)}}, privateKey, "manifest-key-1", 30*time.Minute)
 	if err != nil {
 		t.Fatalf("new issuer: %v", err)
 	}
