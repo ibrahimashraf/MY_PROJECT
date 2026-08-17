@@ -20,7 +20,15 @@ class SignedPackageManifest {
   String get inspectionId => json['inspection_id'] as String;
 }
 
-class PackageManifestVerifier {
+abstract interface class PackageManifestBinder {
+  Future<CachedApprovedWorkPackage> verifyBindAndCache(
+    SignedPackageManifest manifest, {
+    required ApprovedWorkPackageCache cache,
+    required DateTime now,
+  });
+}
+
+class PackageManifestVerifier implements PackageManifestBinder {
   PackageManifestVerifier({required this.authorityPublicKey});
   final SimplePublicKey authorityPublicKey;
 
@@ -53,6 +61,7 @@ class PackageManifestVerifier {
     );
   }
 
+  @override
   Future<CachedApprovedWorkPackage> verifyBindAndCache(
     SignedPackageManifest manifest, {
     required ApprovedWorkPackageCache cache,

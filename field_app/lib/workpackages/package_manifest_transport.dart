@@ -70,13 +70,25 @@ class ManifestReadProof {
       };
 }
 
+abstract interface class PackageManifestFetcher {
+  Future<SignedPackageManifest> fetch({
+    required Uri endpoint,
+    required DeviceSigner signer,
+    required String deviceId,
+    required String authorityId,
+    required int authorityEpoch,
+    required String inspectionId,
+    required DateTime now,
+  });
+}
+
 /// Fetches one server-signed package manifest using a device-bound proof.
 ///
 /// The transport never verifies, binds, or caches a response. Callers must pass
 /// a result through [PackageManifestVerifier] before local persistence. It has
 /// no default endpoint, so current unmounted server composition cannot receive
 /// a request unless a future pilot caller explicitly provides one.
-class PackageManifestTransport {
+class PackageManifestTransport implements PackageManifestFetcher {
   PackageManifestTransport({
     http.Client? client,
     ManifestRequestIdGenerator? requestIdGenerator,
@@ -109,6 +121,7 @@ class PackageManifestTransport {
   ///
   /// [now] is supplied by the caller for deterministic protocol testing. The
   /// server remains authoritative for proof acceptance and lifetime limits.
+  @override
   Future<SignedPackageManifest> fetch({
     required Uri endpoint,
     required DeviceSigner signer,
