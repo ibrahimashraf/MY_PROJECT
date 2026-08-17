@@ -33,17 +33,9 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 
 // Assignment is the current device-scoped distribution record. It never rewrites
 // an already captured inspection; every submitted draft remains package-bound.
-type Assignment struct {
-	TenantID       string
-	OrganizationID string
-	InspectionID   string
-	DeviceID       string
-	PackageID      string
-	PackageVersion int
-	AuthorityEpoch int64
-	ExpiresAt      time.Time
-	AssignedAt     time.Time
-}
+// Assignment remains a compatibility alias for repository callers.
+// The stable manifest contract is owned by the domain package.
+type Assignment = workpackage.Assignment
 
 func (r *Repository) SaveApproved(ctx context.Context, p workpackage.Package, approvedAt time.Time) error {
 	if p.State != workpackage.PublicationApproved {

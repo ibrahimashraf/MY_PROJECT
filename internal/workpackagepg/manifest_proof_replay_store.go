@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"integin/internal/domain/workpackage"
 )
 
 var (
-	// ErrManifestProofReplayAlreadyConsumed identifies a duplicate active proof.
-	ErrManifestProofReplayAlreadyConsumed = errors.New("proof replay already consumed")
-	// ErrManifestProofReplayExpired identifies a proof that cannot be consumed.
-	ErrManifestProofReplayExpired = errors.New("proof replay is expired")
+	// Error identity is domain-owned so manifests do not depend on PostgreSQL.
+	ErrManifestProofReplayAlreadyConsumed = workpackage.ErrManifestProofReplayAlreadyConsumed
+	ErrManifestProofReplayExpired         = workpackage.ErrManifestProofReplayExpired
 )
 
 // ManifestProofReplayStore durably consumes verified manifest proofs through a

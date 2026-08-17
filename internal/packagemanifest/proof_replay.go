@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
-	"integin/internal/workpackagepg"
+	"integin/internal/domain/workpackage"
 )
 
 var (
 	// Error identity is owned by the PostgreSQL layer because the production
 	// manifest package already depends on that layer for assignment types.
-	ErrReplayAlreadyConsumed = workpackagepg.ErrManifestProofReplayAlreadyConsumed
-	ErrReplayExpired         = workpackagepg.ErrManifestProofReplayExpired
+	ErrReplayAlreadyConsumed = workpackage.ErrManifestProofReplayAlreadyConsumed
+	ErrReplayExpired         = workpackage.ErrManifestProofReplayExpired
 )
 
 // ProofReplayStore atomically consumes one verified, tenant-scoped proof request.

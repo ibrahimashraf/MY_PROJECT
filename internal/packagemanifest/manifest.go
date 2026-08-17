@@ -15,7 +15,6 @@ import (
 
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/domain/workpackage"
-	"integin/internal/workpackagepg"
 )
 
 const (
@@ -39,7 +38,7 @@ var (
 // Repository is the narrow persistence seam required to resolve a manifest.
 // *workpackagepg.Repository satisfies it in production composition.
 type Repository interface {
-	GetCurrentAssignment(context.Context, string, string, string, string, time.Time) (workpackagepg.Assignment, error)
+	GetCurrentAssignment(context.Context, string, string, string, string, time.Time) (workpackage.Assignment, error)
 	GetApproved(context.Context, string, string, string, int) (workpackage.Package, error)
 }
 
@@ -170,7 +169,7 @@ func validateVerifiedContext(verified domainsync.VerifiedDeviceContext, inspecti
 	return nil
 }
 
-func validateAssignment(assignment workpackagepg.Assignment, verified domainsync.VerifiedDeviceContext, inspectionID string, at time.Time) error {
+func validateAssignment(assignment workpackage.Assignment, verified domainsync.VerifiedDeviceContext, inspectionID string, at time.Time) error {
 	if assignment.TenantID != verified.TenantID || assignment.OrganizationID != verified.OrganizationID || assignment.DeviceID != verified.DeviceID || assignment.InspectionID != inspectionID {
 		return ErrScopeMismatch
 	}
@@ -186,7 +185,7 @@ func validateAssignment(assignment workpackagepg.Assignment, verified domainsync
 	return nil
 }
 
-func validatePackage(pkg workpackage.Package, assignment workpackagepg.Assignment) error {
+func validatePackage(pkg workpackage.Package, assignment workpackage.Assignment) error {
 	if pkg.TenantID != assignment.TenantID || pkg.OrganizationID != assignment.OrganizationID || pkg.ID != assignment.PackageID || pkg.PackageVersion != assignment.PackageVersion {
 		return ErrScopeMismatch
 	}
