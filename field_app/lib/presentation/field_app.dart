@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../application/field_app_controller.dart';
 import '../domain/inspection_draft.dart';
+import '../workpackages/package_compatibility.dart';
 
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
@@ -58,6 +59,14 @@ class _FieldHomePageState extends State<FieldHomePage> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final draft = controller.activeDraft;
+    final compatibility = evaluatePackageCompatibility(
+      draftPackage: draft?.workPack ?? workPack,
+      assignedPackage: workPack,
+      now: DateTime.now().toUtc(),
+      packageExpiresAt: controller.authority.expiresAt,
+      cachedAuthorityEpoch: controller.authority.epoch,
+      requiredAuthorityEpoch: controller.authority.epoch,
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('INTEGIN Field'),
@@ -84,12 +93,16 @@ class _FieldHomePageState extends State<FieldHomePage> {
                 const SizedBox(height: 20),
                 if (draft == null)
                   _WorkPackCard(controller: controller, workPack: workPack)
-                else
+                else ...[
+                  _PackageCompatibilityCard(decision: compatibility),
+                  const SizedBox(height: 16),
                   _CaptureCard(
-                      controller: controller,
-                      draft: draft,
-                      responseController: responseController,
-                      notesController: notesController),
+                    controller: controller,
+                    draft: draft,
+                    responseController: responseController,
+                    notesController: notesController,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 _PilotOperatorReviewCard(
                   controller: controller,
@@ -398,5 +411,63 @@ class _TypedResponseInput extends StatelessWidget {
           ),
         );
     }
+  }
+}
+
+class _PackageCompatibilityCard extends StatelessWidget {
+  const _PackageCompatibilityCard({required this.decision});
+
+  final PackageCompatibilityDecision decision;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (decision.state) {
+      PackageCompatibilityState.current => Colors.green.shade700,
+      PackageCompatibilityState.updateAvailable => Colors.blue.shade700,
+      PackageCompatibilityState.needsFormUpdate => Colors.orange.shade800,
+      PackageCompatibilityState.packageExpired => Colors.red.shade700,
+      PackageCompatibilityState.authorityStale => Colors.red.shade700,
+    };
+    final icon = switch (decision.state) {
+      PackageCompatibilityState.current => Icons.verified_outlined,
+      PackageCompatibilityState.updateAvailable => Icons.system_update_outlined,
+      PackageCompatibilityState.needsFormUpdate =>
+        Icons.assignment_late_outlined,
+      PackageCompatibilityState.packageExpired => Icons.schedule_outlined,
+      PackageCompatibilityState.authorityStale => Icons.key_off_outlined,
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Package status',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(decision.userMessage),
+                  if (decision.requiredNewItemIds.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                        'Required update fields: ${decision.requiredNewItemIds.join(', ')}'),
+                  ],
+                  if (decision.blocksFinalCompletion) ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                        'Final completion and authoritative sync remain blocked.'),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
