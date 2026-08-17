@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../advisory/pilot_advisory_client.dart';
 import '../domain/inspection_draft.dart';
+import '../workpackages/package_compatibility.dart';
 import '../domain/models.dart';
 import '../outbox/outbox.dart';
 import '../security/transaction_signer.dart';
@@ -121,10 +122,18 @@ class FieldAppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> queueForSync({String? notes}) async {
+  Future<bool> queueForSync(
+      {String? notes,
+      PackageCompatibilityDecision? packageCompatibility}) async {
     final draft = activeDraft;
     if (draft == null) {
       lastError = 'Open an assigned inspection before submitting.';
+      notifyListeners();
+      return false;
+    }
+    if (packageCompatibility != null &&
+        !packageCompatibility.allowsAuthoritativeSync) {
+      lastError = packageCompatibility.userMessage;
       notifyListeners();
       return false;
     }

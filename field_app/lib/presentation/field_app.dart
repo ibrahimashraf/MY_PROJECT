@@ -99,6 +99,7 @@ class _FieldHomePageState extends State<FieldHomePage> {
                   _CaptureCard(
                     controller: controller,
                     draft: draft,
+                    compatibility: compatibility,
                     responseController: responseController,
                     notesController: notesController,
                   ),
@@ -200,11 +201,13 @@ class _CaptureCard extends StatelessWidget {
   const _CaptureCard(
       {required this.controller,
       required this.draft,
+      required this.compatibility,
       required this.responseController,
       required this.notesController});
 
   final FieldAppController controller;
   final InspectionDraft draft;
+  final PackageCompatibilityDecision compatibility;
   final TextEditingController responseController;
   final TextEditingController notesController;
 
@@ -242,8 +245,9 @@ class _CaptureCard extends StatelessWidget {
                   child: const Text('Save response locally'),
                 ),
                 FilledButton.icon(
-                  onPressed: () =>
-                      controller.queueForSync(notes: notesController.text),
+                  onPressed: () => controller.queueForSync(
+                      packageCompatibility: compatibility,
+                      notes: notesController.text),
                   icon: const Icon(Icons.cloud_upload_outlined),
                   label: const Text('Queue signed submission'),
                 ),
