@@ -32,7 +32,7 @@ func TestPreAcceptancePolicyRequiresCurrentAssignmentMatch(t *testing.T) {
 		t.Fatalf("new validator: %v", err)
 	}
 	observer := &policyObserver{}
-	policy, err := NewPreAcceptancePolicy(validator, policyAssignmentResolver{assignment: workpackage.Assignment{PackageID: pkg.ID, PackageVersion: pkg.PackageVersion, AuthorityEpoch: 7}}, func() time.Time { return time.Date(2026, 8, 17, 12, 0, 0, 0, time.UTC) }, observer)
+	policy, err := NewPreAcceptancePolicy(validator, policyAssignmentResolver{assignment: workpackage.Assignment{PackageID: pkg.ID, PackageVersion: pkg.PackageVersion, AuthorityEpoch: 7, ExpiresAt: time.Date(2026, 8, 17, 13, 0, 0, 0, time.UTC)}}, func() time.Time { return time.Date(2026, 8, 17, 12, 0, 0, 0, time.UTC) }, observer)
 	if err != nil {
 		t.Fatalf("new policy: %v", err)
 	}

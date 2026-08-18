@@ -91,9 +91,13 @@ func (p *PreAcceptancePolicy) ValidatePreAcceptance(ctx context.Context, transac
 	if strings.TrimSpace(transaction.TenantID) == "" || strings.TrimSpace(transaction.OrganizationID) == "" || strings.TrimSpace(transaction.EntityID) == "" || strings.TrimSpace(transaction.DeviceID) == "" {
 		return p.reject("missing_verified_scope", ErrPolicyScope)
 	}
-	assignment, err := p.assignments.GetCurrentAssignment(ctx, transaction.TenantID, transaction.OrganizationID, transaction.EntityID, transaction.DeviceID, p.now().UTC())
+	now := p.now().UTC()
+	assignment, err := p.assignments.GetCurrentAssignment(ctx, transaction.TenantID, transaction.OrganizationID, transaction.EntityID, transaction.DeviceID, now)
 	if err != nil {
 		return p.reject("assignment_unavailable", fmt.Errorf("resolve current work-package assignment: %w", err))
+	}
+	if assignment.ExpiresAt.IsZero() || !assignment.ExpiresAt.After(now) {
+		return p.reject("assignment_unavailable", errors.New("current work-package assignment expired"))
 	}
 	var reference struct {
 		InspectionID   string `json:"inspection_id"`
