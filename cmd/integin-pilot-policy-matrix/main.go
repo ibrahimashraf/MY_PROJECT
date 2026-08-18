@@ -169,7 +169,7 @@ func seed() error {
 	if err := os.WriteFile(fixturePath, content, 0600); err != nil {
 		return err
 	}
-	fmt.Printf("seeded tenant=%s device=%s authority=%s fixture=%s\n", tenantID, deviceID, authorityID, fixturePath)
+	fmt.Println("pilot policy matrix seed completed")
 	return nil
 }
 
