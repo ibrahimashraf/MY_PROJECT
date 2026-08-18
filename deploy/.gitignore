@@ -1,0 +1,6 @@
+# Deployment values and mounted secrets are private runtime material.
+env/*.env
+env/*.local
+secrets/
+!env/*.example
+!env/*.schema

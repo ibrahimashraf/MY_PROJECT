@@ -1,0 +1,73 @@
+name: ${INTEGIN_STACK_NAME:-integin}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${INTEGIN_POSTGRES_DB:?set in a private environment file}
+      POSTGRES_USER: ${INTEGIN_POSTGRES_USER:?set in a private environment file}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    ports:
+      - "${INTEGIN_POSTGRES_BIND_ADDRESS:-127.0.0.1}:${INTEGIN_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - integin-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - integin-private
+
+  rustfs:
+    image: rustfs/rustfs:1.0.0-rc.1
+    restart: unless-stopped
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOG_DIRECTORY: /var/log/rustfs
+    secrets:
+      - rustfs_access_key
+      - rustfs_secret_key
+    ports:
+      - "${INTEGIN_RUSTFS_BIND_ADDRESS:-127.0.0.1}:${INTEGIN_RUSTFS_API_PORT:-9000}:9000"
+      - "${INTEGIN_RUSTFS_BIND_ADDRESS:-127.0.0.1}:${INTEGIN_RUSTFS_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - integin-rustfs-data:/data
+      - integin-rustfs-logs:/var/log/rustfs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - integin-private
+
+networks:
+  integin-private:
+    name: ${INTEGIN_STACK_NAME:-integin}-private
+
+volumes:
+  integin-postgres-data:
+    name: ${INTEGIN_STACK_NAME:-integin}-postgres-data
+  integin-rustfs-data:
+    name: ${INTEGIN_STACK_NAME:-integin}-rustfs-data
+  integin-rustfs-logs:
+    name: ${INTEGIN_STACK_NAME:-integin}-rustfs-logs
+
+secrets:
+  postgres_password:
+    file: ${INTEGIN_POSTGRES_PASSWORD_FILE:?set an absolute private file path}
+  rustfs_access_key:
+    file: ${INTEGIN_RUSTFS_ACCESS_KEY_FILE:?set an absolute private file path}
+  rustfs_secret_key:
+    file: ${INTEGIN_RUSTFS_SECRET_KEY_FILE:?set an absolute private file path}
