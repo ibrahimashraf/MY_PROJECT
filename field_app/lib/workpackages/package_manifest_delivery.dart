@@ -1,5 +1,6 @@
 import '../security/transaction_signer.dart';
 import 'approved_work_package_cache.dart';
+import 'package_manifest_binding_observation.dart';
 import 'package_manifest_client.dart';
 import 'package_manifest_transport.dart';
 
@@ -10,13 +11,16 @@ class PackageManifestDelivery {
     required PackageManifestFetcher fetcher,
     required PackageManifestBinder binder,
     required ApprovedWorkPackageCache cache,
+    PackageManifestBindingObserver? observer,
   })  : _fetcher = fetcher,
         _binder = binder,
-        _cache = cache;
+        _cache = cache,
+        _observer = observer;
 
   final PackageManifestFetcher _fetcher;
   final PackageManifestBinder _binder;
   final ApprovedWorkPackageCache _cache;
+  final PackageManifestBindingObserver? _observer;
 
   Future<CachedApprovedWorkPackage> refreshAndBind({
     required Uri endpoint,
@@ -36,10 +40,26 @@ class PackageManifestDelivery {
       inspectionId: inspectionId,
       now: now,
     );
-    return _binder.verifyBindAndCache(
+    final bound = await _binder.verifyBindAndCache(
       manifest,
       cache: _cache,
       now: now,
     );
+    _observeVerifiedCache(now);
+    return bound;
+  }
+
+  void _observeVerifiedCache(DateTime now) {
+    // Evidence observation is advisory-only: an observer must never block or
+    // mutate the verified/cache-bound Field workflow.
+    try {
+      _observer?.onManifestBinding(
+        PackageManifestBindingObservation.verifiedCached(
+          occurredAt: now.toUtc(),
+        ),
+      );
+    } catch (_) {
+      // Intentionally ignored: the verified cached package remains authoritative.
+    }
   }
 }
