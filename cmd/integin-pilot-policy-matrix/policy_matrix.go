@@ -161,7 +161,13 @@ func policyExercise() error {
 	if err := expectSync(client, serverURL, valid, "APPLIED"); err != nil {
 		return err
 	}
+	if err := printPolicyMatrixState(context.Background(), database, value.TenantID, value.DeviceID, "after_valid"); err != nil {
+		return err
+	}
 	if err := expectSync(client, serverURL, valid, "DUPLICATE"); err != nil {
+		return err
+	}
+	if err := printPolicyMatrixState(context.Background(), database, value.TenantID, value.DeviceID, "after_duplicate"); err != nil {
 		return err
 	}
 	securityFailure, err := policySignedTransaction(prefix+"-security", 2, value, privateKey, policyInspectionID(value.DeviceID), payload)
@@ -170,6 +176,9 @@ func policyExercise() error {
 	}
 	securityFailure.Signature = "invalid-signature"
 	if err := expectSync(client, serverURL, securityFailure, "SECURITY_FAILURE"); err != nil {
+		return err
+	}
+	if err := printPolicyMatrixState(context.Background(), database, value.TenantID, value.DeviceID, "after_signature_failure"); err != nil {
 		return err
 	}
 	return nil
