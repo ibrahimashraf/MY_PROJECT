@@ -175,6 +175,7 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
 	}
+	httpServer.Handler = newCandidateRollbackHandler(httpServer.Handler, policyRegistration, httpServer.Shutdown)
 	serverErrors := make(chan error, 1)
 	go func() {
 		serverErrors <- httpServer.ListenAndServe()
