@@ -36,6 +36,7 @@ type Handler struct {
 	ReplayStore packagemanifest.ProofReplayStore
 	Issuer      *packagemanifest.ManifestIssuer
 	Now         func() time.Time
+	Observer    ObservationSink
 }
 
 // request accepts only a device proof. Tenant, organization, user, and package scope are never client input.
@@ -46,10 +47,12 @@ type request struct {
 // ServeHTTP handles a future manifest-read request without adding a route registration.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		h.observe(r.Context(), "request_rejected", "unsupported_method", http.StatusMethodNotAllowed, false)
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	if h == nil || h.Verifier == nil || h.Authorities == nil || h.ReplayStore == nil || h.Issuer == nil {
+		h.observe(r.Context(), "request_rejected", "unconfigured", http.StatusServiceUnavailable, false)
 		writeError(w, http.StatusServiceUnavailable, "manifest service is not configured")
 		return
 	}
@@ -59,15 +62,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&body); err != nil || decoder.Decode(&struct{}{}) != io.EOF {
+		h.observe(r.Context(), "request_rejected", "invalid_request", http.StatusBadRequest, false)
 		writeError(w, http.StatusBadRequest, "invalid manifest request")
 		return
 	}
 	if strings.TrimSpace(body.Proof.AuthorityID) == "" {
+		h.observe(r.Context(), "proof_rejected", "authority_mismatch", http.StatusUnauthorized, false)
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
 	authority, ok := h.Authorities.Get(body.Proof.AuthorityID)
 	if !ok {
+		h.observe(r.Context(), "proof_rejected", "authority_mismatch", http.StatusUnauthorized, false)
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
@@ -77,33 +83,69 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	verified, err := h.Verifier.VerifyDeviceProof(r.Context(), body.Proof, authority, now)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
-		return
-	}
-	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
-		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
-			writeError(w, http.StatusConflict, "manifest proof was already used")
-			return
-		}
+		h.observe(r.Context(), "proof_rejected", proofFailureReason(err), http.StatusUnauthorized, false)
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
 	manifest, err := h.Issuer.Issue(r.Context(), verified, body.Proof.InspectionID, now)
 	if err != nil {
 		if errors.Is(err, packagemanifest.ErrNotFound) {
+			h.observe(r.Context(), "request_rejected", "assignment_not_found", http.StatusNotFound, true)
 			writeError(w, http.StatusNotFound, "approved work package assignment was not found")
 			return
 		}
 		if errors.Is(err, packagemanifest.ErrExpired) || errors.Is(err, packagemanifest.ErrScopeMismatch) || errors.Is(err, packagemanifest.ErrIntegrity) {
+			reason := "package_hash_invalid"
+			if errors.Is(err, packagemanifest.ErrExpired) {
+				reason = "expired"
+			} else if errors.Is(err, packagemanifest.ErrScopeMismatch) {
+				reason = "authority_mismatch"
+			}
+			h.observe(r.Context(), "proof_rejected", reason, http.StatusForbidden, false)
 			writeError(w, http.StatusForbidden, "approved work package assignment is unavailable")
 			return
 		}
+		h.observe(r.Context(), "request_rejected", "issuance_failed", http.StatusInternalServerError, false)
 		writeError(w, http.StatusInternalServerError, "manifest issuance failed")
+		return
+	}
+	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
+		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
+			h.observe(r.Context(), "replay_rejected", "replay", http.StatusConflict, false)
+			writeError(w, http.StatusConflict, "manifest proof was already used")
+			return
+		}
+		h.observe(r.Context(), "proof_rejected", "expired", http.StatusUnauthorized, false)
+		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(manifest)
+	h.observe(r.Context(), "manifest_issued", "valid_proof", http.StatusOK, true)
+}
+
+func (h *Handler) observe(ctx context.Context, outcome, reason string, status int, replayAccepted bool) {
+	if h == nil || h.Observer == nil {
+		return
+	}
+	h.Observer.Observe(ctx, Observation{Outcome: outcome, ReasonCode: reason, HTTPStatus: status, ReplayAccepted: replayAccepted})
+}
+
+func proofFailureReason(err error) string {
+	value := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(value, "lifetime") || strings.Contains(value, "expiry") || strings.Contains(value, "expired"):
+		return "expired"
+	case strings.Contains(value, "authority"):
+		return "authority_mismatch"
+	case strings.Contains(value, "key") || strings.Contains(value, "registered device"):
+		return "key_unknown"
+	case strings.Contains(value, "signature"):
+		return "signature_invalid"
+	default:
+		return "proof_invalid"
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {

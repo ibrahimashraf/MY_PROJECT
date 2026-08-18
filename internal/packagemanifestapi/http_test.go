@@ -80,6 +80,49 @@ func TestHandlerReturnsSignedManifest(t *testing.T) {
 	}
 }
 
+func TestHandlerEmitsRedactedValidAndReplayObservations(t *testing.T) {
+	now := testNow()
+	sink := &recordingSink{}
+	replay := packagemanifest.NewInMemoryProofReplayStore(func() time.Time { return now })
+	h := newHandler(t, fakeVerifier{context: verified(now)}, validStore(now), replay)
+	h.Authorities = authorityLookup{"authority-1": {ID: "authority-1"}}
+	h.Observer = sink
+	request := proofRequest("authority-1", "request-1")
+	if response := serve(h, request); response.Code != http.StatusOK {
+		t.Fatalf("valid response status = %d", response.Code)
+	}
+	if response := serve(h, request); response.Code != http.StatusConflict {
+		t.Fatalf("replay response status = %d", response.Code)
+	}
+	if len(sink.observations) != 2 {
+		t.Fatalf("observation count = %d", len(sink.observations))
+	}
+	if valid := sink.observations[0]; valid.Outcome != "manifest_issued" || valid.ReasonCode != "valid_proof" || valid.HTTPStatus != http.StatusOK || !valid.ReplayAccepted || valid.ManifestID != "" {
+		t.Fatalf("unexpected valid observation: %#v", valid)
+	}
+	if replayObservation := sink.observations[1]; replayObservation.Outcome != "replay_rejected" || replayObservation.ReasonCode != "replay" || replayObservation.HTTPStatus != http.StatusConflict || replayObservation.ReplayAccepted {
+		t.Fatalf("unexpected replay observation: %#v", replayObservation)
+	}
+}
+
+func TestHandlerEmitsRedactedExpiredObservation(t *testing.T) {
+	now := testNow()
+	sink := &recordingSink{}
+	h := newHandler(t, fakeVerifier{err: errors.New("proof expired")}, testStore{}, packagemanifest.NewInMemoryProofReplayStore(func() time.Time { return now }))
+	h.Authorities = authorityLookup{"authority-1": {ID: "authority-1"}}
+	h.Observer = sink
+	if response := serve(h, proofRequest("authority-1", "request-1")); response.Code != http.StatusUnauthorized {
+		t.Fatalf("expired response status = %d", response.Code)
+	}
+	if len(sink.observations) != 1 {
+		t.Fatalf("observation count = %d", len(sink.observations))
+	}
+	observation := sink.observations[0]
+	if observation.Outcome != "proof_rejected" || observation.ReasonCode != "expired" || observation.HTTPStatus != http.StatusUnauthorized || observation.ReplayAccepted {
+		t.Fatalf("unexpected expired observation: %#v", observation)
+	}
+}
+
 type fakeVerifier struct {
 	context domainsync.VerifiedDeviceContext
 	err     error
@@ -87,6 +130,14 @@ type fakeVerifier struct {
 
 func (v fakeVerifier) VerifyDeviceProof(context.Context, domainsync.DeviceProof, device_trust.AuthorityPackage, time.Time) (domainsync.VerifiedDeviceContext, error) {
 	return v.context, v.err
+}
+
+type recordingSink struct {
+	observations []Observation
+}
+
+func (s *recordingSink) Observe(_ context.Context, observation Observation) {
+	s.observations = append(s.observations, observation)
 }
 
 type testStore struct {

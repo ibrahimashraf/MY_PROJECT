@@ -96,3 +96,40 @@ func (s *ManifestProofReplayStore) Consume(
 	}
 	return nil
 }
+
+// Count returns only the active replay-entry total for one already verified
+// tenant, organization, device, and purpose scope. It never returns request
+// identifiers, proofs, keys, or any other replay identity.
+func (s *ManifestProofReplayStore) Count(
+	ctx context.Context,
+	tenantID, organizationID, deviceID, purpose string,
+	at time.Time,
+) (int64, error) {
+	if s == nil || s.repository == nil {
+		return 0, errors.New("proof replay store is not configured")
+	}
+	if strings.TrimSpace(tenantID) == "" || strings.TrimSpace(organizationID) == "" || strings.TrimSpace(deviceID) == "" || strings.TrimSpace(purpose) == "" || at.IsZero() {
+		return 0, errors.New("proof replay count scope is incomplete")
+	}
+	if s.repository.db == nil {
+		return 0, errors.New("proof replay store is not configured")
+	}
+	tx, err := s.repository.scopedTx(ctx, tenantID, organizationID)
+	if err != nil {
+		return 0, fmt.Errorf("begin proof replay count transaction: %w", err)
+	}
+	defer tx.Rollback()
+	var count int64
+	if err := tx.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM manifest_proof_replay
+		WHERE tenant_id = $1
+		  AND organization_id = $2
+		  AND device_id = $3
+		  AND purpose = $4
+		  AND expires_at > $5
+	`, tenantID, organizationID, deviceID, purpose, at.UTC()).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count proof replay entries: %w", err)
+	}
+	return count, nil
+}
