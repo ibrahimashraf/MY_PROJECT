@@ -11,6 +11,8 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/manifestreceiptbridge"
+	"integin/internal/packagemanifest"
 	"integin/internal/packagemanifestapi"
 	"integin/internal/shared/featureflags"
 	"integin/internal/syncapi"
@@ -18,10 +20,13 @@ import (
 )
 
 const (
-	pilotManifestRetrievalEnvironment  = "INTEGIN_PILOT_MANIFEST_RETRIEVAL"
-	pilotRuntimeEnvironment            = "INTEGIN_PILOT_RUNTIME"
-	pilotManifestPrivateKeyEnvironment = "INTEGIN_PILOT_MANIFEST_PRIVATE_KEY_BASE64URL"
-	pilotManifestKeyIDEnvironment      = "INTEGIN_PILOT_MANIFEST_KEY_ID"
+	pilotManifestRetrievalEnvironment      = "INTEGIN_PILOT_MANIFEST_RETRIEVAL"
+	pilotRuntimeEnvironment                = "INTEGIN_PILOT_RUNTIME"
+	pilotManifestPrivateKeyEnvironment     = "INTEGIN_PILOT_MANIFEST_PRIVATE_KEY_BASE64URL"
+	pilotManifestKeyIDEnvironment          = "INTEGIN_PILOT_MANIFEST_KEY_ID"
+	pilotManifestRunIDEnvironment          = "INTEGIN_PILOT_MANIFEST_CANDIDATE_RUN_ID"
+	pilotManifestReceiptsEnvironment       = "INTEGIN_PILOT_MANIFEST_RECEIPTS_DIR"
+	pilotManifestReceiptVersionEnvironment = "INTEGIN_PILOT_MANIFEST_RECEIPT_CONTRACT_VERSION"
 )
 
 // PilotManifestHandlerFromEnvironment returns nil when retrieval is not
@@ -43,6 +48,9 @@ func PilotManifestHandlerFromEnvironment(
 	if os.Getenv(pilotRuntimeEnvironment) != "pilot" {
 		return nil, nil, errors.New("pilot manifest retrieval requires isolated pilot runtime")
 	}
+	if processor == nil || authorities == nil {
+		return nil, nil, errors.New("pilot manifest retrieval requires processor and authorities")
+	}
 	if database == nil {
 		return nil, nil, errors.New("pilot manifest retrieval requires database")
 	}
@@ -55,6 +63,7 @@ func PilotManifestHandlerFromEnvironment(
 	if err != nil || len(privateKey) != ed25519.PrivateKeySize {
 		return nil, nil, errors.New("pilot manifest signing key is invalid")
 	}
+	defer func() { clear(privateKey) }()
 	repository, err := workpackagepg.NewRepository(database)
 	if err != nil {
 		return nil, nil, err
@@ -75,5 +84,41 @@ func PilotManifestHandlerFromEnvironment(
 	if err := config.Validate(); err != nil {
 		return nil, nil, err
 	}
+	if err := attachPilotManifestReceiptBridge(handler); err != nil {
+		return nil, nil, err
+	}
 	return handler, registry, nil
+}
+
+// attachPilotManifestReceiptBridge adds only an optional source-owned observer
+// to an already validated explicit pilot handler. All-empty context is inert;
+// partial or unsafe context fails closed. No launcher, wrapper, fixture, Field,
+// route, or default-runtime code calls this helper.
+func attachPilotManifestReceiptBridge(handler *packagemanifestapi.Handler) error {
+	if handler == nil {
+		return errors.New("pilot manifest receipt bridge requires handler")
+	}
+	_, writer, err := manifestreceiptbridge.Load(
+		os.Getenv(pilotManifestRunIDEnvironment),
+		os.Getenv(pilotManifestReceiptsEnvironment),
+		os.Getenv(pilotManifestReceiptVersionEnvironment),
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	if writer == nil {
+		return nil
+	}
+	replayStore, ok := handler.ReplayStore.(*workpackagepg.ManifestProofReplayStore)
+	if !ok || !replayStore.Ready() {
+		return errors.New("pilot manifest receipt bridge requires durable replay store")
+	}
+	counter, ok := any(replayStore).(packagemanifest.ProofReplayCounter)
+	if !ok || counter == nil {
+		return errors.New("pilot manifest receipt bridge requires durable replay counter")
+	}
+	handler.Observer = manifestreceiptbridge.NewHTTPObserver(writer)
+	handler.ReplayCounter = counter
+	return nil
 }

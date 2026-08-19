@@ -28,3 +28,12 @@ func TestPilotManifestHandlerFromEnvironmentRejectsNonPilotEnablement(t *testing
 		t.Fatal("expected non-pilot manifest retrieval rejection")
 	}
 }
+
+func TestPilotManifestHandlerFromEnvironmentRejectsMissingDependenciesBeforeConfiguration(t *testing.T) {
+	t.Setenv(pilotManifestRetrievalEnvironment, "enabled")
+	t.Setenv(pilotRuntimeEnvironment, "pilot")
+	_, _, err := PilotManifestHandlerFromEnvironment(nil, nil, nil, IsolatedPilotManifestAddress)
+	if err == nil {
+		t.Fatal("expected missing dependency rejection")
+	}
+}

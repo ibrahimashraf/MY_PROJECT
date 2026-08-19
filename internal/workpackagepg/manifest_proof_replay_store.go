@@ -32,6 +32,12 @@ func NewManifestProofReplayStore(repository *Repository) *ManifestProofReplaySto
 	return &ManifestProofReplayStore{repository: repository, now: time.Now}
 }
 
+// Ready reports whether the adapter has the repository dependency needed for
+// replay consumption and counting. It performs no database operation.
+func (s *ManifestProofReplayStore) Ready() bool {
+	return s != nil && s.repository != nil
+}
+
 // Consume atomically removes an expired matching record and inserts the current
 // verified proof. The full tenant/organization/device/purpose/request identity
 // is unique, so concurrent use of a request yields exactly one success.
