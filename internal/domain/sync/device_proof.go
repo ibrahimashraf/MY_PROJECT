@@ -88,10 +88,10 @@ func (p *Processor) VerifyDeviceProof(
 	expiresAt := proof.ExpiresAt.UTC()
 	now := at.UTC()
 	if issuedAt.After(now.Add(proofFutureSkew)) || !expiresAt.After(now) || !expiresAt.After(issuedAt) || expiresAt.Sub(issuedAt) > proofMaximumLifetime {
-		return VerifiedDeviceContext{}, errors.New("device proof is outside its permitted lifetime")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureExpired, errors.New("device proof is outside its permitted lifetime"))
 	}
 	if proof.SignatureAlgorithm != workpackage.ManifestProofSignatureAlgorithm || strings.TrimSpace(proof.KeyID) == "" || strings.TrimSpace(proof.Signature) == "" {
-		return VerifiedDeviceContext{}, errors.New("device proof requires Ed25519 signature metadata")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureSignatureInvalid, errors.New("device proof requires Ed25519 signature metadata"))
 	}
 
 	p.mu.RLock()
@@ -99,32 +99,35 @@ func (p *Processor) VerifyDeviceProof(
 	secret := p.secret
 	p.mu.RUnlock()
 	if !found {
-		return VerifiedDeviceContext{}, errors.New("device is not registered")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureKeyUnknown, errors.New("device is not registered"))
 	}
 	if authority.ID != proof.AuthorityID || authority.Epoch != proof.AuthorityEpoch {
-		return VerifiedDeviceContext{}, errors.New("authority reference does not match server-held authority")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureAuthorityMismatch, errors.New("authority reference does not match server-held authority"))
+	}
+	if now.Before(authority.IssuedAt.UTC()) || !now.Before(authority.ExpiresAt.UTC()) {
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureExpired, errors.New("authority package is outside its permitted lifetime"))
 	}
 	if err := device_trust.ValidateAuthorityPackage(authority, device, secret, now); err != nil {
-		return VerifiedDeviceContext{}, fmt.Errorf("validate device authority: %w", err)
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureAuthorityMismatch, fmt.Errorf("validate device authority: %w", err))
 	}
 	if !contains(authority.Scopes, "work_package.read") {
-		return VerifiedDeviceContext{}, errors.New("authority does not permit work package manifest read")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureAuthorityMismatch, errors.New("authority does not permit work package manifest read"))
 	}
 
 	encodedKey := device.PublicKey()
 	publicKey, err := base64.StdEncoding.DecodeString(encodedKey)
 	if err != nil || len(publicKey) != ed25519.PublicKeySize {
-		return VerifiedDeviceContext{}, errors.New("registered device public key is invalid")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureKeyUnknown, errors.New("registered device public key is invalid"))
 	}
 	if proof.KeyID != security.DeviceKeyID(ed25519.PublicKey(publicKey)) {
-		return VerifiedDeviceContext{}, errors.New("device proof key identifier does not match registered device")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureKeyUnknown, errors.New("device proof key identifier does not match registered device"))
 	}
 	signature, err := base64.StdEncoding.DecodeString(proof.Signature)
 	if err != nil || len(signature) != ed25519.SignatureSize {
-		return VerifiedDeviceContext{}, errors.New("device proof signature is invalid")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureSignatureInvalid, errors.New("device proof signature is invalid"))
 	}
 	if !ed25519.Verify(ed25519.PublicKey(publicKey), []byte(canonicalDeviceProof(proof)), signature) {
-		return VerifiedDeviceContext{}, errors.New("device proof signature verification failed")
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureSignatureInvalid, errors.New("device proof signature verification failed"))
 	}
 
 	return VerifiedDeviceContext{

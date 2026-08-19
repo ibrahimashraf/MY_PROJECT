@@ -234,8 +234,10 @@ func allowedHTTPStatus(c Case, status int) bool {
 		return status == 200
 	case CaseReplay:
 		return status == 409
-	case CaseSignatureInvalid, CaseExpired, CaseKeyUnknown:
+	case CaseSignatureInvalid, CaseKeyUnknown:
 		return status == 401
+	case CaseExpired:
+		return status == 401 || status == 403
 	case CasePackageHashInvalid:
 		return status == 403
 	case CaseAuthorityMismatch:

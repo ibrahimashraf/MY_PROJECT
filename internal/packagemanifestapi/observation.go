@@ -12,6 +12,8 @@ type Observation struct {
 	HTTPStatus     int
 	ManifestID     string
 	ReplayAccepted bool
+	ReplayBefore   *int64
+	ReplayAfter    *int64
 }
 
 // ObservationSink receives source-redacted manifest outcomes. Implementations

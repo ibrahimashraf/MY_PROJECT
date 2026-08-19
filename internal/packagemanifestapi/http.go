@@ -31,12 +31,13 @@ type AuthorityLookup interface {
 // Handler verifies a device proof, atomically consumes its request ID, and issues a manifest.
 // It is unmounted by design: no server router or main package registers this handler.
 type Handler struct {
-	Verifier    DeviceProofVerifier
-	Authorities AuthorityLookup
-	ReplayStore packagemanifest.ProofReplayStore
-	Issuer      *packagemanifest.ManifestIssuer
-	Now         func() time.Time
-	Observer    ObservationSink
+	Verifier      DeviceProofVerifier
+	Authorities   AuthorityLookup
+	ReplayStore   packagemanifest.ProofReplayStore
+	ReplayCounter packagemanifest.ProofReplayCounter
+	Issuer        *packagemanifest.ManifestIssuer
+	Now           func() time.Time
+	Observer      ObservationSink
 }
 
 // request accepts only a device proof. Tenant, organization, user, and package scope are never client input.
@@ -109,6 +110,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "manifest issuance failed")
 		return
 	}
+	var replayBefore, replayAfter *int64
+	if h.Observer != nil && h.ReplayCounter != nil {
+		if before, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
+			replayBefore = &before
+		}
+	}
 	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
 		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
 			h.observe(r.Context(), "replay_rejected", "replay", http.StatusConflict, false)
@@ -119,33 +126,33 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
+	if replayBefore != nil && h.ReplayCounter != nil {
+		if after, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
+			replayAfter = &after
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(manifest)
-	h.observe(r.Context(), "manifest_issued", "valid_proof", http.StatusOK, true)
+	h.observeWithReplay(r.Context(), "manifest_issued", "valid_proof", http.StatusOK, true, replayBefore, replayAfter)
 }
 
 func (h *Handler) observe(ctx context.Context, outcome, reason string, status int, replayAccepted bool) {
+	h.observeWithReplay(ctx, outcome, reason, status, replayAccepted, nil, nil)
+}
+
+func (h *Handler) observeWithReplay(ctx context.Context, outcome, reason string, status int, replayAccepted bool, replayBefore, replayAfter *int64) {
 	if h == nil || h.Observer == nil {
 		return
 	}
-	h.Observer.Observe(ctx, Observation{Outcome: outcome, ReasonCode: reason, HTTPStatus: status, ReplayAccepted: replayAccepted})
+	h.Observer.Observe(ctx, Observation{Outcome: outcome, ReasonCode: reason, HTTPStatus: status, ReplayAccepted: replayAccepted, ReplayBefore: replayBefore, ReplayAfter: replayAfter})
 }
 
 func proofFailureReason(err error) string {
-	value := strings.ToLower(err.Error())
-	switch {
-	case strings.Contains(value, "lifetime") || strings.Contains(value, "expiry") || strings.Contains(value, "expired"):
-		return "expired"
-	case strings.Contains(value, "authority"):
-		return "authority_mismatch"
-	case strings.Contains(value, "key") || strings.Contains(value, "registered device"):
-		return "key_unknown"
-	case strings.Contains(value, "signature"):
-		return "signature_invalid"
-	default:
-		return "proof_invalid"
+	if reason, ok := domainsync.ProofFailureReasonOf(err); ok {
+		return string(reason)
 	}
+	return "proof_invalid"
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {

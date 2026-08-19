@@ -87,6 +87,7 @@ func TestHandlerEmitsRedactedValidAndReplayObservations(t *testing.T) {
 	h := newHandler(t, fakeVerifier{context: verified(now)}, validStore(now), replay)
 	h.Authorities = authorityLookup{"authority-1": {ID: "authority-1"}}
 	h.Observer = sink
+	h.ReplayCounter = &fixedCounter{values: []int64{4, 5}}
 	request := proofRequest("authority-1", "request-1")
 	if response := serve(h, request); response.Code != http.StatusOK {
 		t.Fatalf("valid response status = %d", response.Code)
@@ -97,7 +98,7 @@ func TestHandlerEmitsRedactedValidAndReplayObservations(t *testing.T) {
 	if len(sink.observations) != 2 {
 		t.Fatalf("observation count = %d", len(sink.observations))
 	}
-	if valid := sink.observations[0]; valid.Outcome != "manifest_issued" || valid.ReasonCode != "valid_proof" || valid.HTTPStatus != http.StatusOK || !valid.ReplayAccepted || valid.ManifestID != "" {
+	if valid := sink.observations[0]; valid.Outcome != "manifest_issued" || valid.ReasonCode != "valid_proof" || valid.HTTPStatus != http.StatusOK || !valid.ReplayAccepted || valid.ManifestID != "" || valid.ReplayBefore == nil || valid.ReplayAfter == nil || *valid.ReplayBefore != 4 || *valid.ReplayAfter != 5 {
 		t.Fatalf("unexpected valid observation: %#v", valid)
 	}
 	if replayObservation := sink.observations[1]; replayObservation.Outcome != "replay_rejected" || replayObservation.ReasonCode != "replay" || replayObservation.HTTPStatus != http.StatusConflict || replayObservation.ReplayAccepted {
@@ -108,7 +109,7 @@ func TestHandlerEmitsRedactedValidAndReplayObservations(t *testing.T) {
 func TestHandlerEmitsRedactedExpiredObservation(t *testing.T) {
 	now := testNow()
 	sink := &recordingSink{}
-	h := newHandler(t, fakeVerifier{err: errors.New("proof expired")}, testStore{}, packagemanifest.NewInMemoryProofReplayStore(func() time.Time { return now }))
+	h := newHandler(t, fakeVerifier{err: domainsync.NewDeviceProofFailure(domainsync.DeviceProofFailureExpired)}, testStore{}, packagemanifest.NewInMemoryProofReplayStore(func() time.Time { return now }))
 	h.Authorities = authorityLookup{"authority-1": {ID: "authority-1"}}
 	h.Observer = sink
 	if response := serve(h, proofRequest("authority-1", "request-1")); response.Code != http.StatusUnauthorized {
@@ -138,6 +139,22 @@ type recordingSink struct {
 
 func (s *recordingSink) Observe(_ context.Context, observation Observation) {
 	s.observations = append(s.observations, observation)
+}
+
+type fixedCounter struct {
+	values []int64
+	index  int
+}
+
+func (c *fixedCounter) Count(context.Context, string, string, string, string, time.Time) (int64, error) {
+	if c == nil || len(c.values) == 0 {
+		return 0, errors.New("counter is empty")
+	}
+	value := c.values[c.index]
+	if c.index < len(c.values)-1 {
+		c.index++
+	}
+	return value, nil
 }
 
 type testStore struct {
