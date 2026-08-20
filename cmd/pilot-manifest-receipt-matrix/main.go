@@ -58,6 +58,81 @@ type fixtureIdentitySummary struct {
 	AssignmentRows int `json:"assignment_rows"`
 }
 
+var (
+	errMatrixArguments            = errors.New("isolated matrix arguments are incomplete")
+	errFixtureLoad                = errors.New("public pilot fixture is invalid")
+	errDBInput                    = errors.New("isolated matrix database input is unavailable")
+	errDBConnection               = errors.New("isolated fixture database connection failed")
+	errFixtureIdentity            = errors.New("isolated pilot fixture identity is not present")
+	errMatrixLockConnection       = errors.New("isolated matrix lock connection is unavailable")
+	errMatrixLockAcquire          = errors.New("isolated matrix advisory lock is unavailable")
+	errFixtureMutation            = errors.New("isolated fixture package mutation failed")
+	errFixtureRestore             = errors.New("isolated fixture package restore failed")
+	errFixtureRestoreVerification = errors.New("isolated fixture package restore verification failed")
+	errSigningKeyUnavailable      = errors.New("pilot signing key is unavailable")
+	errSigningKeyInvalid          = errors.New("pilot signing key is invalid")
+	errExpectedHash               = errors.New("isolated fixture expected hash failed")
+	errManifestRequest            = errors.New("isolated manifest request failed")
+	errManifestStatus             = errors.New("isolated manifest case returned an unexpected status")
+	errReceiptEmit                = errors.New("isolated matrix receipt emission failed")
+	errFinalization               = errors.New("isolated matrix finalization failed")
+	errFinalizationIncomplete     = errors.New("isolated matrix finalization is incomplete")
+	errDiagnosticSummary          = errors.New("isolated matrix diagnostic summary emission failed")
+	errSummaryEmit                = errors.New("isolated matrix summary emission failed")
+)
+
+type matrixErrorStage struct {
+	err  error
+	code string
+}
+
+var publicMatrixCodes = map[string]struct{}{
+	"MATRIX_ARGUMENTS_INVALID":            {},
+	"FIXTURE_LOAD_FAILED":                 {},
+	"DB_INPUT_UNAVAILABLE":                {},
+	"DB_CONNECTION_FAILED":                {},
+	"FIXTURE_IDENTITY_MISSING":            {},
+	"MATRIX_LOCK_CONNECTION_UNAVAILABLE":  {},
+	"MATRIX_LOCK_ACQUISITION_FAILED":      {},
+	"FIXTURE_MUTATION_FAILED":             {},
+	"FIXTURE_RESTORE_FAILED":              {},
+	"FIXTURE_RESTORE_VERIFICATION_FAILED": {},
+	"SIGNING_KEY_UNAVAILABLE":             {},
+	"SIGNING_KEY_INVALID":                 {},
+	"EXPECTED_HASH_FAILED":                {},
+	"MANIFEST_REQUEST_FAILED":             {},
+	"MANIFEST_STATUS_UNEXPECTED":          {},
+	"RECEIPT_EMIT_FAILED":                 {},
+	"FINALIZATION_FAILED":                 {},
+	"FINALIZATION_INCOMPLETE":             {},
+	"DIAGNOSTIC_SUMMARY_EMIT_FAILED":      {},
+	"SUMMARY_EMIT_FAILED":                 {},
+	"MATRIX_CLASSIFICATION_FAILED":        {},
+}
+
+var matrixErrorStages = []matrixErrorStage{
+	{errMatrixArguments, "MATRIX_ARGUMENTS_INVALID"},
+	{errFixtureLoad, "FIXTURE_LOAD_FAILED"},
+	{errDBInput, "DB_INPUT_UNAVAILABLE"},
+	{errDBConnection, "DB_CONNECTION_FAILED"},
+	{errFixtureIdentity, "FIXTURE_IDENTITY_MISSING"},
+	{errMatrixLockConnection, "MATRIX_LOCK_CONNECTION_UNAVAILABLE"},
+	{errMatrixLockAcquire, "MATRIX_LOCK_ACQUISITION_FAILED"},
+	{errFixtureMutation, "FIXTURE_MUTATION_FAILED"},
+	{errFixtureRestore, "FIXTURE_RESTORE_FAILED"},
+	{errFixtureRestoreVerification, "FIXTURE_RESTORE_VERIFICATION_FAILED"},
+	{errSigningKeyUnavailable, "SIGNING_KEY_UNAVAILABLE"},
+	{errSigningKeyInvalid, "SIGNING_KEY_INVALID"},
+	{errExpectedHash, "EXPECTED_HASH_FAILED"},
+	{errManifestRequest, "MANIFEST_REQUEST_FAILED"},
+	{errManifestStatus, "MANIFEST_STATUS_UNEXPECTED"},
+	{errReceiptEmit, "RECEIPT_EMIT_FAILED"},
+	{errFinalization, "FINALIZATION_FAILED"},
+	{errFinalizationIncomplete, "FINALIZATION_INCOMPLETE"},
+	{errDiagnosticSummary, "DIAGNOSTIC_SUMMARY_EMIT_FAILED"},
+	{errSummaryEmit, "SUMMARY_EMIT_FAILED"},
+}
+
 func main() {
 	serverURL := flag.String("server-url", "", "isolated loopback candidate URL")
 	fixturePath := flag.String("fixture", "", "public pilot fixture")
@@ -94,38 +169,22 @@ func writePublicErrorCode(path, code string) error {
 }
 
 func isPublicMatrixErrorCode(code string) bool {
-	switch code {
-	case "MATRIX_ARGUMENTS_INVALID", "FIXTURE_LOAD_FAILED", "DB_INPUT_UNAVAILABLE", "DB_CONNECTION_FAILED", "FIXTURE_IDENTITY_MISSING", "MATRIX_LOCK_UNAVAILABLE", "FIXTURE_MUTATION_FAILED", "FIXTURE_RESTORE_FAILED", "FIXTURE_RESTORE_VERIFICATION_FAILED", "MATRIX_EXECUTION_FAILED":
-		return true
-	default:
-		return false
-	}
+	_, ok := publicMatrixCodes[code]
+	return ok
 }
 
 func matrixErrorCode(err error) string {
-	switch err.Error() {
-	case "isolated matrix database input is unavailable":
-		return "DB_INPUT_UNAVAILABLE"
-	case "isolated fixture database connection failed":
-		return "DB_CONNECTION_FAILED"
-	case "isolated pilot fixture identity is not present":
-		return "FIXTURE_IDENTITY_MISSING"
-	case "isolated matrix lock is unavailable":
-		return "MATRIX_LOCK_UNAVAILABLE"
-	case "isolated fixture package mutation failed":
-		return "FIXTURE_MUTATION_FAILED"
-	case "isolated fixture package restore failed":
-		return "FIXTURE_RESTORE_FAILED"
-	case "isolated fixture package restore verification failed":
-		return "FIXTURE_RESTORE_VERIFICATION_FAILED"
-	default:
-		return "MATRIX_EXECUTION_FAILED"
+	for _, stage := range matrixErrorStages {
+		if errors.Is(err, stage.err) {
+			return stage.code
+		}
 	}
+	return "MATRIX_CLASSIFICATION_FAILED"
 }
 
 func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, restoreOnly, diagnoseFixtureIdentity bool) error {
 	if fixturePath == "" {
-		return errors.New("isolated matrix arguments are incomplete")
+		return errMatrixArguments
 	}
 
 	fx, err := loadFixture(fixturePath)
@@ -134,27 +193,35 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	}
 	dbURL := strings.TrimSpace(os.Getenv("INTEGIN_PILOT_MATRIX_DB_URL"))
 	if dbURL == "" {
-		return errors.New("isolated matrix database input is unavailable")
+		return errDBInput
 	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		return errors.New("isolated fixture database connection failed")
+		return errDBConnection
 	}
 	defer db.Close()
+	pingContext, cancelPing := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelPing()
+	if err := db.PingContext(pingContext); err != nil {
+		return errDBConnection
+	}
 	// The session-scoped advisory lock and RLS-scoped work each require their own
 	// connection. This standalone driver does not share the application pool.
 	db.SetMaxOpenConns(2)
 	db.SetMaxIdleConns(2)
 	if diagnoseFixtureIdentity {
-		return json.NewEncoder(os.Stdout).Encode(fixtureIdentityCounts(db, fx))
+		if err := json.NewEncoder(os.Stdout).Encode(fixtureIdentityCounts(db, fx)); err != nil {
+			return errDiagnosticSummary
+		}
+		return nil
 	}
 	lockConn, err := db.Conn(context.Background())
 	if err != nil {
-		return errors.New("isolated matrix lock is unavailable")
+		return errMatrixLockConnection
 	}
 	defer lockConn.Close()
 	if _, err := lockConn.ExecContext(context.Background(), `SELECT pg_advisory_lock(hashtext('integin-pilot-manifest-receipt-matrix'))`); err != nil {
-		return errors.New("isolated matrix lock is unavailable")
+		return errMatrixLockAcquire
 	}
 	defer lockConn.ExecContext(context.Background(), `SELECT pg_advisory_unlock(hashtext('integin-pilot-manifest-receipt-matrix'))`)
 	if err := assertIsolatedFixtureIdentity(db, fx); err != nil {
@@ -162,13 +229,13 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	}
 	expectedHash, err := expectedFixtureHash(fx)
 	if err != nil {
-		return err
+		return errExpectedHash
 	}
 	if restoreOnly {
 		return restorePackageHash(db, fx, expectedHash)
 	}
 	if !strings.HasPrefix(serverURL, "http://127.0.0.1:18080") || privateKeyPath == "" || runID == "" || receiptsDir == "" {
-		return errors.New("isolated matrix arguments are incomplete")
+		return errMatrixArguments
 	}
 	privateKey, err := loadPrivateKey(privateKeyPath)
 	if err != nil {
@@ -249,7 +316,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	// manifest has been received; it is not a Flutter app execution claim.
 	writer, err := manifestreceipts.NewV2Writer(runID, receiptsDir, time.Now)
 	if err != nil {
-		return err
+		return errReceiptEmit
 	}
 	if err := writer.EmitWithFailure(manifestreceipts.V2Observation{
 		Case:            manifestreceipts.CaseFieldBinding,
@@ -260,30 +327,33 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 		CorrelationID:   randomHex(),
 		GeneratedAt:     time.Now().UTC(),
 	}); err != nil {
-		return err
+		return errReceiptEmit
 	}
 	final, err := manifestreceipts.FinalizeV2(runID, receiptsDir, time.Now)
 	if err != nil {
-		return err
+		return errFinalization
 	}
 	if final.Status != manifestreceipts.V2FinalizationComplete || !restored {
-		return errors.New("isolated matrix finalization is incomplete")
+		return errFinalizationIncomplete
 	}
-	return json.NewEncoder(os.Stdout).Encode(summary{
+	if err := json.NewEncoder(os.Stdout).Encode(summary{
 		ContractVersion:         "1",
 		HTTPCaseCount:           7,
 		FieldBindingCaseEmitted: true,
 		FixtureHashRestored:     restored,
 		FinalizationStatus:      string(final.Status),
 		PrivateOutputSuppressed: true,
-	})
+	}); err != nil {
+		return errSummaryEmit
+	}
+	return nil
 }
 
 func loadFixture(path string) (fixture, error) {
 	var result fixture
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &result) != nil || result.DeviceID == "" || result.AuthorityID == "" || result.DeviceKeyID == "" || result.TenantID == "" || result.OrganizationID == "" || result.InspectionID == "" {
-		return fixture{}, errors.New("public pilot fixture is invalid")
+		return fixture{}, errFixtureLoad
 	}
 	return result, nil
 }
@@ -291,7 +361,7 @@ func loadFixture(path string) (fixture, error) {
 func loadPrivateKey(path string) (ed25519.PrivateKey, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return nil, errors.New("pilot signing key is unavailable")
+		return nil, errSigningKeyUnavailable
 	}
 	defer zeroBytes(raw)
 	raw = bytes.TrimSpace(raw)
@@ -304,7 +374,7 @@ func loadPrivateKey(path string) (ed25519.PrivateKey, error) {
 	}
 	if err != nil || n != ed25519.PrivateKeySize {
 		zeroBytes(decoded)
-		return nil, errors.New("pilot signing key is invalid")
+		return nil, errSigningKeyInvalid
 	}
 	return ed25519.PrivateKey(decoded[:n]), nil
 }
@@ -335,16 +405,16 @@ func resign(proof sync.DeviceProof, privateKey ed25519.PrivateKey) sync.DevicePr
 func expectStatus(client *http.Client, endpoint string, proof sync.DeviceProof, expected int) error {
 	body, err := json.Marshal(request{Proof: proof})
 	if err != nil {
-		return err
+		return errManifestRequest
 	}
 	response, err := client.Post(endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return errors.New("isolated manifest request failed")
+		return errManifestRequest
 	}
 	defer response.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 16<<10))
 	if response.StatusCode != expected {
-		return errors.New("isolated manifest case returned an unexpected status")
+		return errManifestStatus
 	}
 	return nil
 }
@@ -371,7 +441,7 @@ func assertIsolatedFixtureIdentity(db *sql.DB, f fixture) error {
 	if err := withFixtureScope(db, f, func(tx *sql.Tx) error {
 		return tx.QueryRow(query, f.AuthorityID, f.DeviceID, f.TenantID, f.OrganizationID, f.DeviceKeyID, f.InspectionID).Scan(&present)
 	}); err != nil || !present {
-		return errors.New("isolated pilot fixture identity is not present")
+		return errFixtureIdentity
 	}
 	return nil
 }
@@ -410,11 +480,11 @@ func mutatePackageHash(db *sql.DB, f fixture, expectedHash string) error {
 		}
 		count, err := result.RowsAffected()
 		if err != nil || count != 1 {
-			return errors.New("isolated fixture package mutation failed")
+			return errFixtureMutation
 		}
 		return nil
 	}); err != nil {
-		return errors.New("isolated fixture package mutation failed")
+		return errFixtureMutation
 	}
 	return nil
 }
@@ -427,18 +497,18 @@ func restorePackageHash(db *sql.DB, f fixture, expectedHash string) error {
 		}
 		count, err := result.RowsAffected()
 		if err != nil || count != 1 {
-			return errors.New("isolated fixture package restore failed")
+			return errFixtureRestore
 		}
 		var persisted string
 		if err := tx.QueryRow(`SELECT package_hash FROM work_package WHERE tenant_id = $1 AND organization_id = $2 AND package_id = $3 AND package_version = 1`, f.TenantID, f.OrganizationID, "pilot-manifest-demo-package").Scan(&persisted); err != nil || persisted != expectedHash {
-			return errors.New("isolated fixture package restore verification failed")
+			return errFixtureRestoreVerification
 		}
 		return nil
 	}); err != nil {
-		if err.Error() == "isolated fixture package restore verification failed" {
+		if errors.Is(err, errFixtureRestoreVerification) {
 			return err
 		}
-		return errors.New("isolated fixture package restore failed")
+		return errFixtureRestore
 	}
 	return nil
 }
