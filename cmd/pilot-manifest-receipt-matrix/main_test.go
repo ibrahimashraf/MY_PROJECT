@@ -123,3 +123,9 @@ func TestValidProofUnexpectedStatusUsesClosedPublicDiagnostic(t *testing.T) {
 		t.Fatalf("valid-proof unauthorized mismatch mapped to %q", got)
 	}
 }
+
+func TestSigningKeyFixtureMismatchHasClosedPublicCode(t *testing.T) {
+	if got := matrixErrorCode(errSigningKeyFixtureMismatch); got != "SIGNING_KEY_FIXTURE_MISMATCH" {
+		t.Fatalf("signing-key fixture mismatch mapped to %q", got)
+	}
+}

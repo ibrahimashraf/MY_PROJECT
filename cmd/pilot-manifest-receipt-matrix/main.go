@@ -25,6 +25,7 @@ import (
 	"integin/internal/domain/sync"
 	"integin/internal/domain/workpackage"
 	"integin/internal/manifestreceipts"
+	"integin/internal/security"
 )
 
 const manifestPath = "/work-package-manifest"
@@ -71,6 +72,7 @@ var (
 	errFixtureRestoreVerification = errors.New("isolated fixture package restore verification failed")
 	errSigningKeyUnavailable      = errors.New("pilot signing key is unavailable")
 	errSigningKeyInvalid          = errors.New("pilot signing key is invalid")
+	errSigningKeyFixtureMismatch  = errors.New("pilot signing key does not match public fixture key identifier")
 	errExpectedHash               = errors.New("isolated fixture expected hash failed")
 	errManifestRequest            = errors.New("isolated manifest request failed")
 	errValidProofStatus           = errors.New("valid proof manifest status is unexpected")
@@ -111,6 +113,7 @@ var publicMatrixCodes = map[string]struct{}{
 	"FIXTURE_RESTORE_VERIFICATION_FAILED":           {},
 	"SIGNING_KEY_UNAVAILABLE":                       {},
 	"SIGNING_KEY_INVALID":                           {},
+	"SIGNING_KEY_FIXTURE_MISMATCH":                  {},
 	"EXPECTED_HASH_FAILED":                          {},
 	"MANIFEST_REQUEST_FAILED":                       {},
 	"MANIFEST_VALID_PROOF_STATUS_UNEXPECTED":        {},
@@ -147,6 +150,7 @@ var matrixErrorStages = []matrixErrorStage{
 	{errFixtureRestoreVerification, "FIXTURE_RESTORE_VERIFICATION_FAILED"},
 	{errSigningKeyUnavailable, "SIGNING_KEY_UNAVAILABLE"},
 	{errSigningKeyInvalid, "SIGNING_KEY_INVALID"},
+	{errSigningKeyFixtureMismatch, "SIGNING_KEY_FIXTURE_MISMATCH"},
 	{errExpectedHash, "EXPECTED_HASH_FAILED"},
 	{errManifestRequest, "MANIFEST_REQUEST_FAILED"},
 	{errValidProofUnauthorized, "MANIFEST_VALID_PROOF_UNAUTHORIZED"},
@@ -282,6 +286,9 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 		return err
 	}
 	defer zero(privateKey)
+	if security.DeviceKeyID(privateKey.Public().(ed25519.PublicKey)) != fx.DeviceKeyID {
+		return errSigningKeyFixtureMismatch
+	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	baseURL := strings.TrimRight(serverURL, "/") + manifestPath
