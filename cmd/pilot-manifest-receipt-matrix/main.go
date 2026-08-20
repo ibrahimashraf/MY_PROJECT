@@ -64,13 +64,41 @@ func main() {
 	privateKeyPath := flag.String("private-key-file", "", "isolated pilot demo signing-key path")
 	runID := flag.String("candidate-run-id", "", "opaque receipt run ID")
 	receiptsDir := flag.String("receipts-dir", "", "restricted receipt run directory")
+	publicErrorCodeFile := flag.String("public-error-code-file", "", "restricted wrapper-owned fixed error-code artifact")
 	restoreOnly := flag.Bool("restore-only", false, "restore the deterministic isolated fixture package hash and exit")
 	diagnoseFixtureIdentity := flag.Bool("diagnose-fixture-identity", false, "emit aggregate-only isolated fixture identity counts")
 	flag.Parse()
 
 	if err := run(*serverURL, *fixturePath, *privateKeyPath, *runID, *receiptsDir, *restoreOnly, *diagnoseFixtureIdentity); err != nil {
-		fmt.Fprintln(os.Stderr, "MATRIX_ERROR_CODE="+matrixErrorCode(err))
+		code := matrixErrorCode(err)
+		_ = writePublicErrorCode(*publicErrorCodeFile, code)
+		fmt.Fprintln(os.Stderr, "MATRIX_ERROR_CODE="+code)
 		os.Exit(1)
+	}
+}
+
+func writePublicErrorCode(path, code string) error {
+	if path == "" {
+		return nil
+	}
+	if !isPublicMatrixErrorCode(code) {
+		return errors.New("invalid public matrix error code")
+	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.WriteString(f, code+"\n")
+	return err
+}
+
+func isPublicMatrixErrorCode(code string) bool {
+	switch code {
+	case "MATRIX_ARGUMENTS_INVALID", "FIXTURE_LOAD_FAILED", "DB_INPUT_UNAVAILABLE", "DB_CONNECTION_FAILED", "FIXTURE_IDENTITY_MISSING", "MATRIX_LOCK_UNAVAILABLE", "FIXTURE_MUTATION_FAILED", "FIXTURE_RESTORE_FAILED", "FIXTURE_RESTORE_VERIFICATION_FAILED", "MATRIX_EXECUTION_FAILED":
+		return true
+	default:
+		return false
 	}
 }
 
