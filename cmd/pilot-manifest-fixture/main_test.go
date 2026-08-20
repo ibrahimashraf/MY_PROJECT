@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -35,5 +36,15 @@ func TestFixtureAuthorityHMACSurvivesDatabasePrecisionRoundTrip(t *testing.T) {
 	authority.ExpiresAt = reloadedExpiresAt
 	if err := device_trust.ValidateAuthorityPackage(authority, device, "fixture-test-secret", issuedAt.Add(time.Minute)); err != nil {
 		t.Fatalf("database-precision authority round trip failed validation: %v", err)
+	}
+}
+
+func TestFixtureAssignmentContextUsesStringFieldAssetMappings(t *testing.T) {
+	var fieldAssetIDs map[string]string
+	if err := json.Unmarshal([]byte(pilotFieldAssetIDsJSON), &fieldAssetIDs); err != nil {
+		t.Fatalf("fixture context does not match AssignmentContext map contract: %v", err)
+	}
+	if fieldAssetIDs["condition"] != "pilot-manifest-demo-asset" {
+		t.Fatal("fixture context condition asset mapping is incomplete")
 	}
 }
