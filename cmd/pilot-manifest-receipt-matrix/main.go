@@ -28,7 +28,10 @@ import (
 	"integin/internal/security"
 )
 
-const manifestPath = "/work-package-manifest"
+const (
+	manifestPath                   = "/work-package-manifest"
+	intentionallyInvalidFixtureHash = "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+)
 
 type fixture struct {
 	DeviceID       string `json:"device_id"`
@@ -546,7 +549,7 @@ func fixtureIdentityCounts(db *sql.DB, f fixture) (fixtureIdentitySummary, error
 
 func mutatePackageHash(db *sql.DB, f fixture, expectedHash string) error {
 	if err := withFixtureScope(db, f, func(tx *sql.Tx) error {
-		result, err := tx.Exec(`UPDATE work_package SET package_hash = 'sha256:pilot-matrix-intentionally-invalid' WHERE tenant_id = $1 AND organization_id = $2 AND package_id = $3 AND package_version = 1 AND package_hash = $4`, f.TenantID, f.OrganizationID, "pilot-manifest-demo-package", expectedHash)
+		result, err := tx.Exec(`UPDATE work_package SET package_hash = $1 WHERE tenant_id = $2 AND organization_id = $3 AND package_id = $4 AND package_version = 1 AND package_hash = $5`, intentionallyInvalidFixtureHash, f.TenantID, f.OrganizationID, "pilot-manifest-demo-package", expectedHash)
 		if err != nil {
 			return err
 		}
@@ -563,7 +566,7 @@ func mutatePackageHash(db *sql.DB, f fixture, expectedHash string) error {
 
 func restorePackageHash(db *sql.DB, f fixture, expectedHash string) error {
 	if err := withFixtureScope(db, f, func(tx *sql.Tx) error {
-		result, err := tx.Exec(`UPDATE work_package SET package_hash = $1 WHERE tenant_id = $2 AND organization_id = $3 AND package_id = $4 AND package_version = 1 AND package_hash IN ($1, 'sha256:pilot-matrix-intentionally-invalid')`, expectedHash, f.TenantID, f.OrganizationID, "pilot-manifest-demo-package")
+		result, err := tx.Exec(`UPDATE work_package SET package_hash = $1 WHERE tenant_id = $2 AND organization_id = $3 AND package_id = $4 AND package_version = 1 AND package_hash IN ($1, $5)`, expectedHash, f.TenantID, f.OrganizationID, "pilot-manifest-demo-package", intentionallyInvalidFixtureHash)
 		if err != nil {
 			return err
 		}

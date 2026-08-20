@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"integin/internal/domain/sync"
@@ -127,5 +128,11 @@ func TestValidProofUnexpectedStatusUsesClosedPublicDiagnostic(t *testing.T) {
 func TestSigningKeyFixtureMismatchHasClosedPublicCode(t *testing.T) {
 	if got := matrixErrorCode(errSigningKeyFixtureMismatch); got != "SIGNING_KEY_FIXTURE_MISMATCH" {
 		t.Fatalf("signing-key fixture mismatch mapped to %q", got)
+	}
+}
+
+func TestTemporaryPackageHashMutationValueMatchesPersistenceContract(t *testing.T) {
+	if !regexp.MustCompile(`^sha256:[0-9a-f]{64}$`).MatchString(intentionallyInvalidFixtureHash) {
+		t.Fatalf("temporary package hash %q does not satisfy persistence contract", intentionallyInvalidFixtureHash)
 	}
 }
