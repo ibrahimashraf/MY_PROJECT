@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var ErrPackageIntegrity = errors.New("work package integrity failure")
+
 // PublicationState controls whether a package can be assigned to field devices.
 // Draft and retired packages must never be treated as assignable field work.
 type PublicationState string

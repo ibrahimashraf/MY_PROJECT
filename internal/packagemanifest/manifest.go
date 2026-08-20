@@ -198,6 +198,9 @@ func mapRepositoryError(err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
+	if errors.Is(err, workpackage.ErrPackageIntegrity) {
+		return ErrIntegrity
+	}
 	return fmt.Errorf("manifest repository: %w", err)
 }
 

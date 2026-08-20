@@ -113,13 +113,20 @@ func (r *Repository) GetApproved(ctx context.Context, tenantID, organizationID, 
 	if err := json.Unmarshal(definition, &p.Sections); err != nil {
 		return workpackage.Package{}, fmt.Errorf("decode work package definition: %w", err)
 	}
-	if err := p.Validate(); err != nil {
-		return workpackage.Package{}, fmt.Errorf("validate stored work package: %w", err)
+	if err := validateStoredPackage(p); err != nil {
+		return workpackage.Package{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		return workpackage.Package{}, err
 	}
 	return p, nil
+}
+
+func validateStoredPackage(p workpackage.Package) error {
+	if err := p.Validate(); err != nil {
+		return fmt.Errorf("%w: validate stored work package: %v", workpackage.ErrPackageIntegrity, err)
+	}
+	return nil
 }
 
 func (r *Repository) AssignApproved(ctx context.Context, assignment Assignment, now time.Time) error {
