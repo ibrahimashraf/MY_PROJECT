@@ -163,6 +163,8 @@ func ValidateAuthorityPackage(packageValue AuthorityPackage, device Device, secr
 }
 
 func sign(packageValue AuthorityPackage, secret string) string {
+	// Timestamp serialization is part of the HMAC contract. Persistence-backed
+	// callers must reload and re-serialize both UTC timestamps with RFC3339Nano.
 	canonical := fmt.Sprintf("%s|%s|%s|%s|%d|%s|%s|%s", packageValue.ID, packageValue.DeviceID, packageValue.TenantID, packageValue.UserID, packageValue.Epoch, strings.Join(packageValue.Scopes, ","), packageValue.IssuedAt.UTC().Format(time.RFC3339Nano), packageValue.ExpiresAt.UTC().Format(time.RFC3339Nano))
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(canonical))
