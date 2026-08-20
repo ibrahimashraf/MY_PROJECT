@@ -14,6 +14,9 @@ const lifecycleRunID = "0123456789abcdef0123456789abcdef"
 
 func TestFinalizeV2CompleteInventoryWritesPublicTerminalArtifact(t *testing.T) {
 	directory := t.TempDir()
+	if err := os.Mkdir(filepath.Join(directory, v2CandidateControlDirectoryName), 0o700); err != nil {
+		t.Fatalf("create wrapper-owned control directory: %v", err)
+	}
 	for _, c := range ExpectedV2Cases() {
 		if err := os.WriteFile(filepath.Join(directory, "receipt-v2-"+string(c)+"-"+lifecycleRunID+".json"), []byte(`{}`), 0o600); err != nil {
 			t.Fatalf("write receipt placeholder: %v", err)
@@ -105,6 +108,12 @@ func TestFinalizeV2FailureOrUnexpectedArtifactFailsClosed(t *testing.T) {
 		{name: "unexpected artifact", code: V2FailureUnexpectedArtifact, setup: func(t *testing.T, directory string) {
 			t.Helper()
 			if err := os.WriteFile(filepath.Join(directory, "unexpected.txt"), []byte("not public evidence"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "unexpected directory", code: V2FailureUnexpectedArtifact, setup: func(t *testing.T, directory string) {
+			t.Helper()
+			if err := os.Mkdir(filepath.Join(directory, "unexpected-directory"), 0o700); err != nil {
 				t.Fatal(err)
 			}
 		}},

@@ -69,6 +69,7 @@ type v2FinalizationArtifact struct {
 const (
 	v2FailureArtifactNamePrefix      = "bridge-failure-v2-"
 	v2FinalizationArtifactNamePrefix = "bridge-finalization-v2-"
+	v2CandidateControlDirectoryName  = "candidate-control"
 )
 
 // EmitWithFailure publishes a normal v2 receipt and, when a recognized case
@@ -117,6 +118,12 @@ func FinalizeV2(runID, directory string, now func() time.Time) (V2Finalization, 
 	for _, entry := range entries {
 		if entry.Name() == finalizationName {
 			return V2Finalization{}, ErrDuplicateReceipt
+		}
+		// The hardened runtime wrapper owns this restricted directory for
+		// transient PID and output artifacts. It is the sole non-receipt
+		// directory allowed in a v2 run; all other non-regular entries fail.
+		if entry.Name() == v2CandidateControlDirectoryName && entry.IsDir() {
+			continue
 		}
 		if entry.Type()&os.ModeSymlink != 0 || !entry.Type().IsRegular() {
 			unexpected = true
