@@ -3,9 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"integin/internal/domain/sync"
 )
 
 func TestPublicMatrixErrorStagesAreClosedAndWrapStable(t *testing.T) {
@@ -80,5 +84,27 @@ func TestWritePublicErrorCodeRejectsUnknownAndPreexistingTargets(t *testing.T) {
 	}
 	if string(content) != "existing" {
 		t.Fatalf("preexisting artifact content changed to %q", content)
+	}
+}
+
+func TestExpectStatusPreservesAssignedPublicCaseSentinel(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusTeapot)
+	}))
+	defer server.Close()
+
+	for _, statusErr := range []error{
+		errValidProofStatus,
+		errReplayStatus,
+		errSignatureInvalidStatus,
+		errExpiredStatus,
+		errAuthorityMismatchStatus,
+		errKeyUnknownStatus,
+		errPackageHashStatus,
+	} {
+		err := expectStatus(server.Client(), server.URL, sync.DeviceProof{}, http.StatusOK, statusErr)
+		if !errors.Is(err, statusErr) {
+			t.Fatalf("status mismatch did not preserve assigned sentinel: %v", err)
+		}
 	}
 }

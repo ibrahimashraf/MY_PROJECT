@@ -73,7 +73,13 @@ var (
 	errSigningKeyInvalid          = errors.New("pilot signing key is invalid")
 	errExpectedHash               = errors.New("isolated fixture expected hash failed")
 	errManifestRequest            = errors.New("isolated manifest request failed")
-	errManifestStatus             = errors.New("isolated manifest case returned an unexpected status")
+	errValidProofStatus           = errors.New("valid proof manifest status is unexpected")
+	errReplayStatus               = errors.New("replay manifest status is unexpected")
+	errSignatureInvalidStatus     = errors.New("signature invalid manifest status is unexpected")
+	errExpiredStatus              = errors.New("expired manifest status is unexpected")
+	errAuthorityMismatchStatus    = errors.New("authority mismatch manifest status is unexpected")
+	errKeyUnknownStatus           = errors.New("key unknown manifest status is unexpected")
+	errPackageHashStatus          = errors.New("package hash manifest status is unexpected")
 	errReceiptEmit                = errors.New("isolated matrix receipt emission failed")
 	errFinalization               = errors.New("isolated matrix finalization failed")
 	errFinalizationIncomplete     = errors.New("isolated matrix finalization is incomplete")
@@ -87,27 +93,33 @@ type matrixErrorStage struct {
 }
 
 var publicMatrixCodes = map[string]struct{}{
-	"MATRIX_ARGUMENTS_INVALID":            {},
-	"FIXTURE_LOAD_FAILED":                 {},
-	"DB_INPUT_UNAVAILABLE":                {},
-	"DB_CONNECTION_FAILED":                {},
-	"FIXTURE_IDENTITY_MISSING":            {},
-	"MATRIX_LOCK_CONNECTION_UNAVAILABLE":  {},
-	"MATRIX_LOCK_ACQUISITION_FAILED":      {},
-	"FIXTURE_MUTATION_FAILED":             {},
-	"FIXTURE_RESTORE_FAILED":              {},
-	"FIXTURE_RESTORE_VERIFICATION_FAILED": {},
-	"SIGNING_KEY_UNAVAILABLE":             {},
-	"SIGNING_KEY_INVALID":                 {},
-	"EXPECTED_HASH_FAILED":                {},
-	"MANIFEST_REQUEST_FAILED":             {},
-	"MANIFEST_STATUS_UNEXPECTED":          {},
-	"RECEIPT_EMIT_FAILED":                 {},
-	"FINALIZATION_FAILED":                 {},
-	"FINALIZATION_INCOMPLETE":             {},
-	"DIAGNOSTIC_SUMMARY_EMIT_FAILED":      {},
-	"SUMMARY_EMIT_FAILED":                 {},
-	"MATRIX_CLASSIFICATION_FAILED":        {},
+	"MATRIX_ARGUMENTS_INVALID":                      {},
+	"FIXTURE_LOAD_FAILED":                           {},
+	"DB_INPUT_UNAVAILABLE":                          {},
+	"DB_CONNECTION_FAILED":                          {},
+	"FIXTURE_IDENTITY_MISSING":                      {},
+	"MATRIX_LOCK_CONNECTION_UNAVAILABLE":            {},
+	"MATRIX_LOCK_ACQUISITION_FAILED":                {},
+	"FIXTURE_MUTATION_FAILED":                       {},
+	"FIXTURE_RESTORE_FAILED":                        {},
+	"FIXTURE_RESTORE_VERIFICATION_FAILED":           {},
+	"SIGNING_KEY_UNAVAILABLE":                       {},
+	"SIGNING_KEY_INVALID":                           {},
+	"EXPECTED_HASH_FAILED":                          {},
+	"MANIFEST_REQUEST_FAILED":                       {},
+	"MANIFEST_VALID_PROOF_STATUS_UNEXPECTED":        {},
+	"MANIFEST_REPLAY_STATUS_UNEXPECTED":             {},
+	"MANIFEST_SIGNATURE_INVALID_STATUS_UNEXPECTED":  {},
+	"MANIFEST_EXPIRED_STATUS_UNEXPECTED":            {},
+	"MANIFEST_AUTHORITY_MISMATCH_STATUS_UNEXPECTED": {},
+	"MANIFEST_KEY_UNKNOWN_STATUS_UNEXPECTED":        {},
+	"MANIFEST_PACKAGE_HASH_STATUS_UNEXPECTED":       {},
+	"RECEIPT_EMIT_FAILED":                           {},
+	"FINALIZATION_FAILED":                           {},
+	"FINALIZATION_INCOMPLETE":                       {},
+	"DIAGNOSTIC_SUMMARY_EMIT_FAILED":                {},
+	"SUMMARY_EMIT_FAILED":                           {},
+	"MATRIX_CLASSIFICATION_FAILED":                  {},
 }
 
 var matrixErrorStages = []matrixErrorStage{
@@ -125,7 +137,13 @@ var matrixErrorStages = []matrixErrorStage{
 	{errSigningKeyInvalid, "SIGNING_KEY_INVALID"},
 	{errExpectedHash, "EXPECTED_HASH_FAILED"},
 	{errManifestRequest, "MANIFEST_REQUEST_FAILED"},
-	{errManifestStatus, "MANIFEST_STATUS_UNEXPECTED"},
+	{errValidProofStatus, "MANIFEST_VALID_PROOF_STATUS_UNEXPECTED"},
+	{errReplayStatus, "MANIFEST_REPLAY_STATUS_UNEXPECTED"},
+	{errSignatureInvalidStatus, "MANIFEST_SIGNATURE_INVALID_STATUS_UNEXPECTED"},
+	{errExpiredStatus, "MANIFEST_EXPIRED_STATUS_UNEXPECTED"},
+	{errAuthorityMismatchStatus, "MANIFEST_AUTHORITY_MISMATCH_STATUS_UNEXPECTED"},
+	{errKeyUnknownStatus, "MANIFEST_KEY_UNKNOWN_STATUS_UNEXPECTED"},
+	{errPackageHashStatus, "MANIFEST_PACKAGE_HASH_STATUS_UNEXPECTED"},
 	{errReceiptEmit, "RECEIPT_EMIT_FAILED"},
 	{errFinalization, "FINALIZATION_FAILED"},
 	{errFinalizationIncomplete, "FINALIZATION_INCOMPLETE"},
@@ -256,23 +274,23 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 
 	// 1. valid proof and 2. its replay share one signed request ID.
 	valid := newProof(randomHex())
-	if err := expectStatus(client, baseURL, valid, http.StatusOK); err != nil {
+	if err := expectStatus(client, baseURL, valid, http.StatusOK, errValidProofStatus); err != nil {
 		return err
 	}
-	if err := expectStatus(client, baseURL, valid, http.StatusConflict); err != nil {
+	if err := expectStatus(client, baseURL, valid, http.StatusConflict, errReplayStatus); err != nil {
 		return err
 	}
 
 	// 3. signature invalid uses an otherwise valid proof with a malformed signature.
 	signatureInvalid := newProof(randomHex())
 	signatureInvalid.Signature = base64.StdEncoding.EncodeToString(make([]byte, ed25519.SignatureSize))
-	if err := expectStatus(client, baseURL, signatureInvalid, http.StatusUnauthorized); err != nil {
+	if err := expectStatus(client, baseURL, signatureInvalid, http.StatusUnauthorized, errSignatureInvalidStatus); err != nil {
 		return err
 	}
 
 	// 4. expiry must be rejected before signature verification.
 	expired := signedProof(fx, privateKey, randomHex(), now.Add(-2*time.Minute), now.Add(-time.Minute))
-	if err := expectStatus(client, baseURL, expired, http.StatusUnauthorized); err != nil {
+	if err := expectStatus(client, baseURL, expired, http.StatusUnauthorized, errExpiredStatus); err != nil {
 		return err
 	}
 
@@ -280,7 +298,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	authorityMismatch := newProof(randomHex())
 	authorityMismatch.AuthorityEpoch++
 	authorityMismatch = resign(authorityMismatch, privateKey)
-	if err := expectStatus(client, baseURL, authorityMismatch, http.StatusUnauthorized); err != nil {
+	if err := expectStatus(client, baseURL, authorityMismatch, http.StatusUnauthorized, errAuthorityMismatchStatus); err != nil {
 		return err
 	}
 
@@ -288,7 +306,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	keyUnknown := newProof(randomHex())
 	keyUnknown.KeyID = "pilot-matrix-unknown-key"
 	keyUnknown = resign(keyUnknown, privateKey)
-	if err := expectStatus(client, baseURL, keyUnknown, http.StatusUnauthorized); err != nil {
+	if err := expectStatus(client, baseURL, keyUnknown, http.StatusUnauthorized, errKeyUnknownStatus); err != nil {
 		return err
 	}
 
@@ -307,7 +325,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 		}
 	}()
 	packageInvalid := newProof(randomHex())
-	if err := expectStatus(client, baseURL, packageInvalid, http.StatusForbidden); err != nil {
+	if err := expectStatus(client, baseURL, packageInvalid, http.StatusForbidden, errPackageHashStatus); err != nil {
 		_ = restorePackageHash(db, fx, expectedHash)
 		return err
 	}
@@ -406,7 +424,7 @@ func resign(proof sync.DeviceProof, privateKey ed25519.PrivateKey) sync.DevicePr
 	return proof
 }
 
-func expectStatus(client *http.Client, endpoint string, proof sync.DeviceProof, expected int) error {
+func expectStatus(client *http.Client, endpoint string, proof sync.DeviceProof, expected int, statusError error) error {
 	body, err := json.Marshal(request{Proof: proof})
 	if err != nil {
 		return errManifestRequest
@@ -418,7 +436,7 @@ func expectStatus(client *http.Client, endpoint string, proof sync.DeviceProof, 
 	defer response.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 16<<10))
 	if response.StatusCode != expected {
-		return errManifestStatus
+		return statusError
 	}
 	return nil
 }
