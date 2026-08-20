@@ -108,3 +108,18 @@ func TestExpectStatusPreservesAssignedPublicCaseSentinel(t *testing.T) {
 		}
 	}
 }
+
+func TestValidProofUnexpectedStatusUsesClosedPublicDiagnostic(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	err := expectStatus(server.Client(), server.URL, sync.DeviceProof{}, http.StatusOK, errValidProofStatus)
+	if !errors.Is(err, errValidProofStatus) || !errors.Is(err, errValidProofUnauthorized) {
+		t.Fatalf("valid-proof mismatch did not preserve diagnostic sentinels: %v", err)
+	}
+	if got := matrixErrorCode(err); got != "MANIFEST_VALID_PROOF_UNAUTHORIZED" {
+		t.Fatalf("valid-proof unauthorized mismatch mapped to %q", got)
+	}
+}

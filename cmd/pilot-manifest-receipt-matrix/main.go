@@ -74,6 +74,12 @@ var (
 	errExpectedHash               = errors.New("isolated fixture expected hash failed")
 	errManifestRequest            = errors.New("isolated manifest request failed")
 	errValidProofStatus           = errors.New("valid proof manifest status is unexpected")
+	errValidProofUnauthorized     = errors.New("valid proof manifest response was unauthorized")
+	errValidProofForbidden        = errors.New("valid proof manifest response was forbidden")
+	errValidProofNotFound         = errors.New("valid proof manifest response was not found")
+	errValidProofServerError      = errors.New("valid proof manifest response was a server error")
+	errValidProofServiceUnavailable = errors.New("valid proof manifest response was unavailable")
+	errValidProofOtherStatus      = errors.New("valid proof manifest response had another unexpected status")
 	errReplayStatus               = errors.New("replay manifest status is unexpected")
 	errSignatureInvalidStatus     = errors.New("signature invalid manifest status is unexpected")
 	errExpiredStatus              = errors.New("expired manifest status is unexpected")
@@ -108,6 +114,12 @@ var publicMatrixCodes = map[string]struct{}{
 	"EXPECTED_HASH_FAILED":                          {},
 	"MANIFEST_REQUEST_FAILED":                       {},
 	"MANIFEST_VALID_PROOF_STATUS_UNEXPECTED":        {},
+	"MANIFEST_VALID_PROOF_UNAUTHORIZED":             {},
+	"MANIFEST_VALID_PROOF_FORBIDDEN":                {},
+	"MANIFEST_VALID_PROOF_NOT_FOUND":                {},
+	"MANIFEST_VALID_PROOF_SERVER_ERROR":             {},
+	"MANIFEST_VALID_PROOF_SERVICE_UNAVAILABLE":      {},
+	"MANIFEST_VALID_PROOF_OTHER_STATUS":             {},
 	"MANIFEST_REPLAY_STATUS_UNEXPECTED":             {},
 	"MANIFEST_SIGNATURE_INVALID_STATUS_UNEXPECTED":  {},
 	"MANIFEST_EXPIRED_STATUS_UNEXPECTED":            {},
@@ -137,6 +149,12 @@ var matrixErrorStages = []matrixErrorStage{
 	{errSigningKeyInvalid, "SIGNING_KEY_INVALID"},
 	{errExpectedHash, "EXPECTED_HASH_FAILED"},
 	{errManifestRequest, "MANIFEST_REQUEST_FAILED"},
+	{errValidProofUnauthorized, "MANIFEST_VALID_PROOF_UNAUTHORIZED"},
+	{errValidProofForbidden, "MANIFEST_VALID_PROOF_FORBIDDEN"},
+	{errValidProofNotFound, "MANIFEST_VALID_PROOF_NOT_FOUND"},
+	{errValidProofServerError, "MANIFEST_VALID_PROOF_SERVER_ERROR"},
+	{errValidProofServiceUnavailable, "MANIFEST_VALID_PROOF_SERVICE_UNAVAILABLE"},
+	{errValidProofOtherStatus, "MANIFEST_VALID_PROOF_OTHER_STATUS"},
 	{errValidProofStatus, "MANIFEST_VALID_PROOF_STATUS_UNEXPECTED"},
 	{errReplayStatus, "MANIFEST_REPLAY_STATUS_UNEXPECTED"},
 	{errSignatureInvalidStatus, "MANIFEST_SIGNATURE_INVALID_STATUS_UNEXPECTED"},
@@ -436,9 +454,34 @@ func expectStatus(client *http.Client, endpoint string, proof sync.DeviceProof, 
 	defer response.Body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 16<<10))
 	if response.StatusCode != expected {
-		return statusError
+		return classifyUnexpectedStatus(statusError, response.StatusCode)
 	}
 	return nil
+}
+
+// classifyUnexpectedStatus preserves the existing per-case sentinel and adds a
+// fixed public diagnostic only for the valid-proof first gate. It never emits a
+// response body or numeric status, so the wrapper may safely expose its code.
+func classifyUnexpectedStatus(statusError error, actual int) error {
+	if statusError != errValidProofStatus {
+		return statusError
+	}
+	var detail error
+	switch actual {
+	case http.StatusUnauthorized:
+		detail = errValidProofUnauthorized
+	case http.StatusForbidden:
+		detail = errValidProofForbidden
+	case http.StatusNotFound:
+		detail = errValidProofNotFound
+	case http.StatusInternalServerError:
+		detail = errValidProofServerError
+	case http.StatusServiceUnavailable:
+		detail = errValidProofServiceUnavailable
+	default:
+		detail = errValidProofOtherStatus
+	}
+	return errors.Join(statusError, detail)
 }
 
 func expectedFixtureHash(f fixture) (string, error) {
