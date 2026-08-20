@@ -210,7 +210,11 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	db.SetMaxOpenConns(2)
 	db.SetMaxIdleConns(2)
 	if diagnoseFixtureIdentity {
-		if err := json.NewEncoder(os.Stdout).Encode(fixtureIdentityCounts(db, fx)); err != nil {
+		diagnostic, err := fixtureIdentityCounts(db, fx)
+		if err != nil {
+			return errDiagnosticSummary
+		}
+		if err := json.NewEncoder(os.Stdout).Encode(diagnostic); err != nil {
 			return errDiagnosticSummary
 		}
 		return nil
@@ -353,7 +357,7 @@ func loadFixture(path string) (fixture, error) {
 	var result fixture
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &result) != nil || result.DeviceID == "" || result.AuthorityID == "" || result.DeviceKeyID == "" || result.TenantID == "" || result.OrganizationID == "" || result.InspectionID == "" {
-		return fixture{}, errFixtureLoad
+		return fixture{}, fmt.Errorf("%w: invalid public fixture", errFixtureLoad)
 	}
 	return result, nil
 }
@@ -446,7 +450,7 @@ func assertIsolatedFixtureIdentity(db *sql.DB, f fixture) error {
 	return nil
 }
 
-func fixtureIdentityCounts(db *sql.DB, f fixture) fixtureIdentitySummary {
+func fixtureIdentityCounts(db *sql.DB, f fixture) (fixtureIdentitySummary, error) {
 	summary := fixtureIdentitySummary{DeviceRows: -1, AuthorityRows: -1, PackageRows: -1, AssignmentRows: -1}
 	count := func(tx *sql.Tx, query string, args ...any) (int, error) {
 		var value int
@@ -467,9 +471,9 @@ func fixtureIdentityCounts(db *sql.DB, f fixture) fixtureIdentitySummary {
 		summary.AssignmentRows, err = count(tx, `SELECT count(*) FROM work_package_assignment WHERE tenant_id = $1 AND organization_id = $2 AND inspection_id = $3 AND device_id = $4 AND package_id = 'pilot-manifest-demo-package' AND package_version = 1 AND authority_epoch = 1`, f.TenantID, f.OrganizationID, f.InspectionID, f.DeviceID)
 		return err
 	}); err != nil {
-		return fixtureIdentitySummary{DeviceRows: -1, AuthorityRows: -1, PackageRows: -1, AssignmentRows: -1}
+		return fixtureIdentitySummary{}, err
 	}
-	return summary
+	return summary, nil
 }
 
 func mutatePackageHash(db *sql.DB, f fixture, expectedHash string) error {
