@@ -26,7 +26,7 @@ func (r *PostgresResolver) Resolve(ctx context.Context, principal PrincipalKey) 
 	if err := ValidatePrincipalKey(principal); err != nil {
 		return Membership{}, err
 	}
-	rows, err := r.db.QueryContext(ctx, `SELECT tenant_id, organization_id, capabilities FROM integin_resolve_identity_membership($1, $2)`, principal.Issuer, principal.Subject)
+	rows, err := r.db.QueryContext(ctx, `SELECT actor_id, tenant_id, organization_id, work_order_role, capabilities FROM integin_resolve_identity_membership($1, $2)`, principal.Issuer, principal.Subject)
 	if err != nil {
 		return Membership{}, fmt.Errorf("resolve local identity membership: %w", err)
 	}
@@ -35,7 +35,7 @@ func (r *PostgresResolver) Resolve(ctx context.Context, principal PrincipalKey) 
 	for rows.Next() {
 		var membership Membership
 		var capabilities pq.StringArray
-		if err := rows.Scan(&membership.TenantID, &membership.OrganizationID, &capabilities); err != nil {
+		if err := rows.Scan(&membership.ActorID, &membership.TenantID, &membership.OrganizationID, &membership.WorkOrderRole, &capabilities); err != nil {
 			return Membership{}, fmt.Errorf("scan local identity membership: %w", err)
 		}
 		membership.Capabilities = append([]string(nil), capabilities...)

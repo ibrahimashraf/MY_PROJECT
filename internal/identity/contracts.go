@@ -20,8 +20,10 @@ type PrincipalKey struct {
 
 // Membership is local INTEGIN context. No Keycloak claim populates these fields.
 type Membership struct {
+	ActorID        string
 	TenantID       string
 	OrganizationID string
+	WorkOrderRole  string
 	Capabilities   []string
 }
 

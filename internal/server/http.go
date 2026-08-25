@@ -18,15 +18,20 @@ import (
 )
 
 type Dependencies struct {
-	SyncProcessor        *domainsync.Processor
-	Devices              []device_trust.Device
-	Authorities          []device_trust.AuthorityPackage
-	EvidenceStore        storage.Store
-	LocalProvisioning    http.Handler
-	OIDCSessionHandler   http.Handler
-	PilotManifestHandler *packagemanifestapi.Handler
-	AuthorityRegistry    *syncapi.AuthorityRegistry
-	Readiness            func(context.Context) error
+	SyncProcessor               *domainsync.Processor
+	Devices                     []device_trust.Device
+	Authorities                 []device_trust.AuthorityPackage
+	EvidenceStore               storage.Store
+	EvidenceRegistrationHandler http.Handler
+	LocalProvisioning           http.Handler
+	OIDCSessionHandler          http.Handler
+	WorkOrderHandler            http.Handler
+	CertificateHandler          http.Handler
+	CertificatePublicHandler    http.Handler
+	PilotManifestHandler        *packagemanifestapi.Handler
+	AuthorityRegistry           *syncapi.AuthorityRegistry
+	Readiness                   func(context.Context) error
+	ReadinessTimeout            time.Duration
 }
 
 // NewMux composes the HTTP boundary without creating global state. Runtime
@@ -60,31 +65,53 @@ func NewMux(dependencies Dependencies) http.Handler {
 	if dependencies.OIDCSessionHandler != nil {
 		mux.Handle("/identity/session", dependencies.OIDCSessionHandler)
 	}
+	if dependencies.WorkOrderHandler != nil {
+		mux.Handle("/work-orders/partial-submissions", dependencies.WorkOrderHandler)
+	}
+	if dependencies.CertificateHandler != nil {
+		mux.Handle("/certificates/", dependencies.CertificateHandler)
+	}
+	if dependencies.CertificatePublicHandler != nil {
+		mux.Handle("/verify/certificates/", dependencies.CertificatePublicHandler)
+	}
 	if dependencies.EvidenceStore != nil {
 		mux.Handle("/evidence", evidenceapi.Handler{Store: dependencies.EvidenceStore})
+	}
+	if dependencies.EvidenceRegistrationHandler != nil {
+		mux.Handle("/evidence/metadata-registrations", dependencies.EvidenceRegistrationHandler)
 	}
 	if dependencies.LocalProvisioning != nil {
 		mux.Handle("/local/provision", dependencies.LocalProvisioning)
 	}
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte(`{"status":"ok","service":"integin"}`))
+		writeOperationalJSON(writer, http.StatusOK, `{"status":"ok","service":"integin"}`)
 	})
 	mux.HandleFunc("/readyz", func(writer http.ResponseWriter, request *http.Request) {
 		if dependencies.Readiness != nil {
-			if err := dependencies.Readiness(request.Context()); err != nil {
-				writer.Header().Set("Content-Type", "application/json")
-				writer.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = writer.Write([]byte(`{"status":"not_ready","service":"integin"}`))
+			context, cancel := context.WithTimeout(request.Context(), readinessTimeout(dependencies.ReadinessTimeout))
+			defer cancel()
+			if err := dependencies.Readiness(context); err != nil {
+				writeOperationalJSON(writer, http.StatusServiceUnavailable, `{"status":"not_ready","service":"integin"}`)
 				return
 			}
 		}
-		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte(`{"status":"ready","service":"integin"}`))
+		writeOperationalJSON(writer, http.StatusOK, `{"status":"ready","service":"integin"}`)
 	})
 	return productionMiddleware(mux)
+}
+
+func readinessTimeout(value time.Duration) time.Duration {
+	if value <= 0 {
+		return 3 * time.Second
+	}
+	return value
+}
+
+func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Cache-Control", "no-store")
+	writer.WriteHeader(status)
+	_, _ = writer.Write([]byte(body))
 }
 
 func productionMiddleware(next http.Handler) http.Handler {
@@ -94,7 +121,7 @@ func productionMiddleware(next http.Handler) http.Handler {
 func withCorrelationID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		correlationID := strings.TrimSpace(request.Header.Get("X-Correlation-ID"))
-		if correlationID == "" || len(correlationID) > 128 {
+		if !validCorrelationID(correlationID) {
 			correlationID = newCorrelationID()
 		}
 		writer.Header().Set("X-Correlation-ID", correlationID)
@@ -104,6 +131,10 @@ func withCorrelationID(next http.Handler) http.Handler {
 
 func withRequestLimit(next http.Handler, limit int64) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.ContentLength > limit {
+			writeOperationalJSON(writer, http.StatusRequestEntityTooLarge, `{"error":"request_too_large"}`)
+			return
+		}
 		request.Body = http.MaxBytesReader(writer, request.Body, limit)
 		next.ServeHTTP(writer, request)
 	})
@@ -114,8 +145,19 @@ func requestLogger(next http.Handler) http.Handler {
 		started := time.Now()
 		wrapped := &statusWriter{ResponseWriter: writer, status: http.StatusOK}
 		next.ServeHTTP(wrapped, request)
-		slog.Default().Info("http_request", "method", request.Method, "path", request.URL.Path, "status", wrapped.status, "duration_ms", time.Since(started).Milliseconds(), "correlation_id", writer.Header().Get("X-Correlation-ID"))
+		path := loggedRequestPath(request.URL.EscapedPath())
+		slog.Default().Info("http_request", "method", request.Method, "path", path, "status", wrapped.status, "duration_ms", time.Since(started).Milliseconds(), "correlation_id", writer.Header().Get("X-Correlation-ID"))
 	})
+}
+
+func loggedRequestPath(path string) string {
+	if strings.HasPrefix(path, "/verify/certificates/") {
+		return "/verify/certificates/:token"
+	}
+	if path == "" {
+		return "/"
+	}
+	return path
 }
 
 type statusWriter struct {
@@ -138,4 +180,16 @@ func newCorrelationID() string {
 		return "integin-" + time.Now().UTC().Format("20060102T150405.000000000Z")
 	}
 	return hex.EncodeToString(bytes[:])
+}
+
+func validCorrelationID(value string) bool {
+	if value == "" || len(value) > 128 {
+		return false
+	}
+	for _, character := range value {
+		if !(character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || character == '-' || character == '_' || character == '.') {
+			return false
+		}
+	}
+	return true
 }

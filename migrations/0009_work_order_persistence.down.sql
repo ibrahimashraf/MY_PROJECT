@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS work_order_state_event;
+DROP TABLE IF EXISTS work_order_submission_item;
+DROP TABLE IF EXISTS work_order_submission_segment;
+DROP TABLE IF EXISTS inspection_record;
+DROP TABLE IF EXISTS work_order_assignment_scope;
+DROP TABLE IF EXISTS work_order_assignment;
+DROP TABLE IF EXISTS work_order_scope_item;
+DROP TABLE IF EXISTS work_order_operation;
+DROP TABLE IF EXISTS work_order_provisional_record;
+DROP TABLE IF EXISTS work_order;
