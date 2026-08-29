@@ -5,7 +5,7 @@
 
 ## 1. Goal
 
-Help the inspector during **NDT** (MPI/UT/RT) and **lifting** (wire-rope, shackle, crane, rigging) by proposing **observations** for defects visible in evidence, **only when the inspector chooses per photo** — Upload directly **or** Get AI observations — with no stop/hold/keep/edit, no verdict, no blocking.
+Help the inspector during **all INTEGIN inspection types** — NDT (MPI/MT/PT/UT/PAUT/TOFD/RT/ET/EC/PECT/MFL/AE), lifting (wire-rope, shackle, crane, rigging), visual/dimensional/functional and any current or future INTEGIN inspection — and **all advisory-eligible INTEGIN systems** (work orders, evidence, planning, reporting — except AI-free `VERDICT`/`CERTIFICATE`/`CALIBRATION`/`AUTHORIZATION`/`SYNC_SECURITY`/`PUBLIC_QR`) by proposing **observations** for defects/patterns visible in evidence, **only when the inspector chooses per photo** — Upload directly **or** Get AI observations — with no stop/hold/keep/edit, no verdict, no blocking.
 
 ## 2. Non-goals
 
@@ -13,8 +13,8 @@ No `ACCEPT`/`REJECT`/`CALIBRATION` verdict, no `certificate`/`commercial_state` 
 
 ## 3. Workflow (opt-in per evidence)
 
-1. Capture photo → UI shows **Upload directly** | **Get AI observations**
-2. If chosen: `POST /v1/advisory` `version:v1` `zone:NDT_DEFECT` or `LIFTING_DEFECT` `evidence_refs:[image_id]` (+ `lens: NDT_MPI|LIFTING_WIRE_ROPE|…`) → `observations[]`
+1. Capture photo → UI shows **Upload directly** | **Get AI observations** — Zone `NDT_DEFECT`/`LIFTING_DEFECT`, Lens any INTEGIN type (e.g., `PAUT`/`EDDY_CURRENT`/`PULSED_EDDY_CURRENT`/`TOFD`/`RT`/`MT` or future)
+2. If chosen: `POST /v1/advisory` `version:v1` `zone:NDT_DEFECT` or `LIFTING_DEFECT` `evidence_refs:[image_id]` (+ `lens: PAUT|EDDY_CURRENT|PULSED_EDDY_CURRENT|TOFD|…` — any current/future lens via default) → `observations[]`
 3. UI renders each observation read-only: `title`/`confidence`/`rationale`/`evidence_refs`/`limitations`/`model {provider, model, version, prompt_version}`/`reasoningTrace`/`blocking=false` + optional **bounding box/heatmap overlay** (visual `evidence_refs`, not a verdict)
 4. Inspector **Attaches as supporting note** or **Dismisses** (with reason) — both write an audit row `AI-suggested vs human-confirmed`; dismiss is ephemeral (not kept as evidence unless attached)
 5. Inspector still writes the primary `inspection_record` verdict — server-authoritative, `integin_runtime` FORCED RLS unchanged
@@ -23,7 +23,7 @@ No `ACCEPT`/`REJECT`/`CALIBRATION` verdict, no `certificate`/`commercial_state` 
 
 ## 4. Contract (versioned, advisory-only)
 
-* **Request:** `POST /v1/advisory` `version:v1` `tenant_id` `zone: NDT_DEFECT | LIFTING_DEFECT` `lens` `inputs:{image_id, procedure_id, asset_id}` `evidence_refs:[…]` — allow-listed zones only; `VERDICT`/`CERTIFICATE`/`CALIBRATION`/`AUTHORIZATION`/`SYNC_SECURITY`/`PUBLIC_QR` remain **AI-free** and return `403` (`ai_service/main.py:16`)
+* **Request:** `POST /v1/advisory` `version:v1` `tenant_id` `zone: any` (all INTEGIN inspection types & systems **except** AI-free) `lens: any` (e.g., `PAUT`/`EDDY_CURRENT`/`VISUAL_INSPECTION` or future) `inputs:{image_id, procedure_id, asset_id}` `evidence_refs:[…]` — only `VERDICT`/`CERTIFICATE`/`CALIBRATION`/`AUTHORIZATION`/`SYNC_SECURITY`/`PUBLIC_QR` remain **AI-free** and return `403` (`ai_service/main.py:16`); all other zones are advisory-only via generic fallback
 * **Response:** `version:v1` `tenant_id` `observations[]` each `{title, summary, confidence 0..1, rationale, evidence_refs[], limitations[], model, prompt_version, blocking:false, reasoningTrace[]}` — secondary view model, no secret/prompt/private-credential exposure
 * **Transport:** injectable `fetch` wrapper, explicit `VITE_ADVISORY_API_URL` (empty = mock), timeouts/normalization in `internal/advisory` (Go) mirrored in UI, deterministic + non-deterministic lenses fenced
 * **Failure:** provider timeout/malformed → explicit advisory error `severity:ADVISORY` `blocking:false`; primary workflow unchanged, panel degrades gracefully (Quiet Signal `src/App.tsx:1` `AdvisoryBoundary`)
@@ -40,7 +40,7 @@ No `ACCEPT`/`REJECT`/`CALIBRATION` verdict, no `certificate`/`commercial_state` 
 
 ## 6. Validation gate (before any claim)
 
-* **Labeled corpus:** ≥500 images per defect type (MPI indication, wire-rope wear, shackle crack, crane corrosion) with `STANDARD` traceability, inspector-labeled, held-out validation
+* **Labeled corpus:** ≥500 images per defect type (MPI/PAUT/TOFD/RT/ET/EC/PECT/MFL/AE indication, wire-rope wear, shackle crack, crane corrosion) with `STANDARD` traceability, inspector-labeled, held-out validation — any current/future INTEGIN NDT/lifting type via generic lens
 * **Model card:** `provider`/`model`/`prompt_version`/`limitations`/`precision`/`recall` per defect type on held-out set
 * **Human-confirmation audit:** `suggested vs confirmed` rate, not `AI accuracy` alone — the inspector remains the authority
 

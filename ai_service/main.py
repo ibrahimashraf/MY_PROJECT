@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 CONTRACT_VERSION = "v1"
-AI_ALLOWED_ZONES = {"MONITORING", "REGULATION"}
+AI_ALLOWED_ZONES = {"MONITORING", "REGULATION", "NDT_DEFECT", "LIFTING_DEFECT"}
 AI_FREE_ZONES = {
     "VERDICT",
     "CERTIFICATE",
@@ -90,6 +90,79 @@ def _lens_copy(lens: str) -> tuple[str, str, float]:
             "Some optional evidence fields may benefit from a completeness review.",
             0.69,
         ),
+        # Generic INTEGIN inspection lenses — any current or future inspection type
+        # is advisory via the default below; the 4 named lenses just give a
+        # nicer title for common cases. New types need no code change.
+        "NDT_MPI": (
+            "NDT MPI indication — observation",
+            "Magnetic particle indication observed — advisory, requires human confirmation with procedure + additional image.",
+            0.73,
+        ),
+        "NDT_UT": (
+            "NDT UT indication — observation",
+            "Ultrasonic indication pattern observed — advisory, requires human confirmation.",
+            0.71,
+        ),
+        "LIFTING_WIRE_ROPE": (
+            "Lifting wire-rope wear — observation",
+            "Surface wear / broken wire pattern observed — advisory, internal break not visible, requires human confirmation.",
+            0.68,
+        ),
+        "LIFTING_SHACKLE": (
+            "Lifting shackle wear — observation",
+            "Shackle wear / deformation pattern observed — advisory, requires human confirmation.",
+            0.66,
+        ),
+        "PAUT": (
+            "PAUT indication — observation",
+            "Phased Array Ultrasonic Testing indication observed — advisory, requires human confirmation with procedure.",
+            0.72,
+        ),
+        "EDDY_CURRENT": (
+            "Eddy current indication — observation",
+            "Eddy current signal pattern observed — advisory, requires human confirmation.",
+            0.70,
+        ),
+        "PULSED_EDDY_CURRENT": (
+            "Pulsed eddy current indication — observation",
+            "Pulsed eddy current wall-loss pattern observed — advisory, requires human confirmation.",
+            0.69,
+        ),
+        "TOFD": (
+            "TOFD indication — observation",
+            "Time-of-Flight Diffraction indication observed — advisory, requires human confirmation.",
+            0.71,
+        ),
+        "RT": (
+            "Radiographic indication — observation",
+            "Radiographic image indication observed — advisory, requires human confirmation.",
+            0.70,
+        ),
+        "MT": (
+            "Magnetic particle indication — observation",
+            "MT indication observed — advisory, requires human confirmation.",
+            0.73,
+        ),
+        "PT": (
+            "Penetrant indication — observation",
+            "Dye penetrant indication observed — advisory, requires human confirmation.",
+            0.68,
+        ),
+        "ET": (
+            "Electromagnetic testing indication — observation",
+            "ET signal pattern observed — advisory, requires human confirmation.",
+            0.69,
+        ),
+        "MFL": (
+            "MFL indication — observation",
+            "Magnetic Flux Leakage indication observed — advisory, requires human confirmation.",
+            0.68,
+        ),
+        "AE": (
+            "Acoustic emission indication — observation",
+            "Acoustic emission event pattern observed — advisory, requires human confirmation.",
+            0.67,
+        ),
     }
     return copies.get(
         lens,
@@ -100,8 +173,12 @@ def _lens_copy(lens: str) -> tuple[str, str, float]:
 def build_advisory(request: AdvisoryRequest) -> AdvisoryResponse:
     if request.version != CONTRACT_VERSION:
         raise HTTPException(status_code=400, detail="unsupported contract version")
-    if request.zone not in AI_ALLOWED_ZONES:
+    # Generic for all INTEGIN inspection types and all systems except AI-free zones.
+    # AI_FREE_ZONES are the only forbidden zones — everything else is advisory-only.
+    if request.zone in AI_FREE_ZONES:
         raise HTTPException(status_code=403, detail="AI invocation is forbidden in this zone")
+    # Keep AI_ALLOWED_ZONES as the documented advisory zones, but also allow any future zone
+    # that is not AI-free via the generic fallback — no code change for new INTEGIN types/systems.
     if len(request.inputs) > 64:
         raise HTTPException(status_code=413, detail="too many input fields")
 
