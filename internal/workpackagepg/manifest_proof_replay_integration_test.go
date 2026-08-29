@@ -2,7 +2,9 @@ package workpackagepg
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/url"
@@ -34,10 +36,10 @@ func TestManifestProofReplayStorePostgresIntegration(t *testing.T) {
 	if err := adminDB.PingContext(ctx); err != nil {
 		t.Fatalf("ping integration database: %v", err)
 	}
-	resetManifestReplayIntegrationDatabase(t, ctx, adminDB)
+	rolePassword := resetManifestReplayIntegrationDatabase(t, ctx, adminDB)
 
 	role := "integin_manifest_replay_test"
-	roleDSN := integrationRoleDSN(t, dsn, role)
+	roleDSN := integrationRoleDSN(t, dsn, role, rolePassword)
 	appDB, err := sql.Open("postgres", roleDSN)
 	if err != nil {
 		t.Fatalf("open scoped integration database: %v", err)
@@ -141,7 +143,7 @@ func TestManifestProofReplayStorePostgresIntegration(t *testing.T) {
 	})
 }
 
-func resetManifestReplayIntegrationDatabase(t *testing.T, ctx context.Context, db *sql.DB) {
+func resetManifestReplayIntegrationDatabase(t *testing.T, ctx context.Context, db *sql.DB) string {
 	t.Helper()
 	migrationPath := filepath.Join("..", "..", "migrations", "0007_manifest_proof_replay.sql")
 	migration, err := os.ReadFile(migrationPath)
@@ -154,27 +156,41 @@ func resetManifestReplayIntegrationDatabase(t *testing.T, ctx context.Context, d
 	if _, err := db.ExecContext(ctx, string(migration)); err != nil {
 		t.Fatalf("apply disposable replay migration: %v", err)
 	}
+	rolePassword := randomIntegrationRolePassword(t)
 	if _, err := db.ExecContext(ctx, `
-		CREATE ROLE integin_manifest_replay_test LOGIN;
-		GRANT SELECT, INSERT, DELETE ON manifest_proof_replay TO integin_manifest_replay_test;
-	`); err != nil {
+            CREATE ROLE integin_manifest_replay_test LOGIN;
+            GRANT SELECT, INSERT, DELETE ON manifest_proof_replay TO integin_manifest_replay_test;
+    `); err != nil {
 		t.Fatalf("configure disposable application role: %v", err)
 	}
+	if _, err := db.ExecContext(ctx, "ALTER ROLE integin_manifest_replay_test PASSWORD '"+rolePassword+"'"); err != nil {
+		t.Fatalf("set disposable application role password: %v", err)
+	}
+	return rolePassword
 }
 
-func integrationRoleDSN(t *testing.T, dsn, role string) string {
+func randomIntegrationRolePassword(t *testing.T) string {
+	t.Helper()
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		t.Fatalf("generate disposable role password: %v", err)
+	}
+	return hex.EncodeToString(raw)
+}
+
+func integrationRoleDSN(t *testing.T, dsn, role, password string) string {
 	t.Helper()
 	parsed, err := url.Parse(dsn)
 	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
 		t.Fatalf("%s must be a PostgreSQL URL for disposable integration testing", manifestReplayIntegrationDSNEnv)
 	}
-	parsed.User = url.User(role)
+	parsed.User = url.UserPassword(role, password)
 	return parsed.String()
 }
 
 func TestManifestReplayIntegrationDSNHelper(t *testing.T) {
-	got := integrationRoleDSN(t, "postgres://postgres@127.0.0.1:25432/postgres?sslmode=disable", "role-a")
-	const want = "postgres://role-a@127.0.0.1:25432/postgres?sslmode=disable"
+	got := integrationRoleDSN(t, "postgres://postgres@127.0.0.1:25432/postgres?sslmode=disable", "role-a", "role-password")
+	const want = "postgres://role-a:role-password@127.0.0.1:25432/postgres?sslmode=disable"
 	if got != want {
 		t.Fatalf("integration role DSN mismatch: want %q got %q", want, got)
 	}
