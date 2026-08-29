@@ -16,11 +16,11 @@ Complete the optional INTEGIN dual-service delivery: validate and checkpoint the
 | 7. Go AI-Service Integration | complete | Versioned HTTP contract, guarded zones, timeouts, health checks, tenant validation, response normalization, configuration, and mock validation. |
 | 8. Secondary Advisor UI | complete | Quiet Signal React/TypeScript console with evidence-linked insights, reasoning traces, health/canary metadata, and advisory safeguards — `quiet-signal` `tsc` `oxlint` `vite build` 195kB PASS, checkpoint `quiet-signal/CHECKPOINT_2026-08-29.md`. |
 | 9. Python Advisory Service | complete | FastAPI `/healthz` and `/v1/advisory`, allowed-zone enforcement, deterministic monitoring-lens summaries, response metadata, and `blocking=false`. |
-| 10. Cross-Service Handoff | in_progress | Final Go validation, persistent records, UI checkpoint, and delivery of the working console and service instructions. |
+| 10. Cross-Service Handoff | complete | Final Go validation `GOVET_OK`/`GOTEST_OK`, UI `TSC_OK`/`LINT_OK`/`vite 201kB`, Python `5 passed`, checkpoint `docs/continuity/PHASE_10_HANDOFF_CHECKPOINT_2026-08-29.md`, and delivery of the working console and service instructions. |
 
 ## Current Phase
 
-Phase 10 — Cross-Service Handoff (Phase 8 complete, checkpoint `quiet-signal/CHECKPOINT_2026-08-29.md`).
+Complete — Ticket 02 + whole A (A1-A7) + Phase 8 Quiet Signal + AI observations (generic + advanced NDT + trust+quality) + Phase 9 Python advisory + Phase 10 Cross-Service Handoff. Next is owner presentation.
 
 ## Acceptance Criteria
 
