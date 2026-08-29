@@ -18,6 +18,9 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"integin/internal/certificatehttp"
+	"integin/internal/certificatepg"
+	"integin/internal/certificatepublichttp"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/identity"
@@ -130,6 +133,19 @@ func main() {
 		localProvisioning = handler
 	}
 	var oidcSessionHandler http.Handler
+	var workOrderHandler http.Handler
+	var evidenceRegistrationHandler http.Handler
+	var certificateHandler http.Handler
+	var certificatePublicHandler http.Handler
+	var certificateRepository *certificatepg.Repository
+	if database != nil {
+		repository, certificateErr := certificatepg.NewRepository(database)
+		if certificateErr != nil {
+			log.Fatal(certificateErr)
+		}
+		certificateRepository = repository
+		certificatePublicHandler = &certificatepublichttp.Handler{Verifier: certificateRepository}
+	}
 	oidcConfig, oidcConfigErr := oidcauth.LoadConfig(os.Getenv)
 	if oidcConfigErr != nil {
 		log.Fatal(oidcConfigErr)
@@ -148,19 +164,40 @@ func main() {
 		if resolverErr != nil {
 			log.Fatal(resolverErr)
 		}
+		if certificateRepository == nil {
+			log.Fatal("certificate repository requires INTEGIN_DB_URL")
+		}
+		certificateHandler = certificatehttp.Handler{
+			Validator: validator,
+			Actors: certificatehttp.LocalActorResolver{
+				Memberships: resolver,
+			},
+			Lifecycle: certificateRepository,
+		}
 		sessionHandler, sessionHandlerErr := oidchttp.NewSessionHandler(validator, resolver, oidchttp.SessionCapability)
 		if sessionHandlerErr != nil {
 			log.Fatal(sessionHandlerErr)
 		}
 		oidcSessionHandler = sessionHandler
+		var handlerErr error
+		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, resolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
+		if evidenceStore != nil {
+			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, resolver, evidenceStore)
+			if handlerErr != nil {
+				log.Fatal(handlerErr)
+			}
+		}
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities))
 	httpServer := &http.Server{
 		Addr: address,
-		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler,
+		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler,
 			PilotManifestHandler: pilotManifestHandler,
-			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness}),
+			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

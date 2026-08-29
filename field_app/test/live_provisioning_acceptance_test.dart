@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
@@ -18,6 +19,9 @@ const _provisionEndpoint =
 const _syncEndpoint = String.fromEnvironment('INTEGIN_LIVE_SYNC_ENDPOINT');
 const _evidenceEndpoint =
     String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT');
+const _receiptPath = String.fromEnvironment('INTEGIN_LIVE_RECEIPT_PATH');
+const _tenantID = String.fromEnvironment('INTEGIN_LIVE_TENANT_ID');
+const _organizationID = String.fromEnvironment('INTEGIN_LIVE_ORGANIZATION_ID');
 
 InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
       inspectionId: inspectionID,
@@ -42,7 +46,10 @@ InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
 void main() {
   final shouldRun = _provisionEndpoint.isNotEmpty &&
       _syncEndpoint.isNotEmpty &&
-      _evidenceEndpoint.isNotEmpty;
+      _evidenceEndpoint.isNotEmpty &&
+      _receiptPath.isNotEmpty &&
+      _tenantID.isNotEmpty &&
+      _organizationID.isNotEmpty;
 
   test(
     'provisioned Flutter client applies signed sync and duplicate-safe evidence',
@@ -54,9 +61,33 @@ void main() {
         keyPair,
         keyId: crypto.sha256.convert(publicKey.bytes).toString(),
       );
+      final plannedDeviceID = 'field-${signer.keyId!.substring(0, 32)}';
+      final workPack = _workPack('flutter-live-$plannedDeviceID');
+      final evidenceID = 'flutter-live-evidence-$plannedDeviceID';
+      final receiptFile = File(_receiptPath);
+      await receiptFile.parent.create(recursive: true);
+      await receiptFile.writeAsString(jsonEncode({
+        'tenant_id': _tenantID,
+        'organization_id': _organizationID,
+        'device_id': plannedDeviceID,
+        'authority_id': '',
+        'inspection_id': workPack.inspectionId,
+        'evidence_id': evidenceID,
+      }));
       final session = await LocalProvisioningClient(
         endpoint: Uri.parse(_provisionEndpoint),
       ).provision(signer);
+      expect(session.deviceId, plannedDeviceID);
+      expect(session.context.tenantId, _tenantID);
+      expect(session.context.organizationId, _organizationID);
+      await receiptFile.writeAsString(jsonEncode({
+        'tenant_id': _tenantID,
+        'organization_id': _organizationID,
+        'device_id': session.deviceId,
+        'authority_id': session.authority.id,
+        'inspection_id': workPack.inspectionId,
+        'evidence_id': evidenceID,
+      }));
       final store = InMemoryOutboxStore();
       final controller = FieldAppController(
         context: session.context,
@@ -72,7 +103,6 @@ void main() {
           transport: HttpSyncTransport(endpoint: Uri.parse(_syncEndpoint)),
         ),
       );
-      final workPack = _workPack('flutter-live-${session.deviceId}');
       controller.beginInspection(workPack);
       controller.recordResponse(
         item: workPack.items.single,
@@ -86,7 +116,6 @@ void main() {
 
       final ciphertext = utf8.encode('Flutter provisioned evidence ciphertext');
       final plaintext = utf8.encode('Flutter provisioned evidence plaintext');
-      final evidenceID = 'flutter-live-evidence-${session.deviceId}';
       final body = {
         'tenant_id': session.context.tenantId,
         'organization_id': session.context.organizationId,
@@ -114,6 +143,6 @@ void main() {
     },
     skip: shouldRun
         ? false
-        : 'Set all INTEGIN_LIVE_* endpoints to run live acceptance.',
+        : 'Set all INTEGIN_LIVE_* endpoints, tenant context, and INTEGIN_LIVE_RECEIPT_PATH to run live acceptance.',
   );
 }
