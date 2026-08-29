@@ -265,7 +265,16 @@ func (s *S3Store) Get(ctx context.Context, key string) (Object, error) {
 	if err != nil {
 		return Object{}, err
 	}
-	return Object{Key: key, ContentType: response.Header.Get("Content-Type"), Data: data, Metadata: map[string]string{}}, nil
+	metadata := make(map[string]string)
+	for header, values := range response.Header {
+		prefix := "x-amz-meta-"
+		lowered := strings.ToLower(header)
+		if !strings.HasPrefix(lowered, prefix) {
+			continue
+		}
+		metadata[strings.TrimPrefix(lowered, prefix)] = strings.Join(values, ",")
+	}
+	return Object{Key: key, ContentType: response.Header.Get("Content-Type"), Data: data, Metadata: metadata}, nil
 }
 func (s *S3Store) Delete(ctx context.Context, key string) error {
 	endpoint, err := s.objectURL(key)

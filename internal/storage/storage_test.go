@@ -79,3 +79,36 @@ func TestAWSSigV4SignerBindsPayloadDigest(t *testing.T) {
 		t.Fatalf("Signature V4 headers missing: %#v", requestHeaders)
 	}
 }
+func TestS3StoreGetReturnsCiphertextAndMetadata(t *testing.T) {
+	var method, signature string
+	client := roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		method = request.Method
+		signature = request.Header.Get("Authorization")
+		header := make(http.Header)
+		header.Set("Content-Type", "application/octet-stream")
+		header.Set("X-Amz-Meta-Tenant_ID", "tenant-1")
+		header.Set("X-Amz-Meta-Inspection_ID", "inspection-1")
+		header.Set("X-Amz-Meta-Ciphertext_SHA256", "abc123")
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ciphertext")), Header: header}, nil
+	})
+	store, err := NewS3Store("http://rustfs.local:9000", "integin-evidence", client, func(request *http.Request) error {
+		request.Header.Set("Authorization", "signed")
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	object, err := store.Get(context.Background(), "tenant-1/org-1/evidence/evidence-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if method != http.MethodGet || signature != "signed" {
+		t.Fatalf("unexpected Get request: method=%q signature=%q", method, signature)
+	}
+	if object.ContentType != "application/octet-stream" || string(object.Data) != "ciphertext" {
+		t.Fatalf("unexpected object body: %#v", object)
+	}
+	if object.Metadata["tenant_id"] != "tenant-1" || object.Metadata["inspection_id"] != "inspection-1" || object.Metadata["ciphertext_sha256"] != "abc123" {
+		t.Fatalf("metadata was not returned or normalized: %#v", object.Metadata)
+	}
+}
