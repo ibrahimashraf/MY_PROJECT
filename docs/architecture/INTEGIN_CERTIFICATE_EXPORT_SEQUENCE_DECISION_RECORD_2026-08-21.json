@@ -1,0 +1,30 @@
+{
+  "contract_version": "delegate-and-debate-decision-v1",
+  "decision_owner": "INTEGIN owner",
+  "decision": "Recommend certificate issuance as the next general INTEGIN authority boundary; defer evidence-export approval as a distinct post-certificate release-control capability, while preserving a future per-integration exception for submission-before-external-recognition.",
+  "positions_considered": [
+    "Certificate-first: control the official inspection outcome before optional disclosure.",
+    "Export-first: control supporting-evidence release before an external recipient or authority receives it.",
+    "Adapter exception: a future external platform may require an approved evidence package before it accepts or recognizes a certificate."
+  ],
+  "accepted_concerns": [
+    "Certificate issuance and evidence export are independent authority decisions; neither approval implies the other.",
+    "Sensitive evidence must not become publicly or externally accessible merely because a certificate is issued.",
+    "Future external adapter policy must be configurable without rewriting the local certificate lifecycle."
+  ],
+  "rejected_or_overridden_concerns": [
+    "Treating export approval as the universal prerequisite is rejected because normal client/site verification needs a certificate, not broad evidence disclosure.",
+    "Treating certificate issuance as permission to export evidence is rejected because recipient, purpose, privacy, and release scope remain separate decisions."
+  ],
+  "residual_risks": [
+    "Owner approver roles, separation-of-duties matrix, and external-registration policy are not yet specified.",
+    "No external authority requirements or connector behavior has been proven.",
+    "Offline authority-signature verification for evidence provenance remains a separate boundary."
+  ],
+  "evidence_required_before_action": [
+    "Owner confirmation of certificate-first implementation order and approval-role policy.",
+    "A bounded certificate lifecycle contract with eligibility, signatory separation, revocation, supersession, QR projection, and negative tests.",
+    "No external release or platform submission until the later export-approval authority path is explicitly designed and proven."
+  ],
+  "next_bounded_action": "On owner confirmation, define the certificate issuance authority contract without implementing any external evidence export or external platform submission."
+}
