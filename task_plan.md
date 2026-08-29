@@ -14,13 +14,13 @@ Complete the optional INTEGIN dual-service delivery: validate and checkpoint the
 | 5. Platform Engines | complete | Notifications, audit, environment/release, planning, reporting, integrations, Standards Vault, feature flags, QR verification, calibration, Feature Console, acceptance tests, formatting, and vet validation. |
 | 6. AI Advisory Layer | complete | Advisory contracts, AI-free zones, seven monitoring lenses, reasoning traces, regulation analysis, conflict resolution, client requests, canary metadata, acceptance tests, formatting, and vet validation. |
 | 7. Go AI-Service Integration | complete | Versioned HTTP contract, guarded zones, timeouts, health checks, tenant validation, response normalization, configuration, and mock validation. |
-| 8. Secondary Advisor UI | in_progress | Quiet Signal React/TypeScript console with evidence-linked insights, reasoning traces, health/canary metadata, and advisory safeguards. |
+| 8. Secondary Advisor UI | complete | Quiet Signal React/TypeScript console with evidence-linked insights, reasoning traces, health/canary metadata, and advisory safeguards — `quiet-signal` `tsc` `oxlint` `vite build` 195kB PASS, checkpoint `quiet-signal/CHECKPOINT_2026-08-29.md`. |
 | 9. Python Advisory Service | complete | FastAPI `/healthz` and `/v1/advisory`, allowed-zone enforcement, deterministic monitoring-lens summaries, response metadata, and `blocking=false`. |
 | 10. Cross-Service Handoff | in_progress | Final Go validation, persistent records, UI checkpoint, and delivery of the working console and service instructions. |
 
 ## Current Phase
 
-Phase 8 — Secondary Advisor UI validation and checkpoint preparation.
+Phase 10 — Cross-Service Handoff (Phase 8 complete, checkpoint `quiet-signal/CHECKPOINT_2026-08-29.md`).
 
 ## Acceptance Criteria
 
