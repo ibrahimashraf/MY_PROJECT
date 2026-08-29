@@ -2,7 +2,9 @@ package workorderhttp_test
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,6 +46,7 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	fixtureDatabase := openHTTPFixtureDatabase(t, ctx)
+	identityFixtureDatabase := openKeycloakIdentityFixtureDatabase(t, ctx, fixtureDatabase)
 
 	token := keycloakPasswordGrant(t, ctx, issuer, clientID, username, password)
 	validator, err := oidcauth.NewValidator(ctx, oidcauth.Config{
@@ -65,8 +68,8 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	tenantID, organizationID, actorID := "pilot-tenant-keycloak", "pilot-organization-keycloak", "inspector-"+id
 	workOrderID, scopeID, assignmentID := id+"-order", id+"-scope", id+"-assignment"
 	inspectionIDs := []string{id + "-inspection-1", id + "-inspection-2"}
-	insertRuntimeMembership(t, ctx, fixtureDatabase, issuer, principal.Subject, tenantID, organizationID, actorID)
-	t.Cleanup(func() { cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, principal.Subject, actorID) })
+	insertRuntimeMembership(t, ctx, identityFixtureDatabase, issuer, principal.Subject, tenantID, organizationID, actorID)
+	t.Cleanup(func() { cleanupRuntimeMembership(t, ctx, identityFixtureDatabase, issuer, principal.Subject, actorID) })
 	setupHTTPWorkOrderFixture(t, ctx, database, workorder.ActorContext{TenantID: tenantID, OrganizationID: organizationID, ActorID: actorID, Role: "inspector"}, workOrderID, scopeID, assignmentID, inspectionIDs)
 	t.Cleanup(func() {
 		cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
@@ -90,9 +93,9 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		"operation_id": id + "-operation", "idempotency_key": id + "-idempotency", "expected_revision": 1,
 		"work_order_id": workOrderID, "assignment_id": assignmentID, "inspection_ids": inspectionIDs,
 	}
-	tampered := token[:len(token)-1] + "x"
-	if token[len(token)-1] == 'x' {
-		tampered = token[:len(token)-1] + "y"
+	tampered := token[:len(token)-10] + "x" + token[len(token)-9:]
+	if tampered == token {
+		tampered = token[:len(token)-10] + "y" + token[len(token)-9:]
 	}
 	if rejected := postPartialSubmission(t, runtime.URL, tampered, body); rejected.Code != http.StatusUnauthorized {
 		t.Fatalf("tampered Keycloak token status = %d body=%s, want %d", rejected.Code, rejected.Body.String(), http.StatusUnauthorized)
@@ -101,11 +104,62 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	if accepted.Code != http.StatusOK {
 		t.Fatalf("Keycloak submission status = %d body=%s", accepted.Code, accepted.Body.String())
 	}
-	assertHTTPSubmissionPersistence(t, ctx, database, workOrderID, inspectionIDs)
+	assertHTTPSubmissionPersistence(t, ctx, fixtureDatabase, workOrderID, inspectionIDs)
 
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
-	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, principal.Subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuer, principal.Subject, actorID, issuer+"-unused", principal.Subject+"-unused", "unused-actor")
+	cleanupRuntimeMembership(t, ctx, identityFixtureDatabase, issuer, principal.Subject, actorID)
+	assertHTTPRuntimeFixtureCleanup(t, ctx, fixtureDatabase, identityFixtureDatabase, workOrderID, issuer, principal.Subject, actorID, issuer+"-unused", principal.Subject+"-unused", "unused-actor")
+}
+
+const keycloakIdentityFixtureRole = "integin_keycloak_identity_fixture"
+
+func openKeycloakIdentityFixtureDatabase(t *testing.T, ctx context.Context, adminDatabase *sql.DB) *sql.DB {
+	t.Helper()
+	if _, err := adminDatabase.ExecContext(ctx, "DROP ROLE IF EXISTS "+keycloakIdentityFixtureRole); err != nil {
+		if _, ownedErr := adminDatabase.ExecContext(ctx, "DROP OWNED BY "+keycloakIdentityFixtureRole); ownedErr == nil {
+			if _, retryErr := adminDatabase.ExecContext(ctx, "DROP ROLE IF EXISTS "+keycloakIdentityFixtureRole); retryErr != nil {
+				t.Fatalf("reset disposable identity fixture role: %v", retryErr)
+			}
+		} else {
+			t.Fatalf("reset disposable identity fixture role: %v", err)
+		}
+	}
+	password := randomKeycloakIdentityFixturePassword(t)
+	if _, err := adminDatabase.ExecContext(ctx, "CREATE ROLE "+keycloakIdentityFixtureRole+" LOGIN; ALTER ROLE "+keycloakIdentityFixtureRole+" PASSWORD '"+password+"'; GRANT USAGE ON SCHEMA public TO "+keycloakIdentityFixtureRole+"; GRANT SELECT, INSERT, DELETE ON identity_actor, identity_subject, identity_membership, identity_membership_capability TO "+keycloakIdentityFixtureRole+"; GRANT USAGE ON SEQUENCE identity_subject_subject_id_seq, identity_membership_membership_id_seq TO "+keycloakIdentityFixtureRole); err != nil {
+		t.Fatalf("configure disposable identity fixture role: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = adminDatabase.ExecContext(context.Background(), "DROP OWNED BY "+keycloakIdentityFixtureRole)
+		_, _ = adminDatabase.ExecContext(context.Background(), "DROP ROLE IF EXISTS "+keycloakIdentityFixtureRole)
+	})
+	identityFixtureDatabase, err := sql.Open("postgres", keycloakIdentityFixtureDSN(t, os.Getenv("INTEGIN_TEST_FIXTURE_DATABASE_URL"), password))
+	if err != nil {
+		t.Fatalf("open disposable identity fixture database: %v", err)
+	}
+	t.Cleanup(func() { _ = identityFixtureDatabase.Close() })
+	if err := identityFixtureDatabase.PingContext(ctx); err != nil {
+		t.Fatalf("ping disposable identity fixture database: %v", err)
+	}
+	return identityFixtureDatabase
+}
+
+func keycloakIdentityFixtureDSN(t *testing.T, dsn, password string) string {
+	t.Helper()
+	parsed, err := url.Parse(strings.TrimSpace(dsn))
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		t.Fatal("INTEGIN_TEST_FIXTURE_DATABASE_URL must be a PostgreSQL URL for disposable identity fixture setup")
+	}
+	parsed.User = url.UserPassword(keycloakIdentityFixtureRole, password)
+	return parsed.String()
+}
+
+func randomKeycloakIdentityFixturePassword(t *testing.T) string {
+	t.Helper()
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		t.Fatalf("generate disposable identity fixture role password: %v", err)
+	}
+	return hex.EncodeToString(raw)
 }
 
 func keycloakPasswordGrant(t *testing.T, ctx context.Context, issuer, clientID, username, password string) string {

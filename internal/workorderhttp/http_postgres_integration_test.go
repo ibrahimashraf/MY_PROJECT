@@ -139,7 +139,7 @@ func TestAuthenticatedPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, otherActorID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
+	assertHTTPRuntimeFixtureCleanup(t, ctx, fixtureDatabase, fixtureDatabase, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
 }
 
 func openHTTPFixtureDatabase(t *testing.T, ctx context.Context) *sql.DB {
