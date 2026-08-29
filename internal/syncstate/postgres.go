@@ -222,19 +222,28 @@ func (r *PostgresRepository) SaveReceipt(ctx context.Context, receipt Receipt) e
 		return err
 	}
 	defer tx.Rollback()
-	var existingHash string
-	err = tx.QueryRowContext(ctx, `SELECT payload_hash FROM sync_receipt WHERE tenant_id = $1 AND transaction_id = $2`, receipt.TenantID, receipt.TransactionID).Scan(&existingHash)
-	if err == nil {
+	var existingHash, existingOutcome string
+	err = tx.QueryRowContext(ctx, `SELECT payload_hash, outcome FROM sync_receipt WHERE tenant_id = $1 AND transaction_id = $2`, receipt.TenantID, receipt.TransactionID).Scan(&existingHash, &existingOutcome)
+	switch {
+	case err == nil:
 		if existingHash != receipt.PayloadHash {
 			return ErrConflict
 		}
-		return tx.Commit()
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO sync_receipt (transaction_id, tenant_id, organization_id, device_id, user_id, sequence_number, operation, entity_id, payload_hash, outcome, reason, captured_at, received_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, receipt.TransactionID, receipt.TenantID, receipt.OrganizationID, receipt.DeviceID, receipt.UserID, receipt.SequenceNumber, receipt.Operation, receipt.EntityID, receipt.PayloadHash, receipt.Outcome, receipt.Reason, receipt.CapturedAt, receipt.ReceivedAt)
-	if err != nil {
+		if existingOutcome == receipt.Outcome {
+			return tx.Commit()
+		}
+		if existingOutcome != "HELD" || receipt.Outcome != "APPLIED" {
+			return ErrConflict
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE sync_receipt SET outcome = $1, reason = $2, received_at = $3 WHERE tenant_id = $4 AND transaction_id = $5 AND outcome = 'HELD'`, receipt.Outcome, receipt.Reason, receipt.ReceivedAt, receipt.TenantID, receipt.TransactionID); err != nil {
+			return err
+		}
+	case errors.Is(err, sql.ErrNoRows):
+		_, err = tx.ExecContext(ctx, `INSERT INTO sync_receipt (transaction_id, tenant_id, organization_id, device_id, user_id, sequence_number, operation, entity_id, payload_hash, outcome, reason, captured_at, received_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, receipt.TransactionID, receipt.TenantID, receipt.OrganizationID, receipt.DeviceID, receipt.UserID, receipt.SequenceNumber, receipt.Operation, receipt.EntityID, receipt.PayloadHash, receipt.Outcome, receipt.Reason, receipt.CapturedAt, receipt.ReceivedAt)
+		if err != nil {
+			return err
+		}
+	default:
 		return err
 	}
 	if receipt.Outcome == "APPLIED" {
@@ -248,6 +257,9 @@ func (r *PostgresRepository) SaveReceipt(ctx context.Context, receipt Receipt) e
 		}
 		if count != 1 {
 			return ErrConflict
+		}
+		if _, err = tx.ExecContext(ctx, `DELETE FROM sync_held_transaction WHERE tenant_id = $1 AND transaction_id = $2`, receipt.TenantID, receipt.TransactionID); err != nil {
+			return err
 		}
 	}
 	return tx.Commit()
@@ -281,6 +293,22 @@ func (r *PostgresRepository) SaveHeld(ctx context.Context, held HeldTransaction)
 		return err
 	}
 	defer tx.Rollback()
+	var existingHash, existingOutcome string
+	err = tx.QueryRowContext(ctx, `SELECT payload_hash, outcome FROM sync_receipt WHERE tenant_id = $1 AND transaction_id = $2`, held.Receipt.TenantID, held.Receipt.TransactionID).Scan(&existingHash, &existingOutcome)
+	if err == nil {
+		if existingHash != held.Receipt.PayloadHash || existingOutcome != "HELD" {
+			return ErrConflict
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE sync_receipt SET reason = $1, received_at = $2 WHERE tenant_id = $3 AND transaction_id = $4`, held.Receipt.Reason, held.Receipt.ReceivedAt, held.Receipt.TenantID, held.Receipt.TransactionID); err != nil {
+			return err
+		}
+	} else if errors.Is(err, sql.ErrNoRows) {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO sync_receipt (transaction_id, tenant_id, organization_id, device_id, user_id, sequence_number, operation, entity_id, payload_hash, outcome, reason, captured_at, received_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, held.Receipt.TransactionID, held.Receipt.TenantID, held.Receipt.OrganizationID, held.Receipt.DeviceID, held.Receipt.UserID, held.Receipt.SequenceNumber, held.Receipt.Operation, held.Receipt.EntityID, held.Receipt.PayloadHash, held.Receipt.Outcome, held.Receipt.Reason, held.Receipt.CapturedAt, held.Receipt.ReceivedAt); err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO sync_held_transaction (transaction_id, tenant_id, organization_id, device_id, sequence_number, expected_sequence, envelope, first_held_at, last_attempt_at, last_error) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (transaction_id) DO UPDATE SET expected_sequence = EXCLUDED.expected_sequence, envelope = EXCLUDED.envelope, last_attempt_at = EXCLUDED.last_attempt_at, last_error = EXCLUDED.last_error WHERE sync_held_transaction.tenant_id = EXCLUDED.tenant_id`, held.Receipt.TransactionID, held.Receipt.TenantID, held.Receipt.OrganizationID, held.Receipt.DeviceID, held.Receipt.SequenceNumber, held.ExpectedSequence, held.Envelope, held.FirstHeldAt, held.LastAttemptAt, held.LastError)
 	if err != nil {
 		return err

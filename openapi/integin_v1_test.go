@@ -34,6 +34,7 @@ func TestINTEGINV1ContractHasRequiredClientOperations(t *testing.T) {
 		"/readyz":           "get",
 		"/sync":             "post",
 		"/evidence":         "post",
+		"/evidence/metadata-registrations": "post",
 		"/local/provision":  "post",
 		"/identity/session": "get",
 	} {

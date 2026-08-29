@@ -73,6 +73,16 @@ func TestSyncHoldsSequenceGapsAndAppliesNextSequence(t *testing.T) {
 	if first.Outcome != Applied {
 		t.Fatalf("expected first transaction applied, got %#v", first)
 	}
+	resumed := processor.Submit(signedTransaction("tx-2", 2, []byte("second")), authority, at)
+	if resumed.Outcome != Applied {
+		t.Fatalf("expected held transaction to resume as applied, got %#v", resumed)
+	}
+	if len(processor.HeldTransactions()) != 0 {
+		t.Fatal("applied held transaction was not removed")
+	}
+	if duplicate := processor.Submit(signedTransaction("tx-2", 2, []byte("second")), authority, at); duplicate.Outcome != Duplicate {
+		t.Fatalf("expected resumed transaction replay to be duplicate, got %#v", duplicate)
+	}
 }
 
 func TestSyncRejectsTamperingConflictsAndSecurityFailures(t *testing.T) {
@@ -91,6 +101,11 @@ func TestSyncRejectsTamperingConflictsAndSecurityFailures(t *testing.T) {
 	}
 	if result := processor.Submit(transaction, authority, at); result.Outcome != Applied {
 		t.Fatalf("expected original to apply, got %#v", result)
+	}
+	forgedReplay := transaction
+	forgedReplay.Signature = "invalid"
+	if result := processor.Submit(forgedReplay, authority, at); result.Outcome != SecurityFailure {
+		t.Fatalf("expected invalid replay to fail authentication rather than deduplicate, got %#v", result)
 	}
 	reused := signedTransaction("tx-1", 1, []byte("different"))
 	if result := processor.Submit(reused, authority, at); result.Outcome != Conflict {
@@ -121,6 +136,12 @@ func TestSyncRejectsTenantAndSignatureMismatches(t *testing.T) {
 	invalidSignature.Signature = "bad"
 	if result := processor.Submit(invalidSignature, authority, at); result.Outcome != SecurityFailure {
 		t.Fatalf("expected signature security failure, got %#v", result)
+	}
+	unknownAlgorithm := signedTransaction("tx-3", 1, []byte("payload"))
+	unknownAlgorithm.SignatureAlgorithm = "unknown"
+	unknownAlgorithm.Signature = signTransaction(unknownAlgorithm, "secret")
+	if result := processor.Submit(unknownAlgorithm, authority, at); result.Outcome != SecurityFailure {
+		t.Fatalf("expected unknown algorithm security failure, got %#v", result)
 	}
 }
 

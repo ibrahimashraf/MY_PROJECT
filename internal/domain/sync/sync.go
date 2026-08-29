@@ -23,13 +23,14 @@ import (
 type Outcome string
 
 const (
-	Applied         Outcome = "APPLIED"
-	Duplicate       Outcome = "DUPLICATE"
-	Queued          Outcome = "QUEUED"
-	Held            Outcome = "HELD"
-	Rejected        Outcome = "REJECTED"
-	Conflict        Outcome = "CONFLICT"
-	SecurityFailure Outcome = "SECURITY_FAILURE"
+	Applied          Outcome = "APPLIED"
+	Duplicate        Outcome = "DUPLICATE"
+	Queued           Outcome = "QUEUED"
+	Held             Outcome = "HELD"
+	Rejected         Outcome = "REJECTED"
+	Conflict         Outcome = "CONFLICT"
+	SecurityFailure  Outcome = "SECURITY_FAILURE"
+	legacyHMACSHA256         = "HMAC-SHA256"
 )
 
 type Transaction struct {
@@ -55,7 +56,7 @@ type Transaction struct {
 
 func NewTransaction(transactionID, tenantID, deviceID, userID string, sequence uint64, operation string, payload []byte) Transaction {
 	copied := append([]byte(nil), payload...)
-	return Transaction{ProtocolVersion: "v1", TransactionID: transactionID, TenantID: tenantID, Environment: "LIVE", DeviceID: deviceID, UserID: userID, SequenceNumber: sequence, Operation: operation, Payload: copied, PayloadHash: HashPayload(copied), CapturedAt: time.Now().UTC(), SignatureAlgorithm: "HMAC-SHA256"}
+	return Transaction{ProtocolVersion: "v1", TransactionID: transactionID, TenantID: tenantID, Environment: "LIVE", DeviceID: deviceID, UserID: userID, SequenceNumber: sequence, Operation: operation, Payload: copied, PayloadHash: HashPayload(copied), CapturedAt: time.Now().UTC(), SignatureAlgorithm: legacyHMACSHA256}
 }
 
 func SignTransaction(transaction Transaction, secret string) Transaction {
@@ -145,26 +146,6 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	if transaction.PayloadHash != calculatedHash {
 		return p.fail(result, types.ErrRejected, SecurityFailure, "payload hash mismatch")
 	}
-	if p.state != nil {
-		if receipt, err := p.state.GetReceipt(ctx, transaction.TenantID, transaction.TransactionID); err == nil {
-			if receipt.PayloadHash == transaction.PayloadHash {
-				result.Outcome = Duplicate
-				result.Reason = "transaction already applied"
-				return result
-			}
-			return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
-		} else if !errors.Is(err, syncstate.ErrNotFound) {
-			return p.fail(result, types.ErrRejected, SecurityFailure, "durable sync state is unavailable")
-		}
-	}
-	if existingHash, exists := p.transactions[transaction.TransactionID]; exists {
-		if existingHash == transaction.PayloadHash {
-			result.Outcome = Duplicate
-			result.Reason = "transaction already applied"
-			return result
-		}
-		return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
-	}
 	device, exists := p.devices[transaction.DeviceID]
 	if !exists {
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, "device is not registered")
@@ -172,7 +153,8 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	if transaction.TenantID != device.TenantID() || transaction.UserID != device.UserID() {
 		return p.fail(result, types.ErrTenantMismatch, SecurityFailure, "transaction identity does not match device authority")
 	}
-	if transaction.SignatureAlgorithm == "Ed25519" {
+	switch transaction.SignatureAlgorithm {
+	case "Ed25519":
 		if transaction.ProtocolVersion != "v1" || transaction.OrganizationID == "" || transaction.Environment == "" || transaction.EntityID == "" || transaction.CapturedAt.IsZero() || transaction.AuthorityID == "" || transaction.AuthorityEpoch == 0 {
 			return p.fail(result, types.ErrValidation, Rejected, "v1 transaction envelope is incomplete")
 		}
@@ -182,6 +164,9 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 		if required := requiredCapability(transaction.Operation); required != "" && !contains(authority.Scopes, required) {
 			return p.fail(result, types.ErrUnauthorized, SecurityFailure, "authority does not permit operation")
 		}
+	case legacyHMACSHA256:
+	default:
+		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction signature algorithm is not supported")
 	}
 	if err := device_trust.ValidateAuthorityPackage(authority, device, p.secret, at); err != nil {
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, err.Error())
@@ -196,6 +181,37 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	} else if !hmac.Equal([]byte(transaction.Signature), []byte(signTransaction(transaction, p.secret))) {
 		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC signature is invalid")
 	}
+	if p.state != nil {
+		if receipt, err := p.state.GetReceipt(ctx, transaction.TenantID, transaction.TransactionID); err == nil {
+			if receipt.PayloadHash != transaction.PayloadHash {
+				return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
+			}
+			switch receipt.Outcome {
+			case string(Applied):
+				result.Outcome = Duplicate
+				result.Reason = "transaction already applied"
+				return result
+			case string(Held):
+				// A durable hold is not an accepted transaction. Continue through the
+				// sequence gate so a later replay can be applied exactly once.
+			default:
+				return p.fail(result, types.ErrConflict, Conflict, "transaction has a non-resumable receipt state")
+			}
+		} else if !errors.Is(err, syncstate.ErrNotFound) {
+			return p.fail(result, types.ErrRejected, SecurityFailure, "durable sync state is unavailable")
+		}
+	}
+	if existingHash, exists := p.transactions[transaction.TransactionID]; exists {
+		if existingHash == transaction.PayloadHash {
+			result.Outcome = Duplicate
+			result.Reason = "transaction already applied"
+			return result
+		}
+		return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
+	}
+	if heldTransaction, exists := p.held[transaction.TransactionID]; exists && heldTransaction.PayloadHash != transaction.PayloadHash {
+		return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
+	}
 	expected := p.lastSequence[transaction.DeviceID] + 1
 	if p.state != nil {
 		if persisted, err := p.state.GetLastAcceptedSequence(ctx, transaction.TenantID, transaction.DeviceID); err == nil {
@@ -206,11 +222,11 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	}
 	result.ExpectedSequence = expected
 	if transaction.SequenceNumber > expected {
-		p.held[transaction.TransactionID] = cloneTransaction(transaction)
 		result.Outcome, result.Code, result.Reason = Held, types.ErrHeld, fmt.Sprintf("sequence gap: expected %d", expected)
 		if err := p.persistHeld(ctx, transaction, result, at); err != nil {
 			return p.fail(result, types.ErrRejected, SecurityFailure, "durable held-transaction state is unavailable")
 		}
+		p.held[transaction.TransactionID] = cloneTransaction(transaction)
 		return result
 	}
 	if transaction.SequenceNumber < expected {
@@ -227,6 +243,7 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	}
 	p.lastSequence[transaction.DeviceID] = transaction.SequenceNumber
 	p.transactions[transaction.TransactionID] = transaction.PayloadHash
+	delete(p.held, transaction.TransactionID)
 	return result
 }
 
@@ -242,9 +259,6 @@ func (p *Processor) persistHeld(ctx context.Context, transaction Transaction, re
 		return nil
 	}
 	receipt := syncstate.Receipt{TransactionID: transaction.TransactionID, TenantID: transaction.TenantID, OrganizationID: transaction.OrganizationID, DeviceID: transaction.DeviceID, UserID: transaction.UserID, SequenceNumber: transaction.SequenceNumber, Operation: transaction.Operation, EntityID: transaction.EntityID, PayloadHash: transaction.PayloadHash, Outcome: string(result.Outcome), Reason: result.Reason, CapturedAt: transaction.CapturedAt, ReceivedAt: at.UTC()}
-	if err := p.state.SaveReceipt(ctx, receipt); err != nil {
-		return err
-	}
 	envelope, err := json.Marshal(transaction)
 	if err != nil {
 		return err
