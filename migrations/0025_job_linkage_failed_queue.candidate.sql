@@ -1,42 +1,55 @@
--- 0025_job_linkage_failed_queue.candidate.sql
--- Mandatory job linkage + failed suppression queue
+-- Migration 0025: Job Linkage Config + Failed Inspection Queue
+-- Compatible with existing schema (TEXT IDs, integin.* settings, FORCE RLS)
+-- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
 
-CREATE TABLE job_linkage_config (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    org_id UUID NOT NULL REFERENCES organizations(id),
+BEGIN;
+
+-- job_linkage_config table
+CREATE TABLE IF NOT EXISTS job_linkage_config (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL,
     require_job_for_inspection BOOLEAN NOT NULL DEFAULT TRUE,
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (tenant_id, org_id)
+    UNIQUE (tenant_id, organization_id)
 );
 
-ALTER TABLE job_linkage_config ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY job_linkage_config_tenant_isolation ON job_linkage_config
-    USING (tenant_id = current_setting('app.current_tenant')::uuid);
-
-CREATE TABLE failed_inspection_queue (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    org_id UUID NOT NULL REFERENCES organizations(id),
-    inspection_id UUID NOT NULL REFERENCES inspections(id),
-    work_order_id UUID NOT NULL REFERENCES work_orders(id),
-    assignment_id UUID NOT NULL REFERENCES assignments(id),
+-- failed_inspection_queue table
+CREATE TABLE IF NOT EXISTS failed_inspection_queue (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL,
+    inspection_id TEXT NOT NULL,
+    work_order_id TEXT NOT NULL,
+    assignment_id TEXT NOT NULL,
     failure_reason TEXT NOT NULL,
-    suppression_reason VARCHAR(32) NOT NULL CHECK (suppression_reason IN ('AUTO_SUPPRESSED', 'MANUAL_REVIEW')),
-    review_status VARCHAR(16) NOT NULL DEFAULT 'PENDING' CHECK (review_status IN ('PENDING', 'REVIEWED', 'RELEASED', 'REJECTED')),
-    reviewed_by UUID REFERENCES users(id),
+    suppression_reason TEXT NOT NULL CHECK (suppression_reason IN ('AUTO_SUPPRESSED','MANUAL_REVIEW')),
+    review_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (review_status IN ('PENDING','REVIEWED','RELEASED','REJECTED')),
+    reviewed_by TEXT,
     reviewed_at TIMESTAMPTZ,
-    created_by UUID NOT NULL REFERENCES users(id),
+    created_by TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Index
+CREATE INDEX IF NOT EXISTS idx_failed_inspection_queue_review_status ON failed_inspection_queue (tenant_id, organization_id, review_status) WHERE review_status IN ('PENDING','REVIEWED','RELEASED','REJECTED');
+
+-- RLS
+ALTER TABLE job_linkage_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_linkage_config FORCE ROW LEVEL SECURITY;
 ALTER TABLE failed_inspection_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE failed_inspection_queue FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY job_linkage_config_tenant_isolation ON job_linkage_config
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
 CREATE POLICY failed_inspection_queue_tenant_isolation ON failed_inspection_queue
-    USING (tenant_id = current_setting('app.current_tenant')::uuid);
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
-CREATE INDEX idx_failed_inspection_queue_review_status
-    ON failed_inspection_queue (review_status)
-    WHERE review_status IN ('PENDING', 'REVIEWED', 'RELEASED', 'REJECTED');
+-- Index
+CREATE INDEX IF NOT EXISTS idx_failed_inspection_queue_review_status ON failed_inspection_queue (tenant_id, organization_id, review_status) WHERE review_status IN ('PENDING','REVIEWED','RELEASED','REJECTED');
+
+COMMIT;

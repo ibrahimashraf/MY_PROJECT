@@ -1,67 +1,80 @@
--- 0030_hse_notification_csv_export.candidate.sql
--- HSE Notification + CSV Export tables
+-- Migration 0030: HSE Notification + CSV Export
+-- Compatible with existing schema (TEXT IDs, integin.* settings, FORCE RLS)
+-- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
+
+BEGIN;
 
 -- hse_notification table
-CREATE TABLE hse_notification (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
-    org_id UUID NOT NULL,
-    inspection_id UUID NOT NULL,
-    defect_code VARCHAR(100) NOT NULL,
-    defect_severity VARCHAR(20) NOT NULL CHECK (defect_severity IN ('IMMEDIATE', 'MAJOR', 'MINOR')),
-    hse_reference VARCHAR(100),
+CREATE TABLE IF NOT EXISTS hse_notification (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL,
+    inspection_id TEXT NOT NULL,
+    defect_code TEXT NOT NULL CHECK (char_length(defect_code) BETWEEN 1 AND 100),
+    defect_severity TEXT NOT NULL CHECK (defect_severity IN ('IMMEDIATE','MAJOR','MINOR')),
+    hse_reference TEXT,
     report_payload JSONB,
-    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED', 'ACKNOWLEDGED', 'REJECTED')),
-    submitted_by UUID,
+    status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','SUBMITTED','ACKNOWLEDGED','REJECTED')),
+    submitted_by TEXT,
     submitted_at TIMESTAMPTZ,
     acknowledged_at TIMESTAMPTZ,
-    acknowledged_by UUID,
-    created_by UUID NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    acknowledged_by TEXT,
+    created_by TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Enable RLS
-ALTER TABLE hse_notification ENABLE ROW LEVEL SECURITY;
-
--- Index on inspection_id
-CREATE INDEX idx_hse_notification_inspection_id ON hse_notification(inspection_id);
-
 -- csv_export_job table
-CREATE TABLE csv_export_job (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
-    org_id UUID NOT NULL,
-    export_type VARCHAR(20) NOT NULL CHECK (export_type IN ('EQUIPMENT', 'INSPECTION', 'CERTIFICATE', 'AUDIT', 'ALL')),
+CREATE TABLE IF NOT EXISTS csv_export_job (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL,
+    export_type TEXT NOT NULL CHECK (export_type IN ('EQUIPMENT','INSPECTION','CERTIFICATE','AUDIT','ALL')),
     filters JSONB,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'GENERATING', 'READY', 'FAILED', 'EXPIRED')),
-    file_key VARCHAR(500),
-    row_count INTEGER,
+    status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','GENERATING','READY','FAILED','EXPIRED')),
+    file_key TEXT,
+    row_count BIGINT,
     expires_at TIMESTAMPTZ,
-    requested_by UUID NOT NULL,
-    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    requested_by TEXT NOT NULL,
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at TIMESTAMPTZ
 );
 
--- Enable RLS
-ALTER TABLE csv_export_job ENABLE ROW LEVEL SECURITY;
-
--- Index on status + requested_by
-CREATE INDEX idx_csv_export_job_status_requested_by ON csv_export_job(status, requested_by);
-
 -- export_template table
-CREATE TABLE export_template (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
-    org_id UUID NOT NULL,
-    export_type VARCHAR(20) NOT NULL CHECK (export_type IN ('EQUIPMENT', 'INSPECTION', 'CERTIFICATE', 'AUDIT', 'ALL')),
-    name VARCHAR(200) NOT NULL,
+CREATE TABLE IF NOT EXISTS export_template (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL,
+    export_type TEXT NOT NULL CHECK (export_type IN ('EQUIPMENT','INSPECTION','CERTIFICATE','AUDIT','ALL')),
+    name TEXT NOT NULL CHECK (char_length(name) BETWEEN 1 AND 200),
     columns JSONB NOT NULL,
-    created_by UUID NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_by TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Enable RLS
-ALTER TABLE export_template ENABLE ROW LEVEL SECURITY;
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_hse_notification_inspection ON hse_notification (tenant_id, organization_id, inspection_id);
+CREATE INDEX IF NOT EXISTS idx_hse_notification_status ON hse_notification (tenant_id, organization_id, status);
+CREATE INDEX IF NOT EXISTS idx_csv_export_job_status_requested ON csv_export_job (tenant_id, organization_id, status, requested_at DESC);
+CREATE INDEX IF NOT EXISTS idx_export_template_type ON export_template (tenant_id, organization_id, export_type);
 
--- Index on export_type for faster lookups
-CREATE INDEX idx_export_template_export_type ON export_template(export_type);
+-- RLS
+ALTER TABLE hse_notification ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hse_notification FORCE ROW LEVEL SECURITY;
+ALTER TABLE csv_export_job ENABLE ROW LEVEL SECURITY;
+ALTER TABLE csv_export_job FORCE ROW LEVEL SECURITY;
+ALTER TABLE export_template ENABLE ROW LEVEL SECURITY;
+ALTER TABLE export_template FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY hse_notification_tenant_isolation ON hse_notification
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
+
+CREATE POLICY csv_export_job_tenant_isolation ON csv_export_job
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
+
+CREATE POLICY export_template_tenant_isolation ON export_template
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
+
+COMMIT;
