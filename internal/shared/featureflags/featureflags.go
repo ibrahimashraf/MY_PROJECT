@@ -8,6 +8,11 @@ const (
 	FlagAIAdvisory       Key = "ai_advisory"
 	FlagClientPortal     Key = "client_portal"
 	FlagCalibration      Key = "calibration"
+	FlagOpenAPI          Key = "open_api_readonly"
+	FlagProductPassport  Key = "product_passport"
+	FlagWordDerived      Key = "word_derived_artifact"
+	FlagTimeSheets       Key = "time_sheets"
+	FlagCourses          Key = "courses"
 	// FlagPilotManifestRetrieval is restricted to the isolated pilot and never implies enforcement.
 	FlagPilotManifestRetrieval Key = "pilot_manifest_retrieval"
 	FlagPressureTesting        Key = "pressure_testing"

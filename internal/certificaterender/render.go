@@ -31,6 +31,11 @@ type Request struct {
 	PublicToken     string
 	QRPage          int
 	QRRectangle     certificatetemplate.Rectangle
+	// Safe additive appendix for Bswagic 270s/300s table pattern (tables/images inside Hash, not Word):
+	// If set, rendered as deterministic extra page(s) after the template pages so existing
+	// fixed-cell Hash stays stable when empty, and Hash includes tables when present.
+	TableRows [][]string
+	TableTitle string
 }
 
 type Result struct {
@@ -94,6 +99,11 @@ func Render(request Request) (Result, error) {
 			pdf.ImageOptions("certificate-qr", request.QRRectangle.X, request.QRRectangle.Y, request.QRRectangle.Width, request.QRRectangle.Height, false, options, 0, "")
 		}
 	}
+	if len(request.TableRows) > 0 {
+		if err := renderTableAppendix(pdf, request); err != nil {
+			return Result{}, err
+		}
+	}
 	if pdf.Err() {
 		return Result{}, fmt.Errorf("PDF render: %w", pdf.Error())
 	}
@@ -139,6 +149,38 @@ func renderCell(pdf *fpdf.Fpdf, cell certificatetemplate.Cell, values map[certif
 	}
 	pdf.SetXY(cell.Rectangle.X, cell.Rectangle.Y)
 	pdf.MultiCell(cell.Rectangle.Width, lineHeight, text, "", "L", false)
+	return nil
+}
+
+func renderTableAppendix(pdf *fpdf.Fpdf, request Request) error {
+	pdf.AddPage()
+	title := strings.TrimSpace(request.TableTitle)
+	if title == "" {
+		title = "Inspection Detail — Evidence Table"
+	}
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.SetXY(20, 20)
+	pdf.CellFormat(request.Template.PageWidth-40, 14, title, "1", 1, "C", false, 0, "")
+	pdf.SetFont("Helvetica", "", 8)
+	y := 36.0
+	colW := (request.Template.PageWidth - 40) / float64(len(request.TableRows[0]))
+	rowH := 10.0
+	for _, row := range request.TableRows {
+		if y+rowH > request.Template.PageHeight-20 {
+			pdf.AddPage()
+			y = 20
+		}
+		x := 20.0
+		for _, col := range row {
+			pdf.SetXY(x, y)
+			// Fixed-cell: each cell has deterministic size; Hash stable.
+			pdf.Rect(x, y, colW, rowH, "D")
+			pdf.SetXY(x+2, y+2)
+			pdf.CellFormat(colW-4, rowH-4, col, "", 0, "L", false, 0, "")
+			x += colW
+		}
+		y += rowH
+	}
 	return nil
 }
 
