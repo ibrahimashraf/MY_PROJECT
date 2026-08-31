@@ -163,7 +163,7 @@ func resetManifestReplayIntegrationDatabase(t *testing.T, ctx context.Context, d
     `); err != nil {
 		t.Fatalf("configure disposable application role: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, "ALTER ROLE integin_manifest_replay_test PASSWORD '"+rolePassword+"'"); err != nil {
+	if _, err := db.ExecContext(ctx, "ALTER ROLE integin_manifest_replay_test PASSWORD $1", rolePassword); err != nil {
 		t.Fatalf("set disposable application role password: %v", err)
 	}
 	return rolePassword

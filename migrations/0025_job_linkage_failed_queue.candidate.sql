@@ -49,7 +49,4 @@ CREATE POLICY failed_inspection_queue_tenant_isolation ON failed_inspection_queu
     USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
--- Index
-CREATE INDEX IF NOT EXISTS idx_failed_inspection_queue_review_status ON failed_inspection_queue (tenant_id, organization_id, review_status) WHERE review_status IN ('PENDING','REVIEWED','RELEASED','REJECTED');
-
 COMMIT;

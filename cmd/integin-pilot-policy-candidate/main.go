@@ -164,11 +164,23 @@ func main() {
 		log.Fatal("pilot candidate policy was not registered")
 	}
 	defer policyRegistration.Disable()
+	licenseHandler, _ := server.NewLicenseHandler(database)
+	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
+	trainingHandler, _ := server.NewTrainingHandler(database)
+	settingsHandler, _ := server.NewSettingsHandler(database)
+	inspectionHandler, _ := server.NewInspectionHandler(database)
+	searchHandler, _ := server.NewSearchHandler(database)
+	auditLogHandler, _ := server.NewAuditLogHandler(database)
+	analyticsHandler, _ := server.NewAnalyticsHandler(database)
+	reportsHandler, _ := server.NewReportsHandler(database)
 	httpServer := &http.Server{
 		Addr: address,
 		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler,
 			PilotManifestHandler: pilotManifestHandler,
-			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness}),
+			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness,
+			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
+			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

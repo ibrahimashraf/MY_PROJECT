@@ -7,52 +7,52 @@ import (
 )
 
 type ServiceCharge struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	WorkOrderID     string
-	InspectionID    string
-	ChargeType      string
-	Description     string
-	Quantity        float64
-	UnitPrice       float64
-	TotalPrice      float64
-	Currency        string
-	TaxRate         float64
-	TaxAmount       float64
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	WorkOrderID    string
+	InspectionID   string
+	ChargeType     string
+	Description    string
+	Quantity       float64
+	UnitPrice      float64
+	TotalPrice     float64
+	Currency       string
+	TaxRate        float64
+	TaxAmount      float64
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type TimesheetAutoCapture struct {
-	ID                     string
-	TenantID               string
-	OrganizationID         string
-	WorkOrderID            string
-	AssignmentID           string
-	TechnicianID           string
-	CheckInAt              time.Time
-	CheckOutAt             time.Time
-	AutoCalculatedHours    float64
-	ManualOverrideHours    float64
-	Status                 string
-	ApprovedBy             string
-	ApprovedAt             time.Time
-	CreatedAt              time.Time
+	ID                  string
+	TenantID            string
+	OrganizationID      string
+	WorkOrderID         string
+	AssignmentID        string
+	TechnicianID        string
+	CheckInAt           time.Time
+	CheckOutAt          time.Time
+	AutoCalculatedHours float64
+	ManualOverrideHours float64
+	Status              string
+	ApprovedBy          string
+	ApprovedAt          time.Time
+	CreatedAt           time.Time
 }
 
 type PartsCatalog struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Code            string
-	Name            string
-	Description     string
-	UnitPrice       float64
-	Currency        string
-	IsActive        bool
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Code           string
+	Name           string
+	Description    string
+	UnitPrice      float64
+	Currency       string
+	IsActive       bool
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type Repository interface {

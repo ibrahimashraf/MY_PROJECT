@@ -2,7 +2,7 @@
 
 ## Result
 
-The controlled pilot proof **passed**. The non-owner `integin_pilot_runtime` role is neither superuser nor `BYPASSRLS`, has the required `SELECT` privileges, and queried canonical inspection records under forced RLS.
+The controlled pilot proof **passed**. The non-owner `integin_runtime` role is neither superuser nor `BYPASSRLS`, has the required `SELECT` privileges, and queried canonical inspection records under forced RLS.
 
 | Runtime context | Expected visible test records | Observed count |
 |---|---:|---:|
@@ -12,7 +12,7 @@ The controlled pilot proof **passed**. The non-owner `integin_pilot_runtime` rol
 
 The proof used two generated `it-rls-read-*` Work-Order graphs in one tenant, one per organization. Every graph contained one work order, scope item, active assignment, assignment-scope relation, and completed/open canonical inspection record. It performed no privilege, policy, migration, server, or external-authority change.
 
-> The proof was run through `SET LOCAL ROLE integin_pilot_runtime`, not as a table owner or superuser. This is material because the role cannot bypass row-level security.
+> The proof was run through `SET LOCAL ROLE integin_runtime`, not as a table owner or superuser. This is material because the role cannot bypass row-level security.
 
 ## Cleanup and regression
 

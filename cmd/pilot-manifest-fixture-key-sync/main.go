@@ -17,16 +17,16 @@ import (
 )
 
 type fixture struct {
-	DeviceID               string `json:"device_id"`
-	AuthorityID            string `json:"authority_id"`
-	TenantID               string `json:"tenant_id"`
-	OrganizationID         string `json:"organization_id"`
-	InspectionID           string `json:"inspection_id"`
-	DeviceKeyID            string `json:"device_key_id"`
-	DevicePublicKeyBase64  string `json:"device_public_key_base64url"`
-	ManifestKeyID          string `json:"manifest_key_id"`
+	DeviceID                string `json:"device_id"`
+	AuthorityID             string `json:"authority_id"`
+	TenantID                string `json:"tenant_id"`
+	OrganizationID          string `json:"organization_id"`
+	InspectionID            string `json:"inspection_id"`
+	DeviceKeyID             string `json:"device_key_id"`
+	DevicePublicKeyBase64   string `json:"device_public_key_base64url"`
+	ManifestKeyID           string `json:"manifest_key_id"`
 	ManifestPublicKeyBase64 string `json:"manifest_public_key_base64url"`
-	UserID                 string `json:"user_id"`
+	UserID                  string `json:"user_id"`
 }
 
 func main() {
@@ -95,16 +95,16 @@ func run(inputPath, outputPath, privateKeyPath string) error {
 
 func (f fixture) validate() error {
 	for name, value := range map[string]string{
-		"device_id":                    f.DeviceID,
-		"authority_id":                 f.AuthorityID,
-		"tenant_id":                    f.TenantID,
-		"organization_id":              f.OrganizationID,
-		"inspection_id":                f.InspectionID,
-		"device_key_id":                f.DeviceKeyID,
-		"device_public_key_base64url":  f.DevicePublicKeyBase64,
-		"manifest_key_id":              f.ManifestKeyID,
+		"device_id":                     f.DeviceID,
+		"authority_id":                  f.AuthorityID,
+		"tenant_id":                     f.TenantID,
+		"organization_id":               f.OrganizationID,
+		"inspection_id":                 f.InspectionID,
+		"device_key_id":                 f.DeviceKeyID,
+		"device_public_key_base64url":   f.DevicePublicKeyBase64,
+		"manifest_key_id":               f.ManifestKeyID,
 		"manifest_public_key_base64url": f.ManifestPublicKeyBase64,
-		"user_id":                      f.UserID,
+		"user_id":                       f.UserID,
 	} {
 		if strings.TrimSpace(value) == "" {
 			return errors.New(name + " is required")

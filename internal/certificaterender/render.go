@@ -34,7 +34,7 @@ type Request struct {
 	// Safe additive appendix for Bswagic 270s/300s table pattern (tables/images inside Hash, not Word):
 	// If set, rendered as deterministic extra page(s) after the template pages so existing
 	// fixed-cell Hash stays stable when empty, and Hash includes tables when present.
-	TableRows [][]string
+	TableRows  [][]string
 	TableTitle string
 }
 

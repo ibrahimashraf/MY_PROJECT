@@ -75,6 +75,9 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	})
 
 	now := time.Now().UTC()
+	if _, err := db.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, tenantID, organizationID); err != nil {
+		t.Fatal(err)
+	}
 	for _, seed := range []struct {
 		query string
 		args  []any

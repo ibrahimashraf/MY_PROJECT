@@ -53,6 +53,9 @@ func TestPostgresResolveCanonicalInspectionTemplateIntegration(t *testing.T) {
 		}
 	})
 	now := time.Date(2026, time.August, 21, 22, 30, 0, 0, time.UTC)
+	if _, err := db.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, actor.TenantID, actor.OrganizationID); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,created_by,updated_by) VALUES ($1,$2,$3,'client-1',$4,'approved','in_progress','open','pending',$5,$5)`, workOrderID, actor.TenantID, actor.OrganizationID, "JOB-"+fmt.Sprint(stamp), actor.ActorID); err != nil {
 		t.Fatalf("seed work order: %v", err)
 	}

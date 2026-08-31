@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS service_charge (
     total_price NUMERIC(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
     currency CHAR(3) NOT NULL DEFAULT 'USD',
     tax_rate NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (tax_rate >= 0),
-    tax_amount NUMERIC(12,2) GENERATED ALWAYS AS (total_price * tax_rate / 100) STORED,
+    tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
     created_by TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

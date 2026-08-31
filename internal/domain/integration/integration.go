@@ -7,41 +7,41 @@ import (
 )
 
 type IntegrationConfig struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Provider        string
-	Config          string
-	Status          string
-	LastSyncAt      time.Time
-	ErrorLog        string
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Provider       string
+	Config         string
+	Status         string
+	LastSyncAt     time.Time
+	ErrorLog       string
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type DataAPIToken struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	TokenHash       []byte
-	Scopes          string
-	ExpiresAt       time.Time
-	RevokedAt       time.Time
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	TokenHash      []byte
+	Scopes         string
+	ExpiresAt      time.Time
+	RevokedAt      time.Time
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type SyncJob struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Provider        string
-	JobType         string
-	Status          string
-	Stats           string
-	StartedAt       time.Time
-	CompletedAt     time.Time
-	ErrorLog        string
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Provider       string
+	JobType        string
+	Status         string
+	Stats          string
+	StartedAt      time.Time
+	CompletedAt    time.Time
+	ErrorLog       string
 }
 
 type Repository interface {

@@ -7,34 +7,34 @@ import (
 )
 
 type TenantSetting struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	SettingKey      string
-	SettingValue    string
-	Scope           string
-	IsEditable      bool
-	Description     string
-	CreatedBy       string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	SettingKey     string
+	SettingValue   string
+	Scope          string
+	IsEditable     bool
+	Description    string
+	CreatedBy      string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type AuditTrailExport struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	ExportType      string
-	DateFrom        time.Time
-	DateTo          time.Time
-	Filters         string
-	Status          string
-	FileKey         string
-	RowCount        int64
-	ChecksumSHA256  []byte
-	RequestedBy     string
-	RequestedAt     time.Time
-	CompletedAt     time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	ExportType     string
+	DateFrom       time.Time
+	DateTo         time.Time
+	Filters        string
+	Status         string
+	FileKey        string
+	RowCount       int64
+	ChecksumSHA256 []byte
+	RequestedBy    string
+	RequestedAt    time.Time
+	CompletedAt    time.Time
 }
 
 type Repository interface {

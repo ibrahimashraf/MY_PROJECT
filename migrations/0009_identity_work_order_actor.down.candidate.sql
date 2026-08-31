@@ -11,7 +11,7 @@ WHERE s.issuer=p_issuer AND s.subject=p_subject AND s.status='ACTIVE'
 GROUP BY m.membership_id, m.tenant_id, m.organization_id;
 $$;
 REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_pilot_runtime;
+GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
 ALTER TABLE identity_membership DROP CONSTRAINT IF EXISTS identity_membership_actor_role_required;
 ALTER TABLE identity_membership DROP COLUMN IF EXISTS work_order_role;
 ALTER TABLE identity_membership DROP COLUMN IF EXISTS actor_id;

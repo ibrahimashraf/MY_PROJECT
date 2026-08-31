@@ -193,11 +193,23 @@ func main() {
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities))
+	licenseHandler, _ := server.NewLicenseHandler(database)
+	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
+	trainingHandler, _ := server.NewTrainingHandler(database)
+	settingsHandler, _ := server.NewSettingsHandler(database)
+	inspectionHandler, _ := server.NewInspectionHandler(database)
+	searchHandler, _ := server.NewSearchHandler(database)
+	auditLogHandler, _ := server.NewAuditLogHandler(database)
+	analyticsHandler, _ := server.NewAnalyticsHandler(database)
+	reportsHandler, _ := server.NewReportsHandler(database)
 	httpServer := &http.Server{
 		Addr: address,
 		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler,
 			PilotManifestHandler: pilotManifestHandler,
-			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler}),
+			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
+			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
+			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

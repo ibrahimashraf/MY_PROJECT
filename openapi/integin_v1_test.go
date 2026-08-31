@@ -30,13 +30,13 @@ func TestINTEGINV1ContractHasRequiredClientOperations(t *testing.T) {
 	}
 
 	for path, method := range map[string]string{
-		"/healthz":          "get",
-		"/readyz":           "get",
-		"/sync":             "post",
-		"/evidence":         "post",
+		"/healthz":                         "get",
+		"/readyz":                          "get",
+		"/sync":                            "post",
+		"/evidence":                        "post",
 		"/evidence/metadata-registrations": "post",
-		"/local/provision":  "post",
-		"/identity/session": "get",
+		"/local/provision":                 "post",
+		"/identity/session":                "get",
 	} {
 		operations, ok := document.Paths[path]
 		if !ok {

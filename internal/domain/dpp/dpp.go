@@ -7,22 +7,22 @@ import (
 )
 
 type ProductPassportDPP struct {
-	ID               string
-	TenantID         string
-	OrganizationID   string
-	AssetID          string
-	SerialNumber     string
-	BatchNumber      string
-	ManufacturerID   string
-	DPPStatus        string
-	DPPVersion       int
-	DPPHash          []byte
+	ID                string
+	TenantID          string
+	OrganizationID    string
+	AssetID           string
+	SerialNumber      string
+	BatchNumber       string
+	ManufacturerID    string
+	DPPStatus         string
+	DPPVersion        int
+	DPPHash           []byte
 	AssignmentPayload string
-	UpdatePayload    string
-	UsePayload       string
-	DisposalPayload  string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	UpdatePayload     string
+	UsePayload        string
+	DisposalPayload   string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 type RegulatoryMonitor struct {
@@ -41,16 +41,16 @@ type RegulatoryMonitor struct {
 }
 
 type ComplianceAction struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	MonitorID       string
-	ActionType      string
-	Status          string
-	Assignee        string
-	DueDate         time.Time
-	CompletedAt     time.Time
-	EvidenceRefs    string
+	ID             string
+	TenantID       string
+	OrganizationID string
+	MonitorID      string
+	ActionType     string
+	Status         string
+	Assignee       string
+	DueDate        time.Time
+	CompletedAt    time.Time
+	EvidenceRefs   string
 }
 
 type Repository interface {

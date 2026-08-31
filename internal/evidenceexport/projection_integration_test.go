@@ -208,7 +208,7 @@ func assertEvidenceRuntimeRLS(t *testing.T, ctx context.Context, db *sql.DB, act
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := tx.ExecContext(ctx, "SET LOCAL ROLE integin_pilot_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET LOCAL ROLE integin_runtime"); err != nil {
 			_ = tx.Rollback()
 			t.Fatal(err)
 		}

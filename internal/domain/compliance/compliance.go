@@ -7,47 +7,47 @@ import (
 )
 
 type HSENotification struct {
-	ID               string
-	TenantID         string
-	OrganizationID   string
-	InspectionID     string
-	DefectCode       string
-	DefectSeverity   string
-	HSEReference     string
-	ReportPayload    string
-	Status           string
-	SubmittedBy      string
-	SubmittedAt      time.Time
-	AcknowledgedAt   time.Time
-	AcknowledgedBy   string
-	CreatedBy        string
-	CreatedAt        time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	InspectionID   string
+	DefectCode     string
+	DefectSeverity string
+	HSEReference   string
+	ReportPayload  string
+	Status         string
+	SubmittedBy    string
+	SubmittedAt    time.Time
+	AcknowledgedAt time.Time
+	AcknowledgedBy string
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type CSVExportJob struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	ExportType      string
-	Filters         string
-	Status          string
-	FileKey         string
-	RowCount        int64
-	ExpiresAt       time.Time
-	RequestedBy     string
-	RequestedAt     time.Time
-	CompletedAt     time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	ExportType     string
+	Filters        string
+	Status         string
+	FileKey        string
+	RowCount       int64
+	ExpiresAt      time.Time
+	RequestedBy    string
+	RequestedAt    time.Time
+	CompletedAt    time.Time
 }
 
 type ExportTemplate struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	ExportType      string
-	Name            string
-	Columns         string
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	ExportType     string
+	Name           string
+	Columns        string
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type Repository interface {

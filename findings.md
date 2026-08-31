@@ -49,7 +49,7 @@ The deterministic validator double is an intentional local-boundary test seam. I
 
 ## Non-Owner Read-Isolation Finding — 2026-08-21
 
-The applied pilot database supports a non-owner canonical inspection read-isolation proof without granting privileges or changing policies. `integin_pilot_runtime` is non-superuser, does not bypass RLS, and has the required `SELECT` capability. Under `SET LOCAL ROLE`, forced RLS returned one expected record per matching organization and zero records when tenant/organization settings were unset. All temporary graphs were removed and post-run counts were zero.
+The applied pilot database supports a non-owner canonical inspection read-isolation proof without granting privileges or changing policies. `integin_runtime` is non-superuser, does not bypass RLS, and has the required `SELECT` capability. Under `SET LOCAL ROLE`, forced RLS returned one expected record per matching organization and zero records when tenant/organization settings were unset. All temporary graphs were removed and post-run counts were zero.
 
 ## Controlled OIDC Validator-Composition Finding — 2026-08-21
 
@@ -101,7 +101,7 @@ The implemented `evidence_metadata` index binds a canonical inspection, tenant/o
 
 The verified projection treats the relational index as a selector, not as proof of current bytes. It retrieves every candidate object from RustFS again and rejects object-key, content-type, byte-count, or ciphertext SHA-256 discrepancies before calling `Seal`. A single manifest is deliberately rejected when its evidence records have incompatible privacy/retention/hold/redaction policy sets; this prevents collapsing per-record policy into a false global export claim.
 
-The first integration run exposed a meaningful test-boundary issue: the pilot owner role is superuser and can bypass RLS, so an unfiltered repository list query observed a cross-organization row even though the table is forced-RLS. The repository now has explicit actor-derived tenant/organization predicates as defense in depth, and the controlled proof separately assumes non-owner `integin_pilot_runtime` to demonstrate actual forced-RLS behavior of `1` matching row and `0` mismatched rows. This does not replace a future application-role connection policy; it prevents the privileged test connection from silently weakening the repository boundary.
+The first integration run exposed a meaningful test-boundary issue: the pilot owner role is superuser and can bypass RLS, so an unfiltered repository list query observed a cross-organization row even though the table is forced-RLS. The repository now has explicit actor-derived tenant/organization predicates as defense in depth, and the controlled proof separately assumes non-owner `integin_runtime` to demonstrate actual forced-RLS behavior of `1` matching row and `0` mismatched rows. This does not replace a future application-role connection policy; it prevents the privileged test connection from silently weakening the repository boundary.
 
 ## Stage A Runtime Operations Finding — 2026-08-21
 

@@ -69,7 +69,7 @@ CREATE POLICY quick_link_tenant_isolation ON quick_link
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
 CREATE INDEX IF NOT EXISTS quick_link_token_idx ON quick_link (token);
-CREATE INDEX IF NOT EXISTS quick_link_expiry_idx ON quick_link (tenant_id, organization_id, expires_at) WHERE expires_at > now();
+CREATE INDEX IF NOT EXISTS quick_link_expiry_idx ON quick_link (tenant_id, organization_id, expires_at);
 
 CREATE TABLE IF NOT EXISTS client_audit_entry (
     id TEXT PRIMARY KEY,

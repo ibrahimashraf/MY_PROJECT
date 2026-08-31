@@ -72,12 +72,12 @@ func RenderWord(req WordRequest, pdfSHA256 string) (WordResult, error) {
 		SHA256:    hex.EncodeToString(digest[:]),
 		ObjectKey: objectKey,
 		Metadata: map[string]string{
-			"certificate_id":      req.CertificateID,
-			"certificate_number":  req.CertificateNo,
-			"snapshot_sha256":     hex.EncodeToString(req.SnapshotSHA256),
-			"artifact_sha256_pdf": pdfSHA256,
+			"certificate_id":       req.CertificateID,
+			"certificate_number":   req.CertificateNo,
+			"snapshot_sha256":      hex.EncodeToString(req.SnapshotSHA256),
+			"artifact_sha256_pdf":  pdfSHA256,
 			"artifact_sha256_word": hex.EncodeToString(digest[:]),
-			"renderer_version":    RendererVersion + "+word-derived",
+			"renderer_version":     RendererVersion + "+word-derived",
 		},
 	}, nil
 }

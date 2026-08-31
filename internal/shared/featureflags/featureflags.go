@@ -3,16 +3,16 @@ package featureflags
 type Key string
 
 const (
-	FlagOfflineFieldWork        Key = "offline_field_work"
-	FlagStandardsVault          Key = "standards_vault"
-	FlagAIAdvisory              Key = "ai_advisory"
-	FlagClientPortal            Key = "client_portal"
-	FlagCalibration             Key = "calibration"
-	FlagOpenAPI                 Key = "open_api_readonly"
-	FlagProductPassport         Key = "product_passport"
-	FlagWordDerived             Key = "word_derived_artifact"
-	FlagTimeSheets              Key = "time_sheets"
-	FlagCourses                 Key = "courses"
+	FlagOfflineFieldWork Key = "offline_field_work"
+	FlagStandardsVault   Key = "standards_vault"
+	FlagAIAdvisory       Key = "ai_advisory"
+	FlagClientPortal     Key = "client_portal"
+	FlagCalibration      Key = "calibration"
+	FlagOpenAPI          Key = "open_api_readonly"
+	FlagProductPassport  Key = "product_passport"
+	FlagWordDerived      Key = "word_derived_artifact"
+	FlagTimeSheets       Key = "time_sheets"
+	FlagCourses          Key = "courses"
 	// Feature 01-15: Core/Onix/EnRep/RiConnect/Bswagic gaps
 	FlagHierarchicalRegister    Key = "hierarchical_register"
 	FlagBulkImportExport        Key = "bulk_import_export"
@@ -34,6 +34,7 @@ const (
 	FlagPressureTesting        Key = "pressure_testing"
 	FlagHullGauging            Key = "hull_gauging"
 	FlagFeatureConsole         Key = "feature_console"
+	FlagLicenseEngine          Key = "license_engine"
 )
 
 type State string

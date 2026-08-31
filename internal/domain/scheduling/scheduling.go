@@ -7,18 +7,18 @@ import (
 )
 
 type CalendarEntry struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	WorkOrderID     string
-	AssignmentID    string
-	TechnicianID    string
-	StartAt         time.Time
-	EndAt           time.Time
-	Status          string
+	ID                 string
+	TenantID           string
+	OrganizationID     string
+	WorkOrderID        string
+	AssignmentID       string
+	TechnicianID       string
+	StartAt            time.Time
+	EndAt              time.Time
+	Status             string
 	CompetencyVerified bool
-	CreatedBy       string
-	CreatedAt       time.Time
+	CreatedBy          string
+	CreatedAt          time.Time
 }
 
 type TechnicianCompetency struct {
@@ -35,13 +35,13 @@ type TechnicianCompetency struct {
 }
 
 type SchedulingRule struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Name            string
-	RuleType        string
-	Config          string
-	Enabled         bool
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Name           string
+	RuleType       string
+	Config         string
+	Enabled        bool
 }
 
 type Repository interface {

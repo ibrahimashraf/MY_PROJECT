@@ -49,14 +49,14 @@ func (a ActorContext) Validate() error {
 
 // MutationReceipt confirms a successful mutation.
 type MutationReceipt struct {
-	OperationID      string    `json:"operation_id"`
-	IdempotencyKey   string    `json:"idempotency_key"`
-	TenantID         string    `json:"tenant_id"`
-	OrganizationID   string    `json:"organization_id"`
-	AggregateID      string    `json:"aggregate_id"`
-	Revision         int64     `json:"revision"`
-	Status           string    `json:"status"`
-	CompletedAt      time.Time `json:"completed_at"`
+	OperationID    string    `json:"operation_id"`
+	IdempotencyKey string    `json:"idempotency_key"`
+	TenantID       string    `json:"tenant_id"`
+	OrganizationID string    `json:"organization_id"`
+	AggregateID    string    `json:"aggregate_id"`
+	Revision       int64     `json:"revision"`
+	Status         string    `json:"status"`
+	CompletedAt    time.Time `json:"completed_at"`
 }
 
 const (
@@ -170,7 +170,7 @@ type ImportStaging struct {
 	ID               string         `json:"id"`
 	TenantID         string         `json:"tenant_id"`
 	OrganizationID   string         `json:"organization_id"`
-	EntityType       string         `json:"entity_type"` // WORK_ORDER, ASSET_REGISTRY, INSPECTION_RECORD
+	EntityType       string         `json:"entity_type"`   // WORK_ORDER, ASSET_REGISTRY, INSPECTION_RECORD
 	SourceFormat     string         `json:"source_format"` // CSV, XLSX
 	SourceFilename   string         `json:"source_filename,omitempty"`
 	SourceChecksum   string         `json:"source_checksum,omitempty"`
@@ -188,37 +188,37 @@ type ImportStaging struct {
 }
 
 type ExportStaging struct {
-	ID              string         `json:"id"`
-	TenantID        string         `json:"tenant_id"`
-	OrganizationID  string         `json:"organization_id"`
-	EntityType      string         `json:"entity_type"` // WORK_ORDER, ASSET_REGISTRY, INSPECTION_RECORD, ALL
-	ExportFormat    string         `json:"export_format"` // CSV, XLSX
-	FilterCriteria  map[string]any `json:"filter_criteria"`
-	FilePath        string         `json:"file_path,omitempty"`
-	FileChecksum    string         `json:"file_checksum,omitempty"`
-	RowCount        int            `json:"row_count"`
-	Status          string         `json:"status"` // PENDING, GENERATING, GENERATED, READY, EXPIRED, FAILED
-	ErrorMessage    string         `json:"error_message,omitempty"`
-	CreatedBy       string         `json:"created_by"`
-	CreatedAt       time.Time      `json:"created_at"`
-	CompletedAt     *time.Time     `json:"completed_at,omitempty"`
-	ExpiresAt       time.Time      `json:"expires_at"`
+	ID             string         `json:"id"`
+	TenantID       string         `json:"tenant_id"`
+	OrganizationID string         `json:"organization_id"`
+	EntityType     string         `json:"entity_type"`   // WORK_ORDER, ASSET_REGISTRY, INSPECTION_RECORD, ALL
+	ExportFormat   string         `json:"export_format"` // CSV, XLSX
+	FilterCriteria map[string]any `json:"filter_criteria"`
+	FilePath       string         `json:"file_path,omitempty"`
+	FileChecksum   string         `json:"file_checksum,omitempty"`
+	RowCount       int            `json:"row_count"`
+	Status         string         `json:"status"` // PENDING, GENERATING, GENERATED, READY, EXPIRED, FAILED
+	ErrorMessage   string         `json:"error_message,omitempty"`
+	CreatedBy      string         `json:"created_by"`
+	CreatedAt      time.Time      `json:"created_at"`
+	CompletedAt    *time.Time     `json:"completed_at,omitempty"`
+	ExpiresAt      time.Time      `json:"expires_at"`
 }
 
 type ImportFieldMapping struct {
-	ID             string  `json:"id"`
-	TenantID       string  `json:"tenant_id"`
-	OrganizationID string  `json:"organization_id"`
-	EntityType     string  `json:"entity_type"`
-	SourceColumn   string  `json:"source_column"`
-	TargetField    string  `json:"target_field"`
-	TransformRule  string  `json:"transform_rule,omitempty"` // NONE, TRIM, UPPER, LOWER, DATE_ISO, DATE_EU, NUMERIC, BOOLEAN_YN, BOOLEAN_TF, JSON
-	DefaultValue   any     `json:"default_value,omitempty"`
-	IsRequired     bool    `json:"is_required"`
-	ValidationRegex string `json:"validation_regex,omitempty"`
-	DisplayOrder   int     `json:"display_order"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	TenantID        string    `json:"tenant_id"`
+	OrganizationID  string    `json:"organization_id"`
+	EntityType      string    `json:"entity_type"`
+	SourceColumn    string    `json:"source_column"`
+	TargetField     string    `json:"target_field"`
+	TransformRule   string    `json:"transform_rule,omitempty"` // NONE, TRIM, UPPER, LOWER, DATE_ISO, DATE_EU, NUMERIC, BOOLEAN_YN, BOOLEAN_TF, JSON
+	DefaultValue    any       `json:"default_value,omitempty"`
+	IsRequired      bool      `json:"is_required"`
+	ValidationRegex string    `json:"validation_regex,omitempty"`
+	DisplayOrder    int       `json:"display_order"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type ExportColumnConfig struct {

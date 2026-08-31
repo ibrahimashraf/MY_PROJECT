@@ -7,44 +7,44 @@ import (
 )
 
 type EscalationRule struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Name            string
-	TriggerType     string
-	DaysOffset      int
-	TargetRole      string
-	EscalationTier  int
-	TemplateID      string
-	Enabled         bool
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Name           string
+	TriggerType    string
+	DaysOffset     int
+	TargetRole     string
+	EscalationTier int
+	TemplateID     string
+	Enabled        bool
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type EscalationEvent struct {
-	ID               string
-	TenantID         string
-	OrganizationID   string
-	RuleID           string
-	InspectionID     string
-	AssignmentID     string
-	Tier             int
-	Status           string
-	TriggeredAt      time.Time
-	AcknowledgedAt   time.Time
-	AcknowledgedBy   string
+	ID             string
+	TenantID       string
+	OrganizationID string
+	RuleID         string
+	InspectionID   string
+	AssignmentID   string
+	Tier           int
+	Status         string
+	TriggeredAt    time.Time
+	AcknowledgedAt time.Time
+	AcknowledgedBy string
 }
 
 type NotificationTemplate struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	Code            string
-	Subject         string
-	BodyTemplate    string
-	Channel         string
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	Code           string
+	Subject        string
+	BodyTemplate   string
+	Channel        string
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type Repository interface {

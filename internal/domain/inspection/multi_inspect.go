@@ -7,17 +7,17 @@ import (
 )
 
 type MultiInspectBatch struct {
-	ID              string
-	TenantID        string
-	OrganizationID  string
-	WorkOrderID     string
-	AssignmentID    string
-	BatchCode       string
-	Status          string
-	TotalItems      int
-	CompletedItems  int
-	CreatedBy       string
-	CreatedAt       time.Time
+	ID             string
+	TenantID       string
+	OrganizationID string
+	WorkOrderID    string
+	AssignmentID   string
+	BatchCode      string
+	Status         string
+	TotalItems     int
+	CompletedItems int
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 type MultiInspectItem struct {
@@ -35,15 +35,15 @@ type MultiInspectItem struct {
 }
 
 type InspectTemplatePreset struct {
-	ID                 string
-	TenantID           string
-	OrganizationID     string
-	EquipmentTypeID    string
-	Name               string
-	PassFailMode       bool
-	ComponentChecks    string
-	CreatedBy          string
-	CreatedAt          time.Time
+	ID              string
+	TenantID        string
+	OrganizationID  string
+	EquipmentTypeID string
+	Name            string
+	PassFailMode    bool
+	ComponentChecks string
+	CreatedBy       string
+	CreatedAt       time.Time
 }
 
 type Repository interface {

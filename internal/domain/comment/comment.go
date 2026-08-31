@@ -7,31 +7,31 @@ import (
 )
 
 type CommentLibraryEntry struct {
-	ID               string
-	TenantID         string
-	OrganizationID   string
-	Category         string
-	EquipmentTypeID  string
-	Code             string
-	Text             string
-	TrafficLight     string
-	IsActive         bool
-	DisplayOrder     int
-	CreatedBy        string
-	CreatedAt        time.Time
+	ID              string
+	TenantID        string
+	OrganizationID  string
+	Category        string
+	EquipmentTypeID string
+	Code            string
+	Text            string
+	TrafficLight    string
+	IsActive        bool
+	DisplayOrder    int
+	CreatedBy       string
+	CreatedAt       time.Time
 }
 
 type InspectionComment struct {
-	ID                  string
-	TenantID            string
-	OrganizationID      string
-	InspectionID        string
-	QuestionCode        string
-	CommentLibraryID    string
-	CustomText          string
-	TrafficLight        string
-	CreatedBy           string
-	CreatedAt           time.Time
+	ID               string
+	TenantID         string
+	OrganizationID   string
+	InspectionID     string
+	QuestionCode     string
+	CommentLibraryID string
+	CustomText       string
+	TrafficLight     string
+	CreatedBy        string
+	CreatedAt        time.Time
 }
 
 type Repository interface {

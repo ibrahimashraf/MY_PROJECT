@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"log/slog"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
-	"integin/internal/evidenceapi"
+	"integin/internal/middleware"
 	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
@@ -30,6 +31,15 @@ type Dependencies struct {
 	CertificatePublicHandler    http.Handler
 	PilotManifestHandler        *packagemanifestapi.Handler
 	AuthorityRegistry           *syncapi.AuthorityRegistry
+	LicenseHandler              http.Handler
+	FlagAdminHandler            http.Handler
+	TrainingHandler             http.Handler
+	SettingsHandler             http.Handler
+	InspectionHandler           http.Handler
+	SearchHandler               http.Handler
+	AuditLogHandler             http.Handler
+	AnalyticsHandler            http.Handler
+	ReportsHandler              http.Handler
 	Readiness                   func(context.Context) error
 	ReadinessTimeout            time.Duration
 }
@@ -57,32 +67,8 @@ func NewMux(dependencies Dependencies) http.Handler {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/sync", syncHandler)
-	if dependencies.PilotManifestHandler != nil {
-		mux.Handle("/work-package-manifest", dependencies.PilotManifestHandler)
-	}
-
-	if dependencies.OIDCSessionHandler != nil {
-		mux.Handle("/identity/session", dependencies.OIDCSessionHandler)
-	}
-	if dependencies.WorkOrderHandler != nil {
-		mux.Handle("/work-orders/partial-submissions", dependencies.WorkOrderHandler)
-	}
-	if dependencies.CertificateHandler != nil {
-		mux.Handle("/certificates/", dependencies.CertificateHandler)
-	}
-	if dependencies.CertificatePublicHandler != nil {
-		mux.Handle("/verify/certificates/", dependencies.CertificatePublicHandler)
-	}
-	if dependencies.EvidenceStore != nil {
-		mux.Handle("/evidence", evidenceapi.Handler{Store: dependencies.EvidenceStore})
-	}
-	if dependencies.EvidenceRegistrationHandler != nil {
-		mux.Handle("/evidence/metadata-registrations", dependencies.EvidenceRegistrationHandler)
-	}
-	if dependencies.LocalProvisioning != nil {
-		mux.Handle("/local/provision", dependencies.LocalProvisioning)
-	}
+	registerCoreRoutes(mux, dependencies, syncHandler)
+	registerLicensedAPIRoutes(mux, dependencies)
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writeOperationalJSON(writer, http.StatusOK, `{"status":"ok","service":"integin"}`)
 	})
@@ -116,6 +102,10 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 
 func productionMiddleware(next http.Handler) http.Handler {
 	return requestLogger(withCorrelationID(withRequestLimit(next, 10<<20)))
+}
+
+func productionMiddlewareWithLicense(next http.Handler, db *sql.DB) http.Handler {
+	return requestLogger(withCorrelationID(withRequestLimit(middleware.LicenseEnforcement(db)(next), 10<<20)))
 }
 
 func withCorrelationID(next http.Handler) http.Handler {

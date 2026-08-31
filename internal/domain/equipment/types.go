@@ -19,17 +19,17 @@ const (
 type EquipmentCategory string
 
 const (
-	CategoryChains      EquipmentCategory = "CHAINS"
-	CategorySlings      EquipmentCategory = "SLINGS"
-	CategoryShackles    EquipmentCategory = "SHACKLES"
-	CategoryHoists      EquipmentCategory = "HOISTS"
-	CategoryCranes      EquipmentCategory = "CRANES"
-	CategoryHarnesses   EquipmentCategory = "HARNESSES"
-	CategoryLanyards    EquipmentCategory = "LANYARDS"
-	CategoryAnchors     EquipmentCategory = "ANCHORS"
-	CategoryVehicles    EquipmentCategory = "VEHICLES"
-	CategoryFixedPlant  EquipmentCategory = "FIXED_PLANT"
-	CategoryOther       EquipmentCategory = "OTHER"
+	CategoryChains     EquipmentCategory = "CHAINS"
+	CategorySlings     EquipmentCategory = "SLINGS"
+	CategoryShackles   EquipmentCategory = "SHACKLES"
+	CategoryHoists     EquipmentCategory = "HOISTS"
+	CategoryCranes     EquipmentCategory = "CRANES"
+	CategoryHarnesses  EquipmentCategory = "HARNESSES"
+	CategoryLanyards   EquipmentCategory = "LANYARDS"
+	CategoryAnchors    EquipmentCategory = "ANCHORS"
+	CategoryVehicles   EquipmentCategory = "VEHICLES"
+	CategoryFixedPlant EquipmentCategory = "FIXED_PLANT"
+	CategoryOther      EquipmentCategory = "OTHER"
 )
 
 type EquipmentStatus string
@@ -58,14 +58,14 @@ var (
 )
 
 type Branch struct {
-	ID             string          `json:"id"`
-	TenantID       string          `json:"tenant_id"`
-	OrganizationID string          `json:"organization_id"`
-	Code           string          `json:"code"`
-	Name           string          `json:"name"`
-	Address        string          `json:"address,omitempty"`
-	Status         LocationStatus  `json:"status"`
-	CreatedAt      time.Time       `json:"created_at"`
+	ID             string         `json:"id"`
+	TenantID       string         `json:"tenant_id"`
+	OrganizationID string         `json:"organization_id"`
+	Code           string         `json:"code"`
+	Name           string         `json:"name"`
+	Address        string         `json:"address,omitempty"`
+	Status         LocationStatus `json:"status"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 func (b Branch) Validate() error {
@@ -85,14 +85,14 @@ func (b Branch) Validate() error {
 }
 
 type Area struct {
-	ID             string          `json:"id"`
-	TenantID       string          `json:"tenant_id"`
-	OrganizationID string          `json:"organization_id"`
-	BranchID       string          `json:"branch_id"`
-	Code           string          `json:"code"`
-	Name           string          `json:"name"`
-	Status         LocationStatus  `json:"status"`
-	CreatedAt      time.Time       `json:"created_at"`
+	ID             string         `json:"id"`
+	TenantID       string         `json:"tenant_id"`
+	OrganizationID string         `json:"organization_id"`
+	BranchID       string         `json:"branch_id"`
+	Code           string         `json:"code"`
+	Name           string         `json:"name"`
+	Status         LocationStatus `json:"status"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 func (a Area) Validate() error {
@@ -112,14 +112,14 @@ func (a Area) Validate() error {
 }
 
 type Zone struct {
-	ID             string          `json:"id"`
-	TenantID       string          `json:"tenant_id"`
-	OrganizationID string          `json:"organization_id"`
-	AreaID         string          `json:"area_id"`
-	Code           string          `json:"code"`
-	Name           string          `json:"name"`
-	Status         LocationStatus  `json:"status"`
-	CreatedAt      time.Time       `json:"created_at"`
+	ID             string         `json:"id"`
+	TenantID       string         `json:"tenant_id"`
+	OrganizationID string         `json:"organization_id"`
+	AreaID         string         `json:"area_id"`
+	Code           string         `json:"code"`
+	Name           string         `json:"name"`
+	Status         LocationStatus `json:"status"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 func (z Zone) Validate() error {
@@ -139,15 +139,15 @@ func (z Zone) Validate() error {
 }
 
 type EquipmentType struct {
-	ID                 string            `json:"id"`
-	TenantID           string            `json:"tenant_id"`
-	OrganizationID     string            `json:"organization_id"`
-	Code               string            `json:"code"`
-	Name               string            `json:"name"`
-	Category           EquipmentCategory `json:"category"`
-	StandardIntervalDays int             `json:"standard_interval_days"`
-	Status             EquipmentStatus   `json:"status"`
-	CreatedAt          time.Time         `json:"created_at"`
+	ID                   string            `json:"id"`
+	TenantID             string            `json:"tenant_id"`
+	OrganizationID       string            `json:"organization_id"`
+	Code                 string            `json:"code"`
+	Name                 string            `json:"name"`
+	Category             EquipmentCategory `json:"category"`
+	StandardIntervalDays int               `json:"standard_interval_days"`
+	Status               EquipmentStatus   `json:"status"`
+	CreatedAt            time.Time         `json:"created_at"`
 }
 
 func (et EquipmentType) Validate() error {
@@ -181,26 +181,26 @@ func (et EquipmentType) Validate() error {
 type FieldDataType string
 
 const (
-	FieldTypeText     FieldDataType = "TEXT"
-	FieldTypeInteger  FieldDataType = "INTEGER"
-	FieldTypeNumeric  FieldDataType = "NUMERIC"
-	FieldTypeBoolean  FieldDataType = "BOOLEAN"
-	FieldTypeDate     FieldDataType = "DATE"
-	FieldTypeEnum     FieldDataType = "ENUM"
+	FieldTypeText    FieldDataType = "TEXT"
+	FieldTypeInteger FieldDataType = "INTEGER"
+	FieldTypeNumeric FieldDataType = "NUMERIC"
+	FieldTypeBoolean FieldDataType = "BOOLEAN"
+	FieldTypeDate    FieldDataType = "DATE"
+	FieldTypeEnum    FieldDataType = "ENUM"
 )
 
 type EquipmentTypeField struct {
-	ID               string        `json:"id"`
-	TenantID         string        `json:"tenant_id"`
-	OrganizationID   string        `json:"organization_id"`
-	EquipmentTypeID  string        `json:"equipment_type_id"`
-	FieldCode        string        `json:"field_code"`
-	Label            string        `json:"label"`
-	DataType         FieldDataType `json:"data_type"`
-	EnumValues       []string      `json:"enum_values,omitempty"`
-	Required         bool          `json:"required"`
-	DisplayOrder     int           `json:"display_order"`
-	HelpText         string        `json:"help_text,omitempty"`
+	ID              string        `json:"id"`
+	TenantID        string        `json:"tenant_id"`
+	OrganizationID  string        `json:"organization_id"`
+	EquipmentTypeID string        `json:"equipment_type_id"`
+	FieldCode       string        `json:"field_code"`
+	Label           string        `json:"label"`
+	DataType        FieldDataType `json:"data_type"`
+	EnumValues      []string      `json:"enum_values,omitempty"`
+	Required        bool          `json:"required"`
+	DisplayOrder    int           `json:"display_order"`
+	HelpText        string        `json:"help_text,omitempty"`
 }
 
 func (f EquipmentTypeField) Validate() error {
@@ -228,23 +228,23 @@ func (f EquipmentTypeField) Validate() error {
 
 // Asset extends the existing asset_registry with hierarchy + custom fields
 type Asset struct {
-	ID               string         `json:"id"`
-	TenantID         string         `json:"tenant_id"`
-	OrganizationID   string         `json:"organization_id"`
-	AssetID          string         `json:"asset_id"`
-	AssetType        string         `json:"asset_type"`
-	SerialNumber     string         `json:"serial_number"`
-	Description      string         `json:"description"`
-	LifecycleState   string         `json:"lifecycle_state"`
-	BranchID         string         `json:"branch_id,omitempty"`
-	AreaID           string         `json:"area_id,omitempty"`
-	ZoneID           string         `json:"zone_id,omitempty"`
-	EquipmentTypeID  string         `json:"equipment_type_id,omitempty"`
-	CustomFields     map[string]any `json:"custom_fields,omitempty"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	CreatedBy        string         `json:"created_by"`
-	UpdatedBy        string         `json:"updated_by"`
+	ID              string         `json:"id"`
+	TenantID        string         `json:"tenant_id"`
+	OrganizationID  string         `json:"organization_id"`
+	AssetID         string         `json:"asset_id"`
+	AssetType       string         `json:"asset_type"`
+	SerialNumber    string         `json:"serial_number"`
+	Description     string         `json:"description"`
+	LifecycleState  string         `json:"lifecycle_state"`
+	BranchID        string         `json:"branch_id,omitempty"`
+	AreaID          string         `json:"area_id,omitempty"`
+	ZoneID          string         `json:"zone_id,omitempty"`
+	EquipmentTypeID string         `json:"equipment_type_id,omitempty"`
+	CustomFields    map[string]any `json:"custom_fields,omitempty"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	CreatedBy       string         `json:"created_by"`
+	UpdatedBy       string         `json:"updated_by"`
 }
 
 func (a Asset) Validate() error {
@@ -268,17 +268,17 @@ func (a Asset) ValidateCustomFields(fields []EquipmentTypeField) error {
 	if custom == nil {
 		custom = map[string]any{}
 	}
-for _, f := range fields {
-			val, exists := custom[f.FieldCode]
-			isEmptyString := false
-			if val != nil {
-				if valStr, ok := val.(string); ok {
-					isEmptyString = strings.TrimSpace(valStr) == ""
-				}
+	for _, f := range fields {
+		val, exists := custom[f.FieldCode]
+		isEmptyString := false
+		if val != nil {
+			if valStr, ok := val.(string); ok {
+				isEmptyString = strings.TrimSpace(valStr) == ""
 			}
-			if f.Required && (!exists || val == nil || isEmptyString) {
-				return fmt.Errorf("%w: required field %s is missing", ErrCustomFieldValidation, f.FieldCode)
-			}
+		}
+		if f.Required && (!exists || val == nil || isEmptyString) {
+			return fmt.Errorf("%w: required field %s is missing", ErrCustomFieldValidation, f.FieldCode)
+		}
 		if exists && val != nil {
 			if err := validateFieldValue(f, val); err != nil {
 				return fmt.Errorf("%w: field %s: %v", ErrCustomFieldValidation, f.FieldCode, err)
