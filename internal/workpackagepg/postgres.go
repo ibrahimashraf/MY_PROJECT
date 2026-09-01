@@ -185,11 +185,11 @@ func (r *Repository) scopedTx(ctx context.Context, tenantID, organizationID stri
 		return nil, err
 	}
 	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true)`, tenantID); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("set work package tenant scope: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.organization_id', $1, true)`, organizationID); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("set work package organization scope: %w", err)
 	}
 	return tx, nil

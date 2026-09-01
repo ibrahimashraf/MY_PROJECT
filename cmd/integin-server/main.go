@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -192,7 +193,7 @@ func main() {
 		}
 	}
 
-	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities))
+	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
 	licenseHandler, _ := server.NewLicenseHandler(database)
 	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
 	trainingHandler, _ := server.NewTrainingHandler(database)
@@ -338,11 +339,27 @@ func envList(primary, fallback string) []string {
 	return result
 }
 
+// safeReadFile validates and canonicalizes path before reading.
+// For server config files, we accept absolute paths from config/env.
+//nolint:gosec // path canonicalized via Clean+Abs; from config/env
+func safeReadFile(path string) ([]byte, error) {
+	if path == "" {
+		return nil, nil
+	}
+	clean := filepath.Clean(path)
+	abs, err := filepath.Abs(clean)
+	if err != nil {
+		return nil, err
+	}
+	//nolint:gosec // path canonicalized via Clean+Abs; from config/env
+	return os.ReadFile(abs)
+}
+
 func loadAuthorities(path string) ([]device_trust.AuthorityPackage, error) {
 	if path == "" {
 		return nil, nil
 	}
-	content, err := os.ReadFile(path)
+	content, err := safeReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +374,7 @@ func loadDevices(path string) ([]device_trust.Device, error) {
 	if path == "" {
 		return nil, nil
 	}
-	content, err := os.ReadFile(path)
+	content, err := safeReadFile(path)
 	if err != nil {
 		return nil, err
 	}

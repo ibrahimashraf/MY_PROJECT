@@ -1,6 +1,7 @@
 package manifestreceiptbridge
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,12 +22,12 @@ func TestHTTPObserverEmitsOnlyClosedValidProofMapping(t *testing.T) {
 	}
 	before, after := int64(4), int64(5)
 	observer := NewHTTPObserver(writer)
-	observer.Observe(nil, packagemanifestapi.Observation{Outcome: "manifest_issued", ReasonCode: "valid_proof", HTTPStatus: 200, ReplayAccepted: true, ReplayBefore: &before, ReplayAfter: &after})
+	observer.Observe(context.TODO(), packagemanifestapi.Observation{Outcome: "manifest_issued", ReasonCode: "valid_proof", HTTPStatus: 200, ReplayAccepted: true, ReplayBefore: &before, ReplayAfter: &after})
 	if _, err := os.Stat(filepath.Join(directory, "receipt-v2-valid_proof-"+observerRunID+".json")); err != nil {
 		t.Fatalf("valid proof receipt missing: %v", err)
 	}
 
-	observer.Observe(nil, packagemanifestapi.Observation{Outcome: "manifest_issued", ReasonCode: "valid_proof", HTTPStatus: 200, ReplayAccepted: true, ManifestID: "manifest-must-not-appear-in-failure"})
+	observer.Observe(context.TODO(), packagemanifestapi.Observation{Outcome: "manifest_issued", ReasonCode: "valid_proof", HTTPStatus: 200, ReplayAccepted: true, ManifestID: "manifest-must-not-appear-in-failure"})
 	failurePath := filepath.Join(directory, "bridge-failure-v2-"+observerRunID+".json")
 	if _, err := os.Stat(failurePath); err != nil {
 		t.Fatalf("missing snapshot did not produce bridge failure: %v", err)
@@ -52,7 +53,7 @@ func TestHTTPObserverRejectsNearMatchesAndDiagnostics(t *testing.T) {
 		{Outcome: "proof_rejected", ReasonCode: "signature_invalid", HTTPStatus: 403},
 		{Outcome: "manifest_issued", ReasonCode: "valid_proof", HTTPStatus: 201},
 	} {
-		observer.Observe(nil, observation)
+		observer.Observe(context.TODO(), observation)
 	}
 	entries, err := os.ReadDir(directory)
 	if err != nil {

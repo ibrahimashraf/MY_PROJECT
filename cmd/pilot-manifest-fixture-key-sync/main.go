@@ -61,6 +61,7 @@ func run(inputPath, outputPath, privateKeyPath string) error {
 	}
 	defer zero(privateKey)
 
+	//nolint:gosec // path is CLI arg/config for test tool
 	raw, err := os.ReadFile(inputAbsolute)
 	if err != nil {
 		return err
@@ -113,6 +114,7 @@ func (f fixture) validate() error {
 	return nil
 }
 
+//nolint:gosec // path is CLI arg/config for test tool
 func loadPrivateKey(path string) (ed25519.PrivateKey, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {

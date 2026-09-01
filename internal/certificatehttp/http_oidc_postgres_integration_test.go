@@ -106,14 +106,24 @@ func TestSignedOIDCCertificateTransportUsesLocalMembership(t *testing.T) {
 	actor := "inspector-" + id
 	insertCertificateMembership(t, ctx, db, issuer.URL, subject, tenant, organization, actor, []string{"certificate.prepare"})
 	t.Cleanup(func() { cleanupCertificateMembership(t, ctx, db, issuer.URL, subject) })
-	lifecycle := &runtimeLifecycle{}
+lifecycle := &runtimeLifecycle{}
 	runtime := httptest.NewServer(server.NewMux(server.Dependencies{CertificateHandler: certificatehttp.Handler{Validator: validator, Actors: certificatehttp.LocalActorResolver{Memberships: resolver}, Lifecycle: lifecycle}}))
 	t.Cleanup(runtime.Close)
+
 	valid := certificateToken(t, key, kid, issuer.URL, subject)
 	invalid := valid[:len(valid)-1] + "x"
 	if valid[len(valid)-1] == 120 {
 		invalid = valid[:len(valid)-1] + "y"
 	}
+
+	// Prime the validator with a valid token to ensure JWKS is fully loaded
+	if status := certificatePost(t, runtime.URL, valid); status != http.StatusNoContent {
+		t.Fatalf("prime request failed: status=%d", status)
+	}
+
+	// Small delay to ensure validator JWKS is fully initialized
+	time.Sleep(10 * time.Millisecond)
+
 	if status := certificatePost(t, runtime.URL, invalid); status != http.StatusUnauthorized {
 		t.Fatalf("tampered status=%d", status)
 	}

@@ -401,6 +401,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 
 func loadFixture(path string) (fixture, error) {
 	var result fixture
+	//nolint:gosec // path is CLI arg/config for test tool
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &result) != nil || result.DeviceID == "" || result.AuthorityID == "" || result.DeviceKeyID == "" || result.TenantID == "" || result.OrganizationID == "" || result.InspectionID == "" {
 		return fixture{}, fmt.Errorf("%w: invalid public fixture", errFixtureLoad)
@@ -408,6 +409,7 @@ func loadFixture(path string) (fixture, error) {
 	return result, nil
 }
 
+//nolint:gosec // path is CLI arg/config for test tool
 func loadPrivateKey(path string) (ed25519.PrivateKey, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {

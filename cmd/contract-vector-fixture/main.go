@@ -70,16 +70,18 @@ func main() {
 	}
 	payload = append(payload, '\n')
 
-	if err := os.MkdirAll(outputDirectory, 0o755); err != nil {
+	if err := os.MkdirAll(outputDirectory, 0o750); err != nil {
 		fail(err.Error())
 	}
 	fixturePath := filepath.Join(outputDirectory, "signed_transaction_ed25519_v1.json")
-	if err := os.WriteFile(fixturePath, payload, 0o644); err != nil {
+	//nolint:gosec // path is CLI arg/config for test tool
+	if err := os.WriteFile(fixturePath, payload, 0o600); err != nil {
 		fail(err.Error())
 	}
 	digest := sha256.Sum256(payload)
+	//nolint:gosec // path is CLI arg/config for test tool
 	manifest := fmt.Sprintf("%x  signed_transaction_ed25519_v1.json\n", digest)
-	if err := os.WriteFile(filepath.Join(outputDirectory, "manifest.sha256"), []byte(manifest), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(outputDirectory, "manifest.sha256"), []byte(manifest), 0o600); err != nil {
 		fail(err.Error())
 	}
 	fmt.Println("PILOT_SIGNED_TRANSACTION_VECTOR_BUNDLE_VERIFIED")

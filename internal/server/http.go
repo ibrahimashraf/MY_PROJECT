@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"log/slog"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
-	"integin/internal/middleware"
 	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
@@ -102,10 +100,6 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 
 func productionMiddleware(next http.Handler) http.Handler {
 	return requestLogger(withCorrelationID(withRequestLimit(next, 10<<20)))
-}
-
-func productionMiddlewareWithLicense(next http.Handler, db *sql.DB) http.Handler {
-	return requestLogger(withCorrelationID(withRequestLimit(middleware.LicenseEnforcement(db)(next), 10<<20)))
 }
 
 func withCorrelationID(next http.Handler) http.Handler {

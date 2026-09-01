@@ -187,6 +187,7 @@ func restoreObject(ctx context.Context, manifestPath string) error {
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // path is CLI arg/config for test tool
 	data, err := os.ReadFile(record.Object.BackupFile)
 	if err != nil {
 		return err
@@ -466,6 +467,7 @@ func ensureBucket(ctx context.Context, config storeConfig) error {
 	return fmt.Errorf("bucket create failed with status %d", response.StatusCode)
 }
 
+//nolint:gosec // path is CLI arg/config for test tool
 func readManifest(path string) (manifest, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

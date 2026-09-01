@@ -12,12 +12,6 @@ import (
 	"integin/internal/domain/workorder"
 )
 
-type allowInspectionMembership struct{}
-
-func (allowInspectionMembership) ValidatePartialSubmission(context.Context, workorder.ActorContext, string, string, []string) error {
-	return nil
-}
-
 func TestCreateRequestIdempotencyAndRLSIntegration(t *testing.T) {
 	dsn := os.Getenv("INTEGIN_TEST_DATABASE_URL")
 	if dsn == "" {

@@ -83,38 +83,53 @@ func Emit(directory, version string, now func() time.Time, random io.Reader) (bo
 	if len(encoded) > maxSignalBytes {
 		return false, errors.New("fixture signal exceeds size limit")
 	}
-	finalPath := filepath.Join(directory, SignalFileName)
-	if filepath.Base(finalPath) != SignalFileName {
-		return false, errors.New("fixture signal path is unsafe")
+
+	// Use os.Root for directory-scoped operations - validates directory is safe
+	root, err := os.OpenRoot(directory)
+	if err != nil {
+		return false, fmt.Errorf("open fixture signal directory root: %w", err)
 	}
-	if _, err := os.Lstat(finalPath); err == nil {
+	defer root.Close()
+
+	// Check for duplicate within the rooted directory
+	if _, err := root.Stat(SignalFileName); err == nil {
 		return false, ErrDuplicateSignal
-	} else if !errors.Is(err, os.ErrNotExist) {
+	} else if !os.IsNotExist(err) {
 		return false, fmt.Errorf("inspect fixture signal target: %w", err)
 	}
-	temporary, err := os.CreateTemp(directory, ".fixture-signal-*.tmp")
+
+	// Create temp file using absolute directory path (validated by assertRegularDirectory)
+	absDir, err := filepath.Abs(directory)
+	if err != nil {
+		return false, fmt.Errorf("resolve fixture signal directory: %w", err)
+	}
+	temporary, err := os.CreateTemp(absDir, ".fixture-signal-*.tmp")
 	if err != nil {
 		return false, fmt.Errorf("create fixture signal temporary file: %w", err)
 	}
 	temporaryPath := temporary.Name()
 	defer os.Remove(temporaryPath)
+
 	if err := temporary.Chmod(0o600); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return false, fmt.Errorf("restrict fixture signal temporary file: %w", err)
 	}
 	if _, err := temporary.Write(encoded); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return false, fmt.Errorf("write fixture signal: %w", err)
 	}
 	if err := temporary.Sync(); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return false, fmt.Errorf("sync fixture signal: %w", err)
 	}
 	if err := temporary.Close(); err != nil {
 		return false, fmt.Errorf("close fixture signal: %w", err)
 	}
-	if err := os.Link(temporaryPath, finalPath); err != nil {
-		if errors.Is(err, os.ErrExist) {
+
+	// Atomic rename within the rooted directory using os.Root
+	tempName := filepath.Base(temporaryPath)
+	if err := root.Rename(tempName, SignalFileName); err != nil {
+		if os.IsExist(err) {
 			return false, ErrDuplicateSignal
 		}
 		return false, fmt.Errorf("publish fixture signal: %w", err)
@@ -123,12 +138,22 @@ func Emit(directory, version string, now func() time.Time, random io.Reader) (bo
 }
 
 func assertRegularDirectory(directory string) error {
-	info, err := os.Lstat(directory)
+	root, err := os.OpenRoot(directory)
+	if err != nil {
+		return fmt.Errorf("open fixture signal directory root: %w", err)
+	}
+	defer root.Close()
+
+	info, err := root.Stat(".")
 	if err != nil {
 		return fmt.Errorf("inspect fixture signal directory: %w", err)
 	}
-	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return errors.New("fixture signal directory is unsafe")
+	if !info.IsDir() {
+		return errors.New("fixture signal directory is not a directory")
+	}
+	// Check for symlinks
+	if info.Mode()&os.ModeSymlink != 0 {
+		return errors.New("fixture signal directory is a symlink")
 	}
 	return nil
 }

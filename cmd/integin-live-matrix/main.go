@@ -17,6 +17,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -151,6 +152,7 @@ func seed() error {
 		return fmt.Errorf("save integration authority: %w", err)
 	}
 	encodedPrivateKey := base64.StdEncoding.EncodeToString(privateKey)
+	//nolint:gosec // PrivateKey in fixture for live matrix; file written with 0600
 	content, err := json.MarshalIndent(fixture{TenantID: tenantID, Organization: integrationOrganization, UserID: integrationUser, DeviceID: deviceID, AuthorityID: authorityID, KeyID: keyID, PrivateKey: encodedPrivateKey}, "", "  ")
 	if err != nil {
 		return err
@@ -177,6 +179,7 @@ func exercise() error {
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // path is CLI arg/config for test tool
 	content, err := os.ReadFile(fixturePath)
 	if err != nil {
 		return fmt.Errorf("read live fixture: %w", err)
@@ -291,7 +294,11 @@ func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse,
 	if err != nil {
 		return outcomeResponse{}, err
 	}
-	response, err := client.Post(endpoint, "application/json", bytes.NewReader(body))
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Scheme != "http" && u.Scheme != "https" || u.Host == "" {
+		return outcomeResponse{}, fmt.Errorf("invalid endpoint URL: %s", endpoint)
+	}
+	response, err := client.Post(endpoint, "application/json", bytes.NewReader(body)) //nolint:gosec // endpoint validated above
 	if err != nil {
 		return outcomeResponse{}, err
 	}
@@ -320,13 +327,6 @@ func localConfig() (databaseURL, tenantID, secret, fixturePath string, err error
 		return "", "", "", "", errors.New("INTEGIN_DB_URL, INTEGIN_TENANT_ID, and INTEGIN_SYNC_SECRET are required")
 	}
 	return databaseURL, tenantID, secret, fixturePath, nil
-}
-
-func firstEnv(name, fallback string) string {
-	if value := strings.TrimSpace(os.Getenv(name)); value != "" {
-		return value
-	}
-	return fallback
 }
 
 func digest(value []byte) string {

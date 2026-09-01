@@ -138,7 +138,7 @@ func verifyAndAppend(ctx context.Context, store storage.Store, actor evidence.Ac
 		EntityReference:     metadata.InspectionID,
 		PlaintextSHA256:     metadata.PlaintextSHA256,
 		CiphertextSHA256:    metadata.CiphertextSHA256,
-		CiphertextBytes:     uint64(metadata.CiphertextBytes),
+		CiphertextBytes:     uint64CiphertextBytes(metadata.CiphertextBytes),
 		EncryptionAlgorithm: metadata.EncryptionAlgorithm,
 		EncryptionKeyRef:    metadata.EncryptionKeyRef,
 		DeviceID:            metadata.DeviceID,
@@ -150,4 +150,11 @@ func verifyAndAppend(ctx context.Context, store storage.Store, actor evidence.Ac
 		KeyID:               metadata.KeyID,
 	})
 	return nil
+}
+
+func uint64CiphertextBytes(v int64) uint64 {
+	if v < 0 {
+		return 0
+	}
+	return uint64(v)
 }

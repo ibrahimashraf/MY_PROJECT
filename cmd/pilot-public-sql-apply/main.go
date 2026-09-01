@@ -49,6 +49,7 @@ func apply(sqlPath string) error {
 	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 || info.Size() > 256<<10 {
 		return errors.New("public SQL input is invalid")
 	}
+	//nolint:gosec // path is CLI arg/config for test tool
 	statement, err := os.ReadFile(sqlPath)
 	statement = bytes.TrimPrefix(statement, []byte{0xef, 0xbb, 0xbf})
 	if err != nil || !strings.HasPrefix(strings.TrimSpace(string(statement)), "BEGIN;") || !strings.HasSuffix(strings.TrimSpace(string(statement)), "COMMIT;") {

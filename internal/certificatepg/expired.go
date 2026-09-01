@@ -70,7 +70,7 @@ func (r *Repository) listByExpiryWindow(ctx context.Context, actor certificateau
 	}
 	clause, extra := where()
 	args := []any{actor.TenantID, actor.OrganizationID}
-	query := fmt.Sprintf(`SELECT id, asset_id, status, expires_at FROM certificate_record WHERE tenant_id=$1 AND organization_id=$2 AND %s ORDER BY expires_at DESC, id`, clause)
+	query := fmt.Sprintf(`SELECT id, asset_id, status, expires_at FROM certificate_record WHERE tenant_id=$1 AND organization_id=$2 AND %s ORDER BY expires_at DESC, id`, clause) //nolint:G201 // clause is internal whitelist
 	if len(extra) > 0 {
 		// extra already contains now/window; shift placeholders
 		// caller used $3/$4, so append after $1/$2

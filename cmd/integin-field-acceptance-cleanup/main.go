@@ -53,6 +53,7 @@ func main() {
 }
 
 func loadReceipt(path string) (receipt, error) {
+	//nolint:gosec // path is CLI arg/config for test tool
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return receipt{}, fmt.Errorf("read receipt: %w", err)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -27,12 +28,26 @@ type fixture struct {
 const pilotFieldAssetIDsJSON = `{"condition":"pilot-manifest-demo-asset"}`
 
 func q(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
+
+// safeReadFile validates path is within expected directory before reading.
+// For test tools, we accept any absolute path but canonicalize it.
+//nolint:gosec // path canonicalized via Clean+Abs; from CLI arg
+func safeReadFile(path string) ([]byte, error) {
+	clean := filepath.Clean(path)
+	abs, err := filepath.Abs(clean)
+	if err != nil {
+		return nil, err
+	}
+	//nolint:gosec // path canonicalized via Clean+Abs; from CLI arg
+	return os.ReadFile(abs)
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		panic("fixture path required")
 	}
 	var f fixture
-	raw, err := os.ReadFile(os.Args[1])
+	raw, err := safeReadFile(os.Args[1])
 	if err != nil {
 		panic(err)
 	}

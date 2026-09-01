@@ -31,6 +31,7 @@ func policySeed() error {
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // path is CLI arg/config for test tool
 	content, err := os.ReadFile(fixturePath)
 	if err != nil {
 		return err
@@ -106,6 +107,7 @@ func policyExercise() error {
 		return err
 	}
 	defer database.Close()
+	//nolint:gosec // path is CLI arg/config for test tool
 
 	content, err := os.ReadFile(fixturePath)
 	if err != nil {

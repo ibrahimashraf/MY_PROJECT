@@ -69,6 +69,7 @@ func main() {
 }
 
 func loadEnvironment(path string) (map[string]string, error) {
+	//nolint:gosec // path is CLI arg/config for test tool
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
