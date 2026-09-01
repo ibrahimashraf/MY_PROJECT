@@ -489,6 +489,44 @@ func (r *Repository) RequestCertificateValidation(ctx context.Context, command w
 	return receipt, tx.Commit()
 }
 
+func (r *Repository) AddEvidenceReference(ctx context.Context, command workorder.AddEvidenceReferenceCommand) (workorder.MutationReceipt, error) {
+	requestHash, err := hashPayload(command)
+	if err != nil {
+		return workorder.MutationReceipt{}, err
+	}
+	tx, receipt, found, err := r.startMutation(ctx, command.Actor, command.Operation, requestHash)
+	if err != nil || found {
+		if found {
+			_ = tx.Rollback()
+		}
+		return receipt, err
+	}
+	defer tx.Rollback()
+	order, err := loadOrder(ctx, tx, command.Actor, command.Evidence.WorkOrderID, true)
+	if err != nil {
+		return receipt, err
+	}
+	if err := workorder.ValidateAddEvidenceReferenceCommand(command, order); err != nil {
+		return receipt, err
+	}
+	if command.Operation.ExpectedRevision != order.Revision {
+		return receipt, ErrStaleRevision
+	}
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO work_order_evidence
+			(id, tenant_id, organization_id, work_order_id, content_hash, reference_url, created_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		command.Evidence.ID, command.Actor.TenantID, command.Actor.OrganizationID,
+		command.Evidence.WorkOrderID, command.Evidence.ContentHash, command.Evidence.ReferenceURL, command.Actor.ActorID); err != nil {
+		return receipt, err
+	}
+	receipt = acceptedReceipt(command.Actor, command.Operation, order.ID, order.Revision)
+	if err := finishMutation(ctx, tx, command.Actor, command.Operation, requestHash, "add_evidence_reference", order.ID, command.Operation.ExpectedRevision, order.Revision, receipt); err != nil {
+		return receipt, err
+	}
+	return receipt, tx.Commit()
+}
+
 func (r *Repository) startMutation(ctx context.Context, actor workorder.ActorContext, operation workorder.OperationMeta, requestHash string) (*sql.Tx, workorder.MutationReceipt, bool, error) {
 	if err := operation.Validate(); err != nil {
 		return nil, workorder.MutationReceipt{}, false, err

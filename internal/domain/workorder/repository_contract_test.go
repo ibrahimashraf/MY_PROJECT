@@ -39,6 +39,9 @@ func (noopRepository) ReconcileProvisional(context.Context, ReconcileProvisional
 func (noopRepository) RequestCertificateValidation(context.Context, RequestCertificateValidationCommand) (MutationReceipt, error) {
 	return MutationReceipt{}, nil
 }
+func (noopRepository) AddEvidenceReference(context.Context, AddEvidenceReferenceCommand) (MutationReceipt, error) {
+	return MutationReceipt{}, nil
+}
 
 func (noopTransactions) WithinTransaction(context.Context, ActorContext, func(context.Context, Repository) error) error {
 	return nil
@@ -56,6 +59,9 @@ func (noopAuthorizer) CanReconcileProvisional(context.Context, ActorContext, Pro
 	return nil
 }
 func (noopAuthorizer) CanRequestCertificateValidation(context.Context, ActorContext, WorkOrder) error {
+	return nil
+}
+func (noopAuthorizer) CanAddEvidenceReference(context.Context, ActorContext, WorkOrder, EvidenceReference) error {
 	return nil
 }
 

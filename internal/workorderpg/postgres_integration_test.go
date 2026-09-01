@@ -309,6 +309,7 @@ func cleanupWorkOrderFixture(t *testing.T, ctx context.Context, db *sql.DB, acto
 	}{
 		{"DELETE FROM work_order_state_event WHERE work_order_id=$1", workOrderID},
 		{"DELETE FROM work_order_operation WHERE aggregate_id=$1", workOrderID},
+		{"DELETE FROM work_order_evidence WHERE work_order_id=$1", workOrderID},
 		{"DELETE FROM work_order_submission_item WHERE submission_segment_id IN (SELECT id FROM work_order_submission_segment WHERE work_order_id=$1)", workOrderID},
 		{"DELETE FROM work_order_submission_segment WHERE work_order_id=$1", workOrderID},
 		{"DELETE FROM inspection_record WHERE work_order_id=$1", workOrderID},

@@ -56,6 +56,9 @@ func (s *testService) ReconcileProvisional(context.Context, workorder.ReconcileP
 func (s *testService) RequestCertificateValidation(context.Context, workorder.RequestCertificateValidationCommand) (workorder.MutationReceipt, error) {
 	return workorder.MutationReceipt{}, nil
 }
+func (s *testService) AddEvidenceReference(context.Context, workorder.AddEvidenceReferenceCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
 func TestHandlerDerivesActorAndIgnoresBodyAuthority(t *testing.T) {
 	service := &testService{}
 	handler := Handler{Validator: testValidator{principal: oidcauth.Principal{Issuer: "issuer", Subject: "subject"}}, Resolver: testResolver{membership: identity.Membership{ActorID: "derived", TenantID: "tenant", OrganizationID: "org", WorkOrderRole: "inspector", Capabilities: []string{"workorder.submit_partial"}}}, Service: service}

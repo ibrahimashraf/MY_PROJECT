@@ -35,6 +35,7 @@ type Repository interface {
 	ReassignScope(ctx context.Context, command ReassignScopeCommand) (MutationReceipt, error)
 	ReconcileProvisional(ctx context.Context, command ReconcileProvisionalCommand) (MutationReceipt, error)
 	RequestCertificateValidation(ctx context.Context, command RequestCertificateValidationCommand) (MutationReceipt, error)
+	AddEvidenceReference(ctx context.Context, command AddEvidenceReferenceCommand) (MutationReceipt, error)
 }
 
 // TransactionRunner makes transaction scope explicit without binding the domain to a SQL driver.
@@ -51,6 +52,7 @@ type Authorizer interface {
 	CanReassignScope(ctx context.Context, actor ActorContext, order WorkOrder) error
 	CanReconcileProvisional(ctx context.Context, actor ActorContext, record ProvisionalRecord) error
 	CanRequestCertificateValidation(ctx context.Context, actor ActorContext, order WorkOrder) error
+	CanAddEvidenceReference(ctx context.Context, actor ActorContext, order WorkOrder, evidence EvidenceReference) error
 }
 
 // ServiceDependencies are injected into the application service, keeping transport and storage separate.

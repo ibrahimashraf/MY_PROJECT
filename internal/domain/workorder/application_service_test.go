@@ -47,6 +47,9 @@ func (r *serviceTestRepo) ReconcileProvisional(context.Context, ReconcileProvisi
 func (r *serviceTestRepo) RequestCertificateValidation(context.Context, RequestCertificateValidationCommand) (MutationReceipt, error) {
 	return MutationReceipt{}, ErrInvalidScope
 }
+func (r *serviceTestRepo) AddEvidenceReference(context.Context, AddEvidenceReferenceCommand) (MutationReceipt, error) {
+	return MutationReceipt{}, ErrInvalidEvidence
+}
 
 type serviceTestTx struct{ repo Repository }
 
@@ -69,6 +72,9 @@ func (serviceTestAuth) CanReconcileProvisional(context.Context, ActorContext, Pr
 	return nil
 }
 func (serviceTestAuth) CanRequestCertificateValidation(context.Context, ActorContext, WorkOrder) error {
+	return nil
+}
+func (serviceTestAuth) CanAddEvidenceReference(context.Context, ActorContext, WorkOrder, EvidenceReference) error {
 	return nil
 }
 

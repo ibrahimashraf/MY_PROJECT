@@ -75,6 +75,7 @@ var (
 	ErrInvalidAssignment   = errors.New("work-order assignment is incomplete")
 	ErrInvalidOperation    = errors.New("operation idempotency metadata is incomplete")
 	ErrProvisionalConflict = errors.New("provisional record candidate fingerprint conflict")
+	ErrInvalidEvidence     = errors.New("work-order evidence reference is invalid")
 )
 
 type WorkOrder struct {
@@ -220,4 +221,52 @@ func CanTransition(from, to ExecutionState) bool {
 		ExecutionAwaitingReview:     {ExecutionInProgress: true, ExecutionCompleted: true},
 	}
 	return allowed[from][to]
+}
+
+// EvidenceReference is a URL reference to externally stored evidence, not a blob.
+// D7-6: evidence_id (id), work_order_id FK CASCADE, content_hash (sha256 hex), reference_url (https://), tenant_id/organization_id.
+// Table: work_order_evidence in migrations/0044_work_order_evidence.sql (candidate).
+type EvidenceReference struct {
+	ID             string `json:"evidence_id"`
+	TenantID       string `json:"tenant_id"`
+	OrganizationID string `json:"organization_id"`
+	WorkOrderID    string `json:"work_order_id"`
+	ContentHash    string `json:"content_hash"`
+	ReferenceURL   string `json:"reference_url"`
+	CreatedBy      string `json:"created_by,omitempty"`
+}
+
+func (e EvidenceReference) Validate() error {
+	if strings.TrimSpace(e.ID) == "" || strings.TrimSpace(e.TenantID) == "" || strings.TrimSpace(e.OrganizationID) == "" || strings.TrimSpace(e.WorkOrderID) == "" {
+		return fmt.Errorf("%w: evidence identity requires evidence_id, tenant_id, organization_id, work_order_id", ErrInvalidEvidence)
+	}
+	if strings.TrimSpace(e.ContentHash) == "" || len(e.ContentHash) != 64 {
+		return fmt.Errorf("%w: content_hash must be 64-char hex sha256", ErrInvalidEvidence)
+	}
+	for _, c := range e.ContentHash {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return fmt.Errorf("%w: content_hash must be hex", ErrInvalidEvidence)
+		}
+	}
+	trimmedURL := strings.TrimSpace(e.ReferenceURL)
+	if trimmedURL == "" || len(trimmedURL) > 2048 {
+		return fmt.Errorf("%w: reference_url is required and must be <=2048 chars", ErrInvalidEvidence)
+	}
+	if !(strings.HasPrefix(trimmedURL, "https://") || strings.HasPrefix(trimmedURL, "http://")) {
+		return fmt.Errorf("%w: reference_url must be https:// or http:// (not blob)", ErrInvalidEvidence)
+	}
+	if strings.Contains(trimmedURL, " ") {
+		return fmt.Errorf("%w: reference_url must not contain spaces", ErrInvalidEvidence)
+	}
+	return nil
+}
+
+func (e EvidenceReference) ValidateFor(order WorkOrder) error {
+	if err := e.Validate(); err != nil {
+		return err
+	}
+	if e.TenantID != order.TenantID || e.OrganizationID != order.OrganizationID || e.WorkOrderID != order.ID {
+		return fmt.Errorf("%w: tenant/organization/work_order mismatch", ErrInvalidEvidence)
+	}
+	return nil
 }

@@ -145,3 +145,19 @@ func (s applicationService) RequestCertificateValidation(ctx context.Context, co
 		return repo.RequestCertificateValidation(txCtx, command)
 	})
 }
+
+func (s applicationService) AddEvidenceReference(ctx context.Context, command AddEvidenceReferenceCommand) (MutationReceipt, error) {
+	order, err := s.deps.Repository.GetWorkOrder(ctx, command.Actor, command.Evidence.WorkOrderID)
+	if err != nil {
+		return MutationReceipt{}, err
+	}
+	if err := ValidateAddEvidenceReferenceCommand(command, order); err != nil {
+		return MutationReceipt{}, err
+	}
+	if err := s.deps.Authorizer.CanAddEvidenceReference(ctx, command.Actor, order, command.Evidence); err != nil {
+		return MutationReceipt{}, err
+	}
+	return s.execute(ctx, command.Actor, command.Operation, func(txCtx context.Context, repo Repository) (MutationReceipt, error) {
+		return repo.AddEvidenceReference(txCtx, command)
+	})
+}

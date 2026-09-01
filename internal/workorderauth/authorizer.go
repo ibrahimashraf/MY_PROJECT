@@ -17,6 +17,7 @@ const (
 	CapabilityReassignScope        = "workorder.reassign_scope"
 	CapabilityReconcileProvisional = "workorder.reconcile_provisional"
 	CapabilityRequestValidation    = "workorder.request_certificate_validation"
+	CapabilityAddEvidenceReference = "workorder.add_evidence_reference"
 )
 
 type Authorizer struct{}
@@ -58,6 +59,10 @@ func (Authorizer) CanReconcileProvisional(_ context.Context, actor workorder.Act
 
 func (Authorizer) CanRequestCertificateValidation(_ context.Context, actor workorder.ActorContext, order workorder.WorkOrder) error {
 	return authorizeOrder(actor, order, CapabilityRequestValidation, "reviewer", "manager", "administrator")
+}
+
+func (Authorizer) CanAddEvidenceReference(_ context.Context, actor workorder.ActorContext, order workorder.WorkOrder, _ workorder.EvidenceReference) error {
+	return authorizeOrder(actor, order, CapabilityAddEvidenceReference, "inspector", "manager", "administrator", "reviewer")
 }
 
 func authorizeOrder(actor workorder.ActorContext, order workorder.WorkOrder, capability string, roles ...string) error {

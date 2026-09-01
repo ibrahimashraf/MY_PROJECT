@@ -74,6 +74,12 @@ type RequestCertificateValidationCommand struct {
 	InspectionIDs []string
 }
 
+type AddEvidenceReferenceCommand struct {
+	Actor     ActorContext
+	Operation OperationMeta
+	Evidence  EvidenceReference
+}
+
 type MutationReceipt struct {
 	OperationID    string `json:"operation_id"`
 	IdempotencyKey string `json:"idempotency_key"`
@@ -99,6 +105,7 @@ type Service interface {
 	ReassignScope(context.Context, ReassignScopeCommand) (MutationReceipt, error)
 	ReconcileProvisional(context.Context, ReconcileProvisionalCommand) (MutationReceipt, error)
 	RequestCertificateValidation(context.Context, RequestCertificateValidationCommand) (MutationReceipt, error)
+	AddEvidenceReference(context.Context, AddEvidenceReferenceCommand) (MutationReceipt, error)
 }
 
 func validateActorOperation(actor ActorContext, operation OperationMeta) error {
@@ -243,4 +250,14 @@ func ValidateCertificateValidationCommand(command RequestCertificateValidationCo
 		seen[inspectionID] = struct{}{}
 	}
 	return nil
+}
+
+func ValidateAddEvidenceReferenceCommand(command AddEvidenceReferenceCommand, order WorkOrder) error {
+	if err := validateActorOperation(command.Actor, command.Operation); err != nil {
+		return err
+	}
+	if command.Actor.TenantID != order.TenantID || command.Actor.OrganizationID != order.OrganizationID {
+		return ErrInvalidEvidence
+	}
+	return command.Evidence.ValidateFor(order)
 }
