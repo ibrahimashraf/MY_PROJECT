@@ -4,9 +4,10 @@ BEGIN;
 
 -- Asset registry: search by description, serial, type, asset_id
 ALTER TABLE asset_registry
-    ADD COLUMN search_vector tsvector;
+    ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
-CREATE INDEX asset_registry_search_idx ON asset_registry USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS asset_registry_search_idx ON asset_registry USING GIN (search_vector);
+DROP TRIGGER IF EXISTS asset_registry_search_trigger ON asset_registry;
 
 CREATE OR REPLACE FUNCTION asset_registry_search_update() RETURNS trigger AS $$
 BEGIN
@@ -25,9 +26,10 @@ CREATE TRIGGER asset_registry_search_trigger
 
 -- Work order: search by job_number, client_id
 ALTER TABLE work_order
-    ADD COLUMN search_vector tsvector;
+    ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
-CREATE INDEX work_order_search_idx ON work_order USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS work_order_search_idx ON work_order USING GIN (search_vector);
+DROP TRIGGER IF EXISTS work_order_search_trigger ON work_order;
 
 CREATE OR REPLACE FUNCTION work_order_search_update() RETURNS trigger AS $$
 BEGIN
@@ -44,9 +46,10 @@ CREATE TRIGGER work_order_search_trigger
 
 -- Inspection record: search by asset_id, inspector_id
 ALTER TABLE inspection_record
-    ADD COLUMN search_vector tsvector;
+    ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
-CREATE INDEX inspection_record_search_idx ON inspection_record USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS inspection_record_search_idx ON inspection_record USING GIN (search_vector);
+DROP TRIGGER IF EXISTS inspection_record_search_trigger ON inspection_record;
 
 CREATE OR REPLACE FUNCTION inspection_record_search_update() RETURNS trigger AS $$
 BEGIN

@@ -2,7 +2,7 @@
 -- CANDIDATE ONLY. Do not apply without a fresh backup and disposable review.
 BEGIN;
 
-CREATE TABLE audit_log (
+CREATE TABLE IF NOT EXISTS audit_log (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -23,10 +23,24 @@ CREATE TABLE audit_log (
     UNIQUE (tenant_id, organization_id, id)
 );
 
-CREATE INDEX audit_log_tenant_org_idx ON audit_log (tenant_id, organization_id, created_at DESC);
-CREATE INDEX audit_log_entity_idx ON audit_log (tenant_id, organization_id, entity_type, entity_id);
-CREATE INDEX audit_log_actor_idx ON audit_log (tenant_id, organization_id, actor_id, created_at DESC);
-CREATE INDEX audit_log_event_idx ON audit_log (tenant_id, organization_id, event_type, created_at DESC);
-CREATE INDEX audit_log_hash_chain_idx ON audit_log (tenant_id, organization_id, previous_hash, entry_hash);
+CREATE INDEX IF NOT EXISTS audit_log_tenant_org_idx ON audit_log (tenant_id, organization_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_log_entity_idx ON audit_log (tenant_id, organization_id, entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS audit_log_actor_idx ON audit_log (tenant_id, organization_id, actor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_log_event_idx ON audit_log (tenant_id, organization_id, event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_log_hash_chain_idx ON audit_log (tenant_id, organization_id, previous_hash, entry_hash);
+
+REVOKE ALL ON TABLE audit_log FROM PUBLIC, integin_runtime;
+GRANT SELECT,INSERT ON TABLE audit_log TO integin_runtime;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS audit_log_tenant_organization_isolation ON audit_log;
+CREATE POLICY audit_log_tenant_organization_isolation ON audit_log
+    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
+    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
+
+CREATE OR REPLACE FUNCTION audit_log_no_update() RETURNS trigger AS $$
+BEGIN RAISE EXCEPTION 'audit_log is immutable: UPDATE/DELETE not allowed'; RETURN NULL; END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS audit_log_immutable ON audit_log;
+CREATE TRIGGER audit_log_immutable BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_no_update();
 
 COMMIT;

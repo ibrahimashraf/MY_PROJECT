@@ -26,6 +26,9 @@ CREATE INDEX IF NOT EXISTS idx_flag_override_scope ON feature_flag_override (ten
 ALTER TABLE feature_flag_override ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feature_flag_override FORCE ROW LEVEL SECURITY;
 
+REVOKE ALL ON TABLE feature_flag_override FROM PUBLIC, integin_runtime;
+GRANT SELECT,INSERT,UPDATE,DELETE ON TABLE feature_flag_override TO integin_runtime;
+DROP POLICY IF EXISTS feature_flag_override_isolation ON feature_flag_override;
 CREATE POLICY feature_flag_override_isolation ON feature_flag_override
     USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
