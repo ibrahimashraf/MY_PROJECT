@@ -138,7 +138,7 @@ func TestSignedOIDCPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuerServer.URL, subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, fixtureDatabase, fixtureDatabase, workOrderID, issuerServer.URL, subject, actorID, issuerServer.URL+"-unused", subject+"-unused", "unused-actor")
+	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuerServer.URL, subject, actorID, issuerServer.URL+"-unused", subject+"-unused", "unused-actor")
 }
 
 func controlledOIDCToken(t *testing.T, privateKey *rsa.PrivateKey, keyID, issuer, subject string) string {
