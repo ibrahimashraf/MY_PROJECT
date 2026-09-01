@@ -6,13 +6,21 @@ import (
 	"net/http"
 
 	"integin/internal/domain/license"
+	"integin/internal/identity"
 	"integin/internal/licensehttp"
 	"integin/internal/licensepg"
+	"integin/internal/oidcauth"
 )
 
-func NewLicenseHandler(database *sql.DB) (http.Handler, error) {
+func NewLicenseHandler(database *sql.DB, validator *oidcauth.Validator, resolver identity.Resolver) (http.Handler, error) {
 	if database == nil {
 		return nil, errors.New("license handler requires database")
+	}
+	if validator == nil {
+		return nil, errors.New("license handler requires OIDC validator")
+	}
+	if resolver == nil {
+		return nil, errors.New("license handler requires identity resolver")
 	}
 	repository, err := licensepg.NewRepository(database)
 	if err != nil {
@@ -25,5 +33,9 @@ func NewLicenseHandler(database *sql.DB) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return licensehttp.Handler{LicenseService: service}, nil
+	return licensehttp.Handler{
+		Validator:      licensehttp.ValidatorWrapper{Validator: validator},
+		Resolver:       resolver,
+		LicenseService: service,
+	}, nil
 }

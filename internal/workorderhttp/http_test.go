@@ -31,11 +31,12 @@ func (r testResolver) Resolve(context.Context, identity.PrincipalKey) (identity.
 }
 
 type testService struct {
-	command workorder.SubmitPartialCommand
+	partialCommand workorder.SubmitPartialCommand
+	evidenceCommand workorder.AddEvidenceReferenceCommand
 }
 
 func (s *testService) SubmitPartial(_ context.Context, c workorder.SubmitPartialCommand) (workorder.MutationReceipt, error) {
-	s.command = c
+	s.partialCommand = c
 	return workorder.MutationReceipt{Status: workorder.ReceiptAccepted}, nil
 }
 func (s *testService) CreateRequest(context.Context, workorder.CreateRequestCommand) (workorder.MutationReceipt, error) {
@@ -56,8 +57,9 @@ func (s *testService) ReconcileProvisional(context.Context, workorder.ReconcileP
 func (s *testService) RequestCertificateValidation(context.Context, workorder.RequestCertificateValidationCommand) (workorder.MutationReceipt, error) {
 	return workorder.MutationReceipt{}, nil
 }
-func (s *testService) AddEvidenceReference(context.Context, workorder.AddEvidenceReferenceCommand) (workorder.MutationReceipt, error) {
-	return workorder.MutationReceipt{}, nil
+func (s *testService) AddEvidenceReference(_ context.Context, c workorder.AddEvidenceReferenceCommand) (workorder.MutationReceipt, error) {
+	s.evidenceCommand = c
+	return workorder.MutationReceipt{Status: workorder.ReceiptAccepted}, nil
 }
 func TestHandlerDerivesActorAndIgnoresBodyAuthority(t *testing.T) {
 	service := &testService{}
@@ -69,13 +71,48 @@ func TestHandlerDerivesActorAndIgnoresBodyAuthority(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status=%d", response.Code)
 	}
-	if service.command.Actor.ActorID != "derived" || service.command.Actor.Role != "inspector" {
-		t.Fatalf("actor was not derived: %+v", service.command.Actor)
+	if service.partialCommand.Actor.ActorID != "derived" || service.partialCommand.Actor.Role != "inspector" {
+		t.Fatalf("actor was not derived: %+v", service.partialCommand.Actor)
 	}
 }
 func TestHandlerRejectsMissingBearer(t *testing.T) {
 	response := httptest.NewRecorder()
 	Handler{}.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/", nil))
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status=%d", response.Code)
+	}
+}
+
+func TestEvidenceHandlerDerivesActorAndIgnoresBodyAuthority(t *testing.T) {
+	service := &testService{}
+	handler := EvidenceHandler{Validator: testValidator{principal: oidcauth.Principal{Issuer: "issuer", Subject: "subject"}}, Resolver: testResolver{membership: identity.Membership{ActorID: "derived", TenantID: "tenant", OrganizationID: "org", WorkOrderRole: "inspector", Capabilities: []string{"workorder.add_evidence_reference"}}}, Service: service}
+	attackerBody := `{"operation_id":"op","idempotency_key":"key","expected_revision":3,"evidence_id":"ev","content_hash":"` + strings.Repeat("a", 64) + `","reference_url":"https://example.com/ev","tenant_id":"attacker","organization_id":"attacker","actor_id":"attacker"}`
+	request := httptest.NewRequest(http.MethodPost, "/work-orders/wo/evidence", strings.NewReader(attackerBody))
+	request.Header.Set("Authorization", "Bearer valid")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("authority-shaped request status = %d body=%s, want %d", response.Code, response.Body.String(), http.StatusBadRequest)
+	}
+	validBody := `{"operation_id":"op","idempotency_key":"key","expected_revision":3,"evidence_id":"ev","content_hash":"` + strings.Repeat("a", 64) + `","reference_url":"https://example.com/ev"}`
+	request = httptest.NewRequest(http.MethodPost, "/work-orders/wo/evidence", strings.NewReader(validBody))
+	request.Header.Set("Authorization", "Bearer valid")
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	if service.evidenceCommand.Actor.ActorID != "derived" || service.evidenceCommand.Actor.Role != "inspector" {
+		t.Fatalf("actor was not derived: %+v", service.evidenceCommand.Actor)
+	}
+	if service.evidenceCommand.Evidence.TenantID != "tenant" || service.evidenceCommand.Evidence.OrganizationID != "org" || service.evidenceCommand.Evidence.WorkOrderID != "wo" || service.evidenceCommand.Evidence.CreatedBy != "derived" {
+		t.Fatalf("evidence was not derived: %+v", service.evidenceCommand.Evidence)
+	}
+}
+
+func TestEvidenceHandlerRejectsMissingBearer(t *testing.T) {
+	response := httptest.NewRecorder()
+	EvidenceHandler{}.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/work-orders/wo/evidence", nil))
 	if response.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status=%d", response.Code)
 	}

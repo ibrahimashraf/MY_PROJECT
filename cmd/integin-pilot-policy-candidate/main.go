@@ -135,6 +135,7 @@ func main() {
 	if oidcConfigErr != nil {
 		log.Fatal(oidcConfigErr)
 	}
+	var licenseHandler http.Handler
 	if oidcConfig.Enabled {
 		if database == nil {
 			log.Fatal("OIDC session route requires INTEGIN_DB_URL")
@@ -154,6 +155,11 @@ func main() {
 			log.Fatal(sessionHandlerErr)
 		}
 		oidcSessionHandler = sessionHandler
+		var handlerErr error
+		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, resolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
@@ -161,11 +167,6 @@ func main() {
 	if policyRegistrationErr != nil {
 		log.Fatal(policyRegistrationErr)
 	}
-	if policyRegistration == nil {
-		log.Fatal("pilot candidate policy was not registered")
-	}
-	defer policyRegistration.Disable()
-	licenseHandler, _ := server.NewLicenseHandler(database)
 	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
 	trainingHandler, _ := server.NewTrainingHandler(database)
 	settingsHandler, _ := server.NewSettingsHandler(database)

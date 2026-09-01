@@ -74,3 +74,34 @@ func TestEventLogTenantRLSMigrationContract(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAnomalyDetectionMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0048_anomaly_detection.candidate.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	required := []string{
+		"CREATE TABLE anomaly_rules",
+		"CREATE TABLE anomaly_alerts",
+		"tenant_id",
+		"CHECK (type IN ('geo', 'frequency', 'pattern'))",
+		"CHECK (status IN ('firing', 'acknowledged', 'resolved'))",
+		"idx_anomaly_rules_tenant",
+		"idx_anomaly_alerts_dedup",
+		"REFERENCES anomaly_rules(id) ON DELETE CASCADE",
+		"REFERENCES short_links(code) ON DELETE CASCADE",
+		"update_anomaly_rule_updated_at",
+		"update_anomaly_alert_updated_at",
+		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_rules TO integin_runtime",
+		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_runtime",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	if _, err := os.Stat("0048_anomaly_detection.down.candidate.sql"); err != nil {
+		t.Fatal(err)
+	}
+}

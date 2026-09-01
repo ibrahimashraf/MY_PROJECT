@@ -27,3 +27,18 @@ func NewWorkOrderPartialSubmissionHandler(database *sql.DB, validator *oidcauth.
 	}
 	return workorderhttp.Handler{Validator: validator, Resolver: resolver, Service: service}, nil
 }
+
+func NewWorkOrderEvidenceHandler(database *sql.DB, validator *oidcauth.Validator, resolver identity.Resolver) (http.Handler, error) {
+	if database == nil || validator == nil || resolver == nil {
+		return nil, errors.New("work-order evidence handler requires database, OIDC validator, and identity resolver")
+	}
+	repository, err := workorderpg.NewRepository(database, workorderpg.NewPostgresInspectionMembershipValidator())
+	if err != nil {
+		return nil, err
+	}
+	service, err := workorder.NewService(workorder.ServiceDependencies{Repository: repository, Transactions: repository, Authorizer: workorderauth.New()})
+	if err != nil {
+		return nil, err
+	}
+	return workorderhttp.EvidenceHandler{Validator: validator, Resolver: resolver, Service: service}, nil
+}

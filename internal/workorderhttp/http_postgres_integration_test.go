@@ -345,3 +345,154 @@ func assertHTTPRuntimeFixtureCleanup(t *testing.T, ctx context.Context, database
 		t.Fatalf("runtime fixture cleanup left rows: work_orders=%d inspections=%d identity_subjects=%d identity_actors=%d", remainingWorkOrders, remainingInspections, remainingSubjects, remainingActors)
 	}
 }
+
+func TestAuthenticatedEvidenceReferenceHTTPPostgresIntegration(t *testing.T) {
+	dsn := os.Getenv("INTEGIN_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled HTTP PostgreSQL integration test")
+	}
+	ctx := context.Background()
+	database, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = database.Close() })
+	if err := database.PingContext(ctx); err != nil {
+		t.Fatal(err)
+	}
+	fixtureDatabase := openHTTPFixtureDatabase(t, ctx)
+
+	id := fmt.Sprintf("it-http-evidence-%d", time.Now().UnixNano())
+	issuer, subject := "https://issuer.example.test/"+id, "subject-"+id
+	tenantID, organizationID, actorID := "pilot-tenant-http", "pilot-organization-http", "inspector-"+id
+	otherIssuer, otherSubject := issuer+"-other", subject+"-other"
+	otherOrganizationID, otherActorID := organizationID+"-other", "inspector-other-"+id
+	workOrderID, scopeID, assignmentID := id+"-order", id+"-scope", id+"-assignment"
+	inspectionIDs := []string{id + "-inspection-1", id + "-inspection-2"}
+
+	insertRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, tenantID, organizationID, actorID)
+	t.Cleanup(func() { cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, actorID) })
+	insertRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, tenantID, otherOrganizationID, otherActorID)
+	t.Cleanup(func() { cleanupRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, otherActorID) })
+	setupHTTPWorkOrderFixture(t, ctx, database, workorder.ActorContext{TenantID: tenantID, OrganizationID: organizationID, ActorID: actorID, Role: "inspector", Capabilities: []string{workorderauth.CapabilityAddEvidenceReference}}, workOrderID, scopeID, assignmentID, inspectionIDs)
+	t.Cleanup(func() {
+		cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
+	})
+
+	repository, err := workorderpg.NewRepository(database, workorderpg.NewPostgresInspectionMembershipValidator())
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := workorder.NewService(workorder.ServiceDependencies{Repository: repository, Transactions: repository, Authorizer: workorderauth.New()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver, err := identity.NewPostgresResolver(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolver.Resolve(ctx, identity.PrincipalKey{Issuer: issuer, Subject: subject}); err != nil {
+		t.Fatalf("fixture identity resolver preflight failed: %v", err)
+	}
+	handler := workorderhttp.EvidenceHandler{Validator: runtimeTokenValidator{principals: map[string]oidcauth.Principal{
+		"valid-token": {Issuer: issuer, Subject: subject},
+		"other-token": {Issuer: otherIssuer, Subject: otherSubject},
+	}}, Resolver: resolver, Service: service}
+	runtime := httptest.NewServer(server.NewMux(server.Dependencies{WorkOrderEvidenceHandler: handler}))
+	t.Cleanup(runtime.Close)
+
+	evidenceID := id + "-evidence-1"
+	contentHash := "a" + strings.Repeat("f", 63)
+	referenceURL := "https://evidence.example.com/" + evidenceID
+	body := map[string]any{
+		"operation_id":       id + "-operation",
+		"idempotency_key":    id + "-idempotency",
+		"expected_revision":  1,
+		"evidence_id":        evidenceID,
+		"content_hash":       contentHash,
+		"reference_url":      referenceURL,
+		"tenant_id":          "attacker-controlled-and-ignored",
+		"organization_id":    "attacker-controlled-and-ignored",
+		"actor_id":           "attacker-controlled-and-ignored",
+	}
+	rejectedAuthority := postEvidenceReference(t, runtime.URL, "valid-token", workOrderID, body)
+	if rejectedAuthority.Code != http.StatusBadRequest {
+		t.Fatalf("authority-shaped request status = %d body=%s, want %d", rejectedAuthority.Code, rejectedAuthority.Body.String(), http.StatusBadRequest)
+	}
+	delete(body, "tenant_id")
+	delete(body, "organization_id")
+	delete(body, "actor_id")
+	first := postEvidenceReference(t, runtime.URL, "valid-token", workOrderID, body)
+	if first.Code != http.StatusOK {
+		t.Fatalf("valid evidence reference status = %d body=%s", first.Code, first.Body.String())
+	}
+	var firstReceipt workorder.MutationReceipt
+	if err := json.NewDecoder(first.Body).Decode(&firstReceipt); err != nil {
+		t.Fatal(err)
+	}
+	if firstReceipt.WorkOrderID != workOrderID || firstReceipt.TenantID != tenantID || firstReceipt.Revision != 1 {
+		t.Fatalf("unexpected derived receipt: %+v", firstReceipt)
+	}
+
+	replay := postEvidenceReference(t, runtime.URL, "valid-token", workOrderID, body)
+	if replay.Code != http.StatusOK {
+		t.Fatalf("idempotent replay status = %d body=%s", replay.Code, replay.Body.String())
+	}
+	var replayReceipt workorder.MutationReceipt
+	if err := json.NewDecoder(replay.Body).Decode(&replayReceipt); err != nil {
+		t.Fatal(err)
+	}
+	if replayReceipt != firstReceipt {
+		t.Fatalf("idempotent replay receipt changed: first=%+v replay=%+v", firstReceipt, replayReceipt)
+	}
+
+	assertEvidenceReferencePersistence(t, ctx, database, workOrderID, evidenceID, contentHash, referenceURL, actorID)
+
+	crossOrganization := postEvidenceReference(t, runtime.URL, "other-token", workOrderID, body)
+	if crossOrganization.Code != http.StatusForbidden {
+		t.Fatalf("cross-organization status = %d body=%s, want %d without order disclosure", crossOrganization.Code, crossOrganization.Body.String(), http.StatusForbidden)
+	}
+	if bytes.Contains(crossOrganization.Body.Bytes(), []byte(workOrderID)) {
+		t.Fatalf("cross-organization response disclosed work-order identifier: %s", crossOrganization.Body.String())
+	}
+
+	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
+	cleanupRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, otherActorID)
+	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, actorID)
+	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
+}
+
+func postEvidenceReference(t *testing.T, baseURL, token, workOrderID string, body map[string]any) *httptest.ResponseRecorder {
+	t.Helper()
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequest(http.MethodPost, baseURL+"/work-orders/"+workOrderID+"/evidence", bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Authorization", "Bearer "+token)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	recorder := httptest.NewRecorder()
+	recorder.Code = response.StatusCode
+	if _, err := recorder.Body.ReadFrom(response.Body); err != nil {
+		t.Fatal(err)
+	}
+	return recorder
+}
+
+func assertEvidenceReferencePersistence(t *testing.T, ctx context.Context, database *sql.DB, workOrderID, evidenceID, contentHash, referenceURL, createdBy string) {
+	t.Helper()
+	var storedEvidenceID, storedContentHash, storedReferenceURL, storedCreatedBy string
+	if err := database.QueryRowContext(ctx, "SELECT id, content_hash, reference_url, created_by FROM work_order_evidence WHERE tenant_id=$1 AND organization_id=$2 AND work_order_id=$3 AND id=$4", "pilot-tenant-http", "pilot-organization-http", workOrderID, evidenceID).Scan(&storedEvidenceID, &storedContentHash, &storedReferenceURL, &storedCreatedBy); err != nil {
+		t.Fatal(err)
+	}
+	if storedEvidenceID != evidenceID || storedContentHash != contentHash || storedReferenceURL != referenceURL || storedCreatedBy != createdBy {
+		t.Fatalf("evidence reference persistence mismatch: id=%s hash=%s url=%s by=%s", storedEvidenceID, storedContentHash, storedReferenceURL, storedCreatedBy)
+	}
+}

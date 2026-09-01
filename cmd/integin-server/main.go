@@ -135,6 +135,7 @@ func main() {
 	}
 	var oidcSessionHandler http.Handler
 	var workOrderHandler http.Handler
+	var workOrderEvidenceHandler http.Handler
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
@@ -151,6 +152,7 @@ func main() {
 	if oidcConfigErr != nil {
 		log.Fatal(oidcConfigErr)
 	}
+	var licenseHandler http.Handler
 	if oidcConfig.Enabled {
 		if database == nil {
 			log.Fatal("OIDC session route requires INTEGIN_DB_URL")
@@ -185,16 +187,23 @@ func main() {
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
+		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, resolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
 		if evidenceStore != nil {
 			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, resolver, evidenceStore)
 			if handlerErr != nil {
 				log.Fatal(handlerErr)
 			}
 		}
+		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, resolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
-	licenseHandler, _ := server.NewLicenseHandler(database)
 	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
 	trainingHandler, _ := server.NewTrainingHandler(database)
 	settingsHandler, _ := server.NewSettingsHandler(database)
@@ -205,7 +214,7 @@ func main() {
 	reportsHandler, _ := server.NewReportsHandler(database)
 	httpServer := &http.Server{
 		Addr: address,
-		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler,
+		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
 			PilotManifestHandler: pilotManifestHandler,
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,

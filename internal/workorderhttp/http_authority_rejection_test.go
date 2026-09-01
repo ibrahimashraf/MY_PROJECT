@@ -24,7 +24,7 @@ func TestHandlerRejectsClientSuppliedAuthorityFields(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("authority-shaped field status = %d, want %d", response.Code, http.StatusBadRequest)
 	}
-	if service.command.WorkOrderID != "" {
-		t.Fatalf("service received rejected authority-shaped request: %+v", service.command)
+	if service.partialCommand.WorkOrderID != "" {
+		t.Fatalf("service received rejected authority-shaped request: %+v", service.partialCommand)
 	}
 }

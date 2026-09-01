@@ -25,6 +25,7 @@ type Dependencies struct {
 	LocalProvisioning           http.Handler
 	OIDCSessionHandler          http.Handler
 	WorkOrderHandler            http.Handler
+	WorkOrderEvidenceHandler    http.Handler
 	CertificateHandler          http.Handler
 	CertificatePublicHandler    http.Handler
 	PilotManifestHandler        *packagemanifestapi.Handler

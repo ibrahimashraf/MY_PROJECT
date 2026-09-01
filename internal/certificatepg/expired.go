@@ -10,7 +10,7 @@ import (
 	"integin/internal/domain/certificateauthority"
 )
 
-// QuickSetValidity maps the UX quick-set (Bswagic 120s 3/6/12 months) to policy validity_days.
+// QuickSetValidity maps the UX quick-set (3/6/12 months) to policy validity_days.
 // No new GRANT; just a helper so callers don't hard-code days. 3m=90d, 6m=180d, 12m=365d.
 func QuickSetValidityDays(months int) (int64, error) {
 	switch months {
@@ -25,7 +25,7 @@ func QuickSetValidityDays(months int) (int64, error) {
 	}
 }
 
-// ExpiredBucket mirrors Bswagic 390s buckets: Expired vs Expire in 1m/2w/10d.
+// ExpiredBucket mirrors ux buckets: Expired vs Expire in 1m/2w/10d.
 type ExpiredBucket struct {
 	ID        string
 	AssetID   string
@@ -46,7 +46,7 @@ func (r *Repository) ListExpired(ctx context.Context, actor certificateauthority
 }
 
 // ListExpiring returns ISSUED certs whose expires_at is in (now, now+window].
-// Window helpers match Bswagic buckets: 10d, 2w (14d), 1m (30d).
+// Window helpers match buckets: 10d, 2w (14d), 1m (30d).
 func (r *Repository) ListExpiring(ctx context.Context, actor certificateauthority.ActorContext, now time.Time, window time.Duration) ([]ExpiredBucket, error) {
 	if err := validateActor(actor); err != nil {
 		return nil, err
