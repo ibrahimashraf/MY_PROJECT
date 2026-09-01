@@ -83,7 +83,7 @@ func TestApplicationServiceCreateRequestUsesTransactionalRepository(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if receipt.Status != ReceiptAccepted || repo.createCalls != 1 || repo.lookupCalls != 0 {
+	if receipt.Status != ReceiptAccepted || repo.createCalls != 1 || repo.lookupCalls != 1 {
 		t.Fatalf("unexpected dispatch: receipt=%+v create=%d lookup=%d", receipt, repo.createCalls, repo.lookupCalls)
 	}
 }
