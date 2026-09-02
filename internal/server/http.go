@@ -104,7 +104,7 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 
 func productionMiddleware(next http.Handler) http.Handler {
 	rateLimiter := middleware.DefaultRateLimiter()
-	return requestLogger(withCorrelationID(withRequestLimit(middleware.RateLimitMiddleware(rateLimiter)(next), 10<<20)))
+	return requestLogger(withCorrelationID(withRequestLimit(rateLimiter.Middleware(next), 10<<20)))
 }
 
 func withCorrelationID(next http.Handler) http.Handler {
