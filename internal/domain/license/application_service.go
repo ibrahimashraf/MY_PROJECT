@@ -125,3 +125,16 @@ func (s applicationService) RevokeLicense(ctx context.Context, actor ActorContex
 		})
 	})
 }
+
+func (s applicationService) ListLicenses(ctx context.Context, actor ActorContext) ([]License, error) {
+	if err := actor.Validate(); err != nil {
+		return nil, err
+	}
+	var licenses []License
+	err := s.deps.Transactions.WithinTransaction(ctx, actor, func(txCtx context.Context, repo Repository) error {
+		var err error
+		licenses, err = repo.ListLicenses(txCtx, actor)
+		return err
+	})
+	return licenses, err
+}

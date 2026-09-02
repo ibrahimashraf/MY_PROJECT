@@ -179,6 +179,9 @@ func insertRuntimeMembership(t *testing.T, ctx context.Context, database *sql.DB
 	if _, err := tx.ExecContext(ctx, "INSERT INTO identity_membership_capability (membership_id, capability) VALUES ($1,$2)", membershipID, workorderauth.CapabilitySubmitPartial); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO identity_membership_capability (membership_id, capability) VALUES ($1,$2)", membershipID, workorderauth.CapabilityAddEvidenceReference); err != nil {
+		t.Fatal(err)
+	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}

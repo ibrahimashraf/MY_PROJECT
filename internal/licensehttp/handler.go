@@ -57,6 +57,8 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case r.Method == http.MethodGet && r.URL.Path == "/api/v1/licenses":
+		h.handleList(w, r, actor)
 	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/licenses/validate":
 		h.handleValidate(w, r, actor)
 	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/licenses":
@@ -145,4 +147,13 @@ func (h Handler) handleRevoke(w http.ResponseWriter, r *http.Request, actor lice
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, map[string]string{"status": "revoked"})
+}
+
+func (h Handler) handleList(w http.ResponseWriter, r *http.Request, actor license.ActorContext) {
+	licenses, err := h.LicenseService.ListLicenses(r.Context(), actor)
+	if err != nil {
+		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	httpresponse.JSON(w, http.StatusOK, licenses)
 }

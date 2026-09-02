@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: integin-pgbouncer
+    ports:
+      - "6432:6432"
+    environment:
+      - DATABASES_HOST=postgres
+      - DATABASES_PORT=5432
+      - DATABASES_DBNAME=integin_pilot
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=10000
+      - DEFAULT_POOL_SIZE=100
+      - MIN_POOL_SIZE=20
+      - RESERVE_POOL_SIZE=10
+      - RESERVE_POOL_TIMEOUT=5
+      - AUTH_TYPE=md5
+      - AUTH_FILE=/etc/pgbouncer/userlist.txt
+      - LOG_CONNECTIONS=1
+      - LOG_DISCONNECTIONS=1
+      - LOG_POOLER_ERRORS=1
+      - STATS_PERIOD=60
+    volumes:
+      - ./deployments/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./deployments/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M

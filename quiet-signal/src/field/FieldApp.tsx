@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   saveInspection,
   listPendingSync,
@@ -6,6 +6,41 @@ import {
   type InspectionRecord,
 } from './db'
 import { syncPendingInspections, registerSyncOnReconnect } from './sync'
+
+function useHoldMic(onResult: (text: string) => void, lang = 'en-US') {
+  const recRef = useRef<any>(null)
+  const [holding, setHolding] = useState(false)
+  const start = useCallback(async () => {
+    const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return alert('Speech not supported')
+    const rec = new SR()
+    rec.lang = lang; rec.interimResults = false; rec.maxAlternatives = 1
+    rec.onresult = (e: any) => onResult(e.results[0][0].transcript)
+    rec.onerror = () => setHolding(false)
+    rec.onend = () => setHolding(false)
+    recRef.current = rec; rec.start(); setHolding(true)
+  }, [onResult, lang])
+  const stop = useCallback(() => { try { recRef.current?.stop() } catch {} setHolding(false) }, [])
+  return { holding, start, stop }
+}
+
+function MicInput({ value, onChange, placeholder, lang }: { value: string; onChange: (v: string) => void; placeholder?: string; lang?: string }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const insert = useCallback((t: string) => {
+    const el = inputRef.current; if (!el) return onChange(value ? value + ' ' + t : t)
+    const s = el.selectionStart ?? value.length, e = el.selectionEnd ?? value.length
+    const nv = value.slice(0, s) + t + value.slice(e); onChange(nv)
+    setTimeout(() => { el.focus(); el.setSelectionRange(s + t.length, s + t.length) }, 0)
+  }, [value, onChange])
+  const { holding, start, stop } = useHoldMic(insert, lang)
+  return (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <input ref={inputRef} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ display: 'block', width: '100%', padding: 8, marginTop: 4, flex: 1 }} />
+      <button type="button" onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
+        style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ccc', background: holding ? '#ef4444' : '#f3f4f6', cursor: 'pointer', flexShrink: 0 }} title="Hold to speak">🎙️</button>
+    </div>
+  )
+}
 
 type InspectionForm = {
   work_order_id: string
@@ -104,33 +139,9 @@ export function FieldApp() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <label>
-            Work Order ID
-            <input
-              value={form.work_order_id}
-              onChange={e => setForm({ ...form, work_order_id: e.target.value })}
-              style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}
-              placeholder="WO-2026-001"
-            />
-          </label>
-          <label>
-            Asset ID
-            <input
-              value={form.asset_id}
-              onChange={e => setForm({ ...form, asset_id: e.target.value })}
-              style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}
-              placeholder="EQ-4401"
-            />
-          </label>
-          <label>
-            Equipment Type
-            <input
-              value={form.equipment_type}
-              onChange={e => setForm({ ...form, equipment_type: e.target.value })}
-              style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}
-              placeholder="CHAIN sling, WIRE ROPE, etc."
-            />
-          </label>
+          <label>Work Order ID<MicInput value={form.work_order_id} onChange={v => setForm({ ...form, work_order_id: v })} placeholder="WO-2026-001" /></label>
+          <label>Asset ID<MicInput value={form.asset_id} onChange={v => setForm({ ...form, asset_id: v })} placeholder="EQ-4401" /></label>
+          <label>Equipment Type<MicInput value={form.equipment_type} onChange={v => setForm({ ...form, equipment_type: v })} placeholder="CHAIN sling, WIRE ROPE, etc." /></label>
 
           <h3>Inspection Checklist</h3>
           {['visual_defects', 'wear_measurements', 'markings_labels', 'certification_status', 'overall_condition'].map(q => (

@@ -11,6 +11,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/middleware"
 	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
@@ -26,6 +27,7 @@ type Dependencies struct {
 	OIDCSessionHandler          http.Handler
 	WorkOrderHandler            http.Handler
 	WorkOrderEvidenceHandler    http.Handler
+	WorkOrderReconciliationHandler http.Handler
 	CertificateHandler          http.Handler
 	CertificatePublicHandler    http.Handler
 	PilotManifestHandler        *packagemanifestapi.Handler
@@ -39,6 +41,7 @@ type Dependencies struct {
 	AuditLogHandler             http.Handler
 	AnalyticsHandler            http.Handler
 	ReportsHandler              http.Handler
+	ShortLinkHandler            http.Handler
 	Readiness                   func(context.Context) error
 	ReadinessTimeout            time.Duration
 }
@@ -100,7 +103,8 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 }
 
 func productionMiddleware(next http.Handler) http.Handler {
-	return requestLogger(withCorrelationID(withRequestLimit(next, 10<<20)))
+	rateLimiter := middleware.DefaultRateLimiter()
+	return requestLogger(withCorrelationID(withRequestLimit(middleware.RateLimitMiddleware(rateLimiter)(next), 10<<20)))
 }
 
 func withCorrelationID(next http.Handler) http.Handler {

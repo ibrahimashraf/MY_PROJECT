@@ -169,6 +169,44 @@ func (r *txRepository) RecordAudit(ctx context.Context, actor license.ActorConte
 	return nil
 }
 
+func (r *txRepository) ListLicenses(ctx context.Context, actor license.ActorContext) ([]license.License, error) {
+	rows, err := r.tx.QueryContext(ctx,
+		`SELECT id, tenant_id, organization_id, tier, status, issued_at, expires_at,
+		        max_inspectors, max_inspections_per_month, features, created_by, created_at
+		 FROM tenant_license
+		 WHERE tenant_id = current_setting('integin.tenant_id', true)
+		   AND organization_id = current_setting('integin.organization_id', true)
+		 ORDER BY created_at DESC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var licenses []license.License
+	for rows.Next() {
+		var lic license.License
+		var featuresJSON []byte
+		var expiresAt sql.NullTime
+		if err := rows.Scan(&lic.ID, &lic.TenantID, &lic.OrganizationID, &lic.Tier, &lic.Status,
+			&lic.IssuedAt, &expiresAt, &lic.MaxInspectors, &lic.MaxInspectionsPerMonth,
+			&featuresJSON, &lic.CreatedBy, &lic.CreatedAt); err != nil {
+			return nil, err
+		}
+		if expiresAt.Valid {
+			lic.ExpiresAt = &expiresAt.Time
+		}
+		if featuresJSON != nil {
+			_ = json.Unmarshal(featuresJSON, &lic.Features)
+		}
+		licenses = append(licenses, lic)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return licenses, nil
+}
+
 func (r *Repository) GetLicense(ctx context.Context, actor license.ActorContext, licenseID string) (license.License, error) {
 	tx, err := r.begin(ctx, actor)
 	if err != nil {
@@ -241,6 +279,21 @@ func (r *Repository) RecordAudit(ctx context.Context, actor license.ActorContext
 		return err
 	}
 	return tx.Commit()
+}
+
+func (r *Repository) ListLicenses(ctx context.Context, actor license.ActorContext) ([]license.License, error) {
+	tx, err := r.begin(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	txRepo := &txRepository{tx: tx}
+	licenses, err := txRepo.ListLicenses(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	return licenses, tx.Commit()
 }
 
 func (r *Repository) WithinTransaction(ctx context.Context, actor license.ActorContext, fn func(context.Context, license.Repository) error) error {

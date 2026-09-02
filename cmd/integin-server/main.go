@@ -51,8 +51,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 20))
-		database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 5))
+database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 200))
+	database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 50))
+	database.SetConnMaxLifetime(30 * time.Minute)
+	database.SetConnMaxIdleTime(5 * time.Minute)
 		pingContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		err = database.PingContext(pingContext)
 		cancel()
@@ -211,7 +213,10 @@ var workOrderEvidenceHandler http.Handler
 	auditLogHandler, _ := server.NewAuditLogHandler(database)
 	analyticsHandler, _ := server.NewAnalyticsHandler(database)
 	reportsHandler, _ := server.NewReportsHandler(database)
+
 	var shortLinkHandler http.Handler
+	var retryWorker *shortlinksvc.RetryWorker
+
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
 		if v := strings.TrimSpace(os.Getenv("QR_CODE_LENGTH")); v != "" {
@@ -219,7 +224,18 @@ var workOrderEvidenceHandler http.Handler
 				codeLen = n
 			}
 		}
-		shortLinkHandler = shortlinkhttp.New(shortlinksvc.New(shortlinkpg.New(database), codeLen, ""))
+		shortLinkSvc := shortlinksvc.New(shortlinkpg.New(database), codeLen, "")
+		shortLinkHandler = shortlinkhttp.New(shortLinkSvc)
+
+		// Initialize and start webhook retry worker
+		retryInterval := 30 * time.Second
+		if v := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVAL")); v != "" {
+			if d, err := time.ParseDuration(v); err == nil {
+				retryInterval = d
+			}
+		}
+		retryWorker = shortlinksvc.NewRetryWorker(shortLinkSvc, retryInterval)
+		retryWorker.Start(context.Background())
 	}
 	httpServer := &http.Server{
 		Addr: address,
@@ -247,6 +263,9 @@ var workOrderEvidenceHandler http.Handler
 			log.Fatal(err)
 		}
 	case <-stop:
+		if retryWorker != nil {
+			retryWorker.Stop()
+		}
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownContext); err != nil {

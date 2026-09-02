@@ -19,11 +19,16 @@ type mockLicenseService struct {
 	validateResult license.Validation
 	issueResult    license.License
 	renewResult    license.License
+	listResult     []license.License
 	revokeErr      error
 }
 
 func (m *mockLicenseService) ValidateLicense(ctx context.Context, actor license.ActorContext, at time.Time) (license.Validation, error) {
 	return m.validateResult, nil
+}
+
+func (m *mockLicenseService) ListLicenses(ctx context.Context, actor license.ActorContext) ([]license.License, error) {
+	return m.listResult, nil
 }
 
 func (m *mockLicenseService) IssueLicense(ctx context.Context, actor license.ActorContext, lic license.License) (license.License, error) {
