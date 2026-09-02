@@ -19,8 +19,10 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"integin/internal/certificatehttp"
 	"integin/internal/certificatepg"
+	"integin/internal/shortlinkhttp"
+	"integin/internal/shortlinkpg"
+	"integin/internal/shortlinksvc"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
@@ -134,8 +136,8 @@ func main() {
 		localProvisioning = handler
 	}
 	var oidcSessionHandler http.Handler
-	var workOrderHandler http.Handler
-	var workOrderEvidenceHandler http.Handler
+var workOrderHandler http.Handler
+var workOrderEvidenceHandler http.Handler
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
@@ -170,27 +172,24 @@ func main() {
 		if certificateRepository == nil {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
-		certificateHandler = certificatehttp.Handler{
-			Validator: validator,
-			Actors: certificatehttp.LocalActorResolver{
-				Memberships: resolver,
-			},
-			Lifecycle: certificateRepository,
+		var handlerErr error
+		certificateHandler, handlerErr = server.NewCertificateHandler(database, validator, resolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
 		}
 		sessionHandler, sessionHandlerErr := oidchttp.NewSessionHandler(validator, resolver, oidchttp.SessionCapability)
 		if sessionHandlerErr != nil {
 			log.Fatal(sessionHandlerErr)
 		}
 		oidcSessionHandler = sessionHandler
-		var handlerErr error
 		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, resolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
-		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, resolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
+	workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, resolver)
+	if handlerErr != nil {
+		log.Fatal(handlerErr)
+	}
 		if evidenceStore != nil {
 			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, resolver, evidenceStore)
 			if handlerErr != nil {
@@ -212,6 +211,16 @@ func main() {
 	auditLogHandler, _ := server.NewAuditLogHandler(database)
 	analyticsHandler, _ := server.NewAnalyticsHandler(database)
 	reportsHandler, _ := server.NewReportsHandler(database)
+	var shortLinkHandler http.Handler
+	if database != nil {
+		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
+		if v := strings.TrimSpace(os.Getenv("QR_CODE_LENGTH")); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				codeLen = n
+			}
+		}
+		shortLinkHandler = shortlinkhttp.New(shortlinksvc.New(shortlinkpg.New(database), codeLen, ""))
+	}
 	httpServer := &http.Server{
 		Addr: address,
 		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
@@ -219,7 +228,7 @@ func main() {
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler}),
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

@@ -20,6 +20,11 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 	if d.WorkOrderEvidenceHandler != nil {
 		mux.Handle("/work-orders/", d.WorkOrderEvidenceHandler)
 	}
+	if d.WorkOrderReconciliationHandler != nil {
+		mux.Handle("/work-orders/provisional", d.WorkOrderReconciliationHandler)
+		mux.Handle("/work-orders/receipts/", d.WorkOrderReconciliationHandler)
+		mux.Handle("/work-orders/held", d.WorkOrderReconciliationHandler)
+	}
 	if d.CertificateHandler != nil {
 		mux.Handle("/certificates/", d.CertificateHandler)
 	}
@@ -34,6 +39,9 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 	}
 	if d.LocalProvisioning != nil {
 		mux.Handle("/local/provision", d.LocalProvisioning)
+	}
+	if d.ShortLinkHandler != nil {
+		mux.Handle("/s/", d.ShortLinkHandler)
 	}
 }
 
@@ -67,6 +75,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 	if d.ReportsHandler != nil {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
+	}
+	if d.ShortLinkHandler != nil {
+		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
+		mux.Handle("/api/v1/admin/shortlinks/", d.ShortLinkHandler)
 	}
 }
 
