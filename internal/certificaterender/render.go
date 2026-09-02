@@ -71,7 +71,7 @@ func Render(request Request) (Result, error) {
 	if err := request.QRRectangle.Validate(request.Template.PageWidth, request.Template.PageHeight); err != nil {
 		return Result{}, fmt.Errorf("QR rectangle: %w", err)
 	}
-	qrURL, err := verifierURL(request.VerifierBaseURL, request.PublicToken)
+	qrURL, err := VerifierURL(request.VerifierBaseURL, request.PublicToken)
 	if err != nil {
 		return Result{}, err
 	}
@@ -185,7 +185,11 @@ func renderTableAppendix(pdf *fpdf.Fpdf, request Request) error {
 	return nil
 }
 
-func verifierURL(baseURL, token string) (string, error) {
+func GenerateQR(qrURL string) ([]byte, error) {
+	return qrcode.Encode(qrURL, qrcode.High, 512)
+}
+
+func VerifierURL(baseURL, token string) (string, error) {
 	parsed, err := url.Parse(strings.TrimSpace(baseURL))
 	if err != nil || parsed.Scheme != "https" || parsed.Host == "" || strings.TrimSpace(token) == "" {
 		return "", errors.New("HTTPS verifier base URL and token are required")
