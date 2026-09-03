@@ -904,6 +904,8 @@ func (s *Service) ProcessAlertWebhooks(ctx context.Context) error {
 		err = s.repo.DeliverAlertWebhook(ctx, req)
 		if err != nil {
 			s.repo.UpdateAlertWebhookStatus(ctx, alert.ID, shortlink.AlertStatusFiring, err.Error())
+		} else {
+			s.repo.UpdateAlertWebhookStatus(ctx, alert.ID, shortlink.AlertStatusFiring, "")
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -21,13 +22,44 @@ func New(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-var webhookRetryIntervals = []time.Duration{
-	1 * time.Minute,  // 1st retry: 1 minute
-	5 * time.Minute,  // 2nd retry: 5 minutes
-	15 * time.Minute, // 3rd retry: 15 minutes
-	1 * time.Hour,    // 4th retry: 1 hour
-	6 * time.Hour,    // 5th retry: 6 hours
-	24 * time.Hour,   // 6th retry: 24 hours
+var webhookRetryIntervals = getWebhookRetryIntervals()
+
+func defaultWebhookRetryIntervals() []time.Duration {
+	return []time.Duration{
+		1 * time.Minute,  // 1st retry: 1 minute
+		5 * time.Minute,  // 2nd retry: 5 minutes
+		15 * time.Minute, // 3rd retry: 15 minutes
+		1 * time.Hour,    // 4th retry: 1 hour
+		6 * time.Hour,    // 5th retry: 6 hours
+		24 * time.Hour,   // 6th retry: 24 hours
+	}
+}
+
+// getWebhookRetryIntervals allows operators to tune retry backoff via
+// WEBHOOK_RETRY_INTERVALS="1m,5m,15m,1h,6h,24h". Falls back to defaults
+// on empty or invalid input to preserve current behavior.
+func getWebhookRetryIntervals() []time.Duration {
+	raw := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVALS"))
+	if raw == "" {
+		return defaultWebhookRetryIntervals()
+	}
+	parts := strings.Split(raw, ",")
+	intervals := make([]time.Duration, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		d, err := time.ParseDuration(p)
+		if err != nil || d <= 0 {
+			return defaultWebhookRetryIntervals()
+		}
+		intervals = append(intervals, d)
+	}
+	if len(intervals) == 0 {
+		return defaultWebhookRetryIntervals()
+	}
+	return intervals
 }
 
 func (r *Repository) Create(ctx context.Context, code, targetURL string, expiresAt *time.Time, webhookURL *string, customDomain *string, hmacSecretRef *string, hmacAlgorithm *string, hmacSignature *string) error {
@@ -291,13 +323,34 @@ func sinceClause(since *time.Time) string {
 	if since == nil {
 		return ""
 	}
-	return " AND timestamp >= " + since.Format("'2006-01-02 15:04:05'")
+	return " AND timestamp >= $2"
 }
 
 func (r *Repository) Revoke(ctx context.Context, code string) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE short_links SET revoked_at = now() WHERE code = $1`, code)
 	return err
+}
+
+// DeleteExpiredShortLinks removes expired links older than grace period.
+// Optional ops cleanup; not wired to auto-run. Returns rows deleted.
+func (r *Repository) DeleteExpiredShortLinks(ctx context.Context, grace time.Duration, limit int) (int64, error) {
+	if limit <= 0 || limit > 10000 {
+		limit = 1000
+	}
+	cutoff := time.Now().Add(-grace)
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM short_links
+		WHERE ctid IN (
+			SELECT ctid FROM short_links
+			WHERE expires_at IS NOT NULL AND expires_at < $1
+			ORDER BY expires_at ASC
+			LIMIT $2
+		)`, cutoff, limit)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 func (r *Repository) List(ctx context.Context, limit, offset int) ([]shortlink.ShortLink, error) {
@@ -1224,8 +1277,7 @@ func (r *Repository) DeliverAlertWebhook(ctx context.Context, req shortlink.Webh
 }
 
 func (r *Repository) GetPendingAlertWebhooks(ctx context.Context, limit int) ([]shortlink.AnomalyAlert, error) {
-	// For alerts that need webhook delivery - we'll track this via a separate mechanism
-	// For now, return alerts with webhook channel that are firing
+	// Exclude alerts whose webhook has already been delivered successfully
 	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
@@ -1236,6 +1288,7 @@ func (r *Repository) GetPendingAlertWebhooks(ctx context.Context, limit int) ([]
 		JOIN anomaly_rules r ON a.rule_id = r.id
 		WHERE a.status = $1 
 		  AND r.config->>'channels' @> '["webhook"]'
+		  AND (a.details->>'webhook_delivered' IS NULL OR a.details->>'webhook_delivered' != 'true')
 		ORDER BY a.fired_at ASC
 		LIMIT $2`, shortlink.AlertStatusFiring, limit)
 	if err != nil {
@@ -1277,9 +1330,13 @@ func (r *Repository) GetPendingAlertWebhooks(ctx context.Context, limit int) ([]
 }
 
 func (r *Repository) UpdateAlertWebhookStatus(ctx context.Context, alertID int64, status shortlink.AlertStatus, errorMsg string) error {
-	// Update the alert status if webhook delivery failed
-	// For now, just update the alert with error info in details
-	detailsJSON, _ := json.Marshal(map[string]string{"webhook_error": errorMsg})
+	var detailsMap map[string]interface{}
+	if errorMsg != "" {
+		detailsMap = map[string]interface{}{"webhook_error": errorMsg, "webhook_delivered": false}
+	} else {
+		detailsMap = map[string]interface{}{"webhook_delivered": "true", "webhook_error": ""}
+	}
+	detailsJSON, _ := json.Marshal(detailsMap)
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE anomaly_alerts 
 		SET details = COALESCE(details, '{}') || $2, updated_at = now()
@@ -1641,3 +1698,4 @@ func (r *Repository) GetTopAssets(ctx context.Context, tenantID string, since, u
 	}
 	return assets, rows.Err()
 }
+
