@@ -29,6 +29,7 @@ func TestCreateRequestIdempotencyAndRLSIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	defer db.Close()
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -116,6 +117,7 @@ func TestCrossOrganizationWorkOrderIsolationIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	defer db.Close()
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -169,6 +171,7 @@ func TestAssignmentTransitionAndPartialSubmissionIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -340,6 +343,7 @@ func TestAddEvidenceReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatal(err)

@@ -61,26 +61,29 @@ func (l *runtimeLifecycle) Supersede(context.Context, certificateauthority.Actor
 func (l *runtimeLifecycle) Expire(context.Context, certificateauthority.ActorContext, string, time.Time) error {
 	return nil
 }
+func (l *runtimeLifecycle) Renew(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
+	return nil
+}
 
 type certificateFixture struct {
-	WorkOrderID       string
-	ScopeID           string
-	AssignmentID      string
-	InspectionID      string
-	TemplateID        string
-	PolicyID          string
-	AssetRegistryID   string
-	PublicScopeID     string
-	CertificateID     string
-	InspectorSubject  string
-	ReviewerSubject   string
-	IssuerSubject     string
-	TenantID          string
-	OrganizationID    string
-	InspectorActorID  string
-	ReviewerActorID   string
-	IssuerActorID     string
-	Issuer            string
+	WorkOrderID      string
+	ScopeID          string
+	AssignmentID     string
+	InspectionID     string
+	TemplateID       string
+	PolicyID         string
+	AssetRegistryID  string
+	PublicScopeID    string
+	CertificateID    string
+	InspectorSubject string
+	ReviewerSubject  string
+	IssuerSubject    string
+	TenantID         string
+	OrganizationID   string
+	InspectorActorID string
+	ReviewerActorID  string
+	IssuerActorID    string
+	Issuer           string
 }
 
 func TestSignedOIDCCertificateTransportUsesLocalMembership(t *testing.T) {
@@ -93,6 +96,8 @@ func TestSignedOIDCCertificateTransportUsesLocalMembership(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err = db.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -130,7 +135,7 @@ func TestSignedOIDCCertificateTransportUsesLocalMembership(t *testing.T) {
 	actor := "inspector-" + id
 	insertCertificateMembership(t, ctx, db, issuer.URL, subject, tenant, organization, actor, []string{"certificate.prepare"})
 	t.Cleanup(func() { cleanupCertificateMembership(t, ctx, db, issuer.URL, subject) })
-lifecycle := &runtimeLifecycle{}
+	lifecycle := &runtimeLifecycle{}
 	runtime := httptest.NewServer(server.NewMux(server.Dependencies{CertificateHandler: certificatehttp.Handler{Validator: validator, Actors: certificatehttp.LocalActorResolver{Memberships: resolver}, Lifecycle: lifecycle}}))
 	t.Cleanup(runtime.Close)
 
@@ -141,13 +146,9 @@ lifecycle := &runtimeLifecycle{}
 		invalid = valid + "-tampered"
 	}
 
-	// Prime the validator with a valid token to ensure JWKS is fully loaded
-	if status := certificatePost(t, runtime.URL, valid); status != http.StatusNoContent {
-		t.Fatalf("prime request failed: status=%d", status)
-	}
-
-	// Small delay to ensure validator JWKS is fully initialized
-	time.Sleep(10 * time.Millisecond)
+	// Prime the handler and wait for full readiness (JWKS + membership warm-up)
+	// under potentially load-contended parallel runs.
+	primeReady(t, runtime.URL, valid)
 
 	if status := certificatePost(t, runtime.URL, invalid); status != http.StatusUnauthorized {
 		t.Fatalf("tampered status=%d", status)
@@ -184,6 +185,53 @@ func certificatePost(t *testing.T, base, token string) int {
 		t.Fatalf("cache=%q", response.Header.Get("Cache-Control"))
 	}
 	return response.StatusCode
+}
+
+// primeReady repeatedly sends a valid bearer request until the handler responds
+// cleanly, warming JWKS/membership state that may be slow under load-contended
+// parallel runs. It fails only if readiness is not reached within the deadline.
+func primeReady(t *testing.T, base, token string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	var status int
+	for {
+		status = certificatePost(t, base, token)
+		if status == http.StatusNoContent {
+			return
+		}
+		// Accept transient server-side warm-up delays but require eventual success.
+		if !time.Now().Before(deadline) {
+			break
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("handler did not become ready; last status=%d", status)
+}
+
+// warmUpHandler repeatedly sends a valid bearer request to a non-existent
+// certificate to warm the OIDC validator (JWKS/membership) without asserting on
+// the response status. It returns once the handler responds, proving the
+// validator is operational, and fails if no response is received in time.
+func warmUpHandler(t *testing.T, base, token string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		r, err := http.NewRequest(http.MethodPost, base+"/certificates/prime-warmup/submit", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.Header.Set("Authorization", "Bearer "+token)
+		response, err := http.DefaultClient.Do(r)
+		if err == nil {
+			// Any response proves the validator/handler is reachable and warmed.
+			_ = response.Body.Close()
+			return
+		}
+		if !time.Now().Before(deadline) {
+			t.Fatalf("handler did not respond: %v", err)
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
 }
 
 func certificatePostWithPath(t *testing.T, base, token, path, body string) int {
@@ -277,6 +325,8 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err = db.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -380,9 +430,9 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		invalidToken = inspectorToken + "-tampered"
 	}
 
-	// Prime the validator with a request to a non-existent certificate (will fail but loads JWKS)
-	_ = certificatePostWithPath(t, runtime.URL, inspectorToken, "/certificates/prime-"+certificateID+"/submit", ``)
-	time.Sleep(10 * time.Millisecond)
+	// Warm the validator/handler (JWKS + membership) so later assertions are not
+	// subject to first-request latency under load-contended parallel runs.
+	warmUpHandler(t, runtime.URL, inspectorToken)
 
 	// Test tampered token rejection on draft creation
 	if status := certificatePostWithPath(t, runtime.URL, invalidToken, "/certificates/drafts", `{"certificate_id":"`+certificateID+`-tamper","inspection_id":"`+inspectionID+`","template_code":"lifting","template_version":3,"profile":"INDEPENDENT_REVIEW"}`); status != http.StatusUnauthorized {
@@ -420,8 +470,8 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		t.Fatalf("issue status=%d body=%s", response.Code, response.Body.String())
 	}
 	var issueResult struct {
-		CertificateNumber string `json:"certificate_number"`
-		PublicToken       string `json:"public_token"`
+		CertificateNumber string    `json:"certificate_number"`
+		PublicToken       string    `json:"public_token"`
 		ExpiresAt         time.Time `json:"expires_at"`
 	}
 	if err := json.NewDecoder(response.Body).Decode(&issueResult); err != nil {

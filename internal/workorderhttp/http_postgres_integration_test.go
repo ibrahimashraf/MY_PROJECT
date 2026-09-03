@@ -45,6 +45,7 @@ func TestAuthenticatedPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	database.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = database.Close() })
 	if err := database.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -152,6 +153,7 @@ func openHTTPFixtureDatabase(t *testing.T, ctx context.Context) *sql.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
+	fixtureDatabase.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = fixtureDatabase.Close() })
 	if err := fixtureDatabase.PingContext(ctx); err != nil {
 		t.Fatal(err)
@@ -359,6 +361,7 @@ func TestAuthenticatedEvidenceReferenceHTTPPostgresIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	database.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = database.Close() })
 	if err := database.PingContext(ctx); err != nil {
 		t.Fatal(err)

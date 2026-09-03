@@ -54,6 +54,9 @@ func (s *lifecycleStub) Revoke(context.Context, certificateauthority.ActorContex
 func (s *lifecycleStub) Supersede(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
 	return nil
 }
+func (s *lifecycleStub) Renew(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
+	return nil
+}
 func (s *lifecycleStub) Expire(context.Context, certificateauthority.ActorContext, string, time.Time) error {
 	return nil
 }
@@ -106,5 +109,23 @@ func TestHandlerIssuesTokenOnce(t *testing.T) {
 	h.ServeHTTP(badResponse, bad)
 	if badResponse.Code != http.StatusBadRequest {
 		t.Fatalf("non-empty issue body status=%d", badResponse.Code)
+	}
+}
+
+func TestHandlerRenewsCertificate(t *testing.T) {
+	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "renewer", Capabilities: map[string]bool{"certificate.renew": true}}
+	h := Handler{Validator: validatorStub{}, Actors: actorStub{actor: actor}, Lifecycle: &lifecycleStub{}}
+	request := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/renew", strings.NewReader(`{"reason":"renewed for new period"}`))
+	request.Header.Set("Authorization", "Bearer token")
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	unauthorized := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/renew", strings.NewReader(`{"reason":"renewed"}`))
+	unauthResponse := httptest.NewRecorder()
+	h.ServeHTTP(unauthResponse, unauthorized)
+	if unauthResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("missing auth status=%d", unauthResponse.Code)
 	}
 }

@@ -26,6 +26,7 @@ type Lifecycle interface {
 	Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error
 	Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error)
 	Revoke(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
+	Renew(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
 	Supersede(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
 	Expire(context.Context, certificateauthority.ActorContext, string, time.Time) error
 }
@@ -49,6 +50,9 @@ type revocationRequest struct {
 }
 type supersedeRequest struct {
 	ReplacementCertificateID string `json:"replacement_certificate_id"`
+}
+type renewalRequest struct {
+	Reason string `json:"reason"`
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +121,18 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := h.Lifecycle.Supersede(r.Context(), actor, id, body.ReplacementCertificateID, now().UTC()); err != nil {
+			write(w, http.StatusConflict, "certificate_rejected", nil)
+			return
+		}
+		write(w, http.StatusNoContent, "", nil)
+		return
+	}
+	if action == "renew" {
+		var body renewalRequest
+		if !decode(w, r, &body) {
+			return
+		}
+		if err := h.Lifecycle.Renew(r.Context(), actor, id, body.Reason, now().UTC()); err != nil {
 			write(w, http.StatusConflict, "certificate_rejected", nil)
 			return
 		}

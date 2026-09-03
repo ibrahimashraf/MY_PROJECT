@@ -40,6 +40,7 @@ func TestAuthenticatedEvidenceMetadataRegistrationPostgresIntegration(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err := db.PingContext(ctx); err != nil {
 		t.Fatal(err)

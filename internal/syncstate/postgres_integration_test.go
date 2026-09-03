@@ -25,6 +25,7 @@ func TestPostgresHeldRecoveryAndAtomicPersistenceIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open database: %v", err)
 	}
+	db.SetMaxOpenConns(5)
 	t.Cleanup(func() {
 		if err := db.Close(); err != nil {
 			t.Errorf("close database: %v", err)

@@ -114,22 +114,3 @@ func (r *Repository) RecordRenewalAttempt(ctx context.Context, attempt certifica
 	}
 	return nil
 }
-
-func (r *Repository) UpdateCertificateRenewalState(ctx context.Context, certificateID string, renewalCount int, lastRenewalAttempt *time.Time, renewalAuthorityToken []byte) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, "", ""); err != nil {
-		return err
-	}
-	_, err = tx.ExecContext(ctx, `UPDATE certificate_record SET renewal_count = $1, last_renewal_attempt = $2, renewal_authority_token = $3 WHERE id = $4`, renewalCount, lastRenewalAttempt, renewalAuthorityToken, certificateID)
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-	return nil
-}

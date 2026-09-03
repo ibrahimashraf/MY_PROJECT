@@ -28,6 +28,7 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	ctx := context.Background()
 	if err := db.PingContext(ctx); err != nil {

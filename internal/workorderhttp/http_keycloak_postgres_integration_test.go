@@ -39,6 +39,7 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	database.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = database.Close() })
 	if err := database.PingContext(ctx); err != nil {
 		t.Fatal(err)

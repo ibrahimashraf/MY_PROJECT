@@ -79,6 +79,7 @@ func openCertificateIntegrationDB(t *testing.T) (*sql.DB, context.Context, worko
 	if err != nil {
 		t.Fatal(err)
 	}
+	db.SetMaxOpenConns(5)
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
 		t.Fatal(err)
