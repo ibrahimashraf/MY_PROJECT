@@ -8,6 +8,8 @@
 -- Disposable isolated apply only; never pilot. Requires verified backup
 -- before any isolated exercise, then dropdb.
 
+BEGIN;
+
 GRANT USAGE ON SCHEMA public TO integin_runtime;
 
 -- Extend work_order_operation with signed-payload fields.
@@ -86,3 +88,5 @@ CREATE POLICY work_order_operation_tenant_organization_isolation ON work_order_o
         tenant_id = current_setting('integin.tenant_id', true)
         AND organization_id = current_setting('integin.organization_id', true)
     );
+
+COMMIT;
