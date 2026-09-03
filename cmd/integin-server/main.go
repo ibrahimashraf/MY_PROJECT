@@ -157,6 +157,8 @@ var workOrderEvidenceHandler http.Handler
 		log.Fatal(oidcConfigErr)
 	}
 	var licenseHandler http.Handler
+	var activeValidator *oidcauth.Validator
+	var activeResolver identity.Resolver
 	if oidcConfig.Enabled {
 		if database == nil {
 			log.Fatal("OIDC session route requires INTEGIN_DB_URL")
@@ -167,10 +169,12 @@ var workOrderEvidenceHandler http.Handler
 		if validatorErr != nil {
 			log.Fatal(validatorErr)
 		}
+		activeValidator = validator
 		resolver, resolverErr := identity.NewPostgresResolver(database)
 		if resolverErr != nil {
 			log.Fatal(resolverErr)
 		}
+		activeResolver = resolver
 		if certificateRepository == nil {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
@@ -225,7 +229,7 @@ var workOrderEvidenceHandler http.Handler
 			}
 		}
 		shortLinkSvc := shortlinksvc.New(shortlinkpg.New(database), codeLen, "")
-		shortLinkHandler = shortlinkhttp.New(shortLinkSvc)
+		shortLinkHandler = shortlinkhttp.NewWithAuth(shortLinkSvc, activeValidator, activeResolver)
 
 		// Initialize and start webhook retry worker
 		retryInterval := 30 * time.Second

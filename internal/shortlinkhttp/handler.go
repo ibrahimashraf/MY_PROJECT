@@ -1,22 +1,54 @@
 package shortlinkhttp
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"integin/internal/domain/shortlink"
+	"integin/internal/identity"
+	"integin/internal/oidcauth"
 	"integin/internal/shortlinksvc"
 )
 
-type Handler struct {
-	svc *shortlinksvc.Service
+// TokenValidator defines the contract for OIDC bearer token verification.
+type TokenValidator interface {
+	Validate(ctx context.Context, rawToken string) (oidcauth.Principal, error)
 }
 
+type Handler struct {
+	svc       *shortlinksvc.Service
+	validator TokenValidator
+	resolver  identity.Resolver
+	engine    *gin.Engine
+	initOnce  sync.Once
+}
+
+// New creates a short link HTTP handler for backwards-compatibility and testing.
 func New(svc *shortlinksvc.Service) *Handler {
-	return &Handler{svc: svc}
+	return NewWithAuth(svc, nil, nil)
+}
+
+// NewWithAuth creates a short link HTTP handler fully wired with OIDC token validation
+// and local identity resolution to prevent tenant impersonation and organization takeover.
+func NewWithAuth(svc *shortlinksvc.Service, validator TokenValidator, resolver identity.Resolver) *Handler {
+	h := &Handler{
+		svc:       svc,
+		validator: validator,
+		resolver:  resolver,
+	}
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	engine.Use(gin.Recovery())
+	h.RegisterRoutes(engine)
+	h.engine = engine
+	return h
 }
 
 func (h *Handler) RegisterRoutes(r *gin.Engine) {
@@ -25,7 +57,7 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 
 	// Admin API
 	admin := r.Group("/admin/api/v1/shortlinks")
-	admin.Use(AdminAuthMiddleware())
+	admin.Use(h.AdminAuthMiddleware())
 	{
 		admin.POST("", h.CreateHandler)
 		admin.GET("", h.ListHandler)
@@ -274,9 +306,26 @@ func (h *Handler) ResolveDLQHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "resolved"})
 }
 
+// getTenantID returns the authenticated tenant_id, enforcing tenant isolation.
+// If a caller explicitly specifies a tenant_id, it is validated against the authenticated tenant_id
+// to prevent cross-tenant access and organization takeover.
+func (h *Handler) getTenantID(c *gin.Context, requestedTenant string) (string, error) {
+	authTenant := c.GetString("tenant_id")
+	if authTenant != "" {
+		if requestedTenant != "" && requestedTenant != authTenant {
+			return "", errors.New("cross-tenant access prohibited")
+		}
+		return authTenant, nil
+	}
+	if requestedTenant != "" {
+		return requestedTenant, nil
+	}
+	return "", errors.New("tenant_id is required")
+}
+
 func (h *Handler) CreateHMACSecretHandler(c *gin.Context) {
 	var req struct {
-		TenantID  string `json:"tenant_id" binding:"required"`
+		TenantID  string `json:"tenant_id"`
 		Secret    string `json:"secret" binding:"required"`
 		Algorithm string `json:"algorithm"`
 	}
@@ -285,7 +334,13 @@ func (h *Handler) CreateHMACSecretHandler(c *gin.Context) {
 		return
 	}
 
-	secret, err := h.svc.CreateHMACSecret(c.Request.Context(), req.TenantID, req.Secret, req.Algorithm)
+	tenantID, err := h.getTenantID(c, req.TenantID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	secret, err := h.svc.CreateHMACSecret(c.Request.Context(), tenantID, req.Secret, req.Algorithm)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -295,9 +350,9 @@ func (h *Handler) CreateHMACSecretHandler(c *gin.Context) {
 }
 
 func (h *Handler) ListHMACSecretsHandler(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -311,9 +366,9 @@ func (h *Handler) ListHMACSecretsHandler(c *gin.Context) {
 }
 
 func (h *Handler) GetHMACSecretHandler(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -344,9 +399,9 @@ func (h *Handler) GetHMACSecretHandler(c *gin.Context) {
 }
 
 func (h *Handler) RevokeHMACSecretHandler(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -357,7 +412,7 @@ func (h *Handler) RevokeHMACSecretHandler(c *gin.Context) {
 		return
 	}
 
-	err := h.svc.RevokeHMACSecret(c.Request.Context(), tenantID, version)
+	err = h.svc.RevokeHMACSecret(c.Request.Context(), tenantID, version)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -473,31 +528,105 @@ func getShortBaseURL(r *http.Request) string {
 	return scheme + "://" + r.Host + "/s"
 }
 
-// AdminAuthMiddleware - placeholder, use existing auth middleware
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Use gin's default router to handle the request
-	ginEngine := gin.Default()
-	h.RegisterRoutes(ginEngine)
-	ginEngine.ServeHTTP(w, r)
+	h.initOnce.Do(func() {
+		if h.engine == nil {
+			gin.SetMode(gin.ReleaseMode)
+			engine := gin.New()
+			engine.Use(gin.Recovery())
+			h.RegisterRoutes(engine)
+			h.engine = engine
+		}
+	})
+
+	// Align request path: if server router mounts /api/v1/admin/shortlinks,
+	// normalize the path prefix to /admin/api/v1/shortlinks expected by the internal router.
+	path := r.URL.Path
+	if strings.HasPrefix(path, "/api/v1/admin/shortlinks") {
+		trimmed := strings.TrimPrefix(path, "/api/v1/admin/shortlinks")
+		r2 := new(http.Request)
+		*r2 = *r
+		u2 := new(url.URL)
+		*u2 = *r.URL
+		u2.Path = "/admin/api/v1/shortlinks" + trimmed
+		r2.URL = u2
+		h.engine.ServeHTTP(w, r2)
+		return
+	}
+
+	h.engine.ServeHTTP(w, r)
 }
 
-func AdminAuthMiddleware() gin.HandlerFunc {
+// AdminAuthMiddleware validates callers via OIDC Bearer tokens and DB identity resolution,
+// strictly preventing header spoofing and organization takeover attacks.
+func (h *Handler) AdminAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// If TokenValidator & Resolver are wired, enforce strict cryptographic OIDC & DB membership
+		if h.validator != nil && h.resolver != nil {
+			authHeader := c.GetHeader("Authorization")
+			token, ok := extractBearer(authHeader)
+			if !ok {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication_required"})
+				return
+			}
+
+			principal, err := h.validator.Validate(c.Request.Context(), token)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid_token"})
+				return
+			}
+
+			membership, err := h.resolver.Resolve(c.Request.Context(), identity.PrincipalKey{
+				Issuer:  principal.Issuer,
+				Subject: principal.Subject,
+			})
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+				return
+			}
+
+			// Securely bind authenticated context
+			c.Set("tenant_id", membership.TenantID)
+			c.Set("organization_id", membership.OrganizationID)
+			c.Set("actor_id", membership.ActorID)
+			c.Set("membership", membership)
+			c.Next()
+			return
+		}
+
+		// Fallback for tests/unauthenticated standalone mode: require headers
 		tenant := c.GetHeader("X-Tenant-ID")
 		org := c.GetHeader("X-Organization-ID")
 		if tenant == "" || org == "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-Organization-ID required"})
 			return
 		}
+		c.Set("tenant_id", tenant)
+		c.Set("organization_id", org)
 		c.Next()
 	}
+}
+
+func extractBearer(header string) (string, bool) {
+	if header == "" {
+		return "", false
+	}
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return "", false
+	}
+	t := strings.TrimSpace(parts[1])
+	if t == "" {
+		return "", false
+	}
+	return t, true
 }
 
 // Anomaly Rule Handlers
 
 func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
 	var req struct {
-		TenantID    string                 `json:"tenant_id" binding:"required"`
+		TenantID    string                 `json:"tenant_id"`
 		Name        string                 `json:"name" binding:"required"`
 		Description string                 `json:"description"`
 		Type        string                 `json:"type" binding:"required"`
@@ -508,8 +637,14 @@ func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
 		return
 	}
 
+	tenantID, err := h.getTenantID(c, req.TenantID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
 	rule, err := h.svc.CreateAnomalyRule(c.Request.Context(), shortlink.CreateAnomalyRuleRequest{
-		TenantID:    req.TenantID,
+		TenantID:    tenantID,
 		Name:        req.Name,
 		Description: req.Description,
 		Type:        shortlink.AnomalyType(req.Type),
@@ -524,9 +659,9 @@ func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
 }
 
 func (h *Handler) ListAnomalyRulesHandler(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -642,9 +777,9 @@ func (h *Handler) DeleteAnomalyRuleHandler(c *gin.Context) {
 // Anomaly Alert Handlers
 
 func (h *Handler) ListAnomalyAlertsHandler(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -945,6 +1080,7 @@ func (h *Handler) AnalyticsTopAssetsHandler(c *gin.Context) {
 }
 
 func (h *Handler) parseAnalyticsRequest(c *gin.Context) shortlink.AnalyticsRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -963,7 +1099,7 @@ func (h *Handler) parseAnalyticsRequest(c *gin.Context) shortlink.AnalyticsReque
 	}
 
 	return shortlink.AnalyticsRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
@@ -972,6 +1108,7 @@ func (h *Handler) parseAnalyticsRequest(c *gin.Context) shortlink.AnalyticsReque
 }
 
 func (h *Handler) parseTimeSeriesRequest(c *gin.Context) shortlink.TimeSeriesRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -987,7 +1124,7 @@ func (h *Handler) parseTimeSeriesRequest(c *gin.Context) shortlink.TimeSeriesReq
 	interval := c.DefaultQuery("interval", "1h")
 
 	return shortlink.TimeSeriesRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
@@ -996,6 +1133,7 @@ func (h *Handler) parseTimeSeriesRequest(c *gin.Context) shortlink.TimeSeriesReq
 }
 
 func (h *Handler) parseGeoHeatmapRequest(c *gin.Context) shortlink.GeoHeatmapRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -1010,7 +1148,7 @@ func (h *Handler) parseGeoHeatmapRequest(c *gin.Context) shortlink.GeoHeatmapReq
 	}
 
 	return shortlink.GeoHeatmapRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
@@ -1019,6 +1157,7 @@ func (h *Handler) parseGeoHeatmapRequest(c *gin.Context) shortlink.GeoHeatmapReq
 }
 
 func (h *Handler) parseDeviceAnalyticsRequest(c *gin.Context) shortlink.DeviceAnalyticsRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -1033,7 +1172,7 @@ func (h *Handler) parseDeviceAnalyticsRequest(c *gin.Context) shortlink.DeviceAn
 	}
 
 	return shortlink.DeviceAnalyticsRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
@@ -1041,6 +1180,7 @@ func (h *Handler) parseDeviceAnalyticsRequest(c *gin.Context) shortlink.DeviceAn
 }
 
 func (h *Handler) parseFunnelRequest(c *gin.Context) shortlink.FunnelRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -1055,7 +1195,7 @@ func (h *Handler) parseFunnelRequest(c *gin.Context) shortlink.FunnelRequest {
 	}
 
 	return shortlink.FunnelRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
@@ -1063,6 +1203,7 @@ func (h *Handler) parseFunnelRequest(c *gin.Context) shortlink.FunnelRequest {
 }
 
 func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsRequest {
+	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
 	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
 	var customStart, customEnd *time.Time
 	if s := c.Query("custom_start"); s != "" {
@@ -1081,7 +1222,7 @@ func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsReque
 	}
 
 	return shortlink.TopAssetsRequest{
-		TenantID:    c.Query("tenant_id"),
+		TenantID:    tenantID,
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,

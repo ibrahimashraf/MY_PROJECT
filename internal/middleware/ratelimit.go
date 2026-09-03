@@ -49,8 +49,24 @@ func (rl *RateLimiter) getLimiter(tenantID string) *rate.Limiter {
 }
 
 // Middleware returns an HTTP middleware that enforces rate limiting per tenant
+var skipRateLimitPaths = map[string]bool{
+	"/healthz":   true,
+	"/healthz/":  true,
+	"/readyz":    true,
+	"/readyz/":   true,
+	"/health":    true,
+	"/ready":     true,
+	"/live":      true,
+}
+
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip rate limiting for health check endpoints
+		if skipRateLimitPaths[r.URL.Path] {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		tenantID := r.Header.Get("X-Tenant-ID")
 		if tenantID == "" {
 			http.Error(w, "X-Tenant-ID header required", http.StatusBadRequest)
