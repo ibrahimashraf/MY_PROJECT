@@ -19,14 +19,15 @@ type rateWindow struct {
 	count   int
 }
 type Handler struct {
-	Verifier        Verifier
-	Limit           int
-	Window          time.Duration
-	Now             func() time.Time
-	VerifierBaseURL string
-	Renderer        *certificaterender.Request
-	mu              sync.Mutex
-	rates           map[string]rateWindow
+	Verifier         Verifier
+	Authenticated    *AuthenticatedTransport
+	Limit            int
+	Window           time.Duration
+	Now              func() time.Time
+	VerifierBaseURL  string
+	Renderer         *certificaterender.Request
+	mu               sync.Mutex
+	rates            map[string]rateWindow
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +51,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		reply(w, http.StatusNotFound, nil)
 		return
 	}
-	now := time.Now
+	now := time.Now()
 	if h.Now != nil {
-		now = h.Now
+		now = h.Now()
 	}
-	if !h.allow(remoteKey(r), now().UTC()) {
+	if !h.allow(remoteKey(r), now.UTC()) {
 		reply(w, http.StatusTooManyRequests, nil)
 		return
 	}
@@ -70,7 +71,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Default: JSON projection
+	// Default: use authenticated transport if configured, otherwise regular verifier
+	if h.Authenticated != nil {
+		h.handleAuthenticated(w, r, token)
+		return
+	}
+
+	// Fall back to regular verifier (original behavior)
 	view, found, err := h.Verifier.VerifyPublic(r.Context(), token)
 	if err != nil {
 		reply(w, http.StatusServiceUnavailable, nil)
@@ -159,6 +166,20 @@ func (h *Handler) getRenderData(token string) (*certificaterender.Request, bool,
 	// This would need a Repository with GetRenderData method
 	// For now return not found - requires extending the Verifier interface
 	return nil, false, nil
+}
+
+func (h *Handler) handleAuthenticated(w http.ResponseWriter, r *http.Request, token string) {
+	view, found, err := h.Authenticated.Verifier.VerifyPublic(r.Context(), token)
+	if err != nil {
+		reply(w, http.StatusServiceUnavailable, nil)
+		return
+	}
+	if !found {
+		reply(w, http.StatusNotFound, nil)
+		return
+	}
+	response := h.Authenticated.composeAuthenticatedResponse(view)
+	reply(w, http.StatusOK, response)
 }
 
 func extractTokenAndPath(path string) (string, string, bool) {

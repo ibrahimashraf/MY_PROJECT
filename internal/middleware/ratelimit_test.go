@@ -3,11 +3,14 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestRateLimiter_TenantRateLimiting(t *testing.T) {
 	limiter := NewRateLimiter(1, 2) // 1 req/s, burst of 2
+	defer limiter.Close()
 	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -44,6 +47,7 @@ func TestRateLimiter_TenantRateLimiting(t *testing.T) {
 
 func TestRateLimiter_IPFallbackRateLimiting(t *testing.T) {
 	limiter := NewRateLimiter(1, 2) // 1 req/s, burst of 2
+	defer limiter.Close()
 	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -80,6 +84,7 @@ func TestRateLimiter_IPFallbackRateLimiting(t *testing.T) {
 
 func TestRateLimiter_SkipPaths(t *testing.T) {
 	limiter := NewRateLimiter(1, 1)
+	defer limiter.Close()
 	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -93,4 +98,52 @@ func TestRateLimiter_SkipPaths(t *testing.T) {
 			t.Fatalf("/healthz should never be rate limited, got %d on request %d", w.Code, i+1)
 		}
 	}
+}
+
+func TestRateLimiter_EvictIdle(t *testing.T) {
+	limiter := NewRateLimiter(10, 10)
+	defer limiter.Close()
+
+	_ = limiter.getLimiter("tenant:idle-1")
+	_ = limiter.getLimiter("ip:1.2.3.4")
+
+	// Artificially age items
+	for _, shard := range limiter.shards {
+		shard.mu.Lock()
+		for _, item := range shard.limiters {
+			item.lastSeen = time.Now().Add(-2 * time.Hour)
+		}
+		shard.mu.Unlock()
+	}
+
+	limiter.EvictIdle(1 * time.Hour)
+
+	// Verify all shards are now empty
+	total := 0
+	for _, shard := range limiter.shards {
+		shard.mu.RLock()
+		total += len(shard.limiters)
+		shard.mu.RUnlock()
+	}
+	if total != 0 {
+		t.Fatalf("expected 0 limiters after EvictIdle, got %d", total)
+	}
+}
+
+func TestRateLimiter_HighConcurrency(t *testing.T) {
+	limiter := NewRateLimiter(1000, 100)
+	defer limiter.Close()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < 20; j++ {
+				l := limiter.getLimiter("tenant:worker")
+				_ = l.Allow()
+			}
+		}(i)
+	}
+	wg.Wait()
 }

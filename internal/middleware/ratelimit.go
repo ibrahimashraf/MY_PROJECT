@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"hash/fnv"
 	"net"
 	"net/http"
 	"strings"
@@ -10,55 +11,121 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiter manages rate limiting per tenant
-type RateLimiter struct {
-	limiters map[string]*rate.Limiter
+const numShards = 32
+
+type limiterItem struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
+type limiterShard struct {
 	mu       sync.RWMutex
-	rate     rate.Limit
-	burst    int
+	limiters map[string]*limiterItem
 }
 
-// NewRateLimiter creates a new rate limiter
+// RateLimiter manages partitioned rate limiting with automated idle eviction.
+type RateLimiter struct {
+	shards [numShards]*limiterShard
+	rate   rate.Limit
+	burst  int
+	stop   chan struct{}
+}
+
+// NewRateLimiter creates a new sharded rate limiter with automated eviction.
 func NewRateLimiter(requestsPerSecond float64, burst int) *RateLimiter {
-	return &RateLimiter{
-		limiters: make(map[string]*rate.Limiter),
-		rate:     rate.Limit(requestsPerSecond),
-		burst:    burst,
+	rl := &RateLimiter{
+		rate:  rate.Limit(requestsPerSecond),
+		burst: burst,
+		stop:  make(chan struct{}),
 	}
+	for i := 0; i < numShards; i++ {
+		rl.shards[i] = &limiterShard{
+			limiters: make(map[string]*limiterItem),
+		}
+	}
+	go rl.evictionLoop(10 * time.Minute)
+	return rl
 }
 
-// getLimiter returns the rate limiter for a tenant, creating if needed
-func (rl *RateLimiter) getLimiter(tenantID string) *rate.Limiter {
-	rl.mu.RLock()
-	limiter, exists := rl.limiters[tenantID]
-	rl.mu.RUnlock()
+func (rl *RateLimiter) shardFor(key string) *limiterShard {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(key))
+	return rl.shards[h.Sum32()%numShards]
+}
+
+// getLimiter returns the rate limiter for a key, creating or touching if needed.
+func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
+	shard := rl.shardFor(key)
+	now := time.Now()
+
+	shard.mu.RLock()
+	item, exists := shard.limiters[key]
+	shard.mu.RUnlock()
 
 	if exists {
-		return limiter
+		shard.mu.Lock()
+		item.lastSeen = now
+		shard.mu.Unlock()
+		return item.limiter
 	}
 
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
 
 	// Double-check after acquiring write lock
-	if limiter, exists := rl.limiters[tenantID]; exists {
-		return limiter
+	if item, exists := shard.limiters[key]; exists {
+		item.lastSeen = now
+		return item.limiter
 	}
 
-	limiter = rate.NewLimiter(rl.rate, rl.burst)
-	rl.limiters[tenantID] = limiter
+	limiter := rate.NewLimiter(rl.rate, rl.burst)
+	shard.limiters[key] = &limiterItem{
+		limiter:  limiter,
+		lastSeen: now,
+	}
 	return limiter
 }
 
-// Middleware returns an HTTP middleware that enforces rate limiting per tenant
+// evictionLoop removes entries that have been idle for >15 minutes to bound memory usage.
+func (rl *RateLimiter) evictionLoop(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			rl.EvictIdle(15 * time.Minute)
+		case <-rl.stop:
+			return
+		}
+	}
+}
+
+// EvictIdle purges limiters idle longer than maxIdle.
+func (rl *RateLimiter) EvictIdle(maxIdle time.Duration) {
+	threshold := time.Now().Add(-maxIdle)
+	for _, shard := range rl.shards {
+		shard.mu.Lock()
+		for key, item := range shard.limiters {
+			if item.lastSeen.Before(threshold) {
+				delete(shard.limiters, key)
+			}
+		}
+		shard.mu.Unlock()
+	}
+}
+
+// Close stops background eviction routines.
+func (rl *RateLimiter) Close() {
+	close(rl.stop)
+}
+
+// skipRateLimitPaths contains only the active canonical health endpoints from CURRENT_STATE.md.
 var skipRateLimitPaths = map[string]bool{
-	"/healthz":   true,
-	"/healthz/":  true,
-	"/readyz":    true,
-	"/readyz/":   true,
-	"/health":    true,
-	"/ready":     true,
-	"/live":      true,
+	"/healthz":  true,
+	"/healthz/": true,
+	"/readyz":   true,
+	"/readyz/":  true,
 }
 
 func extractClientIP(r *http.Request) string {

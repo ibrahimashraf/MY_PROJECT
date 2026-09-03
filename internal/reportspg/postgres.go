@@ -337,7 +337,9 @@ func (r *Repository) queryAssetInventory(ctx context.Context, config domain.Repo
 	}
 	_ = argIdx // used conditionally
 
-	query += " ORDER BY created_at DESC"
+	maxLimit := 5000
+	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", argIdx)
+	args = append(args, maxLimit)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {

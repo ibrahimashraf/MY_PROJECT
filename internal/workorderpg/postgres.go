@@ -425,20 +425,48 @@ func (r *Repository) ReconcileProvisional(ctx context.Context, command workorder
 }
 
 func validateCertificateInspections(ctx context.Context, tx *sql.Tx, actor workorder.ActorContext, workOrderID string, inspectionIDs []string) error {
-	for _, inspectionID := range inspectionIDs {
-		var lifecycleState, finalizationState string
-		err := tx.QueryRowContext(ctx, `
-			SELECT lifecycle_state, finalization_state
-			FROM inspection_record
-			WHERE tenant_id=$1 AND organization_id=$2 AND work_order_id=$3 AND id=$4
-			FOR UPDATE`, actor.TenantID, actor.OrganizationID, workOrderID, inspectionID).Scan(&lifecycleState, &finalizationState)
-		if errors.Is(err, sql.ErrNoRows) {
-			return workorder.ErrInvalidScope
-		}
-		if err != nil {
+	if len(inspectionIDs) == 0 {
+		return nil
+	}
+
+	// Single query using ANY to fetch all inspections at once (fixes N+1)
+	// Instead of one SELECT per inspectionID, we do one SELECT with id = ANY($4)
+	rows, err := tx.QueryContext(ctx, `
+		SELECT id, lifecycle_state, finalization_state
+		FROM inspection_record
+		WHERE tenant_id=$1 AND organization_id=$2 AND work_order_id=$3 AND id = ANY($4)
+		FOR UPDATE`, actor.TenantID, actor.OrganizationID, workOrderID, pqStringArray(inspectionIDs))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	// Build a map of inspection results
+	inspectionMap := make(map[string]struct {
+		lifecycleState  string
+		finalizationState string
+	})
+	for rows.Next() {
+		var id, lifecycleState, finalizationState string
+		if err := rows.Scan(&id, &lifecycleState, &finalizationState); err != nil {
 			return err
 		}
-		if err := workorder.ValidateCertificateInspectionState(lifecycleState, finalizationState); err != nil {
+		inspectionMap[id] = struct {
+			lifecycleState  string
+			finalizationState string
+		}{lifecycleState: lifecycleState, finalizationState: finalizationState}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Validate each inspection from the map (no more DB queries)
+	for _, inspectionID := range inspectionIDs {
+		inv, ok := inspectionMap[inspectionID]
+		if !ok {
+			return workorder.ErrInvalidScope
+		}
+		if err := workorder.ValidateCertificateInspectionState(inv.lifecycleState, inv.finalizationState); err != nil {
 			return err
 		}
 	}
