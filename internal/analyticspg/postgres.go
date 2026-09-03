@@ -77,52 +77,38 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 }
 
 func (r *Repository) getSummaryKPIs(ctx context.Context, req analytics.DashboardRequest) ([]analytics.KPI, error) {
-	var totalWO, totalIns int64
+	var totalWO int64
 	var completionRate float64
+	var totalIns int64
 	var avgCycleTime float64
 
+	// Unified work_order aggregation: 1 query instead of 2 roundtrips
 	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM work_order
-		 WHERE tenant_id = $1 AND organization_id = $2
-		   AND created_at BETWEEN $3 AND $4`,
-		req.TenantID, req.OrganizationID, req.From, req.To,
-	).Scan(&totalWO)
-	if err != nil {
-		return nil, err
-	}
-
-	err = r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM inspection_record
-		 WHERE tenant_id = $1 AND organization_id = $2
-		   AND created_at BETWEEN $3 AND $4`,
-		req.TenantID, req.OrganizationID, req.From, req.To,
-	).Scan(&totalIns)
-	if err != nil {
-		return nil, err
-	}
-
-	err = r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(
-			CASE WHEN COUNT(*) = 0 THEN 0
-			ELSE SUM(CASE WHEN execution_state = 'completed' THEN 1 ELSE 0 END)::float8 / COUNT(*) * 100
-			END, 0)
+		`SELECT COUNT(*),
+		        COALESCE(
+					CASE WHEN COUNT(*) = 0 THEN 0
+					ELSE SUM(CASE WHEN execution_state = 'completed' THEN 1 ELSE 0 END)::float8 / COUNT(*) * 100
+					END, 0)
 		 FROM work_order
 		 WHERE tenant_id = $1 AND organization_id = $2
 		   AND created_at BETWEEN $3 AND $4`,
 		req.TenantID, req.OrganizationID, req.From, req.To,
-	).Scan(&completionRate)
+	).Scan(&totalWO, &completionRate)
 	if err != nil {
 		return nil, err
 	}
 
+	// Unified inspection_record aggregation: 1 query instead of 2 roundtrips
 	err = r.db.QueryRowContext(ctx,
-		`SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0)
+		`SELECT COUNT(*),
+		        COALESCE(AVG(CASE WHEN lifecycle_state IN ('approved', 'rejected', 'completed')
+		                          THEN EXTRACT(EPOCH FROM (updated_at - created_at))
+		                          ELSE NULL END), 0)
 		 FROM inspection_record
 		 WHERE tenant_id = $1 AND organization_id = $2
-		   AND created_at BETWEEN $3 AND $4
-		   AND lifecycle_state IN ('approved', 'rejected', 'completed')`,
+		   AND created_at BETWEEN $3 AND $4`,
 		req.TenantID, req.OrganizationID, req.From, req.To,
-	).Scan(&avgCycleTime)
+	).Scan(&totalIns, &avgCycleTime)
 	if err != nil {
 		return nil, err
 	}

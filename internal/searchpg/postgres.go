@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 
 	"integin/internal/domain/search"
 )
@@ -48,6 +49,14 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 		}
 		results = append(results, inspections...)
 	}
+
+	// Sort merged results by relevance rank descending, then by creation time
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].Rank != results[j].Rank {
+			return results[i].Rank > results[j].Rank
+		}
+		return results[i].CreatedAt.After(results[j].CreatedAt)
+	})
 
 	total := len(results)
 	if req.Offset >= total {

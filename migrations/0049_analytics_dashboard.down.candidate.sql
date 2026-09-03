@@ -1,8 +1,10 @@
--- Migration 0049 down: Remove Analytics Dashboard Indexes
+-- Migration 0049 Down: Analytics Dashboard Indexes Rollback
 
-DROP INDEX IF EXISTS idx_scan_events_tenant_timestamp;
-DROP INDEX IF EXISTS idx_scan_events_country_region_city;
-DROP INDEX IF EXISTS idx_scan_events_device_os_browser;
-DROP INDEX IF EXISTS idx_scan_events_ip_timestamp;
-DROP INDEX IF EXISTS idx_scan_events_short_link_timestamp;
-DROP INDEX IF EXISTS idx_scan_events_recent;
+BEGIN;
+
+DROP INDEX IF EXISTS idx_scan_events_tenant_code_timestamp;
+DROP INDEX IF EXISTS idx_scan_events_tenant_geo;
+DROP INDEX IF EXISTS idx_scan_events_tenant_device;
+DROP INDEX IF EXISTS idx_scan_events_tenant_ip_timestamp;
+
+COMMIT;

@@ -170,39 +170,39 @@ var workOrderEvidenceHandler http.Handler
 			log.Fatal(validatorErr)
 		}
 		activeValidator = validator
-		resolver, resolverErr := identity.NewPostgresResolver(database)
+		rawResolver, resolverErr := identity.NewPostgresResolver(database)
 		if resolverErr != nil {
 			log.Fatal(resolverErr)
 		}
-		activeResolver = resolver
+		activeResolver = identity.NewCachedResolver(rawResolver, 60*time.Second)
 		if certificateRepository == nil {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
 		var handlerErr error
-		certificateHandler, handlerErr = server.NewCertificateHandler(database, validator, resolver)
+		certificateHandler, handlerErr = server.NewCertificateHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
-		sessionHandler, sessionHandlerErr := oidchttp.NewSessionHandler(validator, resolver, oidchttp.SessionCapability)
+		sessionHandler, sessionHandlerErr := oidchttp.NewSessionHandler(validator, activeResolver, oidchttp.SessionCapability)
 		if sessionHandlerErr != nil {
 			log.Fatal(sessionHandlerErr)
 		}
 		oidcSessionHandler = sessionHandler
-		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, resolver)
+		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
-	workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, resolver)
-	if handlerErr != nil {
-		log.Fatal(handlerErr)
-	}
+		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, activeResolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
 		if evidenceStore != nil {
-			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, resolver, evidenceStore)
+			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, activeResolver, evidenceStore)
 			if handlerErr != nil {
 				log.Fatal(handlerErr)
 			}
 		}
-		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, resolver)
+		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
