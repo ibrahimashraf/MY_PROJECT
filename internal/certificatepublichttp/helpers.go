@@ -54,12 +54,35 @@ func validToken(v string) bool {
 	}
 	return true
 }
-func remoteKey(r *http.Request) string {
-	h, _, e := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
-	if e == nil && h != "" {
-		return h
+func (h *Handler) remoteKey(r *http.Request) string {
+	remoteHost, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err != nil || remoteHost == "" {
+		remoteHost = strings.TrimSpace(r.RemoteAddr)
 	}
-	return strings.TrimSpace(r.RemoteAddr)
+
+	if len(h.TrustedProxies) > 0 {
+		isTrusted := false
+		for _, trusted := range h.TrustedProxies {
+			if remoteHost == strings.TrimSpace(trusted) {
+				isTrusted = true
+				break
+			}
+		}
+		if isTrusted {
+			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+				parts := strings.Split(xff, ",")
+				clientIP := strings.TrimSpace(parts[0])
+				if clientIP != "" {
+					return clientIP
+				}
+			}
+			if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
+				return xri
+			}
+		}
+	}
+
+	return remoteHost
 }
 
 func reply(w http.ResponseWriter, s int, p any) {

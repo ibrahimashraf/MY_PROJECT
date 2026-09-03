@@ -168,7 +168,11 @@ func main() {
 			log.Fatal(certificateErr)
 		}
 		certificateRepository = repository
-		certificatePublicHandler = &certificatepublichttp.Handler{Verifier: certificateRepository}
+		trustedProxies := envList("INTEGIN_TRUSTED_PROXIES", "INTEGIN_TRUSTED_PROXY")
+		certificatePublicHandler = &certificatepublichttp.Handler{
+			Verifier:       certificateRepository,
+			TrustedProxies: trustedProxies,
+		}
 	}
 	oidcConfig, oidcConfigErr := oidcauth.LoadConfig(os.Getenv)
 	if oidcConfigErr != nil {

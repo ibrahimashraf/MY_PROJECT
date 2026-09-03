@@ -52,6 +52,20 @@ services:
     networks:
       - integin-private
 
+  haproxy:
+    image: haproxy:3.1-alpine
+    restart: unless-stopped
+    ports:
+      - "${INTEGIN_HAPROXY_PORT:-80}:80"
+    volumes:
+      - ../haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    networks:
+      - integin-private
+
 networks:
   integin-private:
     name: ${INTEGIN_STACK_NAME:-integin}-private

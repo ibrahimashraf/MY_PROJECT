@@ -24,6 +24,7 @@ type Handler struct {
 	Window           time.Duration
 	Now              func() time.Time
 	VerifierBaseURL  string
+	TrustedProxies   []string
 	mu               sync.Mutex
 	rates            map[string]rateWindow
 }
@@ -53,7 +54,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.Now != nil {
 		now = h.Now()
 	}
-	if !h.allow(remoteKey(r), now.UTC()) {
+	if !h.allow(h.remoteKey(r), now.UTC()) {
 		reply(w, http.StatusTooManyRequests, nil)
 		return
 	}

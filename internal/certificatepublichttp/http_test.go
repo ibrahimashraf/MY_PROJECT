@@ -115,6 +115,79 @@ func TestPublicVerifierComposesThroughServerMux(t *testing.T) {
 	}
 }
 
+func TestTrustedProxyRemoteKeyExtraction(t *testing.T) {
+	v := &verifierStub{found: true}
+	h := &Handler{
+		Verifier:       v,
+		Limit:          1,
+		TrustedProxies: []string{"10.0.0.1", "127.0.0.1"},
+	}
+
+	token := strings.Repeat("x", 43)
+
+	// First request from client 198.51.100.25 via trusted proxy 10.0.0.1
+	r1 := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+token, nil)
+	r1.RemoteAddr = "10.0.0.1:54321"
+	r1.Header.Set("X-Forwarded-For", "198.51.100.25, 10.0.0.1")
+	w1 := httptest.NewRecorder()
+	h.ServeHTTP(w1, r1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w1.Code)
+	}
+
+	// Second request from client 198.51.100.25 via trusted proxy should hit rate limit (429)
+	r2 := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+token, nil)
+	r2.RemoteAddr = "10.0.0.1:54322"
+	r2.Header.Set("X-Forwarded-For", "198.51.100.25, 10.0.0.1")
+	w2 := httptest.NewRecorder()
+	h.ServeHTTP(w2, r2)
+	if w2.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429 for same client IP, got %d", w2.Code)
+	}
+
+	// Request from a DIFFERENT client 198.51.100.26 via the same proxy should be ALLOWED (200)
+	r3 := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+token, nil)
+	r3.RemoteAddr = "10.0.0.1:54323"
+	r3.Header.Set("X-Forwarded-For", "198.51.100.26, 10.0.0.1")
+	w3 := httptest.NewRecorder()
+	h.ServeHTTP(w3, r3)
+	if w3.Code != http.StatusOK {
+		t.Fatalf("expected 200 for different client IP, got %d", w3.Code)
+	}
+}
+
+func TestUntrustedProxyIgnoresForwardedHeaders(t *testing.T) {
+	v := &verifierStub{found: true}
+	// Handler without trusted proxies
+	h := &Handler{
+		Verifier: v,
+		Limit:    1,
+	}
+
+	token := strings.Repeat("y", 43)
+
+	// Caller attempts spoofing X-Forwarded-For from untrusted remote 192.0.2.1
+	r1 := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+token, nil)
+	r1.RemoteAddr = "192.0.2.1:12345"
+	r1.Header.Set("X-Forwarded-For", " spoofed.ip.1")
+	w1 := httptest.NewRecorder()
+	h.ServeHTTP(w1, r1)
+	if w1.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w1.Code)
+	}
+
+	// Next request sends different spoofed header but same RemoteAddr -> must be blocked
+	r2 := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+token, nil)
+	r2.RemoteAddr = "192.0.2.1:12346"
+	r2.Header.Set("X-Forwarded-For", "spoofed.ip.2")
+	w2 := httptest.NewRecorder()
+	h.ServeHTTP(w2, r2)
+	if w2.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429 because untrusted proxy header must be ignored, got %d", w2.Code)
+	}
+}
+
+
 func BenchmarkPublicVerifierHandler(b *testing.B) {
 	handler := &Handler{Verifier: richVerifierStub{}, Limit: b.N + 1}
 	path := "/verify/certificates/" + strings.Repeat("p", 43)
