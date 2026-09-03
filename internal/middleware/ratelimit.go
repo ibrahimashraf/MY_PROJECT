@@ -69,7 +69,8 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 
 		tenantID := r.Header.Get("X-Tenant-ID")
 		if tenantID == "" {
-			http.Error(w, "X-Tenant-ID header required", http.StatusBadRequest)
+			// Do not block public or unauthenticated endpoints that lack tenant context
+			next.ServeHTTP(w, r)
 			return
 		}
 

@@ -13,6 +13,7 @@ private/
 evidence/ 
  
 # Build and dependency output 
+*.exe 
 **/build/ 
 **/.dart_tool/ 
 **/.venv/ 
