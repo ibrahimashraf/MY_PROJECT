@@ -155,8 +155,13 @@ func (s *Service) ResolveShortLink(ctx context.Context, code string) (string, er
 	if sl.ExpiresAt != nil && time.Now().After(*sl.ExpiresAt) {
 		return "", ErrExpired
 	}
-	// Fire and forget scan count increment
-	go s.repo.IncrementScanCount(context.Background(), baseCode)
+	// Asynchronously increment scan count with bounded timeout and panic safety
+	go func() {
+		defer func() { _ = recover() }()
+		incCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = s.repo.IncrementScanCount(incCtx, baseCode)
+	}()
 	return sl.TargetURL, nil
 }
 
@@ -220,17 +225,25 @@ func (s *Service) RecordScan(ctx context.Context, req shortlink.ScanEventRequest
 		UTMContent:    req.UTMContent,
 	}
 
-	// Increment scan count, record event, check anomalies and deliver webhook
+	// Increment scan count, record event, check anomalies and deliver webhook asynchronously.
+	// Bounded with strict 15s timeout and panic recovery; webhook retry sweeps remain
+	// exclusively with the dedicated RetryWorker to avoid query storming.
 	go func() {
-		ctx := context.Background()
+		defer func() {
+			if r := recover(); r != nil {
+				// Suppress crash from untrusted panic in async background pipeline
+			}
+		}()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
 		_ = s.repo.IncrementScanCount(ctx, req.Code)
 		_ = s.repo.RecordScanEvent(ctx, event)
 		if _, err := s.CheckAnomalies(ctx, event); err == nil {
 			_ = s.ProcessAlertWebhooks(ctx)
 		}
-		if err := s.DeliverWebhook(ctx, req.Code, event); err == nil {
-			_ = s.ProcessWebhookRetries(ctx)
-		}
+		_ = s.DeliverWebhook(ctx, req.Code, event)
 	}()
 
 	return nil
@@ -491,6 +504,7 @@ func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
 	sem := make(chan struct{}, 5)
 	var wg sync.WaitGroup
 
+	forLoop:
 	for _, delivery := range deliveries {
 		sl, ok := shortLinkMap[delivery.ShortLinkCode]
 		if !ok {
@@ -506,12 +520,7 @@ func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
 		select {
 		case sem <- struct{}{}:
 		case <-ctx.Done():
-			break
-		}
-
-		// If context was cancelled while waiting for semaphore, abort remaining batch
-		if ctx.Err() != nil {
-			break
+			break forLoop
 		}
 
 		wg.Add(1)

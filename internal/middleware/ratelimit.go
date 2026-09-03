@@ -123,9 +123,11 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 		if !rl.tenantCreation[key] {
 			rl.tenantCreation[key] = true
 			go func() {
-				defer func() { rl.tenantCreationMu.Lock(); rl.tenantCreationMu.Unlock(); rl.tenantCreation[key] = false }()
 				// Allow initializer to complete before full rate limiting
 				time.Sleep(100 * time.Millisecond)
+				rl.tenantCreationMu.Lock()
+				delete(rl.tenantCreation, key)
+				rl.tenantCreationMu.Unlock()
 			}()
 		}
 		rl.tenantCreationMu.Unlock()
