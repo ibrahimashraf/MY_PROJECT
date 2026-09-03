@@ -95,6 +95,9 @@ func (s *Service) CreateShortLink(ctx context.Context, req shortlink.CreateReque
 			}
 			return code, nil
 		}
+		if errors.Is(err, shortlink.ErrCodeCollision) {
+			continue
+		}
 		var pgErr pgError
 		if errors.As(err, &pgErr) && pgErr.Code() == "23505" {
 			continue

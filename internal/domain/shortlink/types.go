@@ -7,9 +7,10 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("short link not found")
-	ErrInvalidHMAC  = errors.New("invalid HMAC signature")
-	ErrHMACRequired = errors.New("HMAC signature required but not provided")
+	ErrNotFound      = errors.New("short link not found")
+	ErrInvalidHMAC   = errors.New("invalid HMAC signature")
+	ErrHMACRequired  = errors.New("HMAC signature required but not provided")
+	ErrCodeCollision = errors.New("code collision")
 )
 
 type AnomalyType string

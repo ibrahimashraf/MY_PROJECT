@@ -31,13 +31,20 @@ var webhookRetryIntervals = []time.Duration{
 }
 
 func (r *Repository) Create(ctx context.Context, code, targetURL string, expiresAt *time.Time, webhookURL *string, customDomain *string, hmacSecretRef *string, hmacAlgorithm *string, hmacSignature *string) error {
-	_, err := r.db.ExecContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		INSERT INTO short_links (code, target_url, expires_at, webhook_url, custom_domain, hmac_secret_ref, hmac_algorithm, hmac_signature)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (code) DO NOTHING`,
 		code, targetURL, expiresAt, webhookURL, customDomain, hmacSecretRef, hmacAlgorithm, hmacSignature)
 	if err != nil {
 		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return shortlink.ErrCodeCollision
 	}
 	return nil
 }
