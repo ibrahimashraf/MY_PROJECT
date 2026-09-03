@@ -316,8 +316,8 @@ func (p EvidencePolicy) MarshalJSON() ([]byte, error) {
 
 // Repository defines persistence operations for form definitions.
 type Repository interface {
-	// RegisterDraft creates a new DRAFT form version.
-	RegisterDraft(ctx context.Context, actor ActorContext, form FormVersion) (FormVersion, error)
+	// RegisterDraft creates a new DRAFT form version (returns created=false if identical exists).
+	RegisterDraft(ctx context.Context, actor ActorContext, form FormVersion) (FormVersion, bool, error)
 	// Approve transitions a DRAFT form to APPROVED.
 	Approve(ctx context.Context, actor ActorContext, formID string, expectedVersion int) (FormVersion, error)
 	// Retire transitions an APPROVED form to RETIRED.

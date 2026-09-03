@@ -87,6 +87,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/assurance", d.AssuranceHandler)
 		mux.Handle("/api/v1/assurance/", d.AssuranceHandler)
 	}
+	if d.FormDefinitionHandler != nil {
+		mux.Handle("/api/v1/form-definitions", d.FormDefinitionHandler)
+		mux.Handle("/api/v1/form-definitions/", d.FormDefinitionHandler)
+	}
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {

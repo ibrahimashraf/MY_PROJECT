@@ -25,6 +25,8 @@ import (
 	"integin/internal/certificatepublichttp"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/formdefinitionhttp"
+	"integin/internal/formdefinitionpg"
 	"integin/internal/identity"
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
@@ -226,6 +228,7 @@ func main() {
 	var retryWorker *shortlinksvc.RetryWorker
 	var qrnfcHandler http.Handler
 	var assuranceHandler http.Handler
+	var formDefHandler http.Handler
 
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
@@ -255,6 +258,12 @@ func main() {
 		}
 		assuranceHandler = assurancehttp.NewHandler(activeValidator, activeResolver, projRepo, workRepo, nil)
 
+		formDefRepo, formDefErr := formdefinitionpg.NewRepository(database)
+		if formDefErr != nil {
+			log.Fatal(formDefErr)
+		}
+		formDefHandler = formdefinitionhttp.NewHandler(activeValidator, activeResolver, formDefRepo, nil)
+
 		// Initialize and start webhook retry worker
 		retryInterval := 30 * time.Second
 		if v := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVAL")); v != "" {
@@ -272,7 +281,7 @@ func main() {
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler}),
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

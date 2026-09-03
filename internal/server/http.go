@@ -46,6 +46,7 @@ type Dependencies struct {
 	ShortLinkHandler               http.Handler
 	QRNFCHandler                   http.Handler
 	AssuranceHandler               http.Handler
+	FormDefinitionHandler          http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }
