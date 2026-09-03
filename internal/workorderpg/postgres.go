@@ -10,6 +10,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/lib/pq"
+
 	"integin/internal/domain/workorder"
 )
 
@@ -661,12 +663,16 @@ func verifyScopeIDs(ctx context.Context, tx *sql.Tx, actor workorder.ActorContex
 }
 
 func insertAssignmentScope(ctx context.Context, tx *sql.Tx, actor workorder.ActorContext, assignmentID string, ids []string) error {
-	for _, id := range ids {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO work_order_assignment_scope (tenant_id,organization_id,assignment_id,scope_item_id) VALUES ($1,$2,$3,$4)`, actor.TenantID, actor.OrganizationID, assignmentID, id); err != nil {
-			return err
-		}
+	if len(ids) == 0 {
+		return nil
 	}
-	return nil
+	// Bulk insert using unnest to avoid N+1 write amplification
+	// Instead of one INSERT per id, we do one INSERT with unnest
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO work_order_assignment_scope (tenant_id, organization_id, assignment_id, scope_item_id)
+		SELECT $1::text, $2::text, $3::text, unnest($4::text[])
+	`, actor.TenantID, actor.OrganizationID, assignmentID, pq.Array(ids))
+	return err
 }
 
 func bumpOrder(ctx context.Context, tx *sql.Tx, actor workorder.ActorContext, order workorder.WorkOrder, state, _ workorder.ExecutionState) (int64, error) {
