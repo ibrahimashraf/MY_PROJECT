@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -85,7 +87,22 @@ func NewMux(dependencies Dependencies) http.Handler {
 		}
 		writeOperationalJSON(writer, http.StatusOK, `{"status":"ready","service":"integin"}`)
 	})
-	return productionMiddleware(mux)
+	rateLimiter := middleware.DefaultRateLimiter()
+	mux.HandleFunc("/metrics", func(writer http.ResponseWriter, _ *http.Request) {
+		allowed, denied := rateLimiter.Stats()
+		writer.Header().Set("Content-Type", "text/plain; version=0.0.4")
+		writer.WriteHeader(http.StatusOK)
+		fmt.Fprintf(writer, "# HELP integin_ratelimit_allowed_total Total requests allowed by rate limiter.\n")
+		fmt.Fprintf(writer, "# TYPE integin_ratelimit_allowed_total counter\n")
+		fmt.Fprintf(writer, "integin_ratelimit_allowed_total %d\n", allowed)
+		fmt.Fprintf(writer, "# HELP integin_ratelimit_denied_total Total requests denied by rate limiter.\n")
+		fmt.Fprintf(writer, "# TYPE integin_ratelimit_denied_total counter\n")
+		fmt.Fprintf(writer, "integin_ratelimit_denied_total %d\n", denied)
+		fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
+		fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
+		fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
+	})
+	return productionMiddlewareWithLimiter(mux, rateLimiter)
 }
 
 func readinessTimeout(value time.Duration) time.Duration {
@@ -104,6 +121,10 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 
 func productionMiddleware(next http.Handler) http.Handler {
 	rateLimiter := middleware.DefaultRateLimiter()
+	return productionMiddlewareWithLimiter(next, rateLimiter)
+}
+
+func productionMiddlewareWithLimiter(next http.Handler, rateLimiter *middleware.RateLimiter) http.Handler {
 	gate := newConcurrencyGateFromEnv()
 	return requestLogger(withCorrelationID(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20)))
 }

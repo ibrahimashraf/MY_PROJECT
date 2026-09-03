@@ -138,6 +138,13 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (Principal, e
 			}
 			return principal, err
 		}
+		// Proactively prune expired entries during JWKS refresh
+		v.tokenCache.Range(func(k, val any) bool {
+			if entry, ok := val.(tokenCacheEntry); ok && now.After(entry.expiresAt) {
+				v.tokenCache.Delete(k)
+			}
+			return true
+		})
 		if err := v.refresh(ctx); err != nil {
 			return Principal{}, err
 		}

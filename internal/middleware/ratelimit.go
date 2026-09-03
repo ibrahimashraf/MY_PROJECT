@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -34,6 +35,8 @@ type RateLimiter struct {
 	tenantCreationMu sync.Mutex
 	stop            chan struct{}
 	skipPaths       map[string]bool // endpoints to skip rate limiting
+	allowed         atomic.Int64
+	denied          atomic.Int64
 }
 
 // NewRateLimiter creates a new sharded rate limiter with automated eviction.
@@ -48,6 +51,8 @@ func NewRateLimiter(requestsPerSecond float64, burst int, opts ...RateLimitConfi
 			"/healthz/": true,
 			"/readyz":   true,
 			"/readyz/":  true,
+			"/metrics":  true,
+			"/metrics/": true,
 		},
 		stop: make(chan struct{}),
 	}
@@ -156,6 +161,8 @@ var skipPaths = map[string]bool{
 	"/healthz/": true,
 	"/readyz":   true,
 	"/readyz/":  true,
+	"/metrics":  true,
+	"/metrics/": true,
 }
 
 // extractClientIP extracts the client IP from the request.
@@ -198,10 +205,12 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 
 		limiter := rl.getLimiter(limiterKey)
 		if !limiter.AllowN(time.Now(), 1) {
+			rl.denied.Add(1)
 			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
+		rl.allowed.Add(1)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -249,17 +258,22 @@ type RateLimitStats struct {
 
 // RecordAllowed records a successful allowed request
 func (rl *RateLimiter) RecordAllowed() {
-	// Increment allowed counter (could be extended with Prometheus metrics)
+	rl.allowed.Add(1)
 }
 
 // RecordDenied records a denied request
 func (rl *RateLimiter) RecordDenied() {
-	// Increment denied counter
+	rl.denied.Add(1)
 }
 
 // RecordCreationRecorded records a creation request
 func (rl *RateLimiter) RecordCreationRecorded() {
 	// Track creation-specific metrics
+}
+
+// Stats returns current allowed/denied counters for observability.
+func (rl *RateLimiter) Stats() (allowed, denied int64) {
+	return rl.allowed.Load(), rl.denied.Load()
 }
 
 // DefaultRateLimiter returns a rate limiter with default settings

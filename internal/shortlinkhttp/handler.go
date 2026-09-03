@@ -1,4 +1,4 @@
-package shortlinkhttp
+﻿package shortlinkhttp
 
 import (
 	"context"
@@ -117,6 +117,10 @@ func (h *Handler) RedirectHandler(c *gin.Context) {
 	}
 	target, err := h.svc.ResolveShortLink(c.Request.Context(), code)
 	if err != nil {
+		if errors.Is(err, shortlinksvc.ErrExpired) || errors.Is(err, shortlinksvc.ErrRevoked) {
+			c.AbortWithStatus(http.StatusGone)
+			return
+		}
 		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
@@ -1229,3 +1233,4 @@ func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsReque
 		Limit:       limit,
 	}
 }
+

@@ -44,10 +44,15 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 		req.From = req.To.AddDate(0, -1, 0)
 	}
 
-	// In-memory 30s TTL cache: prevents repeated dashboard loads from saturating connection pool
+	// In-memory 30s TTL cache: prevents repeated dashboard loads from saturating connection pool.
+	// Round default To timestamp to 10-second boundaries to achieve cache hits across near-simultaneous requests.
+	toUnix := req.To.Unix()
+	if req.To.Equal(req.From.AddDate(0, 1, 0)) || req.To.Sub(time.Now()).Abs() < 2*time.Second {
+		toUnix = (toUnix / 10) * 10
+	}
 	cacheKey := fmt.Sprintf("%s|%s|%d|%d|%s|%s",
 		req.TenantID, req.OrganizationID,
-		req.From.Unix(), req.To.Unix(),
+		req.From.Unix(), toUnix,
 		req.InspectorID, req.AssetType)
 
 	now := time.Now()
@@ -57,6 +62,16 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 			return entry.response, nil
 		}
 		r.cache.Delete(cacheKey)
+	}
+
+	// Proactive bounded cleanup: purge expired cache keys periodically
+	if now.Unix()%30 == 0 {
+		r.cache.Range(func(k, v any) bool {
+			if e, ok := v.(dashboardCacheEntry); ok && now.After(e.expiresAt) {
+				r.cache.Delete(k)
+			}
+			return true
+		})
 	}
 
 	summary, err := r.getSummaryKPIs(ctx, req)

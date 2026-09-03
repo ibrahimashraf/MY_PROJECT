@@ -1,4 +1,4 @@
-package middleware
+﻿package middleware
 
 import (
 	"net/http"
@@ -89,14 +89,49 @@ func TestRateLimiter_SkipPaths(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	for i := 0; i < 5; i++ {
-		req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-		req.RemoteAddr = "10.0.0.1:1234"
+	for _, path := range []string{"/healthz", "/readyz", "/metrics"} {
+		for i := 0; i < 5; i++ {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.RemoteAddr = "10.0.0.1:1234"
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			if w.Code != http.StatusOK {
+				t.Fatalf("%s should never be rate limited, got %d on request %d", path, w.Code, i+1)
+			}
+		}
+	}
+}
+
+func TestRateLimiter_StatsCounters(t *testing.T) {
+	limiter := NewRateLimiter(1, 2)
+	defer limiter.Close()
+	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// 2 allowed requests
+	for i := 0; i < 2; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/resource", nil)
+		req.Header.Set("X-Tenant-ID", "stats-tenant")
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Fatalf("/healthz should never be rate limited, got %d on request %d", w.Code, i+1)
-		}
+	}
+
+	// 1 denied request (exceeds burst)
+	req := httptest.NewRequest(http.MethodGet, "/resource", nil)
+	req.Header.Set("X-Tenant-ID", "stats-tenant")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429, got %d", w.Code)
+	}
+
+	allowed, denied := limiter.Stats()
+	if allowed != 2 {
+		t.Fatalf("expected 2 allowed, got %d", allowed)
+	}
+	if denied != 1 {
+		t.Fatalf("expected 1 denied, got %d", denied)
 	}
 }
 
@@ -147,3 +182,4 @@ func TestRateLimiter_HighConcurrency(t *testing.T) {
 	}
 	wg.Wait()
 }
+

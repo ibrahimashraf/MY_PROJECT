@@ -150,6 +150,7 @@ type Repository interface {
 	GetScanEvents(ctx context.Context, code string, limit, offset int) ([]ScanEvent, error)
 	GetScanStats(ctx context.Context, code string, since *time.Time) (*ScanStats, error)
 	Revoke(ctx context.Context, code string) error
+	DeleteExpiredShortLinks(ctx context.Context, grace time.Duration, limit int) (int64, error)
 	List(ctx context.Context, limit, offset int) ([]ShortLink, error)
 	GetStats(ctx context.Context, code string) (*ShortLink, error)
 	GetByCodes(ctx context.Context, codes []string) ([]*ShortLink, error)

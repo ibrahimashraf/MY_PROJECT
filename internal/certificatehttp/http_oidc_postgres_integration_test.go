@@ -373,9 +373,10 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 	reviewerToken := certificateToken(t, key, kid, issuer.URL, reviewerSubject)
 	issuerToken := certificateToken(t, key, kid, issuer.URL, issuerSubject)
 
-	invalidToken := inspectorToken[:len(inspectorToken)-1] + "x"
-	if inspectorToken[len(inspectorToken)-1] == 120 {
-		invalidToken = inspectorToken[:len(inspectorToken)-1] + "y"
+	parts := strings.Split(inspectorToken, ".")
+	invalidToken := parts[0] + "." + parts[1] + ".invalid-signature"
+	if len(parts) != 3 {
+		invalidToken = inspectorToken + "-tampered"
 	}
 
 	// Prime the validator with a request to a non-existent certificate (will fail but loads JWKS)

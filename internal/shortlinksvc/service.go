@@ -1,4 +1,4 @@
-package shortlinksvc
+﻿package shortlinksvc
 
 import (
 	"archive/zip"
@@ -454,14 +454,7 @@ func (s *Service) handleDeliveryFailure(ctx context.Context, delivery *shortlink
 }
 
 func (s *Service) calculateNextRetry(attempt int) *time.Time {
-	intervals := []time.Duration{
-		1 * time.Minute,  // 1st retry (attempt = 1): 1 minute
-		5 * time.Minute,  // 2nd retry (attempt = 2): 5 minutes
-		15 * time.Minute, // 3rd retry (attempt = 3): 15 minutes
-		1 * time.Hour,    // 4th retry (attempt = 4): 1 hour
-		6 * time.Hour,    // 5th retry (attempt = 5): 6 hours
-		24 * time.Hour,   // 6th retry (attempt = 6): 24 hours
-	}
+	intervals := defaultWebhookRetryIntervals()
 	idx := attempt - 1
 	if idx < 0 {
 		idx = 0
@@ -471,6 +464,17 @@ func (s *Service) calculateNextRetry(attempt int) *time.Time {
 	}
 	t := time.Now().Add(intervals[idx])
 	return &t
+}
+
+func defaultWebhookRetryIntervals() []time.Duration {
+	return []time.Duration{
+		1 * time.Minute,  // 1st retry: 1 minute
+		5 * time.Minute,  // 2nd retry: 5 minutes
+		15 * time.Minute, // 3rd retry: 15 minutes
+		1 * time.Hour,    // 4th retry: 1 hour
+		6 * time.Hour,    // 5th retry: 6 hours
+		24 * time.Hour,   // 6th retry: 24 hours
+	}
 }
 
 func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
@@ -555,6 +559,11 @@ func (s *Service) RetryDLQEntry(ctx context.Context, req shortlink.RetryDLQReque
 
 	// Attempt immediate delivery
 	return s.attemptWebhookDelivery(ctx, delivery, *sl.WebhookURL)
+}
+
+// CleanupExpiredLinks removes short links that expired before the given grace period.
+func (s *Service) CleanupExpiredLinks(ctx context.Context, grace time.Duration, limit int) (int64, error) {
+	return s.repo.DeleteExpiredShortLinks(ctx, grace, limit)
 }
 
 func (s *Service) ResolveDLQEntry(ctx context.Context, id int64, resolvedBy string) error {
@@ -1047,3 +1056,4 @@ func (s *Service) parseTimeRange(tr shortlink.TimeRange, customStart, customEnd 
 	
 	return since, until
 }
+

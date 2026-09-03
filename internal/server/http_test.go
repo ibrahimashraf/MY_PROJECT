@@ -1,4 +1,4 @@
-package server
+﻿package server
 
 import (
 	"bytes"
@@ -186,5 +186,24 @@ func TestNewMuxMountsCertificateRoutesOnlyWhenHandlersProvided(t *testing.T) {
 	mux.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/verify/certificates/token", nil))
 	if response.Code != http.StatusOK || publicCalls != 1 {
 		t.Fatalf("public status=%d calls=%d", response.Code, publicCalls)
+	}
+}
+
+func TestMetricsEndpointReturnsPrometheusFormat(t *testing.T) {
+	mux := NewMux(Dependencies{})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/metrics status = %d", rec.Code)
+	}
+	ct := rec.Header().Get("Content-Type")
+	if !strings.Contains(ct, "text/plain") {
+		t.Fatalf("/metrics Content-Type = %q, want text/plain", ct)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"integin_ratelimit_allowed_total", "integin_ratelimit_denied_total", "integin_go_goroutines"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("/metrics body missing %s", want)
+		}
 	}
 }

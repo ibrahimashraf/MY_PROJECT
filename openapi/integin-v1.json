@@ -2607,12 +2607,33 @@
                                                                         }
                                                             },
                                               "summary":  "Return dependency readiness",
-                                              "tags":  [
+                                               "tags":  [
                                                            "Operational"
                                                        ]
-                                          }
-                              },
-                  "/sync":  {
+                                           }
+                               },
+                   "/metrics":  {
+                                   "get":  {
+                                               "operationId":  "getMetrics",
+                                               "responses":  {
+                                                                 "200":  {
+                                                                             "content":  {
+                                                                                             "text/plain":  {
+                                                                                                                  "schema":  {
+                                                                                                                                 "type":  "string"
+                                                                                                                             }
+                                                                                                              }
+                                                                                         },
+                                                                             "description":  "Prometheus exposition metrics"
+                                                                         }
+                                                             },
+                                               "summary":  "Return Prometheus metrics",
+                                               "tags":  [
+                                                           "Operational"
+                                                       ]
+                                           }
+                               },
+                   "/sync":  {
                                 "post":  {
                                              "description":  "The server validates device trust, authority package, signature, sequencing, tenant context, and workflow rules. A 200 response can carry an application-level rejected or held outcome; clients must inspect `outcome` and must not assume success solely from HTTP status.",
                                              "operationId":  "submitSignedTransaction",
