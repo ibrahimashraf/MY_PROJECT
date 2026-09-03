@@ -433,7 +433,7 @@ func (r *Repository) GetByIDs(ctx context.Context, ids []int64) ([]*shortlink.We
 		var delivery shortlink.WebhookDelivery
 		var nextRetryAt, deliveredAt sql.NullTime
 		if err := rows.Scan(&delivery.ID, &delivery.ShortLinkCode, &delivery.Payload, &delivery.Status, &delivery.Attempt,
-			&delivery.MaxAttempts, &delivery.NextRetryAt, &delivery.LastError, &delivery.CreatedAt, &delivery.UpdatedAt, &delivery.DeliveredAt); err != nil {
+			&delivery.MaxAttempts, &nextRetryAt, &delivery.LastError, &delivery.CreatedAt, &delivery.UpdatedAt, &deliveredAt); err != nil {
 			return nil, err
 		}
 		if nextRetryAt.Valid {
@@ -515,12 +515,23 @@ func (r *Repository) GetPendingWebhookDeliveries(ctx context.Context, limit int)
 	if limit <= 0 || limit > 1000 {
 		limit = 100
 	}
+	// Multi-node safe: Atomically select and reserve pending deliveries by pushing next_retry_at into the future.
+	// This prevents concurrent server nodes from selecting and dispatching duplicate webhooks.
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, short_link_code, payload, status, attempt, max_attempts, next_retry_at, last_error, created_at, updated_at, delivered_at
-		FROM webhook_deliveries
-		WHERE status = $1 AND (next_retry_at IS NULL OR next_retry_at <= now())
-		ORDER BY created_at ASC
-		LIMIT $2`, shortlink.WebhookDeliveryStatusPending, limit)
+		WITH claimable AS (
+			SELECT id
+			FROM webhook_deliveries
+			WHERE status = $1 AND (next_retry_at IS NULL OR next_retry_at <= now())
+			ORDER BY created_at ASC
+			LIMIT $2
+			FOR UPDATE SKIP LOCKED
+		)
+		UPDATE webhook_deliveries d
+		SET next_retry_at = now() + interval '2 minutes', updated_at = now()
+		FROM claimable
+		WHERE d.id = claimable.id
+		RETURNING d.id, d.short_link_code, d.payload, d.status, d.attempt, d.max_attempts, d.next_retry_at, d.last_error, d.created_at, d.updated_at, d.delivered_at`,
+		shortlink.WebhookDeliveryStatusPending, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -617,10 +628,14 @@ func (r *Repository) GetDLQEntries(ctx context.Context, req shortlink.ListDLQReq
 }
 
 func (r *Repository) CreateDLQEntry(ctx context.Context, delivery *shortlink.WebhookDelivery, errorMsg string) error {
+	newAttempt := delivery.Attempt + 1
+	if newAttempt > delivery.MaxAttempts {
+		newAttempt = delivery.MaxAttempts
+	}
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE webhook_deliveries
-		SET status = $2, last_error = $3, updated_at = now()
-		WHERE id = $1`, delivery.ID, shortlink.WebhookDeliveryStatusDeadLetter, errorMsg)
+		SET status = $2, attempt = $3, last_error = $4, updated_at = now()
+		WHERE id = $1`, delivery.ID, shortlink.WebhookDeliveryStatusDeadLetter, newAttempt, errorMsg)
 	return err
 }
 

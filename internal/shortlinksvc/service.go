@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	qrcode "github.com/skip2/go-qrcode"
+	"sync"
 	"time"
 
 	"integin/internal/domain/shortlink"
@@ -36,13 +37,26 @@ type Service struct {
 	repo        shortlink.Repository
 	codeLen     int
 	defaultHMAC string
+	httpClient  *http.Client
 }
 
 func New(repo shortlink.Repository, codeLen int, defaultHMAC string) *Service {
 	if codeLen <= 0 {
 		codeLen = 6
 	}
-	return &Service{repo: repo, codeLen: codeLen, defaultHMAC: defaultHMAC}
+	return &Service{
+		repo:        repo,
+		codeLen:     codeLen,
+		defaultHMAC: defaultHMAC,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        100,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+			},
+		},
+	}
 }
 
 func (s *Service) CreateShortLink(ctx context.Context, req shortlink.CreateRequest) (string, error) {
@@ -349,7 +363,10 @@ func (s *Service) deliverWebhookDirect(ctx context.Context, webhookURL string, p
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "INTEGIN-ShortLink/1.0")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := s.httpClient
+	if client == nil {
+		client = http.DefaultClient
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -372,7 +389,10 @@ func (s *Service) attemptWebhookDelivery(ctx context.Context, delivery *shortlin
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "INTEGIN-ShortLink/1.0")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := s.httpClient
+	if client == nil {
+		client = http.DefaultClient
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		s.handleDeliveryFailure(ctx, delivery, err)
@@ -407,17 +427,21 @@ func (s *Service) handleDeliveryFailure(ctx context.Context, delivery *shortlink
 
 func (s *Service) calculateNextRetry(attempt int) *time.Time {
 	intervals := []time.Duration{
-		1 * time.Minute,  // 1st retry: 1 minute
-		5 * time.Minute,  // 2nd retry: 5 minutes
-		15 * time.Minute, // 3rd retry: 15 minutes
-		1 * time.Hour,    // 4th retry: 1 hour
-		6 * time.Hour,    // 5th retry: 6 hours
-		24 * time.Hour,   // 6th retry: 24 hours
+		1 * time.Minute,  // 1st retry (attempt = 1): 1 minute
+		5 * time.Minute,  // 2nd retry (attempt = 2): 5 minutes
+		15 * time.Minute, // 3rd retry (attempt = 3): 15 minutes
+		1 * time.Hour,    // 4th retry (attempt = 4): 1 hour
+		6 * time.Hour,    // 5th retry (attempt = 5): 6 hours
+		24 * time.Hour,   // 6th retry (attempt = 6): 24 hours
 	}
-	if attempt >= len(intervals) {
-		return nil
+	idx := attempt - 1
+	if idx < 0 {
+		idx = 0
 	}
-	t := time.Now().Add(intervals[attempt])
+	if idx >= len(intervals) {
+		idx = len(intervals) - 1
+	}
+	t := time.Now().Add(intervals[idx])
 	return &t
 }
 
@@ -448,6 +472,10 @@ func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
 		shortLinkMap[sl.Code] = sl
 	}
 
+	// Process deliveries concurrently with bounded parallelism (max 5 concurrent HTTP calls)
+	sem := make(chan struct{}, 5)
+	var wg sync.WaitGroup
+
 	for _, delivery := range deliveries {
 		sl, ok := shortLinkMap[delivery.ShortLinkCode]
 		if !ok {
@@ -460,10 +488,26 @@ func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
 			continue
 		}
 
-		// Attempt delivery
-		s.attemptWebhookDelivery(ctx, &delivery, *sl.WebhookURL)
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			break
+		}
+
+		// If context was cancelled while waiting for semaphore, abort remaining batch
+		if ctx.Err() != nil {
+			break
+		}
+
+		wg.Add(1)
+		go func(dl shortlink.WebhookDelivery, webhookURL string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			s.attemptWebhookDelivery(ctx, &dl, webhookURL)
+		}(delivery, *sl.WebhookURL)
 	}
 
+	wg.Wait()
 	return nil
 }
 

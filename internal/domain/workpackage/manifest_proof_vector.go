@@ -2,7 +2,7 @@
 package workpackage
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,17 +17,28 @@ func CanonicalManifestReadProof(
 	issuedAt, expiresAt time.Time,
 	keyID string,
 ) string {
-	return strings.Join([]string{
-		ManifestProofProtocolVersion,
-		ManifestProofPurpose,
-		requestID,
-		deviceID,
-		authorityID,
-		fmt.Sprintf("%d", authorityEpoch),
-		inspectionID,
-		issuedAt.UTC().Format(time.RFC3339Nano),
-		expiresAt.UTC().Format(time.RFC3339Nano),
-		ManifestProofSignatureAlgorithm,
-		keyID,
-	}, "|")
+	var b strings.Builder
+	b.Grow(256)
+	b.WriteString(ManifestProofProtocolVersion)
+	b.WriteByte('|')
+	b.WriteString(ManifestProofPurpose)
+	b.WriteByte('|')
+	b.WriteString(requestID)
+	b.WriteByte('|')
+	b.WriteString(deviceID)
+	b.WriteByte('|')
+	b.WriteString(authorityID)
+	b.WriteByte('|')
+	b.WriteString(strconv.FormatUint(authorityEpoch, 10))
+	b.WriteByte('|')
+	b.WriteString(inspectionID)
+	b.WriteByte('|')
+	b.WriteString(issuedAt.UTC().Format(time.RFC3339Nano))
+	b.WriteByte('|')
+	b.WriteString(expiresAt.UTC().Format(time.RFC3339Nano))
+	b.WriteByte('|')
+	b.WriteString(ManifestProofSignatureAlgorithm)
+	b.WriteByte('|')
+	b.WriteString(keyID)
+	return b.String()
 }

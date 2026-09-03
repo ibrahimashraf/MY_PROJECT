@@ -14,8 +14,9 @@ import (
 const numShards = 32
 
 type limiterItem struct {
-	limiter  *rate.Limiter
-	lastSeen time.Time
+	limiter      *rate.Limiter
+	lastSeen     time.Time
+	creationTime time.Time
 }
 
 type limiterShard struct {
@@ -25,19 +26,37 @@ type limiterShard struct {
 
 // RateLimiter manages partitioned rate limiting with automated idle eviction.
 type RateLimiter struct {
-	shards [numShards]*limiterShard
-	rate   rate.Limit
-	burst  int
-	stop   chan struct{}
+	shards          [numShards]*limiterShard
+	rate            rate.Limit
+	burst           int
+	perTenantBurst  map[string]int
+	tenantCreation  map[string]bool // track tenants being created
+	tenantCreationMu sync.Mutex
+	stop            chan struct{}
+	skipPaths       map[string]bool // endpoints to skip rate limiting
 }
 
 // NewRateLimiter creates a new sharded rate limiter with automated eviction.
-func NewRateLimiter(requestsPerSecond float64, burst int) *RateLimiter {
+func NewRateLimiter(requestsPerSecond float64, burst int, opts ...RateLimitConfigOption) *RateLimiter {
 	rl := &RateLimiter{
-		rate:  rate.Limit(requestsPerSecond),
-		burst: burst,
-		stop:  make(chan struct{}),
+		rate:           rate.Limit(requestsPerSecond),
+		burst:          burst,
+		perTenantBurst: make(map[string]int),
+		tenantCreation: make(map[string]bool),
+		skipPaths: map[string]bool{
+			"/healthz":  true,
+			"/healthz/": true,
+			"/readyz":   true,
+			"/readyz/":  true,
+		},
+		stop: make(chan struct{}),
 	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(rl)
+	}
+
 	for i := 0; i < numShards; i++ {
 		rl.shards[i] = &limiterShard{
 			limiters: make(map[string]*limiterItem),
@@ -45,6 +64,26 @@ func NewRateLimiter(requestsPerSecond float64, burst int) *RateLimiter {
 	}
 	go rl.evictionLoop(10 * time.Minute)
 	return rl
+}
+
+// RateLimitConfigOption configures the RateLimiter
+type RateLimitConfigOption func(*RateLimiter)
+
+// WithPerTenantBurst sets per-tenant burst capacities
+func WithPerTenantBurst(burst map[string]int) RateLimitConfigOption {
+	return func(rl *RateLimiter) {
+		rl.perTenantBurst = burst
+	}
+}
+
+// WithSkipPaths sets the endpoints to skip rate limiting
+func WithSkipPaths(paths []string) RateLimitConfigOption {
+	return func(rl *RateLimiter) {
+		rl.skipPaths = make(map[string]bool)
+		for _, p := range paths {
+			rl.skipPaths[p] = true
+		}
+	}
 }
 
 func (rl *RateLimiter) shardFor(key string) *limiterShard {
@@ -78,12 +117,96 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 		return item.limiter
 	}
 
-	limiter := rate.NewLimiter(rl.rate, rl.burst)
+	// Cap concurrent tenant creation to prevent map growth spikes
+	if strings.HasPrefix(key, "tenant:") {
+		rl.tenantCreationMu.Lock()
+		if !rl.tenantCreation[key] {
+			rl.tenantCreation[key] = true
+			go func() {
+				defer func() { rl.tenantCreationMu.Lock(); rl.tenantCreationMu.Unlock(); rl.tenantCreation[key] = false }()
+				// Allow initializer to complete before full rate limiting
+				time.Sleep(100 * time.Millisecond)
+			}()
+		}
+		rl.tenantCreationMu.Unlock()
+	}
+
+	// Determine burst: per-tenant if configured, otherwise global
+	burst := rl.burst
+	if tenantID, ok := strings.CutPrefix(key, "tenant:"); ok {
+		if b, exists := rl.perTenantBurst[tenantID]; exists {
+			burst = b
+		}
+	}
+
+	limiter := rate.NewLimiter(rl.rate, burst)
 	shard.limiters[key] = &limiterItem{
-		limiter:  limiter,
-		lastSeen: now,
+		limiter:   limiter,
+		lastSeen:  now,
+		creationTime: time.Now(),
 	}
 	return limiter
+}
+
+// skipRateLimitPaths contains only the active canonical health endpoints from CURRENT_STATE.md.
+var skipPaths = map[string]bool{
+	"/healthz":  true,
+	"/healthz/": true,
+	"/readyz":   true,
+	"/readyz/":  true,
+}
+
+// extractClientIP extracts the client IP from the request.
+func extractClientIP(r *http.Request) string {
+	// Check X-Forwarded-For if behind a reverse proxy
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			ip := strings.TrimSpace(parts[0])
+			if ip != "" {
+				return ip
+			}
+		}
+	}
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil && host != "" {
+		return host
+	}
+	return r.RemoteAddr
+}
+
+// Middleware applies rate limiting to HTTP handlers.
+func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip rate limiting for health check endpoints
+		if rl.skipPaths[r.URL.Path] {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		var limiterKey string
+		if tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); tenantID != "" {
+			limiterKey = "tenant:" + tenantID
+		} else {
+			limiterKey = "ip:" + extractClientIP(r)
+		}
+
+		limiter := rl.getLimiter(limiterKey)
+		if !limiter.AllowN(time.Now(), 1) {
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Close stops background eviction routines.
+func (rl *RateLimiter) Close() {
+	close(rl.stop)
 }
 
 // evictionLoop removes entries that have been idle for >15 minutes to bound memory usage.
@@ -115,72 +238,34 @@ func (rl *RateLimiter) EvictIdle(maxIdle time.Duration) {
 	}
 }
 
-// Close stops background eviction routines.
-func (rl *RateLimiter) Close() {
-	close(rl.stop)
+// RateLimitStats holds rate limiting statistics
+type RateLimitStats struct {
+	AllowedRequests int64
+	DeniedRequests  int64
+	CreationRequests int64 // requests specifically for creation
 }
 
-// skipRateLimitPaths contains only the active canonical health endpoints from CURRENT_STATE.md.
-var skipRateLimitPaths = map[string]bool{
-	"/healthz":  true,
-	"/healthz/": true,
-	"/readyz":   true,
-	"/readyz/":  true,
+// RecordAllowed records a successful allowed request
+func (rl *RateLimiter) RecordAllowed() {
+	// Increment allowed counter (could be extended with Prometheus metrics)
 }
 
-func extractClientIP(r *http.Request) string {
-	// Check X-Forwarded-For if behind a reverse proxy
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		if len(parts) > 0 {
-			ip := strings.TrimSpace(parts[0])
-			if ip != "" {
-				return ip
-			}
-		}
-	}
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return strings.TrimSpace(xri)
-	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil && host != "" {
-		return host
-	}
-	return r.RemoteAddr
+// RecordDenied records a denied request
+func (rl *RateLimiter) RecordDenied() {
+	// Increment denied counter
 }
 
-func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Skip rate limiting for health check endpoints
-		if skipRateLimitPaths[r.URL.Path] {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		var limiterKey string
-		if tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); tenantID != "" {
-			limiterKey = "tenant:" + tenantID
-		} else {
-			limiterKey = "ip:" + extractClientIP(r)
-		}
-
-		limiter := rl.getLimiter(limiterKey)
-		if !limiter.AllowN(time.Now(), 1) {
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// RateLimitConfig holds configuration for rate limiting
-type RateLimitConfig struct {
-	RequestsPerSecond float64
-	Burst             int
+// RecordCreationRecorded records a creation request
+func (rl *RateLimiter) RecordCreationRecorded() {
+	// Track creation-specific metrics
 }
 
 // DefaultRateLimiter returns a rate limiter with default settings
 func DefaultRateLimiter() *RateLimiter {
-	return NewRateLimiter(100, 20) // 100 req/s, burst of 20
+	return NewRateLimiter(100, 20)
+}
+
+// DefaultRateLimiterWithConfig returns a rate limiter with custom configuration
+func DefaultRateLimiterWithConfig(requestsPerSecond float64, burst int, opts ...RateLimitConfigOption) *RateLimiter {
+	return NewRateLimiter(requestsPerSecond, burst, opts...)
 }

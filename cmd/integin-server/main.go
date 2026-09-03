@@ -51,10 +51,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 200))
-	database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 50))
-	database.SetConnMaxLifetime(30 * time.Minute)
-	database.SetConnMaxIdleTime(5 * time.Minute)
+		database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 200))
+		database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 150))
+		database.SetConnMaxLifetime(30 * time.Minute)
+		database.SetConnMaxIdleTime(5 * time.Minute)
 		pingContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		err = database.PingContext(pingContext)
 		cancel()

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"integin/internal/domain/analytics"
@@ -12,8 +13,14 @@ import (
 
 var ErrNilDB = errors.New("analytics postgres repository requires a database")
 
+type dashboardCacheEntry struct {
+	response  analytics.DashboardResponse
+	expiresAt time.Time
+}
+
 type Repository struct {
-	db *sql.DB
+	db    *sql.DB
+	cache sync.Map
 }
 
 func NewRepository(db *sql.DB) (*Repository, error) {
@@ -35,6 +42,21 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 	}
 	if req.From.IsZero() {
 		req.From = req.To.AddDate(0, -1, 0)
+	}
+
+	// In-memory 30s TTL cache: prevents repeated dashboard loads from saturating connection pool
+	cacheKey := fmt.Sprintf("%s|%s|%d|%d|%s|%s",
+		req.TenantID, req.OrganizationID,
+		req.From.Unix(), req.To.Unix(),
+		req.InspectorID, req.AssetType)
+
+	now := time.Now()
+	if val, ok := r.cache.Load(cacheKey); ok {
+		entry := val.(dashboardCacheEntry)
+		if now.Before(entry.expiresAt) {
+			return entry.response, nil
+		}
+		r.cache.Delete(cacheKey)
 	}
 
 	summary, err := r.getSummaryKPIs(ctx, req)
@@ -72,6 +94,11 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 		return resp, err
 	}
 	resp.AssetBreakdown = assetBD
+
+	r.cache.Store(cacheKey, dashboardCacheEntry{
+		response:  resp,
+		expiresAt: time.Now().Add(30 * time.Second),
+	})
 
 	return resp, nil
 }
