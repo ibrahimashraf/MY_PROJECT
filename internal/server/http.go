@@ -20,32 +20,34 @@ import (
 )
 
 type Dependencies struct {
-	SyncProcessor               *domainsync.Processor
-	Devices                     []device_trust.Device
-	Authorities                 []device_trust.AuthorityPackage
-	EvidenceStore               storage.Store
-	EvidenceRegistrationHandler http.Handler
-	LocalProvisioning           http.Handler
-	OIDCSessionHandler          http.Handler
-	WorkOrderHandler            http.Handler
-	WorkOrderEvidenceHandler    http.Handler
+	SyncProcessor                  *domainsync.Processor
+	Devices                        []device_trust.Device
+	Authorities                    []device_trust.AuthorityPackage
+	EvidenceStore                  storage.Store
+	EvidenceRegistrationHandler    http.Handler
+	LocalProvisioning              http.Handler
+	OIDCSessionHandler             http.Handler
+	WorkOrderHandler               http.Handler
+	WorkOrderEvidenceHandler       http.Handler
 	WorkOrderReconciliationHandler http.Handler
-	CertificateHandler          http.Handler
-	CertificatePublicHandler    http.Handler
-	PilotManifestHandler        *packagemanifestapi.Handler
-	AuthorityRegistry           *syncapi.AuthorityRegistry
-	LicenseHandler              http.Handler
-	FlagAdminHandler            http.Handler
-	TrainingHandler             http.Handler
-	SettingsHandler             http.Handler
-	InspectionHandler           http.Handler
-	SearchHandler               http.Handler
-	AuditLogHandler             http.Handler
-	AnalyticsHandler            http.Handler
-	ReportsHandler              http.Handler
-	ShortLinkHandler            http.Handler
-	Readiness                   func(context.Context) error
-	ReadinessTimeout            time.Duration
+	CertificateHandler             http.Handler
+	CertificatePublicHandler       http.Handler
+	PilotManifestHandler           *packagemanifestapi.Handler
+	AuthorityRegistry              *syncapi.AuthorityRegistry
+	LicenseHandler                 http.Handler
+	FlagAdminHandler               http.Handler
+	TrainingHandler                http.Handler
+	SettingsHandler                http.Handler
+	InspectionHandler              http.Handler
+	SearchHandler                  http.Handler
+	AuditLogHandler                http.Handler
+	AnalyticsHandler               http.Handler
+	ReportsHandler                 http.Handler
+	ShortLinkHandler               http.Handler
+	QRNFCHandler                   http.Handler
+	AssuranceHandler               http.Handler
+	Readiness                      func(context.Context) error
+	ReadinessTimeout               time.Duration
 }
 
 // NewMux composes the HTTP boundary without creating global state. Runtime

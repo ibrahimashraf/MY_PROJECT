@@ -10,20 +10,16 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"integin/internal/domain/qrnfc"
+	"integin/internal/identity"
+	"integin/internal/oidcauth"
 )
 
-// TokenValidator validates OIDC tokens and resolves local membership.
+// TokenValidator defines the contract for OIDC bearer token verification.
 type TokenValidator interface {
-	Validate(ctx context.Context, token string) (string, error)
-}
-
-// ActorResolver resolves a validated OIDC subject to a local actor context.
-type ActorResolver interface {
-	Resolve(ctx context.Context, subject string) (qrnfc.ActorContext, error)
+	Validate(ctx context.Context, rawToken string) (oidcauth.Principal, error)
 }
 
 // EntryVerifier verifies QR/NFC entry tokens.
@@ -38,81 +34,70 @@ type AccessLogger interface {
 
 // Handler is the HTTP handler for authenticated QR/NFC entry.
 type Handler struct {
-	Validator    TokenValidator
-	Actors       ActorResolver
-	Verifier     EntryVerifier
-	Logger       AccessLogger
-	Log          *slog.Logger
-	rateWindow   map[string]rateWindow
-	rateMu       sync.Mutex
-	limit        int
-	window       time.Duration
-	now          func() time.Time
+	validator TokenValidator
+	resolver  identity.Resolver
+	verifier  EntryVerifier
+	logger    AccessLogger
+	log       *slog.Logger
 }
 
-type rateWindow struct {
-	started time.Time
-	count   int
-}
-
-// NewHandler creates a new authenticated entry handler.
-func NewHandler(validator TokenValidator, actors ActorResolver, verifier EntryVerifier, logger AccessLogger, log *slog.Logger) *Handler {
+// NewHandler creates a new authenticated entry handler wired to the shared
+// OIDC validator and local identity resolver (same auth path as admin APIs).
+func NewHandler(validator TokenValidator, resolver identity.Resolver, verifier EntryVerifier, logger AccessLogger, log *slog.Logger) *Handler {
+	if log == nil {
+		log = slog.Default()
+	}
 	return &Handler{
-		Validator:  validator,
-		Actors:     actors,
-		Verifier:   verifier,
-		Logger:     logger,
-		Log:        log,
-		rateWindow: make(map[string]rateWindow),
-		limit:      60,
-		window:     time.Minute,
-		now:        time.Now,
+		validator: validator,
+		resolver:  resolver,
+		verifier:  verifier,
+		logger:    logger,
+		log:       log,
 	}
 }
 
 // ServeHTTP handles POST /qr-nfc/verify with Bearer token authentication.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, `{"error":"method_not_allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 
+	ip := extractClientIP(r)
+
 	// Extract and validate Bearer token
 	authHeader := r.Header.Get("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		http.Error(w, `{"error":"missing or invalid authorization header"}`, http.StatusUnauthorized)
-		return
-	}
-	bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
-	if strings.TrimSpace(bearerToken) == "" {
-		http.Error(w, `{"error":"empty bearer token"}`, http.StatusUnauthorized)
+	bearer, ok := extractBearer(authHeader)
+	if !ok {
+		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "missing or invalid authorization header")
+		http.Error(w, `{"error":"authentication_required"}`, http.StatusUnauthorized)
 		return
 	}
 
-	// Rate limit check
-	clientIP := extractClientIP(r)
-	if !h.allow(clientIP, h.now()) {
-		h.logAccess(r, "", "DENIED", "rate limit exceeded")
-		http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
-		return
-	}
-
-	// Validate OIDC token
-	subject, err := h.Validator.Validate(r.Context(), bearerToken)
+	// Validate OIDC token (issuer/subject authenticity only)
+	principal, err := h.validator.Validate(r.Context(), bearer)
 	if err != nil {
-		h.logAccess(r, "", "DENIED", "oidc validation failed")
-		http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "oidc validation failed")
+		http.Error(w, `{"error":"invalid_token"}`, http.StatusUnauthorized)
 		return
 	}
 
-	// Resolve local actor
-	actor, err := h.Actors.Resolve(r.Context(), subject)
+	// Resolve local authorization context
+	membership, err := h.resolver.Resolve(r.Context(), identity.PrincipalKey{
+		Issuer:  principal.Issuer,
+		Subject: principal.Subject,
+	})
 	if err != nil {
-		h.logAccess(r, "", "DENIED", "actor resolution failed")
-		http.Error(w, `{"error":"access denied"}`, http.StatusForbidden)
+		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "actor resolution failed")
+		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
 		return
+	}
+	actor := &qrnfc.ActorContext{
+		TenantID:       membership.TenantID,
+		OrganizationID: membership.OrganizationID,
+		ActorID:        membership.ActorID,
 	}
 
 	// Parse request body
@@ -120,100 +105,89 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Token string `json:"token"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "invalid request body")
+		http.Error(w, `{"error":"invalid_request"}`, http.StatusBadRequest)
 		return
 	}
 	if strings.TrimSpace(req.Token) == "" {
-		http.Error(w, `{"error":"token is required"}`, http.StatusBadRequest)
+		h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "token is required")
+		http.Error(w, `{"error":"token_required"}`, http.StatusBadRequest)
 		return
 	}
 
 	// Verify token digest
-	tokenDigest := computeDigest(req.Token)
-	entry, err := h.Verifier.VerifyByDigest(r.Context(), actor, tokenDigest)
+	entry, err := h.verifier.VerifyByDigest(r.Context(), *actor, computeDigest(req.Token))
 	if err != nil {
-		if errors.Is(err, qrnfc.ErrNotFound) {
-			h.logAccess(r, "", "DENIED", "token not found")
+		switch {
+		case errors.Is(err, qrnfc.ErrNotFound):
 			// Indistinguishable from revoked/expired for security
-			http.Error(w, `{"error":"invalid token"}`, http.StatusNotFound)
+			h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "token not found")
+			http.Error(w, `{"error":"invalid_token"}`, http.StatusNotFound)
+			return
+		case errors.Is(err, qrnfc.ErrExpired):
+			h.logAccess(r, actor, entry.ID, ip, qrnfc.AccessOutcomeExpired, "token expired")
+			http.Error(w, `{"error":"token_expired"}`, http.StatusGone)
+			return
+		default:
+			h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "verification failed")
+			http.Error(w, `{"error":"verification_failed"}`, http.StatusInternalServerError)
 			return
 		}
-		if errors.Is(err, qrnfc.ErrExpired) {
-			h.logAccess(r, entry.ID, "EXPIRED", "")
-			http.Error(w, `{"error":"token expired"}`, http.StatusGone)
-			return
-		}
-		h.logAccess(r, "", "DENIED", "verification failed")
-		http.Error(w, `{"error":"verification failed"}`, http.StatusInternalServerError)
-		return
 	}
 
 	// Log successful access
-	h.logAccess(r, entry.ID, "SUCCESS", "")
+	h.logAccess(r, actor, entry.ID, ip, qrnfc.AccessOutcomeSuccess, "")
 
 	// Compose response (privacy-preserving: no token digest, no raw token)
 	resp := map[string]interface{}{
-		"entry_id":    entry.ID,
-		"asset_id":    entry.AssetID,
-		"entry_type":  entry.EntryType,
-		"status":      entry.Status,
-		"issued_at":   entry.IssuedAt,
+		"entry_id":   entry.ID,
+		"asset_id":   entry.AssetID,
+		"entry_type": entry.EntryType,
+		"status":     entry.Status,
+		"issued_at":  entry.IssuedAt,
 	}
 	if entry.ExpiresAt != nil {
 		resp["expires_at"] = entry.ExpiresAt
 	}
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.log.Error("failed to encode qr_nfc response", "error", err)
+	}
 }
 
-func (h *Handler) logAccess(r *http.Request, entryID, outcome, detail string) {
-	if h.Logger == nil {
+func (h *Handler) logAccess(r *http.Request, actor *qrnfc.ActorContext, entryID, ip string, outcome qrnfc.AccessOutcome, detail string) {
+	h.log.Info("qr_nfc_access",
+		"entry_id", entryID,
+		"outcome", outcome,
+		"client_ip", ip,
+		"detail", detail,
+	)
+	if h.logger == nil || actor == nil {
 		return
 	}
-	clientIP := extractClientIP(r)
-	logID := fmt.Sprintf("log_%d", time.Now().UnixNano())
-	entryType := qrnfc.EntryTypeQR
-	if entryID != "" {
-		// Try to determine entry type from context
-		entryType = qrnfc.EntryTypeQR
+	record := qrnfc.EntryLog{
+		ID:         fmt.Sprintf("log_%d", time.Now().UnixNano()),
+		EntryID:    entryID,
+		EntryType:  qrnfc.EntryTypeQR,
+		AccessedAt: time.Now().UTC(),
+		AccessorID: actor.ActorID,
+		AccessorIP: ip,
+		Outcome:    outcome,
 	}
-	h.Logger.LogAccess(r.Context(), qrnfc.ActorContext{
-		TenantID:       "",
-		OrganizationID: "",
-		ActorID:        "",
-	}, qrnfc.EntryLog{
-		ID:           logID,
-		EntryID:      entryID,
-		EntryType:    entryType,
-		AccessedAt:   time.Now().UTC(),
-		AccessorID:   "",
-		AccessorIP:   clientIP,
-		Outcome:      qrnfc.AccessOutcome(outcome),
-	})
-	if h.Log != nil {
-		h.Log.Info("qr_nfc_access",
-			"entry_id", entryID,
-			"outcome", outcome,
-			"client_ip", clientIP,
-			"detail", detail,
-		)
+	if err := h.logger.LogAccess(r.Context(), *actor, record); err != nil {
+		h.log.Error("failed to persist qr_nfc access log", "error", err)
 	}
 }
 
-func (h *Handler) allow(key string, now time.Time) bool {
-	h.rateMu.Lock()
-	defer h.rateMu.Unlock()
-	rw, ok := h.rateWindow[key]
-	if !ok || rw.started.IsZero() || now.Sub(rw.started) >= h.window {
-		h.rateWindow[key] = rateWindow{started: now, count: 1}
-		return true
+func extractBearer(authHeader string) (string, bool) {
+	const prefix = "Bearer "
+	if !strings.HasPrefix(authHeader, prefix) {
+		return "", false
 	}
-	if rw.count >= h.limit {
-		return false
+	token := strings.TrimSpace(strings.TrimPrefix(authHeader, prefix))
+	if token == "" {
+		return "", false
 	}
-	rw.count++
-	h.rateWindow[key] = rw
-	return true
+	return token, true
 }
 
 func extractClientIP(r *http.Request) string {

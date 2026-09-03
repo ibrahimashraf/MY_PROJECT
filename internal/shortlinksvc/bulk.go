@@ -1,4 +1,4 @@
-﻿package shortlinksvc
+package shortlinksvc
 
 import (
 	"bytes"
@@ -25,30 +25,30 @@ type BulkCreateItem struct {
 }
 
 type BulkCreateResponse struct {
-	Created int           `json:"created"`
-	Failed  int           `json:"failed"`
-	Results []BulkResult  `json:"results"`
+	Created int          `json:"created"`
+	Failed  int          `json:"failed"`
+	Results []BulkResult `json:"results"`
 }
 
 type BulkResult struct {
-	Code       string `json:"code"`
-	ShortURL   string `json:"short_url,omitempty"`
-	TargetURL  string `json:"target_url"`
-	Error      string `json:"error,omitempty"`
+	Code      string `json:"code"`
+	ShortURL  string `json:"short_url,omitempty"`
+	TargetURL string `json:"target_url"`
+	Error     string `json:"error,omitempty"`
 }
 
 type ExportRequest struct {
-	CodePrefix   string      `json:"code_prefix"`
-	CreatedAfter *time.Time  `json:"created_after"`
+	CodePrefix    string     `json:"code_prefix"`
+	CreatedAfter  *time.Time `json:"created_after"`
 	CreatedBefore *time.Time `json:"created_before"`
-	IncludeStats bool        `json:"include_stats"`
-	Format       string      `json:"format"` // csv, json
+	IncludeStats  bool       `json:"include_stats"`
+	Format        string     `json:"format"` // csv, json
 }
 
 type ExportResponse struct {
-	Format string        `json:"format"`
-	Data   string        `json:"data"`
-	Count  int           `json:"count"`
+	Format string `json:"format"`
+	Data   string `json:"data"`
+	Count  int    `json:"count"`
 }
 
 func (s *Service) BulkCreate(ctx context.Context, req BulkCreateRequest) (BulkCreateResponse, error) {
@@ -74,15 +74,15 @@ func (s *Service) BulkCreate(ctx context.Context, req BulkCreateRequest) (BulkCr
 
 		if item.CustomDomain != nil && *item.CustomDomain != "" {
 			results = append(results, BulkResult{
-				Code:       code,
-				ShortURL:   "https://" + *item.CustomDomain + "/" + code,
-				TargetURL:  item.TargetURL,
+				Code:      code,
+				ShortURL:  "https://" + *item.CustomDomain + "/" + code,
+				TargetURL: item.TargetURL,
 			})
 		} else {
 			results = append(results, BulkResult{
-				Code:       code,
-				ShortURL:   "/s/" + code,
-				TargetURL:  item.TargetURL,
+				Code:      code,
+				ShortURL:  "/s/" + code,
+				TargetURL: item.TargetURL,
 			})
 		}
 	}
@@ -143,8 +143,8 @@ func (s *Service) ExportCSV(ctx context.Context, req ExportRequest) (ExportRespo
 
 	return ExportResponse{
 		Format: "csv",
-		Data:  buf.String(),
-		Count: len(filtered),
+		Data:   buf.String(),
+		Count:  len(filtered),
 	}, nil
 }
 
@@ -175,8 +175,8 @@ func (s *Service) ExportJSON(ctx context.Context, req ExportRequest) (ExportResp
 
 	return ExportResponse{
 		Format: "json",
-		Data:  string(data),
-		Count: len(filtered),
+		Data:   string(data),
+		Count:  len(filtered),
 	}, nil
 }
 

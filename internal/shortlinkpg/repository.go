@@ -1,4 +1,4 @@
-﻿package shortlinkpg
+package shortlinkpg
 
 import (
 	"bytes"
@@ -1274,7 +1274,7 @@ func (r *Repository) DeliverAlertWebhook(ctx context.Context, req shortlink.Webh
 	if req.Timeout == 0 {
 		client.Timeout = 10 * time.Second
 	}
-	
+
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", req.URL, bytes.NewReader(req.Payload))
 	if err != nil {
 		return err
@@ -1284,13 +1284,13 @@ func (r *Repository) DeliverAlertWebhook(ctx context.Context, req shortlink.Webh
 	for k, v := range req.Headers {
 		httpReq.Header.Set(k, v)
 	}
-	
+
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("webhook delivery failed with status %d", resp.StatusCode)
 	}
@@ -1611,7 +1611,7 @@ func (r *Repository) GetFunnel(ctx context.Context, tenantID string, since, unti
 	// Redirects = unique IPs (each IP that scanned and was redirected)
 	// Conversions = would need a conversion event, for now we use unique IPs as proxy
 	// This is a simplified funnel - in production you'd track actual conversions
-	
+
 	query := `
 		SELECT 
 			COUNT(*) as scans,
@@ -1649,7 +1649,7 @@ func (r *Repository) GetFunnel(ctx context.Context, tenantID string, since, unti
 	// We'll use unique IPs as "redirects" and assume a conversion rate
 	redirects := uniqueIPs
 	conversions := uniqueIPs / 10 // Placeholder - would need actual conversion tracking
-	
+
 	var scanToRedirectRate, redirectToConversionRate float64
 	if scans > 0 {
 		scanToRedirectRate = float64(redirects) / float64(scans) * 100
@@ -1659,11 +1659,11 @@ func (r *Repository) GetFunnel(ctx context.Context, tenantID string, since, unti
 	}
 
 	return &shortlink.FunnelData{
-		Scans:                     scans,
-		Redirects:                 redirects,
-		Conversions:               conversions,
-		ScanToRedirectRate:        scanToRedirectRate,
-		RedirectToConversionRate:  redirectToConversionRate,
+		Scans:                    scans,
+		Redirects:                redirects,
+		Conversions:              conversions,
+		ScanToRedirectRate:       scanToRedirectRate,
+		RedirectToConversionRate: redirectToConversionRate,
 	}, nil
 }
 
@@ -1719,5 +1719,3 @@ func (r *Repository) GetTopAssets(ctx context.Context, tenantID string, since, u
 	}
 	return assets, rows.Err()
 }
-
-

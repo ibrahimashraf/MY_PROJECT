@@ -2499,7 +2499,101 @@
                                                         ]
                                            }
                                },
-                  "/identity/session":  {
+                  "/qr-nfc/verify": {
+                    "post": {
+                      "summary": "Verify an authenticated QR/NFC entry token",
+                      "description": "Authenticates the caller via Bearer OIDC token, resolves local organization membership, and verifies a QR/NFC entry token against its stored SHA-256 digest. Returns entry metadata only; no raw token or digest is exposed.",
+                      "operationId": "verifyQRNFCEntry",
+                      "tags": [
+                        "QR-NFC"
+                      ],
+                      "security": [
+                        {
+                          "bearerAuth": []
+                        }
+                      ],
+                      "requestBody": {
+                        "required": true,
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "required": [
+                                "token"
+                              ],
+                              "properties": {
+                                "token": {
+                                  "type": "string",
+                                  "description": "Opaque QR/NFC entry token"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "responses": {
+                        "200": {
+                          "description": "Verified entry metadata",
+                          "content": {
+                            "application/json": {
+                              "schema": {
+                                "type": "object",
+                                "properties": {
+                                  "entry_id": {
+                                    "type": "string"
+                                  },
+                                  "asset_id": {
+                                    "type": "string"
+                                  },
+                                  "entry_type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "QR",
+                                      "NFC"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ACTIVE",
+                                      "REVOKED",
+                                      "EXPIRED"
+                                    ]
+                                  },
+                                  "issued_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "expires_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "400": {
+                          "$ref": "#/components/responses/BadRequest"
+                        },
+                        "401": {
+                          "$ref": "#/components/responses/AuthenticationFailed"
+                        },
+                        "403": {
+                          "$ref": "#/components/responses/AuthorizationFailed"
+                        },
+                        "404": {
+                          "description": "Token digest not found (indistinguishable from revoked for security)"
+                        },
+                        "410": {
+                          "description": "Token expired"
+                        },
+                        "429": {
+                          "description": "Too many requests"
+                        }
+                      }
+                    }
+                  },                  "/identity/session":  {
                                             "get":  {
                                                         "description":  "Pilot-only optional route. Keycloak validates identity; the local PostgreSQL resolver determines membership and `identity.session.read` capability. No token, claims, or capabilities are exposed in the response.",
                                                         "operationId":  "getLocallyAuthorizedSession",

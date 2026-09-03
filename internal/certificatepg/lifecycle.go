@@ -44,11 +44,17 @@ func (r *Repository) transition(ctx context.Context, actor certificateauthority.
 	if err := authorizeTransition(actor, profile, inspectorID, capability); err != nil {
 		return err
 	}
-	field := "reviewed"
-	if next == "SIGNED" {
+	// Column prefix is derived from a fixed internal whitelist; never from user input.
+	var field string
+	switch next {
+	case "APPROVED":
+		field = "reviewed"
+	case "SIGNED":
 		field = "signed"
+	default:
+		return fmt.Errorf("unsupported transition target %q", next)
 	}
-	query := fmt.Sprintf(`UPDATE certificate_record SET status = $1, %s_by = $2, %s_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, field, field)
+	query := fmt.Sprintf(`UPDATE certificate_record SET status = $1, %s_by = $2, %s_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, field, field) //nolint:gosec // field is a fixed internal whitelist (reviewed|signed)
 	result, err := tx.ExecContext(ctx, query, next, actor.ActorID, now.UTC(), certificateID, actor.TenantID, actor.OrganizationID, expected)
 	if err != nil {
 		return err

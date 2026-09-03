@@ -19,10 +19,9 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"integin/internal/assurancehttp"
+	"integin/internal/assurancepg"
 	"integin/internal/certificatepg"
-	"integin/internal/shortlinkhttp"
-	"integin/internal/shortlinkpg"
-	"integin/internal/shortlinksvc"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
@@ -30,8 +29,13 @@ import (
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
+	"integin/internal/qrnfchttp"
+	"integin/internal/qrnfcpg"
 	"integin/internal/server"
 	"integin/internal/shared/types"
+	"integin/internal/shortlinkhttp"
+	"integin/internal/shortlinkpg"
+	"integin/internal/shortlinksvc"
 	"integin/internal/storage"
 	"integin/internal/syncstate"
 )
@@ -138,8 +142,8 @@ func main() {
 		localProvisioning = handler
 	}
 	var oidcSessionHandler http.Handler
-var workOrderHandler http.Handler
-var workOrderEvidenceHandler http.Handler
+	var workOrderHandler http.Handler
+	var workOrderEvidenceHandler http.Handler
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
@@ -220,6 +224,8 @@ var workOrderEvidenceHandler http.Handler
 
 	var shortLinkHandler http.Handler
 	var retryWorker *shortlinksvc.RetryWorker
+	var qrnfcHandler http.Handler
+	var assuranceHandler http.Handler
 
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
@@ -230,6 +236,24 @@ var workOrderEvidenceHandler http.Handler
 		}
 		shortLinkSvc := shortlinksvc.New(shortlinkpg.New(database), codeLen, "")
 		shortLinkHandler = shortlinkhttp.NewWithAuth(shortLinkSvc, activeValidator, activeResolver)
+
+		// QR/NFC authenticated entry requires OIDC auth and the shared identity resolver.
+		if activeValidator != nil && activeResolver != nil {
+			qrnfcRepo, qrnfcErr := qrnfcpg.NewRepository(database)
+			if qrnfcErr != nil {
+				log.Fatal(qrnfcErr)
+			}
+			qrnfcHandler = qrnfchttp.NewHandler(activeValidator, activeResolver, qrnfcRepo, qrnfcRepo, nil)
+		}
+		projRepo, projErr := assurancepg.NewProjectionRepository(database)
+		if projErr != nil {
+			log.Fatal(projErr)
+		}
+		workRepo, workErr := assurancepg.NewWorkRepository(database)
+		if workErr != nil {
+			log.Fatal(workErr)
+		}
+		assuranceHandler = assurancehttp.NewHandler(activeValidator, activeResolver, projRepo, workRepo, nil)
 
 		// Initialize and start webhook retry worker
 		retryInterval := 30 * time.Second
@@ -248,7 +272,7 @@ var workOrderEvidenceHandler http.Handler
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler}),
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

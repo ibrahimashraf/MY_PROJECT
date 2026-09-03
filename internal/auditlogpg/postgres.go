@@ -55,9 +55,18 @@ func (r *Repository) Append(ctx context.Context, entry auditlog.Entry) (auditlog
 	entryData := entry.EventType + string(entry.EntityType) + entry.EntityID + entry.ActorID + string(entry.Action) + entry.CreatedAt.Format(time.RFC3339Nano)
 	entry.EntryHash = auditlog.ComputeHash(entry.PreviousHash, entryData)
 
-	oldValueJSON, _ := json.Marshal(entry.OldValue)
-	newValueJSON, _ := json.Marshal(entry.NewValue)
-	metadataJSON, _ := json.Marshal(entry.Metadata)
+	oldValueJSON, err := json.Marshal(entry.OldValue)
+	if err != nil {
+		return auditlog.Entry{}, fmt.Errorf("marshal audit old_value: %w", err)
+	}
+	newValueJSON, err := json.Marshal(entry.NewValue)
+	if err != nil {
+		return auditlog.Entry{}, fmt.Errorf("marshal audit new_value: %w", err)
+	}
+	metadataJSON, err := json.Marshal(entry.Metadata)
+	if err != nil {
+		return auditlog.Entry{}, fmt.Errorf("marshal audit metadata: %w", err)
+	}
 
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO audit_log (id, tenant_id, organization_id, event_type, entity_type, entity_id,
@@ -162,13 +171,19 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 		}
 		entry.Action = auditlog.Action(action)
 		if oldValueJSON != nil {
-			_ = json.Unmarshal(oldValueJSON, &entry.OldValue)
+			if err := json.Unmarshal(oldValueJSON, &entry.OldValue); err != nil {
+				return auditlog.QueryResponse{}, fmt.Errorf("unmarshal audit old_value for %s: %w", entry.ID, err)
+			}
 		}
 		if newValueJSON != nil {
-			_ = json.Unmarshal(newValueJSON, &entry.NewValue)
+			if err := json.Unmarshal(newValueJSON, &entry.NewValue); err != nil {
+				return auditlog.QueryResponse{}, fmt.Errorf("unmarshal audit new_value for %s: %w", entry.ID, err)
+			}
 		}
 		if metadataJSON != nil {
-			_ = json.Unmarshal(metadataJSON, &entry.Metadata)
+			if err := json.Unmarshal(metadataJSON, &entry.Metadata); err != nil {
+				return auditlog.QueryResponse{}, fmt.Errorf("unmarshal audit metadata for %s: %w", entry.ID, err)
+			}
 		}
 		entries = append(entries, entry)
 	}

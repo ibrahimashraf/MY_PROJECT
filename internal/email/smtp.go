@@ -1,4 +1,4 @@
-﻿package email
+package email
 
 import (
 	"context"
@@ -130,4 +130,3 @@ func defaultHealth(ctx context.Context, config Config) error {
 	}
 	return connection.Close()
 }
-

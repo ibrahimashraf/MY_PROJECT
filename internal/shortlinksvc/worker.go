@@ -1,4 +1,4 @@
-﻿package shortlinksvc
+package shortlinksvc
 
 import (
 	"context"

@@ -43,6 +43,9 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 	if d.ShortLinkHandler != nil {
 		mux.Handle("/s/", d.ShortLinkHandler)
 	}
+	if d.QRNFCHandler != nil {
+		mux.Handle("/qr-nfc/verify", d.QRNFCHandler)
+	}
 }
 
 func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
@@ -79,6 +82,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	if d.ShortLinkHandler != nil {
 		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
 		mux.Handle("/api/v1/admin/shortlinks/", d.ShortLinkHandler)
+	}
+	if d.AssuranceHandler != nil {
+		mux.Handle("/api/v1/assurance", d.AssuranceHandler)
+		mux.Handle("/api/v1/assurance/", d.AssuranceHandler)
 	}
 }
 

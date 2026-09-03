@@ -1,4 +1,4 @@
-﻿package shortlinksvc
+package shortlinksvc
 
 import (
 	"archive/zip"
@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -160,7 +161,9 @@ func (s *Service) ResolveShortLink(ctx context.Context, code string) (string, er
 		defer func() { _ = recover() }()
 		incCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = s.repo.IncrementScanCount(incCtx, baseCode)
+		if err := s.repo.IncrementScanCount(incCtx, baseCode); err != nil {
+			slog.Error("increment scan count failed", "code", baseCode, "error", err)
+		}
 	}()
 	return sl.TargetURL, nil
 }
@@ -238,12 +241,20 @@ func (s *Service) RecordScan(ctx context.Context, req shortlink.ScanEventRequest
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		_ = s.repo.IncrementScanCount(ctx, req.Code)
-		_ = s.repo.RecordScanEvent(ctx, event)
-		if _, err := s.CheckAnomalies(ctx, event); err == nil {
-			_ = s.ProcessAlertWebhooks(ctx)
+		if err := s.repo.IncrementScanCount(ctx, req.Code); err != nil {
+			slog.Error("scan count increment failed", "code", req.Code, "error", err)
 		}
-		_ = s.DeliverWebhook(ctx, req.Code, event)
+		if err := s.repo.RecordScanEvent(ctx, event); err != nil {
+			slog.Error("record scan event failed", "code", req.Code, "error", err)
+		}
+		if _, err := s.CheckAnomalies(ctx, event); err == nil {
+			if err := s.ProcessAlertWebhooks(ctx); err != nil {
+				slog.Error("process alert webhooks failed", "code", req.Code, "error", err)
+			}
+		}
+		if err := s.DeliverWebhook(ctx, req.Code, event); err != nil {
+			slog.Error("deliver webhook failed", "code", req.Code, "error", err)
+		}
 	}()
 
 	return nil
@@ -508,7 +519,7 @@ func (s *Service) ProcessWebhookRetries(ctx context.Context) error {
 	sem := make(chan struct{}, 5)
 	var wg sync.WaitGroup
 
-	forLoop:
+forLoop:
 	for _, delivery := range deliveries {
 		sl, ok := shortLinkMap[delivery.ShortLinkCode]
 		if !ok {
@@ -860,7 +871,7 @@ func (s *Service) checkPatternAnomaly(ctx context.Context, rule *shortlink.Anoma
 	if stats.TotalScans > 0 && stats.UniqueIPs > 0 {
 		ratio := float64(stats.TotalScans) / float64(stats.UniqueIPs)
 		details["scans_per_ip"] = ratio
-		
+
 		// If ratio > threshold and low unique IPs, might be bot
 		if ratio >= float64(rule.Config.Threshold) && stats.UniqueIPs < 10 {
 			return true, fmt.Sprintf("Bot-like pattern detected: %.1f scans/IP from %d unique IPs", ratio, stats.UniqueIPs), details
@@ -888,25 +899,25 @@ func (s *Service) ProcessAlertWebhooks(ctx context.Context) error {
 		}
 
 		payload := map[string]interface{}{
-			"event":        "anomaly_alert",
-			"alert_id":     alert.ID,
-			"rule_id":      alert.RuleID,
-			"rule_name":    rule.Name,
-			"type":         alert.Type,
-			"status":       alert.Status,
-			"message":      alert.Message,
-			"details":      alert.Details,
-			"short_link":   alert.ShortLinkCode,
-			"tenant_id":    alert.TenantID,
-			"fired_at":     alert.FiredAt,
+			"event":      "anomaly_alert",
+			"alert_id":   alert.ID,
+			"rule_id":    alert.RuleID,
+			"rule_name":  rule.Name,
+			"type":       alert.Type,
+			"status":     alert.Status,
+			"message":    alert.Message,
+			"details":    alert.Details,
+			"short_link": alert.ShortLinkCode,
+			"tenant_id":  alert.TenantID,
+			"fired_at":   alert.FiredAt,
 		}
 
 		payloadBytes, _ := json.Marshal(payload)
 
 		req := shortlink.WebhookDeliveryRequest{
-			URL:       *rule.Config.WebhookURL,
-			Payload:   payloadBytes,
-			Timeout:   10 * time.Second,
+			URL:        *rule.Config.WebhookURL,
+			Payload:    payloadBytes,
+			Timeout:    10 * time.Second,
 			MaxRetries: 3,
 		}
 
@@ -948,7 +959,7 @@ func (s *Service) ListHMACSecrets(ctx context.Context, tenantID string) ([]short
 
 func (s *Service) GetDashboardAnalytics(ctx context.Context, req shortlink.AnalyticsRequest) (*shortlink.DashboardAnalytics, error) {
 	since, until := s.parseTimeRange(req.TimeRange, req.CustomStart, req.CustomEnd)
-	
+
 	overview, err := s.repo.GetDashboardOverview(ctx, req.TenantID, since, until)
 	if err != nil {
 		return nil, err
@@ -980,18 +991,18 @@ func (s *Service) GetDashboardAnalytics(ctx context.Context, req shortlink.Analy
 	}
 
 	return &shortlink.DashboardAnalytics{
-		TotalScans:    overview.TotalScans,
-		UniqueIPs:     overview.UniqueIPs,
-		TopAssets:     topAssets,
-		TimeSeries:    timeSeries,
-		GeoHeatmap:    geoHeatmap,
-		Devices:       devices,
-		OS:            osList,
-		Browsers:      browsers,
-		Funnel:        *funnel,
-		TimeRange:     req.TimeRange,
-		CustomStart:   req.CustomStart,
-		CustomEnd:     req.CustomEnd,
+		TotalScans:  overview.TotalScans,
+		UniqueIPs:   overview.UniqueIPs,
+		TopAssets:   topAssets,
+		TimeSeries:  timeSeries,
+		GeoHeatmap:  geoHeatmap,
+		Devices:     devices,
+		OS:          osList,
+		Browsers:    browsers,
+		Funnel:      *funnel,
+		TimeRange:   req.TimeRange,
+		CustomStart: req.CustomStart,
+		CustomEnd:   req.CustomEnd,
 	}, nil
 }
 
@@ -1027,7 +1038,7 @@ func (s *Service) GetTopAssets(ctx context.Context, req shortlink.TopAssetsReque
 func (s *Service) parseTimeRange(tr shortlink.TimeRange, customStart, customEnd *time.Time) (*time.Time, *time.Time) {
 	now := time.Now()
 	var since, until *time.Time
-	
+
 	switch tr {
 	case shortlink.TimeRange1H:
 		s := now.Add(-1 * time.Hour)
@@ -1053,7 +1064,6 @@ func (s *Service) parseTimeRange(tr shortlink.TimeRange, customStart, customEnd 
 		since = &s
 		until = &now
 	}
-	
+
 	return since, until
 }
-
