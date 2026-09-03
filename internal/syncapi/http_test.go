@@ -24,7 +24,7 @@ func TestHandlerAppliesAndDeduplicatesSignedTransaction(t *testing.T) {
 	transaction.EntityID = "inspection-1"
 	transaction.AuthorityID = authority.ID
 	transaction.AuthorityEpoch = authority.Epoch
-	transaction = domainsync.SignTransaction(transaction, "secret")
+	transaction = domainsync.SignTransaction(transaction, "secret", "default")
 	body := requestBody(t, transaction, authority.ID)
 
 	first := httptest.NewRecorder()
@@ -73,7 +73,7 @@ func TestHandlerRejectsUnknownAuthorityAndMalformedPayload(t *testing.T) {
 
 func testProcessor(t *testing.T) (*domainsync.Processor, device_trust.AuthorityPackage) {
 	t.Helper()
-	processor, err := domainsync.NewProcessor("secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

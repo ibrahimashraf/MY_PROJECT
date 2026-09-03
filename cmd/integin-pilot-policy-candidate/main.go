@@ -32,9 +32,17 @@ import (
 )
 
 func main() {
-	secret := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
-	if secret == "" {
+	secretStr := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
+	if secretStr == "" {
 		log.Fatal("INTEGIN_SYNC_SECRET is required")
+	}
+	secrets := make(map[string]string)
+	if strings.HasPrefix(secretStr, "{") {
+		if err := json.Unmarshal([]byte(secretStr), &secrets); err != nil {
+			log.Fatalf("invalid INTEGIN_SYNC_SECRET JSON: %v", err)
+		}
+	} else {
+		secrets["default"] = secretStr
 	}
 	var database *sql.DB
 	var stateRepo syncstate.SyncStateRepository
@@ -77,7 +85,7 @@ func main() {
 		}
 		log.Print("INTEGIN_DB_URL is not configured; using legacy JSON device/authority bootstrap")
 	}
-	processor, err := domainsync.NewProcessorWithState(secret, stateRepo)
+	processor, err := domainsync.NewProcessorWithState(secrets, stateRepo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,7 +127,7 @@ func main() {
 			log.Fatal("local provisioning requires the PostgreSQL sync-state repository")
 		}
 		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
-			Repository: repository, Processor: processor, SigningSecret: secret,
+			Repository: repository, Processor: processor, SigningSecret: secretStr,
 			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),

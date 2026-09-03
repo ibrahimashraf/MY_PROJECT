@@ -47,9 +47,17 @@ import (
 )
 
 func main() {
-	secret := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
-	if secret == "" {
+	secretStr := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
+	if secretStr == "" {
 		log.Fatal("INTEGIN_SYNC_SECRET is required")
+	}
+	secrets := make(map[string]string)
+	if strings.HasPrefix(secretStr, "{") {
+		if err := json.Unmarshal([]byte(secretStr), &secrets); err != nil {
+			log.Fatalf("invalid INTEGIN_SYNC_SECRET JSON: %v", err)
+		}
+	} else {
+		secrets["default"] = secretStr
 	}
 	var database *sql.DB
 	var stateRepo syncstate.SyncStateRepository
@@ -61,8 +69,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 200))
-		database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 150))
+		database.SetMaxOpenConns(envInt("INTEGIN_DB_MAX_OPEN_CONNS", 90))
+		database.SetMaxIdleConns(envInt("INTEGIN_DB_MAX_IDLE_CONNS", 50))
 		database.SetConnMaxLifetime(30 * time.Minute)
 		database.SetConnMaxIdleTime(5 * time.Minute)
 		pingContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -94,7 +102,7 @@ func main() {
 		}
 		log.Print("INTEGIN_DB_URL is not configured; using legacy JSON device/authority bootstrap")
 	}
-	processor, err := domainsync.NewProcessorWithState(secret, stateRepo)
+	processor, err := domainsync.NewProcessorWithState(secrets, stateRepo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,7 +144,7 @@ func main() {
 			log.Fatal("local provisioning requires the PostgreSQL sync-state repository")
 		}
 		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
-			Repository: repository, Processor: processor, SigningSecret: secret,
+			Repository: repository, Processor: processor, SigningSecret: secretStr,
 			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),
@@ -302,7 +310,7 @@ func main() {
 	}
 	httpServer := &http.Server{
 		Addr: address,
-		Handler: server.NewMux(server.Dependencies{SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
+		Handler: server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
 			PilotManifestHandler: pilotManifestHandler,
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,

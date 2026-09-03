@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 // concurrencyGate implements an in-flight counting semaphore to protect the Go runtime
@@ -25,6 +26,8 @@ func newConcurrencyGateFromEnv() *concurrencyGate {
 }
 
 func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
+	// Enforce an absolute maximum throughput timeout (HARDEN-002)
+	timeoutHandler := http.TimeoutHandler(next, 30*time.Second, `{"error":"request_timeout"}`)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Health check endpoints are always admitted immediately
 		if r.URL.Path == "/healthz" || r.URL.Path == "/healthz/" ||
@@ -36,7 +39,7 @@ func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 		select {
 		case cg.sem <- struct{}{}:
 			defer func() { <-cg.sem }()
-			next.ServeHTTP(w, r)
+			timeoutHandler.ServeHTTP(w, r)
 		default:
 			// Fail fast in microseconds: 0 DB queries, 0 stack growth
 			w.Header().Set("Retry-After", "2")

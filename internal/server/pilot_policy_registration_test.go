@@ -24,7 +24,7 @@ func (o *registrationObserver) ObserveWorkPackagePolicy(observation workpackagee
 }
 
 func TestPilotPolicyRegistrationFailsClosedForUnsafeConfiguration(t *testing.T) {
-	processor, err := domainsync.NewProcessor("test-secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "test-secret"})
 	if err != nil {
 		t.Fatalf("new processor: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestPilotPolicyRegistrationFailsClosedForUnsafeConfiguration(t *testing.T) 
 }
 
 func TestPilotPolicyRegistrationRegistersAndRollsBackIdempotently(t *testing.T) {
-	processor, err := domainsync.NewProcessor("test-secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "test-secret"})
 	if err != nil {
 		t.Fatalf("new processor: %v", err)
 	}

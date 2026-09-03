@@ -3,7 +3,9 @@
 package auditcheckpoint
 
 import (
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -27,6 +29,8 @@ type Checkpoint struct {
 	PreviousRootSHA256 string  `json:"previous_root_sha256"`
 	Entries            []Entry `json:"entries"`
 	RootSHA256         string  `json:"root_sha256"`
+	Signature          string  `json:"signature,omitempty"`
+	KeyID              string  `json:"key_id,omitempty"`
 }
 
 // Entry holds allowlisted audit metadata only. ContextSHA256 protects the
@@ -48,21 +52,35 @@ type Entry struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// Seal computes a deterministic SHA-256 canonical root. It performs no
-// signature operation and does not read or write external systems.
-func (c *Checkpoint) Seal() error {
+// Seal computes a deterministic SHA-256 canonical root and signs the payload with Ed25519.
+func (c *Checkpoint) Seal(privateKey ed25519.PrivateKey, keyID string) error {
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return errors.New("invalid private key size")
+	}
+	if keyID == "" {
+		return errors.New("key_id is required")
+	}
 	payload, err := c.canonicalPayload()
 	if err != nil {
 		return err
 	}
 	sum := sha256.Sum256(payload)
 	c.RootSHA256 = hex.EncodeToString(sum[:])
+	
+	sig := ed25519.Sign(privateKey, payload)
+	c.Signature = base64.StdEncoding.EncodeToString(sig)
+	c.KeyID = keyID
 	return nil
 }
 
-// Verify recomputes the canonical root. A valid root is integrity evidence for
-// this payload only; it is not an attestation signature or storage proof.
-func (c Checkpoint) Verify() error {
+// Verify recomputes the canonical root and verifies the Ed25519 signature.
+func (c Checkpoint) Verify(publicKey ed25519.PublicKey) error {
+	if len(publicKey) != ed25519.PublicKeySize {
+		return errors.New("invalid public key size")
+	}
+	if c.Signature == "" {
+		return errors.New("signature is required")
+	}
 	if !isSHA256(c.RootSHA256) {
 		return errors.New("root_sha256 must be a lowercase SHA-256 digest")
 	}
@@ -74,6 +92,15 @@ func (c Checkpoint) Verify() error {
 	if c.RootSHA256 != hex.EncodeToString(sum[:]) {
 		return errors.New("root_sha256 does not match canonical payload")
 	}
+	
+	sigBytes, err := base64.StdEncoding.DecodeString(c.Signature)
+	if err != nil {
+		return errors.New("invalid signature encoding")
+	}
+	if !ed25519.Verify(publicKey, payload, sigBytes) {
+		return errors.New("signature verification failed")
+	}
+	
 	return nil
 }
 

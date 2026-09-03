@@ -24,7 +24,7 @@ type candidateTestObserver struct{}
 func (candidateTestObserver) ObserveWorkPackagePolicy(workpackageenforcement.PolicyObservation) {}
 
 func TestCandidateRollbackControlDisablesRegistrationBeforeShutdown(t *testing.T) {
-	processor, err := domainsync.NewProcessor("candidate-rollback-test")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "candidate-rollback-test"})
 	if err != nil {
 		t.Fatalf("new processor: %v", err)
 	}

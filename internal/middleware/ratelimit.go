@@ -30,6 +30,7 @@ type RateLimiter struct {
 	shards          [numShards]*limiterShard
 	rate            rate.Limit
 	burst           int
+	maxMapSize      int
 	perTenantBurst  map[string]int
 	tenantCreation  map[string]bool // track tenants being created
 	tenantCreationMu sync.Mutex
@@ -44,6 +45,7 @@ func NewRateLimiter(requestsPerSecond float64, burst int, opts ...RateLimitConfi
 	rl := &RateLimiter{
 		rate:           rate.Limit(requestsPerSecond),
 		burst:          burst,
+		maxMapSize:     2000, // Per-shard max (32 shards * 2000 = 64k entries max)
 		perTenantBurst: make(map[string]int),
 		tenantCreation: make(map[string]bool),
 		skipPaths: map[string]bool{
@@ -120,6 +122,11 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 	if item, exists := shard.limiters[key]; exists {
 		item.lastSeen = now
 		return item.limiter
+	}
+
+	// Enforce max map size to prevent OOM (HARDEN-001)
+	if len(shard.limiters) >= rl.maxMapSize {
+		shard.limiters = make(map[string]*limiterItem)
 	}
 
 	// Cap concurrent tenant creation to prevent map growth spikes

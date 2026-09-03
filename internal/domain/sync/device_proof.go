@@ -96,7 +96,11 @@ func (p *Processor) VerifyDeviceProof(
 
 	p.mu.RLock()
 	device, found := p.devices[proof.DeviceID]
-	secret := p.secret
+	var secret string
+	for _, v := range p.secrets {
+		secret = v
+		break
+	}
 	p.mu.RUnlock()
 	if !found {
 		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureKeyUnknown, errors.New("device is not registered"))

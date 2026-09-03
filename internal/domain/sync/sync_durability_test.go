@@ -10,7 +10,7 @@ import (
 
 func TestSyncInvalidEnvelopeDoesNotProbeDurableReceipt(t *testing.T) {
 	state := &receiptLookupSpy{}
-	processor, err := NewProcessorWithState("secret", state)
+	processor, err := NewProcessorWithState(map[string]string{"default": "secret"}, state)
 	if err != nil {
 		t.Fatal(err)
 	}

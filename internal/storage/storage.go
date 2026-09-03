@@ -113,8 +113,34 @@ func NewAWSSigV4Signer(accessKey, secretKey, region, service string) Signer {
 		if host == "" {
 			host = request.URL.Host
 		}
-		signedHeaders := "host;x-amz-content-sha256;x-amz-date"
-		canonicalHeaders := "host:" + strings.TrimSpace(host) + "\n" + "x-amz-content-sha256:" + payloadHash + "\n" + "x-amz-date:" + amzDate + "\n"
+		var metaKeys []string
+		for k := range request.Header {
+			lowerK := strings.ToLower(k)
+			if strings.HasPrefix(lowerK, "x-amz-meta-") {
+				metaKeys = append(metaKeys, lowerK)
+			}
+		}
+		sort.Strings(metaKeys)
+
+		headerList := []string{"host", "x-amz-content-sha256", "x-amz-date"}
+		headerList = append(headerList, metaKeys...)
+		
+		var canon []string
+		for _, k := range headerList {
+			if k == "host" {
+				canon = append(canon, "host:"+strings.TrimSpace(host))
+			} else if k == "x-amz-content-sha256" {
+				canon = append(canon, "x-amz-content-sha256:"+payloadHash)
+			} else if k == "x-amz-date" {
+				canon = append(canon, "x-amz-date:"+amzDate)
+			} else {
+				val := strings.TrimSpace(request.Header.Get(k))
+				canon = append(canon, k+":"+val)
+			}
+		}
+
+		signedHeaders := strings.Join(headerList, ";")
+		canonicalHeaders := strings.Join(canon, "\n") + "\n"
 		canonicalRequest := strings.Join([]string{request.Method, canonicalURI(request.URL), canonicalQuery(request.URL), canonicalHeaders, signedHeaders, payloadHash}, "\n")
 		scope := shortDate + "/" + region + "/" + service + "/aws4_request"
 		stringToSign := strings.Join([]string{"AWS4-HMAC-SHA256", amzDate, scope, sha256Hex([]byte(canonicalRequest))}, "\n")

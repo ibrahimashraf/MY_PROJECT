@@ -32,3 +32,10 @@ Upload encrypted evidence and verify separate plaintext/ciphertext digests. Repe
 ## Recovery gate
 
 Perform a PostgreSQL backup/restore drill and a RustFS object-plus-manifest restore drill before production promotion. The restore must preserve tenant ownership, evidence IDs, ciphertext bytes, digest values, inspection relationships, and audit records. Record the exact RustFS version, image digest or binary checksum, migration version, backup timestamp, and test results in the release record.
+
+## Backup and WAL Automation
+
+Before production promotion, configure automated continuous archiving and point-in-time recovery (PITR):
+- **WAL Archiving**: Enable `archive_mode` and configure `archive_command` to push PostgreSQL Write-Ahead Logs (WAL) segments to secure, immutable storage (e.g., a dedicated S3 bucket).
+- **Automated Base Backups**: Schedule daily automated base backups (using tools like `pg_basebackup`, pgBackRest, or WAL-G) to ensure bounded recovery times.
+- **Monitoring**: Set up proactive alerts for WAL archive failures, backup job failures, and storage capacity limits.

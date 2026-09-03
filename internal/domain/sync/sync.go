@@ -60,7 +60,8 @@ func NewTransaction(transactionID, tenantID, deviceID, userID string, sequence u
 	return Transaction{ProtocolVersion: "v1", TransactionID: transactionID, TenantID: tenantID, Environment: "LIVE", DeviceID: deviceID, UserID: userID, SequenceNumber: sequence, Operation: operation, Payload: copied, PayloadHash: HashPayload(copied), CapturedAt: time.Now().UTC(), SignatureAlgorithm: legacyHMACSHA256}
 }
 
-func SignTransaction(transaction Transaction, secret string) Transaction {
+func SignTransaction(transaction Transaction, secret string, keyID string) Transaction {
+	transaction.KeyID = keyID
 	transaction.Signature = signTransaction(transaction, secret)
 	transaction.Payload = append([]byte(nil), transaction.Payload...)
 	return transaction
@@ -94,7 +95,7 @@ type Result struct {
 
 type Processor struct {
 	mu                  syncpkg.RWMutex
-	secret              string
+	secrets             map[string]string
 	devices             map[string]device_trust.Device
 	lastSequence        map[string]uint64
 	transactions        map[string]string
@@ -103,15 +104,15 @@ type Processor struct {
 	preAcceptancePolicy PreAcceptancePolicy
 }
 
-func NewProcessor(secret string) (*Processor, error) {
-	return NewProcessorWithState(secret, nil)
+func NewProcessor(secrets map[string]string) (*Processor, error) {
+	return NewProcessorWithState(secrets, nil)
 }
 
-func NewProcessorWithState(secret string, state syncstate.SyncStateRepository) (*Processor, error) {
-	if strings.TrimSpace(secret) == "" {
+func NewProcessorWithState(secrets map[string]string, state syncstate.SyncStateRepository) (*Processor, error) {
+	if len(secrets) == 0 {
 		return nil, errors.New("sync signing secret is required")
 	}
-	return &Processor{secret: secret, state: state, devices: make(map[string]device_trust.Device), lastSequence: make(map[string]uint64), transactions: make(map[string]string), held: make(map[string]Transaction)}, nil
+	return &Processor{secrets: secrets, state: state, devices: make(map[string]device_trust.Device), lastSequence: make(map[string]uint64), transactions: make(map[string]string), held: make(map[string]Transaction)}, nil
 }
 func (p *Processor) RegisterDevice(device device_trust.Device) {
 	p.mu.Lock()
@@ -169,7 +170,15 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	default:
 		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction signature algorithm is not supported")
 	}
-	if err := device_trust.ValidateAuthorityPackage(authority, device, p.secret, at); err != nil {
+	// For ValidateAuthorityPackage, we can use any active secret if we assume it validates HMACs. 
+	// Actually, ValidateAuthorityPackage might not need the HMAC secret for its core logic unless it decrypts something.
+	// But it requires a string secret. Let's pass the default or first one.
+	var defaultSecret string
+	for _, v := range p.secrets {
+		defaultSecret = v
+		break
+	}
+	if err := device_trust.ValidateAuthorityPackage(authority, device, defaultSecret, at); err != nil {
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, err.Error())
 	}
 	if transaction.SignatureAlgorithm == "Ed25519" {
@@ -179,8 +188,17 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 		if !validKey || signatureErr != nil || !security.VerifyDeviceMutation(ed25519.PublicKey(publicKey), []byte(canonicalTransaction(transaction)), signature) {
 			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction Ed25519 signature is invalid")
 		}
-	} else if !hmac.Equal([]byte(transaction.Signature), []byte(signTransaction(transaction, p.secret))) {
-		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC signature is invalid")
+	} else {
+		secret, ok := p.secrets[transaction.KeyID]
+		if !ok && transaction.KeyID == "" {
+			secret, ok = p.secrets["default"]
+		}
+		if !ok {
+			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC key ID is unknown")
+		}
+		if !hmac.Equal([]byte(transaction.Signature), []byte(signTransaction(transaction, secret))) {
+			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC signature is invalid")
+		}
 	}
 	if p.state != nil {
 		if receipt, err := p.state.GetReceipt(ctx, transaction.TenantID, transaction.TransactionID); err == nil {

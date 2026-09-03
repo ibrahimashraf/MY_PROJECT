@@ -42,7 +42,7 @@ func main() {
 		fail(errors.New("pilot policy probe requires isolated pilot runtime"))
 	}
 
-	processor, err := domainsync.NewProcessor("pilot-policy-registration-probe")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "pilot-policy-registration-probe"})
 	if err != nil {
 		fail(fmt.Errorf("create isolated probe processor: %w", err))
 	}

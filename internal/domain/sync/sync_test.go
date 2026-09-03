@@ -28,11 +28,11 @@ func trustedDevice(t *testing.T) (device_trust.Device, device_trust.AuthorityPac
 }
 
 func signedTransaction(id string, sequence uint64, payload []byte) Transaction {
-	return SignTransaction(NewTransaction(id, "tenant-1", "device-1", "user-1", sequence, "FindingRecorded", payload), "secret")
+	return SignTransaction(NewTransaction(id, "tenant-1", "device-1", "user-1", sequence, "FindingRecorded", payload), "secret", "default")
 }
 
 func TestSyncAppliesAndDeduplicatesTransactions(t *testing.T) {
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestSyncAppliesAndDeduplicatesTransactions(t *testing.T) {
 }
 
 func TestSyncHoldsSequenceGapsAndAppliesNextSequence(t *testing.T) {
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestSyncHoldsSequenceGapsAndAppliesNextSequence(t *testing.T) {
 }
 
 func TestSyncRejectsTamperingConflictsAndSecurityFailures(t *testing.T) {
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestSyncRejectsTamperingConflictsAndSecurityFailures(t *testing.T) {
 }
 
 func TestSyncRejectsTenantAndSignatureMismatches(t *testing.T) {
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestSyncRejectsTenantAndSignatureMismatches(t *testing.T) {
 	at := time.Date(2026, 8, 13, 12, 30, 0, 0, time.UTC)
 	wrongTenant := signedTransaction("tx-1", 1, []byte("payload"))
 	wrongTenant.TenantID = "tenant-2"
-	wrongTenant.Signature = signTransaction(wrongTenant, "secret")
+	wrongTenant.Signature = SignTransaction(wrongTenant, "secret", "default").Signature
 	if result := processor.Submit(wrongTenant, authority, at); result.Code != types.ErrTenantMismatch {
 		t.Fatalf("expected tenant mismatch, got %#v", result)
 	}
@@ -162,7 +162,7 @@ func TestSyncAcceptsVersionedEd25519EnvelopeAndEnforcesCapability(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

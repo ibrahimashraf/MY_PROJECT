@@ -24,6 +24,22 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 	return &Repository{db: db}, nil
 }
 
+func (r *Repository) beginTenant(ctx context.Context, tenantID, organizationID string, readOnly bool) (*sql.Tx, error) {
+	opts := &sql.TxOptions{}
+	if readOnly {
+		opts.ReadOnly = true
+	}
+	tx, err := r.db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, organizationID); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *Repository) Append(ctx context.Context, entry auditlog.Entry) (auditlog.Entry, error) {
 	if entry.ID == "" {
 		entry.ID = fmt.Sprintf("%s:%s:%s:%d", entry.TenantID, entry.OrganizationID, entry.EventType, time.Now().UnixNano())
@@ -32,7 +48,7 @@ func (r *Repository) Append(ctx context.Context, entry auditlog.Entry) (auditlog
 		entry.CreatedAt = time.Now().UTC()
 	}
 
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.beginTenant(ctx, entry.TenantID, entry.OrganizationID, false)
 	if err != nil {
 		return auditlog.Entry{}, err
 	}
@@ -136,7 +152,14 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 
 	var total int
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM audit_log WHERE %s", where)
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	
+	tx, err := r.beginTenant(ctx, req.TenantID, req.OrganizationID, true)
+	if err != nil {
+		return auditlog.QueryResponse{}, err
+	}
+	defer tx.Rollback()
+
+	if err := tx.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
 		return auditlog.QueryResponse{}, err
 	}
 
@@ -149,7 +172,7 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 	)
 	args = append(args, req.Limit, req.Offset)
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return auditlog.QueryResponse{}, err
 	}
@@ -221,7 +244,13 @@ func (r *Repository) VerifyChain(ctx context.Context, tenantID, organizationID s
 		where,
 	)
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	tx, err := r.beginTenant(ctx, tenantID, organizationID, true)
+	if err != nil {
+		return auditlog.VerifyResult{}, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return auditlog.VerifyResult{}, err
 	}

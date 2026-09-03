@@ -17,7 +17,7 @@ func (p *rejectingPreAcceptancePolicy) ValidatePreAcceptance(context.Context, Tr
 }
 
 func TestPreAcceptancePolicyRunsAfterVerificationAndBeforeAcceptance(t *testing.T) {
-	processor, err := NewProcessor("secret")
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

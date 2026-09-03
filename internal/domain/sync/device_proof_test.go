@@ -63,7 +63,7 @@ func proofFixture(t *testing.T, now time.Time, scopes []string) (*Processor, dev
 	if err != nil {
 		t.Fatal(err)
 	}
-	processor, err := NewProcessor("proof-secret")
+	processor, err := NewProcessor(map[string]string{"default": "proof-secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

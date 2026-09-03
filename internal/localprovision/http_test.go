@@ -38,7 +38,7 @@ func TestHandlerProvisionsLoopbackDeviceWithPublicKeyOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	repository := &memoryRepository{}
-	processor, err := domainsync.NewProcessor("local-secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "local-secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestHandlerProvisionsLoopbackDeviceWithPublicKeyOnly(t *testing.T) {
 
 func TestHandlerRejectsNonLoopbackClient(t *testing.T) {
 	repository := &memoryRepository{}
-	processor, err := domainsync.NewProcessor("local-secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "local-secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

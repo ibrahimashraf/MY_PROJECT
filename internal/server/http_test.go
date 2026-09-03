@@ -1,4 +1,4 @@
-﻿package server
+package server
 
 import (
 	"bytes"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestNewMuxMountsHealthAndSyncRoutes(t *testing.T) {
-	processor, err := domainsync.NewProcessor("secret")
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}

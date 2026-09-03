@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -20,6 +21,7 @@ import (
 )
 
 type Dependencies struct {
+	DB                             *sql.DB
 	SyncProcessor                  *domainsync.Processor
 	Devices                        []device_trust.Device
 	Authorities                    []device_trust.AuthorityPackage
@@ -106,6 +108,27 @@ func NewMux(dependencies Dependencies) http.Handler {
 		fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
 		fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
 		fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
+		if dependencies.DB != nil {
+			stats := dependencies.DB.Stats()
+			fmt.Fprintf(writer, "# HELP integin_db_max_open_connections Maximum open database connections.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_max_open_connections gauge\n")
+			fmt.Fprintf(writer, "integin_db_max_open_connections %d\n", stats.MaxOpenConnections)
+			fmt.Fprintf(writer, "# HELP integin_db_open_connections Current open database connections.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_open_connections gauge\n")
+			fmt.Fprintf(writer, "integin_db_open_connections %d\n", stats.OpenConnections)
+			fmt.Fprintf(writer, "# HELP integin_db_in_use Current in-use database connections.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_in_use gauge\n")
+			fmt.Fprintf(writer, "integin_db_in_use %d\n", stats.InUse)
+			fmt.Fprintf(writer, "# HELP integin_db_idle Current idle database connections.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_idle gauge\n")
+			fmt.Fprintf(writer, "integin_db_idle %d\n", stats.Idle)
+			fmt.Fprintf(writer, "# HELP integin_db_wait_count Total database connections waited for.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_wait_count counter\n")
+			fmt.Fprintf(writer, "integin_db_wait_count %d\n", stats.WaitCount)
+			fmt.Fprintf(writer, "# HELP integin_db_wait_duration_ms Total database connection wait duration.\n")
+			fmt.Fprintf(writer, "# TYPE integin_db_wait_duration_ms counter\n")
+			fmt.Fprintf(writer, "integin_db_wait_duration_ms %d\n", stats.WaitDuration.Milliseconds())
+		}
 	})
 	return productionMiddlewareWithLimiter(mux, rateLimiter)
 }

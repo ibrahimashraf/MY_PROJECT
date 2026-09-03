@@ -36,12 +36,12 @@ func TestPhase3AuthorizedOfflineTransactionAndRevocation(t *testing.T) {
 		t.Fatalf("expected authorized offline work: %#v", decision)
 	}
 
-	processor, err := syncengine.NewProcessor("secret")
+	processor, err := syncengine.NewProcessor(map[string]string{"default": "secret"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	processor.RegisterDevice(device)
-	transaction := syncengine.SignTransaction(syncengine.NewTransaction("tx-1", "tenant-1", "device-1", "user-1", 1, "InspectionStarted", []byte("inspection-1")), "secret")
+	transaction := syncengine.SignTransaction(syncengine.NewTransaction("tx-1", "tenant-1", "device-1", "user-1", 1, "InspectionStarted", []byte("inspection-1")), "secret", "default")
 	if result := processor.Submit(transaction, authority, issuedAt.Add(10*time.Minute)); result.Outcome != syncengine.Applied {
 		t.Fatalf("expected applied transaction: %#v", result)
 	}
@@ -55,7 +55,7 @@ func TestPhase3AuthorizedOfflineTransactionAndRevocation(t *testing.T) {
 	if decision := authorization.Evaluate(authorizationRequest); decision.Allowed {
 		t.Fatal("revoked device should not authorize offline work")
 	}
-	transaction2 := syncengine.SignTransaction(syncengine.NewTransaction("tx-2", "tenant-1", "device-1", "user-1", 2, "FindingRecorded", []byte("finding")), "secret")
+	transaction2 := syncengine.SignTransaction(syncengine.NewTransaction("tx-2", "tenant-1", "device-1", "user-1", 2, "FindingRecorded", []byte("finding")), "secret", "default")
 	if result := processor.Submit(transaction2, authority, issuedAt.Add(20*time.Minute)); result.Outcome != syncengine.SecurityFailure {
 		t.Fatalf("expected revoked sync security failure: %#v", result)
 	}
