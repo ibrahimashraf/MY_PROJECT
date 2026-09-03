@@ -1,4 +1,4 @@
-package email
+﻿package email
 
 import (
 	"context"
@@ -88,7 +88,7 @@ func (p *Provider) Send(ctx context.Context, message Message) Delivery {
 	if contentType == "" {
 		contentType = "text/plain; charset=utf-8"
 	}
-	raw := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: %s\r\n\r\n%s", p.Config.From, strings.Join(message.To, ", "), message.Subject, contentType, body))
+	raw := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: %s\r\n\r\n%s", p.Config.From, sanitizeHeader(strings.Join(message.To, ", ")), sanitizeHeader(message.Subject), contentType, body))
 	var auth smtp.Auth
 	if p.Config.Username != "" {
 		auth = smtp.PlainAuth("", p.Config.Username, p.Config.Password, p.Config.Host)
@@ -119,6 +119,9 @@ func validateMessage(message Message) error {
 	}
 	return nil
 }
+func sanitizeHeader(v string) string {
+	return strings.NewReplacer("\r", "", "\n", "").Replace(v)
+}
 func defaultHealth(ctx context.Context, config Config) error {
 	dialer := net.Dialer{Timeout: 3 * time.Second}
 	connection, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort(config.Host, strconv.Itoa(config.Port)))
@@ -127,3 +130,4 @@ func defaultHealth(ctx context.Context, config Config) error {
 	}
 	return connection.Close()
 }
+

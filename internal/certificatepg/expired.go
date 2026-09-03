@@ -1,4 +1,4 @@
-package certificatepg
+﻿package certificatepg
 
 import (
 	"context"
@@ -108,3 +108,4 @@ func (r *Repository) listByExpiryWindow(ctx context.Context, actor certificateau
 	}
 	return out, rows.Err()
 }
+

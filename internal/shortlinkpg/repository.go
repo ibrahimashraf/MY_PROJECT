@@ -1,4 +1,4 @@
-package shortlinkpg
+﻿package shortlinkpg
 
 import (
 	"bytes"
@@ -203,6 +203,9 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 			}
 			stats.Countries[country] = count
 		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan countries: %w", err)
+		}
 	}
 
 	// Devices
@@ -217,11 +220,14 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var device string
 			var count int64
-			rows.Scan(&device, &count)
+			_ = rows.Scan(&device, &count) //nolint:gosec // Scan error handled by rows.Err()
 			if device == "" {
 				device = "Unknown"
 			}
 			stats.Devices[device] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan devices: %w", err)
 		}
 	}
 
@@ -237,11 +243,14 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var browser string
 			var count int64
-			rows.Scan(&browser, &count)
+			_ = rows.Scan(&browser, &count) //nolint:gosec // Scan error handled by rows.Err()
 			if browser == "" {
 				browser = "Unknown"
 			}
 			stats.Browsers[browser] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan browsers: %w", err)
 		}
 	}
 
@@ -257,11 +266,14 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var referrer string
 			var count int64
-			rows.Scan(&referrer, &count)
+			_ = rows.Scan(&referrer, &count) //nolint:gosec // Scan error handled by rows.Err()
 			if referrer == "" {
 				referrer = "Direct"
 			}
 			stats.Referrers[referrer] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan referrers: %w", err)
 		}
 	}
 
@@ -277,8 +289,11 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var source string
 			var count int64
-			rows.Scan(&source, &count)
+			_ = rows.Scan(&source, &count) //nolint:gosec // Scan error handled by rows.Err()
 			stats.UTMSources[source] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan utm sources: %w", err)
 		}
 	}
 
@@ -294,8 +309,11 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var medium string
 			var count int64
-			rows.Scan(&medium, &count)
+			_ = rows.Scan(&medium, &count) //nolint:gosec // Scan error handled by rows.Err()
 			stats.UTMMedia[medium] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan utm mediums: %w", err)
 		}
 	}
 
@@ -311,8 +329,11 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		for rows.Next() {
 			var campaign string
 			var count int64
-			rows.Scan(&campaign, &count)
+			_ = rows.Scan(&campaign, &count) //nolint:gosec // Scan error handled by rows.Err()
 			stats.UTMCampaigns[campaign] = count
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("scan utm campaigns: %w", err)
 		}
 	}
 
@@ -1698,4 +1719,5 @@ func (r *Repository) GetTopAssets(ctx context.Context, tenantID string, since, u
 	}
 	return assets, rows.Err()
 }
+
 

@@ -1,4 +1,4 @@
-package shortlinksvc
+﻿package shortlinksvc
 
 import (
 	"bytes"
@@ -228,7 +228,7 @@ func (s *Service) ImportCSV(ctx context.Context, data string) (BulkCreateRespons
 		items = append(items, item)
 	}
 
-	return s.BulkCreate(context.Background(), BulkCreateRequest{Links: items})
+	return s.BulkCreate(ctx, BulkCreateRequest{Links: items})
 }
 
 func derefString(s *string) string {
