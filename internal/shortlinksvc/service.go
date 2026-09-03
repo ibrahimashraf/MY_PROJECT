@@ -9,10 +9,12 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	qrcode "github.com/skip2/go-qrcode"
@@ -362,6 +364,8 @@ func (s *Service) deliverWebhookDirect(ctx context.Context, webhookURL string, p
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "INTEGIN-ShortLink/1.0")
+	payloadHash := sha256.Sum256(payload)
+	req.Header.Set("Idempotency-Key", "integin-direct-"+hex.EncodeToString(payloadHash[:8]))
 
 	client := s.httpClient
 	if client == nil {
@@ -388,6 +392,14 @@ func (s *Service) attemptWebhookDelivery(ctx context.Context, delivery *shortlin
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "INTEGIN-ShortLink/1.0")
+
+	// Native Idempotency & Delivery Tracking (Konveyor / Enterprise Distributed Standard)
+	// Guarantees downstream ERP/billing systems can deduplicate retries cleanly.
+	payloadHash := sha256.Sum256(delivery.Payload)
+	idempotencyKey := fmt.Sprintf("integin-%d-%s", delivery.ID, hex.EncodeToString(payloadHash[:8]))
+	req.Header.Set("Idempotency-Key", idempotencyKey)
+	req.Header.Set("X-Integin-Delivery-ID", strconv.FormatInt(delivery.ID, 10))
+	req.Header.Set("X-Integin-Attempt", strconv.Itoa(delivery.Attempt+1))
 
 	client := s.httpClient
 	if client == nil {
