@@ -52,6 +52,8 @@ type Certificate struct {
 	revocationReason   string
 	exception          *SeparationException
 	emitted            []events.Envelope
+	renewalAuthorityToken []byte  // 32-byte authority token set by migration 0016 renewal tracking
+	renewalCount       int     // incremented by SetRenewalAuthority
 }
 
 func New(id, tenantID, organizationID, environment, number, inspectionID string, inspectionRevision int, assetID, inspectorID, createdBy string, expiryDate time.Time) (Certificate, error) {
@@ -247,6 +249,28 @@ func (c Certificate) require(expected Status) error {
 	}
 	return nil
 }
+
+// RenewalContext returns the tenant/organization scope and renewal authority token
+// for this certificate. The authority token is a 32-byte value set by the
+// PostgreSQL persistence layer (migration 0016) during a renewal attempt.
+// Callers must validate this token against the server-derived actor context.
+func (c Certificate) RenewalContext() (tenantID string, organizationID string, authorityToken []byte, hasAuthority bool) {
+	hasAuthority = len(c.renewalAuthorityToken) == 32
+	return c.tenantID, c.organizationID, c.renewalAuthorityToken, hasAuthority
+}
+
+// SetRenewalAuthority sets the renewal authority token and increments the renewal count.
+// This is called by the PostgreSQL persistence layer after a successful renewal attempt.
+// The tenant_id and organization_id must match the server-derived actor context.
+func (c *Certificate) SetRenewalAuthority(tenantID, organizationID string, authorityToken []byte) {
+	c.tenantID = tenantID
+	c.organizationID = organizationID
+	if len(authorityToken) == 32 {
+		c.renewalAuthorityToken = authorityToken
+	}
+	c.renewalCount++
+}
+
 func (c *Certificate) makeEvent(eventType string, payload any) (events.Envelope, error) {
 	eventID := fmt.Sprintf("%s-%d-%d", c.id, c.revision, len(c.emitted)+1)
 	return events.NewEnvelope(eventID, eventType, c.tenantID, c.organizationID, c.environment, "certificate", c.id, payload, time.Now().UTC())

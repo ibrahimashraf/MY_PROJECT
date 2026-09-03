@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -59,6 +61,27 @@ var skipRateLimitPaths = map[string]bool{
 	"/live":      true,
 }
 
+func extractClientIP(r *http.Request) string {
+	// Check X-Forwarded-For if behind a reverse proxy
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			ip := strings.TrimSpace(parts[0])
+			if ip != "" {
+				return ip
+			}
+		}
+	}
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		return strings.TrimSpace(xri)
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil && host != "" {
+		return host
+	}
+	return r.RemoteAddr
+}
+
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Skip rate limiting for health check endpoints
@@ -67,14 +90,14 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		tenantID := r.Header.Get("X-Tenant-ID")
-		if tenantID == "" {
-			// Do not block public or unauthenticated endpoints that lack tenant context
-			next.ServeHTTP(w, r)
-			return
+		var limiterKey string
+		if tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); tenantID != "" {
+			limiterKey = "tenant:" + tenantID
+		} else {
+			limiterKey = "ip:" + extractClientIP(r)
 		}
 
-		limiter := rl.getLimiter(tenantID)
+		limiter := rl.getLimiter(limiterKey)
 		if !limiter.AllowN(time.Now(), 1) {
 			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return

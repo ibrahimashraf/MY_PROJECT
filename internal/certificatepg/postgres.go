@@ -93,3 +93,43 @@ func insertAudit(ctx context.Context, tx *sql.Tx, certificate *certificateauthor
 	_, err = tx.ExecContext(ctx, `INSERT INTO certificate_audit_event (id, tenant_id, organization_id, certificate_id, action, actor_id, occurred_at, policy_evidence) VALUES ($1,$2,$3,$4,'DRAFT_CREATED',$5,$6,$7::jsonb)`, certificate.ID()+":draft_created", certificate.TenantID(), certificate.OrganizationID(), certificate.ID(), strings.TrimSpace(actorID), certificate.CreatedAt(), string(evidence))
 	return err
 }
+
+func (r *Repository) RecordRenewalAttempt(ctx context.Context, attempt certificateauthority.RenewalAttempt) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, attempt.TenantID, attempt.OrganizationID); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO certificate_renewal_attempt (id, tenant_id, organization_id, certificate_id, attempted_at, authority_tenant_id, authority_organization_id, previous_status, new_status, renewal_reason, authority_snapshot, result_state, error_detail)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+		attempt.ID, attempt.TenantID, attempt.OrganizationID, attempt.CertificateID, attempt.AttemptedAt, attempt.AuthorityTenantID, attempt.AuthorityOrganizationID, attempt.PreviousStatus, attempt.NewStatus, attempt.RenewalReason, attempt.AuthoritySnapshot, attempt.ResultState, attempt.ErrorDetail)
+	if err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Repository) UpdateCertificateRenewalState(ctx context.Context, certificateID string, renewalCount int, lastRenewalAttempt *time.Time, renewalAuthorityToken []byte) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, "", ""); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE certificate_record SET renewal_count = $1, last_renewal_attempt = $2, renewal_authority_token = $3 WHERE id = $4`, renewalCount, lastRenewalAttempt, renewalAuthorityToken, certificateID)
+	if err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}

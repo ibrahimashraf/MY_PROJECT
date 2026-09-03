@@ -1,6 +1,7 @@
 package certificateauthority
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -18,6 +19,23 @@ const (
 	Revoked       Status = "REVOKED"
 	Superseded    Status = "SUPERSEDED"
 )
+
+// RenewalAttempt records a certificate renewal attempt with authority derivation.
+type RenewalAttempt struct {
+	ID                string
+	TenantID          string
+	OrganizationID    string
+	CertificateID     string
+	AttemptedAt       time.Time
+	AuthorityTenantID string
+	AuthorityOrganizationID string
+	PreviousStatus    Status
+	NewStatus         Status
+	RenewalReason     string
+	AuthoritySnapshot json.RawMessage
+	ResultState       string // SUCCESS, FAILED_AUTHORITY, FAILED_INSPECTION, FAILED_POLICY, DUPLICATE
+	ErrorDetail       string
+}
 
 type Profile string
 
