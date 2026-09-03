@@ -19,12 +19,16 @@ import (
 
 	_ "github.com/lib/pq"
 
+	"integin/internal/assetentitlementhttp"
+	"integin/internal/assetentitlementpg"
 	"integin/internal/assurancehttp"
 	"integin/internal/assurancepg"
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/evidencepackhttp"
+	"integin/internal/evidencepackpg"
 	"integin/internal/formdefinitionhttp"
 	"integin/internal/formdefinitionpg"
 	"integin/internal/identity"
@@ -229,6 +233,8 @@ func main() {
 	var qrnfcHandler http.Handler
 	var assuranceHandler http.Handler
 	var formDefHandler http.Handler
+	var evidencePackHandler http.Handler
+	var assetEntitlementHandler http.Handler
 
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
@@ -264,6 +270,26 @@ func main() {
 		}
 		formDefHandler = formdefinitionhttp.NewHandler(activeValidator, activeResolver, formDefRepo, nil)
 
+		packRepo, packErr := evidencepackpg.NewPackRepository(database)
+		if packErr != nil {
+			log.Fatal(packErr)
+		}
+		releaseRepo, releaseErr := evidencepackpg.NewReleaseRepository(database)
+		if releaseErr != nil {
+			log.Fatal(releaseErr)
+		}
+		evidencePackHandler = evidencepackhttp.NewHandler(activeValidator, activeResolver, packRepo, releaseRepo, nil)
+
+		entRepo, entErr := assetentitlementpg.NewRepository(database)
+		if entErr != nil {
+			log.Fatal(entErr)
+		}
+		entPkgRepo, entPkgErr := assetentitlementpg.NewPackageRepository(database)
+		if entPkgErr != nil {
+			log.Fatal(entPkgErr)
+		}
+		assetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
+
 		// Initialize and start webhook retry worker
 		retryInterval := 30 * time.Second
 		if v := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVAL")); v != "" {
@@ -281,7 +307,8 @@ func main() {
 			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler}),
+			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
+			EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

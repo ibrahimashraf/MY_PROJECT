@@ -91,6 +91,14 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/form-definitions", d.FormDefinitionHandler)
 		mux.Handle("/api/v1/form-definitions/", d.FormDefinitionHandler)
 	}
+	if d.EvidencePackHandler != nil {
+		mux.Handle("/api/v1/evidence-packs", d.EvidencePackHandler)
+		mux.Handle("/api/v1/evidence-packs/", d.EvidencePackHandler)
+	}
+	if d.AssetEntitlementHandler != nil {
+		mux.Handle("/api/v1/asset-entitlements", d.AssetEntitlementHandler)
+		mux.Handle("/api/v1/asset-entitlements/", d.AssetEntitlementHandler)
+	}
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {

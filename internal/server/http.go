@@ -47,6 +47,8 @@ type Dependencies struct {
 	QRNFCHandler                   http.Handler
 	AssuranceHandler               http.Handler
 	FormDefinitionHandler          http.Handler
+	EvidencePackHandler            http.Handler
+	AssetEntitlementHandler        http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }
