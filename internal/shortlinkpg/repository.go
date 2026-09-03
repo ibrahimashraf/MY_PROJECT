@@ -503,10 +503,13 @@ func (r *Repository) UpdateWebhookDeliveryStatus(ctx context.Context, id int64, 
 	args := []interface{}{id, status, attempt, lastError, nextRetryAt}
 
 	if status == shortlink.WebhookDeliveryStatusDelivered {
-		query += ", delivered_at = now()"
+		query += ", delivered_at = now() WHERE id = $1"
+	} else {
+		// Terminal state protection: Never overwrite delivered or dead_letter entries with transient failed status
+		query += " WHERE id = $1 AND status != $6 AND status != $7"
+		args = append(args, shortlink.WebhookDeliveryStatusDelivered, shortlink.WebhookDeliveryStatusDeadLetter)
 	}
 
-	query += " WHERE id = $1"
 	_, err := r.db.ExecContext(ctx, query, args...)
 	return err
 }
