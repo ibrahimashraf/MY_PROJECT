@@ -635,7 +635,8 @@ func (r *Repository) CreateDLQEntry(ctx context.Context, delivery *shortlink.Web
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE webhook_deliveries
 		SET status = $2, attempt = $3, last_error = $4, updated_at = now()
-		WHERE id = $1`, delivery.ID, shortlink.WebhookDeliveryStatusDeadLetter, newAttempt, errorMsg)
+		WHERE id = $1 AND status != $2 AND status != $5`,
+		delivery.ID, shortlink.WebhookDeliveryStatusDeadLetter, newAttempt, errorMsg, shortlink.WebhookDeliveryStatusDelivered)
 	return err
 }
 
@@ -649,9 +650,9 @@ func (r *Repository) RetryDLQEntry(ctx context.Context, req shortlink.RetryDLQRe
 	err := r.db.QueryRowContext(ctx, `
 		UPDATE webhook_deliveries
 		SET status = $2, attempt = 0, next_retry_at = $3, last_error = '', updated_at = now()
-		WHERE id = $1
+		WHERE id = $1 AND status = $4
 		RETURNING id, short_link_code, payload, status, attempt, max_attempts, next_retry_at, last_error, created_at, updated_at, delivered_at`,
-		req.DeliveryID, shortlink.WebhookDeliveryStatusPending, nextRetryAt).Scan(
+		req.DeliveryID, shortlink.WebhookDeliveryStatusPending, nextRetryAt, shortlink.WebhookDeliveryStatusDeadLetter).Scan(
 		&delivery.ID, &delivery.ShortLinkCode, &delivery.Payload, &delivery.Status, &delivery.Attempt,
 		&delivery.MaxAttempts, &nextRetryAtResult, &delivery.LastError, &delivery.CreatedAt, &delivery.UpdatedAt, &deliveredAt)
 	if err == sql.ErrNoRows {
@@ -670,11 +671,22 @@ func (r *Repository) RetryDLQEntry(ctx context.Context, req shortlink.RetryDLQRe
 }
 
 func (r *Repository) ResolveDLQEntry(ctx context.Context, id int64, resolvedBy string) error {
-	_, err := r.db.ExecContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE webhook_deliveries
 		SET status = $2, delivered_at = now(), updated_at = now()
-		WHERE id = $1`, id, shortlink.WebhookDeliveryStatusDelivered)
-	return err
+		WHERE id = $1 AND status = $3`,
+		id, shortlink.WebhookDeliveryStatusDelivered, shortlink.WebhookDeliveryStatusDeadLetter)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return shortlink.ErrNotFound
+	}
+	return nil
 }
 
 func (r *Repository) calculateNextRetry(attempt int) *time.Time {
