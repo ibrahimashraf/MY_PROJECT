@@ -10,7 +10,8 @@
 # Local runtime and protected artifacts 
 operations/pilot/runtime/ 
 private/ 
-evidence/ 
+/evidence/ 
+docs/evidence/pilot-backups/ 
  
 # Build and dependency output 
 *.exe 
