@@ -97,11 +97,33 @@ func TestFormDefinitionHTTP_Lifecycle(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", w.Code)
 	}
-	var approved formdefinition.FormVersion
-	if err := json.NewDecoder(w.Body).Decode(&approved); err != nil {
+	// 3. Retire
+	retBody, _ := json.Marshal(transitionRequest{ExpectedVersion: 1})
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/form-definitions/form-1/retire", bytes.NewReader(retBody))
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req.Header.Set("X-Organization-ID", "org-1")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+	var retired formdefinition.FormVersion
+	if err := json.NewDecoder(w.Body).Decode(&retired); err != nil {
 		t.Fatal(err)
 	}
-	if approved.Status != formdefinition.FormStatusApproved {
-		t.Errorf("expected APPROVED, got %s", approved.Status)
+	if retired.Status != formdefinition.FormStatusRetired {
+		t.Errorf("expected RETIRED, got %s", retired.Status)
+	}
+
+	// 4. Get by code
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/form-definitions/by-code/crane_annual_v1", nil)
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req.Header.Set("X-Organization-ID", "org-1")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
 	}
 }

@@ -13,9 +13,10 @@ import (
 )
 
 var (
-	ErrNilDB    = errors.New("form definition postgres repository requires a database")
-	ErrNotFound = errors.New("form version not found")
-	ErrNotDraft = errors.New("form version is not a draft")
+	ErrNilDB       = errors.New("form definition postgres repository requires a database")
+	ErrNotFound    = errors.New("form version not found")
+	ErrNotDraft    = errors.New("form version is not a draft")
+	ErrNotApproved = errors.New("form version is not approved")
 )
 
 type Repository struct {
@@ -145,9 +146,9 @@ func (r *Repository) Retire(ctx context.Context, actor formdefinition.ActorConte
 			return formdefinition.FormVersion{}, err
 		}
 		if existing.Status != formdefinition.FormStatusApproved {
-			return formdefinition.FormVersion{}, ErrNotDraft
+			return formdefinition.FormVersion{}, formdefinition.ErrInvalidStatus
 		}
-		return formdefinition.FormVersion{}, errors.New("form version mismatch or not approved")
+		return formdefinition.FormVersion{}, formdefinition.ErrInvalidStatus
 	}
 	stored, err := loadFormByID(ctx, tx, actor, formID)
 	if err != nil {
