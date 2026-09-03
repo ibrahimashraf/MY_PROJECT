@@ -4,7 +4,9 @@ package oidcauth
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,10 +16,16 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type tokenCacheEntry struct {
+	principal Principal
+	expiresAt time.Time
+}
 
 var errUnknownKeyID = errors.New("oidc token key identifier is unknown")
 
@@ -61,7 +69,8 @@ type Validator struct {
 	now     func() time.Time
 
 	mu          sync.RWMutex
-	keys        map[string]*rsa.PublicKey
+	keysPtr     atomic.Pointer[map[string]*rsa.PublicKey]
+	tokenCache  sync.Map
 	refreshedAt time.Time
 }
 
@@ -76,6 +85,8 @@ func NewValidator(ctx context.Context, config Config, client *http.Client) (*Val
 	copyClient := *client
 	copyClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }
 	validator := &Validator{config: config, client: &copyClient, now: time.Now}
+	emptyKeys := make(map[string]*rsa.PublicKey)
+	validator.keysPtr.Store(&emptyKeys)
 	var document discoveryDocument
 	if err := validator.getJSON(ctx, config.Issuer+"/.well-known/openid-configuration", &document); err != nil {
 		return nil, fmt.Errorf("OIDC discovery: %w", err)
@@ -98,12 +109,33 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (Principal, e
 	if strings.TrimSpace(rawToken) == "" {
 		return Principal{}, errors.New("missing bearer token")
 	}
+
+	// Fast-path: SHA-256 token verification cache eliminates redundant RSA math under 10k clients
+	tokenHash := sha256.Sum256([]byte(rawToken))
+	cacheKey := hex.EncodeToString(tokenHash[:])
+	now := v.now()
+
+	if val, ok := v.tokenCache.Load(cacheKey); ok {
+		entry := val.(tokenCacheEntry)
+		if now.Before(entry.expiresAt) {
+			return entry.principal, nil
+		}
+		v.tokenCache.Delete(cacheKey)
+	}
+
 	if err := v.ensureFresh(ctx); err != nil {
 		return Principal{}, err
 	}
 	for attempt := 0; attempt < 2; attempt++ {
 		principal, err := v.validateWithCurrentKeys(rawToken)
 		if !errors.Is(err, errUnknownKeyID) || attempt == 1 {
+			if err == nil {
+				// Cache valid verification outcome for 30 seconds
+				v.tokenCache.Store(cacheKey, tokenCacheEntry{
+					principal: principal,
+					expiresAt: now.Add(30 * time.Second),
+				})
+			}
 			return principal, err
 		}
 		if err := v.refresh(ctx); err != nil {
@@ -114,12 +146,13 @@ func (v *Validator) Validate(ctx context.Context, rawToken string) (Principal, e
 }
 
 func (v *Validator) validateWithCurrentKeys(rawToken string) (Principal, error) {
-	v.mu.RLock()
-	keys := make(map[string]*rsa.PublicKey, len(v.keys))
-	for keyID, key := range v.keys {
-		keys[keyID] = key
+	// Atomic pointer load: 0 mutex locks, 0 heap map copies per request
+	keysMapPtr := v.keysPtr.Load()
+	if keysMapPtr == nil {
+		return Principal{}, errUnknownKeyID
 	}
-	v.mu.RUnlock()
+	keys := *keysMapPtr
+
 	parsedClaims := &claims{}
 	token, err := jwt.ParseWithClaims(rawToken, parsedClaims, func(token *jwt.Token) (any, error) {
 		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
@@ -190,7 +223,8 @@ func (v *Validator) validateClaims(value *claims) error {
 
 func (v *Validator) ensureFresh(ctx context.Context) error {
 	v.mu.RLock()
-	stale := len(v.keys) == 0 || v.now().Sub(v.refreshedAt) >= v.config.JWKSRefresh
+	keysPtr := v.keysPtr.Load()
+	stale := keysPtr == nil || len(*keysPtr) == 0 || v.now().Sub(v.refreshedAt) >= v.config.JWKSRefresh
 	v.mu.RUnlock()
 	if stale {
 		return v.refresh(ctx)
@@ -221,8 +255,13 @@ func (v *Validator) refresh(ctx context.Context) error {
 		return errors.New("OIDC JWKS contains no permitted RSA signing key")
 	}
 	v.mu.Lock()
-	v.keys = keys
+	v.keysPtr.Store(&keys)
 	v.refreshedAt = v.now()
+	// Clear token cache on JWKS rotation so stale signatures are never accepted
+	v.tokenCache.Range(func(k, _ any) bool {
+		v.tokenCache.Delete(k)
+		return true
+	})
 	v.mu.Unlock()
 	return nil
 }

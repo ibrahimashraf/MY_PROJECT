@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -122,5 +123,33 @@ func TestCachedResolver_ErrorBypassesCache(t *testing.T) {
 	}
 	if atomic.LoadInt64(&mock.calls) != 2 {
 		t.Fatalf("expected 2 calls for errors, got %d", mock.calls)
+	}
+}
+
+func TestCachedResolver_SingleflightCoalescing(t *testing.T) {
+	mock := &mockResolver{
+		membership: Membership{ActorID: "actor-singleflight"},
+	}
+	cached := NewCachedResolver(mock, 1*time.Minute)
+	principal := PrincipalKey{Issuer: "https://auth.example.com", Subject: "user-sf"}
+
+	// 50 concurrent goroutines querying the exact same principal at the same time
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			m, err := cached.Resolve(context.Background(), principal)
+			if err != nil || m.ActorID != "actor-singleflight" {
+				t.Errorf("unexpected resolution: %v, %v", m, err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	// Exactly 1 call to inner resolver due to singleflight coalescing
+	calls := atomic.LoadInt64(&mock.calls)
+	if calls != 1 {
+		t.Fatalf("expected singleflight to coalesce 50 requests into 1 DB call, but got %d calls", calls)
 	}
 }

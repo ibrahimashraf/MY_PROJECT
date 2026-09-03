@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	syncpkg "sync"
 	"time"
@@ -282,7 +283,40 @@ func signTransaction(transaction Transaction, secret string) string {
 }
 
 func canonicalTransaction(transaction Transaction) string {
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|%d|%s|%s|%s", transaction.ProtocolVersion, transaction.TransactionID, transaction.TenantID, transaction.OrganizationID, transaction.Environment, transaction.DeviceID, transaction.UserID, transaction.SequenceNumber, transaction.Operation, transaction.EntityID, transaction.PayloadHash, transaction.AuthorityID, transaction.AuthorityEpoch, transaction.CapturedAt.UTC().Format(time.RFC3339Nano), transaction.SignatureAlgorithm, transaction.KeyID)
+	var b strings.Builder
+	b.Grow(256)
+	b.WriteString(transaction.ProtocolVersion)
+	b.WriteByte('|')
+	b.WriteString(transaction.TransactionID)
+	b.WriteByte('|')
+	b.WriteString(transaction.TenantID)
+	b.WriteByte('|')
+	b.WriteString(transaction.OrganizationID)
+	b.WriteByte('|')
+	b.WriteString(transaction.Environment)
+	b.WriteByte('|')
+	b.WriteString(transaction.DeviceID)
+	b.WriteByte('|')
+	b.WriteString(transaction.UserID)
+	b.WriteByte('|')
+	b.WriteString(strconv.FormatUint(transaction.SequenceNumber, 10))
+	b.WriteByte('|')
+	b.WriteString(transaction.Operation)
+	b.WriteByte('|')
+	b.WriteString(transaction.EntityID)
+	b.WriteByte('|')
+	b.WriteString(transaction.PayloadHash)
+	b.WriteByte('|')
+	b.WriteString(transaction.AuthorityID)
+	b.WriteByte('|')
+	b.WriteString(strconv.FormatUint(transaction.AuthorityEpoch, 10))
+	b.WriteByte('|')
+	b.WriteString(transaction.CapturedAt.UTC().Format(time.RFC3339Nano))
+	b.WriteByte('|')
+	b.WriteString(transaction.SignatureAlgorithm)
+	b.WriteByte('|')
+	b.WriteString(transaction.KeyID)
+	return b.String()
 }
 
 func requiredCapability(operation string) string {

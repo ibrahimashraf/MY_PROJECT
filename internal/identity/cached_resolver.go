@@ -11,12 +11,20 @@ type cacheEntry struct {
 	expiresAt  time.Time
 }
 
-// CachedResolver decorates an underlying Resolver with an in-memory TTL cache,
-// mitigating repetitive multi-table join pressure on PostgreSQL under high concurrency.
+type singleflightCall struct {
+	wg  sync.WaitGroup
+	val Membership
+	err error
+}
+
+// CachedResolver decorates an underlying Resolver with an in-memory TTL cache and
+// singleflight request coalescing to eliminate cache stampedes on PostgreSQL under high concurrency.
 type CachedResolver struct {
-	inner Resolver
-	ttl   time.Duration
-	cache sync.Map
+	inner    Resolver
+	ttl      time.Duration
+	cache    sync.Map
+	sfMu     sync.Mutex
+	inFlight map[string]*singleflightCall
 }
 
 // NewCachedResolver returns a thread-safe caching resolver.
@@ -25,12 +33,13 @@ func NewCachedResolver(inner Resolver, ttl time.Duration) *CachedResolver {
 		ttl = 60 * time.Second
 	}
 	return &CachedResolver{
-		inner: inner,
-		ttl:   ttl,
+		inner:    inner,
+		ttl:      ttl,
+		inFlight: make(map[string]*singleflightCall),
 	}
 }
 
-// Resolve returns cached membership if valid, otherwise queries the inner resolver.
+// Resolve returns cached membership if valid, otherwise coalesces concurrent misses into a single database query.
 func (c *CachedResolver) Resolve(ctx context.Context, principal PrincipalKey) (Membership, error) {
 	if err := ValidatePrincipalKey(principal); err != nil {
 		return Membership{}, err
@@ -39,6 +48,7 @@ func (c *CachedResolver) Resolve(ctx context.Context, principal PrincipalKey) (M
 	key := principal.Issuer + "\x00" + principal.Subject
 	now := time.Now()
 
+	// Fast-path: read directly from in-memory cache
 	if val, ok := c.cache.Load(key); ok {
 		entry := val.(cacheEntry)
 		if now.Before(entry.expiresAt) {
@@ -47,17 +57,34 @@ func (c *CachedResolver) Resolve(ctx context.Context, principal PrincipalKey) (M
 		c.cache.Delete(key)
 	}
 
-	membership, err := c.inner.Resolve(ctx, principal)
-	if err != nil {
-		return Membership{}, err
+	// Slow-path: singleflight coalescing to prevent thundering herd against PostgreSQL
+	c.sfMu.Lock()
+	if call, exists := c.inFlight[key]; exists {
+		c.sfMu.Unlock()
+		call.wg.Wait()
+		return call.val, call.err
 	}
 
-	c.cache.Store(key, cacheEntry{
-		membership: membership,
-		expiresAt:  now.Add(c.ttl),
-	})
+	call := &singleflightCall{}
+	call.wg.Add(1)
+	c.inFlight[key] = call
+	c.sfMu.Unlock()
 
-	return membership, nil
+	// Execute actual query in exactly one goroutine
+	call.val, call.err = c.inner.Resolve(ctx, principal)
+	if call.err == nil {
+		c.cache.Store(key, cacheEntry{
+			membership: call.val,
+			expiresAt:  time.Now().Add(c.ttl),
+		})
+	}
+
+	c.sfMu.Lock()
+	delete(c.inFlight, key)
+	c.sfMu.Unlock()
+
+	call.wg.Done()
+	return call.val, call.err
 }
 
 // Invalidate removes a specific principal from cache.

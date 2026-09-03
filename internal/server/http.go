@@ -104,7 +104,8 @@ func writeOperationalJSON(writer http.ResponseWriter, status int, body string) {
 
 func productionMiddleware(next http.Handler) http.Handler {
 	rateLimiter := middleware.DefaultRateLimiter()
-	return requestLogger(withCorrelationID(withRequestLimit(rateLimiter.Middleware(next), 10<<20)))
+	gate := newConcurrencyGateFromEnv()
+	return requestLogger(withCorrelationID(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20)))
 }
 
 func withCorrelationID(next http.Handler) http.Handler {
@@ -161,6 +162,13 @@ func (w *statusWriter) WriteHeader(status int) {
 
 func (w *statusWriter) Write(data []byte) (int, error) {
 	return w.ResponseWriter.Write(data)
+}
+
+// Flush transparently supports chunked HTTP streaming without heap accumulation.
+func (w *statusWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
 
 func newCorrelationID() string {
