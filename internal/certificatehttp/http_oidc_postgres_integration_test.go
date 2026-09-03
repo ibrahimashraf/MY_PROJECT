@@ -135,9 +135,10 @@ lifecycle := &runtimeLifecycle{}
 	t.Cleanup(runtime.Close)
 
 	valid := certificateToken(t, key, kid, issuer.URL, subject)
-	invalid := valid[:len(valid)-1] + "x"
-	if valid[len(valid)-1] == 120 {
-		invalid = valid[:len(valid)-1] + "y"
+	parts := strings.Split(valid, ".")
+	invalid := parts[0] + "." + parts[1] + ".invalid-signature"
+	if len(parts) != 3 {
+		invalid = valid + "-tampered"
 	}
 
 	// Prime the validator with a valid token to ensure JWKS is fully loaded

@@ -13,6 +13,7 @@ import (
 	"github.com/lib/pq"
 
 	"integin/internal/domain/workorder"
+	"integin/internal/shared/pgtx"
 )
 
 var (
@@ -48,18 +49,7 @@ func (r *Repository) begin(ctx context.Context, actor workorder.ActorContext) (*
 	if err := actor.Validate(); err != nil {
 		return nil, err
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx,
-		"SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)",
-		actor.TenantID, actor.OrganizationID,
-	); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.db, actor.TenantID, actor.OrganizationID)
 }
 
 func (r *Repository) GetWorkOrder(ctx context.Context, actor workorder.ActorContext, workOrderID string) (workorder.WorkOrder, error) {

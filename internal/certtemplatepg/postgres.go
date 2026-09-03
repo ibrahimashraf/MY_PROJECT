@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"integin/internal/domain/certificatetemplate"
+	"integin/internal/shared/pgtx"
 )
 
 var (
@@ -123,15 +124,7 @@ func (r *Repository) Get(ctx context.Context, actor certificatetemplate.ActorCon
 }
 
 func (r *Repository) begin(ctx context.Context, actor certificatetemplate.ActorContext) (*sql.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,true), set_config('integin.organization_id',$2,true)`, actor.TenantID, actor.OrganizationID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.db, actor.TenantID, actor.OrganizationID)
 }
 
 func load(ctx context.Context, tx *sql.Tx, actor certificatetemplate.ActorContext, templateCode string, version int) (certificatetemplate.DefinitionRecord, error) {
