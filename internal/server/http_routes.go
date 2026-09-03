@@ -102,5 +102,5 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {
-	return evidenceapi.Handler{Store: d.EvidenceStore}
+	return evidenceapi.Handler{Store: d.EvidenceStore, Validator: d.Validator, Resolver: d.Resolver}
 }

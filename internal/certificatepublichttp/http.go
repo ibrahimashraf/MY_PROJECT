@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"integin/internal/certificatepg"
-	"integin/internal/certificaterender"
 	"net/http"
 	"strings"
 	"sync"
@@ -25,7 +24,6 @@ type Handler struct {
 	Window           time.Duration
 	Now              func() time.Time
 	VerifierBaseURL  string
-	Renderer         *certificaterender.Request
 	mu               sync.Mutex
 	rates            map[string]rateWindow
 }
@@ -41,7 +39,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		reply(w, http.StatusServiceUnavailable, nil)
 		return
 	}
-	token, pathSuffix, ok := extractTokenAndPath(r.URL.Path)
+	token, _, ok := extractTokenAndPath(r.URL.Path)
 	if !ok {
 		reply(w, http.StatusNotFound, nil)
 		return
@@ -60,18 +58,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle /qr suffix
-	if pathSuffix == "/qr" {
-		h.handleQR(w, r, token)
-		return
-	}
-	// Handle /pdf suffix
-	if pathSuffix == "/pdf" {
-		h.handlePDF(w, r, token)
-		return
-	}
-
-	// Default: use authenticated transport if configured, otherwise regular verifier
+	// Suffixes removed, fall back to authenticated transport if configured
 	if h.Authenticated != nil {
 		h.handleAuthenticated(w, r, token)
 		return
@@ -106,67 +93,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reply(w, http.StatusOK, response)
 }
 
-func (h *Handler) handleQR(w http.ResponseWriter, r *http.Request, token string) {
-	_, found, err := h.Verifier.VerifyPublic(r.Context(), token)
-	if err != nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	if !found {
-		reply(w, http.StatusNotFound, nil)
-		return
-	}
-	if h.VerifierBaseURL == "" {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	qrURL, err := certificaterender.VerifierURL(h.VerifierBaseURL, token)
-	if err != nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	qrPNG, err := certificaterender.GenerateQR(qrURL)
-	if err != nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(qrPNG)
-}
 
-func (h *Handler) handlePDF(w http.ResponseWriter, r *http.Request, token string) {
-	if h.Renderer == nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	renderData, found, err := h.getRenderData(token)
-	if err != nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	if !found {
-		reply(w, http.StatusNotFound, nil)
-		return
-	}
-	result, err := certificaterender.Render(*renderData)
-	if err != nil {
-		reply(w, http.StatusServiceUnavailable, nil)
-		return
-	}
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+result.Metadata["content_disposition_name"]+"\"")
-	w.Header().Set("Cache-Control", "no-store")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(result.PDF)
-}
-
-func (h *Handler) getRenderData(token string) (*certificaterender.Request, bool, error) {
-	// This would need a Repository with GetRenderData method
-	// For now return not found - requires extending the Verifier interface
-	return nil, false, nil
-}
 
 func (h *Handler) handleAuthenticated(w http.ResponseWriter, r *http.Request, token string) {
 	view, found, err := h.Authenticated.Verifier.VerifyPublic(r.Context(), token)

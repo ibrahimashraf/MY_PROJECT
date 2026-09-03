@@ -14,7 +14,9 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/identity"
 	"integin/internal/middleware"
+	"integin/internal/oidcauth"
 	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
@@ -26,6 +28,8 @@ type Dependencies struct {
 	Devices                        []device_trust.Device
 	Authorities                    []device_trust.AuthorityPackage
 	EvidenceStore                  storage.Store
+	Validator                      *oidcauth.Validator
+	Resolver                       identity.Resolver
 	EvidenceRegistrationHandler    http.Handler
 	LocalProvisioning              http.Handler
 	OIDCSessionHandler             http.Handler

@@ -10,11 +10,20 @@ import (
 	"net/http"
 	"strings"
 
+	"integin/internal/identity"
+	"integin/internal/oidcauth"
 	"integin/internal/storage"
+	"integin/internal/workorderauth"
 )
 
+type TokenValidator interface {
+	Validate(context.Context, string) (oidcauth.Principal, error)
+}
+
 type Handler struct {
-	Store storage.Store
+	Store     storage.Store
+	Validator TokenValidator
+	Resolver  identity.Resolver
 }
 
 type request struct {
@@ -44,8 +53,8 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 		writeJSON(writer, http.StatusMethodNotAllowed, response{Outcome: "REJECTED", Reason: "POST is required"})
 		return
 	}
-	if h.Store == nil {
-		writeJSON(writer, http.StatusServiceUnavailable, response{Outcome: "REJECTED", Reason: "evidence store is unavailable"})
+	if h.Validator == nil || h.Resolver == nil || h.Store == nil {
+		writeJSON(writer, http.StatusServiceUnavailable, response{Outcome: "REJECTED", Reason: "evidence store or identity service is unavailable"})
 		return
 	}
 	var incoming request
@@ -57,6 +66,29 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: err.Error()})
 		return
 	}
+	raw, ok := bearer(requestHTTP.Header.Get("Authorization"))
+	if !ok {
+		writeJSON(writer, http.StatusUnauthorized, response{Outcome: "REJECTED", Reason: "authentication_failed"})
+		return
+	}
+	principal, err := h.Validator.Validate(requestHTTP.Context(), raw)
+	if err != nil {
+		writeJSON(writer, http.StatusUnauthorized, response{Outcome: "REJECTED", Reason: "authentication_failed"})
+		return
+	}
+	membership, err := h.Resolver.Resolve(requestHTTP.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject})
+	if err != nil {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
+		return
+	}
+	actor, err := workorderauth.ActorFromMembership(membership)
+	if err != nil {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
+		return
+	}
+	// D-02: Overwrite caller-supplied tenant/org fields from the derived actor
+	incoming.TenantID = actor.TenantID
+	incoming.OrganizationID = actor.OrganizationID
 	data, err := base64.StdEncoding.DecodeString(incoming.Base64Blob)
 	if err != nil {
 		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "base64 blob is invalid"})
@@ -123,4 +155,12 @@ func writeJSON(writer http.ResponseWriter, status int, payload response) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	_ = json.NewEncoder(writer).Encode(payload)
+}
+
+func bearer(value string) (string, bool) {
+	parts := strings.Fields(value)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
 }

@@ -2,6 +2,7 @@ package evidenceapi
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -10,21 +11,46 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"integin/internal/identity"
+	"integin/internal/oidcauth"
 	"integin/internal/storage"
+	"integin/internal/workorderauth"
 )
+
+type validatorStub struct{ err error }
+
+func (v validatorStub) Validate(context.Context, string) (oidcauth.Principal, error) {
+	if v.err != nil {
+		return oidcauth.Principal{}, v.err
+	}
+	return oidcauth.Principal{Issuer: "https://issuer.example", Subject: "subject-a"}, nil
+}
+
+type resolverStub struct{ err error }
+
+func (r resolverStub) Resolve(context.Context, identity.PrincipalKey) (identity.Membership, error) {
+	if r.err != nil {
+		return identity.Membership{}, r.err
+	}
+	return identity.Membership{ActorID: "actor-a", TenantID: "tenant-1", OrganizationID: "org-1", WorkOrderRole: "inspector", Capabilities: []string{workorderauth.CapabilitySubmitPartial}}, nil
+}
 
 func TestHandlerAppliesAndDeduplicatesTenantScopedEvidence(t *testing.T) {
 	store := storage.NewInMemoryStore()
-	handler := Handler{Store: store}
+	handler := Handler{Store: store, Validator: validatorStub{}, Resolver: resolverStub{}}
 	body := evidenceBody(t, "tenant-1", "org-1", "photo-1", []byte("encrypted-evidence"))
 
 	first := httptest.NewRecorder()
-	handler.ServeHTTP(first, httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(body)))
+	req1 := httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(body))
+	req1.Header.Set("Authorization", "Bearer token")
+	handler.ServeHTTP(first, req1)
 	if first.Code != http.StatusOK || !bytes.Contains(first.Body.Bytes(), []byte(`"APPLIED"`)) {
 		t.Fatalf("first response = %d %s", first.Code, first.Body.String())
 	}
 	second := httptest.NewRecorder()
-	handler.ServeHTTP(second, httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(body)))
+	req2 := httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(body))
+	req2.Header.Set("Authorization", "Bearer token")
+	handler.ServeHTTP(second, req2)
 	if second.Code != http.StatusOK || !bytes.Contains(second.Body.Bytes(), []byte(`"DUPLICATE"`)) {
 		t.Fatalf("second response = %d %s", second.Code, second.Body.String())
 	}
@@ -35,7 +61,7 @@ func TestHandlerAppliesAndDeduplicatesTenantScopedEvidence(t *testing.T) {
 
 func TestHandlerRejectsDigestMismatchAndTenantPathInjection(t *testing.T) {
 	store := storage.NewInMemoryStore()
-	handler := Handler{Store: store}
+	handler := Handler{Store: store, Validator: validatorStub{}, Resolver: resolverStub{}}
 	body := evidenceBody(t, "tenant-1", "org-1", "photo-1", []byte("encrypted-evidence"))
 	var payload request
 	if err := json.Unmarshal(body, &payload); err != nil {
@@ -44,21 +70,25 @@ func TestHandlerRejectsDigestMismatchAndTenantPathInjection(t *testing.T) {
 	payload.CiphertextSHA256 = "bad"
 	badBody, _ := json.Marshal(payload)
 	record := httptest.NewRecorder()
-	handler.ServeHTTP(record, httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(badBody)))
+	req1 := httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(badBody))
+	req1.Header.Set("Authorization", "Bearer token")
+	handler.ServeHTTP(record, req1)
 	if record.Code != http.StatusBadRequest || !bytes.Contains(record.Body.Bytes(), []byte(`"SECURITY_FAILURE"`)) {
 		t.Fatalf("digest response = %d %s", record.Code, record.Body.String())
 	}
 
 	pathBody := evidenceBody(t, "tenant/escape", "org-1", "photo-1", []byte("encrypted-evidence"))
 	record = httptest.NewRecorder()
-	handler.ServeHTTP(record, httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(pathBody)))
+	req2 := httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(pathBody))
+	req2.Header.Set("Authorization", "Bearer token")
+	handler.ServeHTTP(record, req2)
 	if record.Code != http.StatusBadRequest {
 		t.Fatalf("path response = %d", record.Code)
 	}
 }
 
 func TestHandlerRejectsMalformedEvidenceRequests(t *testing.T) {
-	handler := Handler{Store: storage.NewInMemoryStore()}
+	handler := Handler{Store: storage.NewInMemoryStore(), Validator: validatorStub{}, Resolver: resolverStub{}}
 	tests := []struct {
 		name string
 		body []byte
@@ -70,7 +100,9 @@ func TestHandlerRejectsMalformedEvidenceRequests(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			record := httptest.NewRecorder()
-			handler.ServeHTTP(record, httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(test.body)))
+			req := httptest.NewRequest(http.MethodPost, "/evidence", bytes.NewReader(test.body))
+			req.Header.Set("Authorization", "Bearer token")
+			handler.ServeHTTP(record, req)
 			if record.Code != http.StatusBadRequest {
 				t.Fatalf("status = %d body = %s", record.Code, record.Body.String())
 			}
