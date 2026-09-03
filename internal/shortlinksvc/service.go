@@ -572,13 +572,13 @@ func parseUserAgent(ua string) (deviceType, os, browser string) {
 	if ua == "" {
 		return "Unknown", "Unknown", "Unknown"
 	}
-	uaLower := toLower(ua)
+	uaLower := strings.ToLower(ua)
 
 	// Device type
 	switch {
-	case contains(uaLower, "mobile") || contains(uaLower, "android") || contains(uaLower, "iphone"):
+	case strings.Contains(uaLower, "mobile") || strings.Contains(uaLower, "android") || strings.Contains(uaLower, "iphone"):
 		deviceType = "Mobile"
-	case contains(uaLower, "tablet") || contains(uaLower, "ipad"):
+	case strings.Contains(uaLower, "tablet") || strings.Contains(uaLower, "ipad"):
 		deviceType = "Tablet"
 	default:
 		deviceType = "Desktop"
@@ -586,15 +586,15 @@ func parseUserAgent(ua string) (deviceType, os, browser string) {
 
 	// OS
 	switch {
-	case contains(uaLower, "windows"):
+	case strings.Contains(uaLower, "windows"):
 		os = "Windows"
-	case contains(uaLower, "macintosh") || contains(uaLower, "mac os"):
+	case strings.Contains(uaLower, "macintosh") || strings.Contains(uaLower, "mac os"):
 		os = "macOS"
-	case contains(uaLower, "linux"):
+	case strings.Contains(uaLower, "linux"):
 		os = "Linux"
-	case contains(uaLower, "android"):
+	case strings.Contains(uaLower, "android"):
 		os = "Android"
-	case contains(uaLower, "iphone") || contains(uaLower, "ipad") || contains(uaLower, "ipod"):
+	case strings.Contains(uaLower, "iphone") || strings.Contains(uaLower, "ipad") || strings.Contains(uaLower, "ipod"):
 		os = "iOS"
 	default:
 		os = "Unknown"
@@ -602,15 +602,15 @@ func parseUserAgent(ua string) (deviceType, os, browser string) {
 
 	// Browser
 	switch {
-	case contains(uaLower, "edg"):
+	case strings.Contains(uaLower, "edg"):
 		browser = "Edge"
-	case contains(uaLower, "chrome") && !contains(uaLower, "edg"):
+	case strings.Contains(uaLower, "chrome") && !strings.Contains(uaLower, "edg"):
 		browser = "Chrome"
-	case contains(uaLower, "firefox"):
+	case strings.Contains(uaLower, "firefox"):
 		browser = "Firefox"
-	case contains(uaLower, "safari") && !contains(uaLower, "chrome"):
+	case strings.Contains(uaLower, "safari") && !strings.Contains(uaLower, "chrome"):
 		browser = "Safari"
-	case contains(uaLower, "opera") || contains(uaLower, "opr"):
+	case strings.Contains(uaLower, "opera") || strings.Contains(uaLower, "opr"):
 		browser = "Opera"
 	default:
 		browser = "Unknown"
@@ -623,31 +623,6 @@ func lookupGeoIP(ip string) (country, region, city string) {
 	// In production, integrate with a GeoIP database like MaxMind
 	// For now, return empty strings - can be enhanced with a GeoIP library
 	return "", "", ""
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || indexOf(s, substr) >= 0))
-}
-
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
-}
-
-func toLower(s string) string {
-	result := make([]byte, len(s))
-	for i, r := range s {
-		if r >= 'A' && r <= 'Z' {
-			result[i] = byte(r + 32)
-		} else {
-			result[i] = byte(r)
-		}
-	}
-	return string(result)
 }
 
 // Anomaly detection methods
