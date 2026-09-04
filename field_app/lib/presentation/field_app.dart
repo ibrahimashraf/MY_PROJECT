@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../application/field_app_controller.dart';
 import '../domain/inspection_draft.dart';
+import '../sync/event_stream_client.dart';
 import '../workpackages/package_compatibility.dart';
 
 class FieldHomePage extends StatefulWidget {
@@ -109,6 +110,10 @@ class _FieldHomePageState extends State<FieldHomePage> {
                   controller: controller,
                   inspectionId: workPack.inspectionId,
                 ),
+                if (controller.recentEvents.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _StationLiveEventsCard(events: controller.recentEvents),
+                ],
                 if (controller.lastError != null) ...[
                   const SizedBox(height: 16),
                   Text(controller.lastError!,
@@ -475,3 +480,66 @@ class _PackageCompatibilityCard extends StatelessWidget {
     );
   }
 }
+
+class _StationLiveEventsCard extends StatelessWidget {
+  const _StationLiveEventsCard({required this.events});
+
+  final List<StationEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.sensors, color: Colors.blueAccent),
+                const SizedBox(width: 8),
+                Text(
+                  'Real-Time Station Feed (${events.length})',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...events.take(5).map((e) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withAlpha(30),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          e.type,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          e.payload.toString(),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      Text(
+                        '${e.timestamp.hour.toString().padLeft(2, '0')}:${e.timestamp.minute.toString().padLeft(2, '0')}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

@@ -158,3 +158,32 @@ func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
 		t.Fatal("0015 down migration missing DROP TABLE certificate_artifact")
 	}
 }
+
+func TestRiverJobQueueMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0059_river_job_queue.candidate.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	required := []string{
+		"CREATE TABLE IF NOT EXISTS river_job",
+		"args JSONB NOT NULL",
+		"state TEXT NOT NULL DEFAULT 'available'",
+		"CREATE TABLE IF NOT EXISTS river_leader",
+		"river_job_kind",
+		"river_job_state_and_scheduled_at",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	downSQL, err := os.ReadFile("0059_river_job_queue.down.candidate.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(downSQL), "DROP TABLE IF EXISTS river_job") {
+		t.Fatal("0059 down migration missing DROP TABLE IF EXISTS river_job")
+	}
+}
+

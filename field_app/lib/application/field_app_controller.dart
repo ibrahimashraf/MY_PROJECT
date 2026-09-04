@@ -8,6 +8,7 @@ import '../workpackages/package_compatibility.dart';
 import '../domain/models.dart';
 import '../outbox/outbox.dart';
 import '../security/transaction_signer.dart';
+import '../sync/event_stream_client.dart';
 import '../sync/sync_client.dart';
 import '../sync/sync_guard.dart';
 
@@ -22,9 +23,12 @@ class FieldAppController extends ChangeNotifier {
     this.deviceSigner,
     this.deviceKeyId,
     this.syncClient,
+    this.eventStreamClient,
     this.advisoryClient,
     this.trace,
-  });
+  }) {
+    _initStream();
+  }
 
   final TenantContext context;
   final String deviceId;
@@ -35,6 +39,7 @@ class FieldAppController extends ChangeNotifier {
   final DeviceSigner? deviceSigner;
   final String? deviceKeyId;
   final SyncClient? syncClient;
+  final EventStreamClient? eventStreamClient;
 
   /// Present only in the isolated pilot build; advisory data has no authority.
   final PilotAdvisoryClient? advisoryClient;
@@ -42,6 +47,7 @@ class FieldAppController extends ChangeNotifier {
   /// Optional pilot diagnostic sink. It records only outcome classes and counts.
   final void Function(String)? trace;
   final List<OfflineMutation> _outbox = [];
+  final List<StationEvent> recentEvents = [];
   InspectionDraft? activeDraft;
   ConnectivityState connectivity = ConnectivityState.offline;
   DateTime? lastSuccessfulSync;
@@ -365,6 +371,29 @@ class FieldAppController extends ChangeNotifier {
     return reasons.isEmpty ? 'none' : 'other';
   }
 
+  void _initStream() {
+    if (eventStreamClient == null) return;
+    eventStreamClient!.events.listen((event) {
+      recentEvents.insert(0, event);
+      if (recentEvents.length > 20) {
+        recentEvents.removeLast();
+      }
+      notifyListeners();
+    }, onError: (_) {
+      // Stream error does not break local app operation
+    });
+    eventStreamClient!.connect().catchError((_) {
+      // Offline fallback: ignore stream connection failure
+    });
+  }
+
+  @override
+  void dispose() {
+    eventStreamClient?.dispose();
+    super.dispose();
+  }
+
   String _transactionId() =>
       'tx-${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(9999)}';
 }
+
