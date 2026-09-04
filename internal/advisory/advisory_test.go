@@ -39,7 +39,7 @@ func TestAIFreeZonesRejectInvocation(t *testing.T) {
 	if provider.calls != 0 {
 		t.Fatal("AI provider was called in an AI-free zone")
 	}
-	if AIAllowed(ZoneAuthorization) || !AIAllowed(ZoneMonitoring) {
+	if AIAllowed(ZoneAuthorization) || !AIAllowed(ZoneMonitoring) || !AIAllowed(ZoneNDTDefect) || !AIAllowed(ZoneLiftingDefect) {
 		t.Fatal("AI-free-zone policy incorrect")
 	}
 }

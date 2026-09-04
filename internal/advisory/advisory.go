@@ -19,9 +19,13 @@ const (
 	ZoneInspectionApproval Zone = "INSPECTION_APPROVAL"
 	ZoneMonitoring         Zone = "MONITORING"
 	ZoneRegulation         Zone = "REGULATION"
+	ZoneNDTDefect          Zone = "NDT_DEFECT"
+	ZoneLiftingDefect      Zone = "LIFTING_DEFECT"
 )
 
-func AIAllowed(zone Zone) bool { return zone == ZoneMonitoring || zone == ZoneRegulation }
+func AIAllowed(zone Zone) bool {
+	return zone == ZoneMonitoring || zone == ZoneRegulation || zone == ZoneNDTDefect || zone == ZoneLiftingDefect
+}
 
 type Insight struct {
 	ID            string
