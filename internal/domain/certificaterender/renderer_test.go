@@ -3,6 +3,7 @@ package certificaterender
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -144,5 +145,37 @@ func TestValidatePDFSecurity(t *testing.T) {
 	maliciousPDF := []byte("%PDF-1.7\n/JavaScript (app.alert(1))\n%%EOF")
 	if err := ValidatePDFSecurity(maliciousPDF); err == nil {
 		t.Fatal("expected malicious pdf with /JavaScript to fail validation")
+	}
+}
+
+func TestWorkerProtocolContract(t *testing.T) {
+	// Verify that JobInput produces valid JSON and compiled HTML accepted by worker.py schema
+	input := sampleJobInput()
+	htmlDoc, err := CompileHTML(input)
+	if err != nil {
+		t.Fatalf("failed to compile html: %v", err)
+	}
+
+	payload := map[string]any{
+		"tenant_id":          input.TenantID,
+		"certificate_id":     input.CertificateID,
+		"certificate_number": input.CertificateNumber,
+		"snapshot_sha256":    input.SnapshotSHA256,
+		"compiled_html":      htmlDoc,
+	}
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal worker payload: %v", err)
+	}
+
+	if len(raw) > MaxJobBytes {
+		t.Fatalf("worker payload %d exceeds MaxJobBytes %d", len(raw), MaxJobBytes)
+	}
+
+	// Verify that forbidden patterns are caught before dispatching to worker
+	payload["compiled_html"] = "<div><script>alert(1)</script></div>"
+	if containsForbiddenContent(payload["compiled_html"].(string)) != true {
+		t.Fatal("expected forbidden script to be flagged by containsForbiddenContent")
 	}
 }

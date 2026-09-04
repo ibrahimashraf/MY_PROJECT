@@ -66,6 +66,22 @@ services:
     networks:
       - integin-private
 
+  renderer-worker:
+    build:
+      context: ../renderer-worker
+      dockerfile: Dockerfile
+    image: integin/renderer-worker:69.0
+    restart: "no"
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,uid=10001,gid=10001,mode=1777
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
 networks:
   integin-private:
     name: ${INTEGIN_STACK_NAME:-integin}-private
