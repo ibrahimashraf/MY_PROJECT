@@ -1,4 +1,4 @@
-$projectRoot = 'C:\MY PROJECT\integin-pilot-source\field_app'
+$projectRoot = 'C:\MY_PROJECT\integin-pilot-source\field_app'
 $testPath = 'test\contract_vector_parity_test.dart'
 $dartPath = 'C:\flutter\bin\cache\dart-sdk\bin\dart.exe'
 $toolsSnapshot = 'C:\flutter\bin\cache\flutter_tools.snapshot'
