@@ -8,10 +8,14 @@ The first portable profile is intentionally hybrid. The INTEGIN Go server is bui
 
 | Artifact | Role |
 | --- | --- |
-| `compose/integin-infrastructure.compose.yaml` | PostgreSQL and RustFS services with loopback-only default port binding and named persistent volumes. |
+| `compose/integin-infrastructure.compose.yaml` | PostgreSQL, RustFS, and isolated zero-egress renderer-worker services with loopback-only default port binding and named persistent volumes. |
+| `renderer-worker/Dockerfile` | Minimal OCI container profile for WeasyPrint 69.0 + Pango + HarfBuzz isolated execution. |
+| `renderer-worker/worker.py` | Piped stdin/stdout non-authoritative worker CLI enforcing zero egress and PDF/A-4b output. |
+| `renderer-worker/fonts/manifest.sha256` | Pinned checksum manifest for licensed Google Noto Arabic & Latin font pack. |
 | `env/compose.env.example` | Non-secret Compose variable names and safe defaults. |
 | `env/acceptance.env.schema` | Secret-free application configuration contract. |
 | `systemd/integin-server.service.template` | Linux native-server service template. |
+| `systemd/integin-renderer-worker.service.template` | Linux systemd service template for isolated containerized renderer worker. |
 | `scripts/build-targets.sh` | Reproducible Windows and Linux Go target builds. |
 | `scripts/verify-deployment-kit.sh` | Static source, Compose, and target-build validation; never deploys. |
 
