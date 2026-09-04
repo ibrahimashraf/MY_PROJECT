@@ -11,6 +11,7 @@ import (
 	"integin/internal/certificatepg"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/oidcauth"
+	"integin/internal/storage"
 )
 
 type TokenValidator interface {
@@ -31,10 +32,16 @@ type Lifecycle interface {
 	Expire(context.Context, certificateauthority.ActorContext, string, time.Time) error
 }
 
+type ArtifactRetriever interface {
+	GetArtifact(ctx context.Context, actor certificateauthority.ActorContext, certificateID, artifactType string) (certificatepg.ArtifactRecord, error)
+	Get(ctx context.Context, key string) (storage.Object, error)
+}
+
 type Handler struct {
 	Validator TokenValidator
 	Actors    ActorResolver
 	Lifecycle Lifecycle
+	Artifacts ArtifactRetriever
 	Now       func() time.Time
 }
 type draftRequest struct {
@@ -80,8 +87,38 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.Now != nil {
 		now = h.Now
 	}
+
+	id, action, valid := route(r.URL.Path)
+
+	if r.Method == http.MethodGet {
+		if !valid || (action != "artifact" && action != "pdf") {
+			write(w, http.StatusNotFound, "not_found", nil)
+			return
+		}
+		if h.Artifacts == nil {
+			write(w, http.StatusServiceUnavailable, "service_unavailable", nil)
+			return
+		}
+		record, err := h.Artifacts.GetArtifact(r.Context(), actor, id, "CERTIFICATE_PDF")
+		if err != nil {
+			write(w, http.StatusNotFound, "not_found", nil)
+			return
+		}
+		obj, err := h.Artifacts.Get(r.Context(), record.ObjectKey)
+		if err != nil {
+			write(w, http.StatusNotFound, "not_found", nil)
+			return
+		}
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", "inline; filename=\"certificate.pdf\"")
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(obj.Data)
+		return
+	}
+
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Allow", "GET, POST")
 		write(w, http.StatusMethodNotAllowed, "method_not_allowed", nil)
 		return
 	}
@@ -98,7 +135,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		write(w, http.StatusCreated, "", map[string]string{"certificate_id": record.ID(), "status": string(record.Status())})
 		return
 	}
-	id, action, valid := route(r.URL.Path)
 	if !valid {
 		write(w, http.StatusNotFound, "not_found", nil)
 		return

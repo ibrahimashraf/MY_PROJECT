@@ -11,6 +11,7 @@ import (
 	"integin/internal/certificatepg"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/oidcauth"
+	"integin/internal/storage"
 )
 
 type validatorStub struct{ err error }
@@ -127,5 +128,83 @@ func TestHandlerRenewsCertificate(t *testing.T) {
 	h.ServeHTTP(unauthResponse, unauthorized)
 	if unauthResponse.Code != http.StatusUnauthorized {
 		t.Fatalf("missing auth status=%d", unauthResponse.Code)
+	}
+}
+
+type artifactRetrieverStub struct {
+	record certificatepg.ArtifactRecord
+	object storage.Object
+	err    error
+}
+
+func (s *artifactRetrieverStub) GetArtifact(_ context.Context, _ certificateauthority.ActorContext, _ string, _ string) (certificatepg.ArtifactRecord, error) {
+	if s.err != nil {
+		return certificatepg.ArtifactRecord{}, s.err
+	}
+	return s.record, nil
+}
+
+func (s *artifactRetrieverStub) Get(_ context.Context, _ string) (storage.Object, error) {
+	if s.err != nil {
+		return storage.Object{}, s.err
+	}
+	return s.object, nil
+}
+
+func TestHandlerRetrievesArtifact(t *testing.T) {
+	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "viewer", Capabilities: map[string]bool{"certificate.view": true}}
+	retriever := &artifactRetrieverStub{
+		record: certificatepg.ArtifactRecord{
+			ID:            "art-1",
+			CertificateID: "cert-123",
+			ObjectKey:     "tenants/tenant/certs/cert-123/certificate.pdf",
+		},
+		object: storage.Object{
+			Key:         "tenants/tenant/certs/cert-123/certificate.pdf",
+			ContentType: "application/pdf",
+			Data:        []byte("%PDF-1.7 mock content"),
+		},
+	}
+	h := Handler{
+		Validator: validatorStub{},
+		Actors:    actorStub{actor: actor},
+		Lifecycle: &lifecycleStub{},
+		Artifacts: retriever,
+	}
+
+	// 1. Success on GET /certificates/cert-123/artifact
+	req := httptest.NewRequest(http.MethodGet, "/certificates/cert-123/artifact", nil)
+	req.Header.Set("Authorization", "Bearer token")
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", res.Code, res.Body.String())
+	}
+	if res.Header().Get("Content-Type") != "application/pdf" {
+		t.Fatalf("content-type=%q", res.Header().Get("Content-Type"))
+	}
+	if res.Header().Get("Cache-Control") != "private, no-store" {
+		t.Fatalf("cache-control=%q", res.Header().Get("Cache-Control"))
+	}
+	if res.Body.String() != "%PDF-1.7 mock content" {
+		t.Fatalf("body mismatch: %q", res.Body.String())
+	}
+
+	// 2. Success on alias GET /certificates/cert-123/pdf
+	req2 := httptest.NewRequest(http.MethodGet, "/certificates/cert-123/pdf", nil)
+	req2.Header.Set("Authorization", "Bearer token")
+	res2 := httptest.NewRecorder()
+	h.ServeHTTP(res2, req2)
+	if res2.Code != http.StatusOK {
+		t.Fatalf("pdf alias status=%d", res2.Code)
+	}
+
+	// 3. Unauthenticated request rejected
+	reqUnauth := httptest.NewRequest(http.MethodGet, "/certificates/cert-123/artifact", nil)
+	resUnauth := httptest.NewRecorder()
+	h.ServeHTTP(resUnauth, reqUnauth)
+	if resUnauth.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 unauthorized, got %d", resUnauth.Code)
 	}
 }

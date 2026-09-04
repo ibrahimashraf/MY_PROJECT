@@ -105,3 +105,45 @@ func TestAnomalyDetectionMigrationContract(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0015_certificate_artifact_metadata.candidate.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	required := []string{
+		"CREATE TABLE certificate_artifact",
+		"id TEXT PRIMARY KEY",
+		"tenant_id TEXT NOT NULL",
+		"organization_id TEXT NOT NULL",
+		"certificate_id TEXT NOT NULL",
+		"CHECK (artifact_type IN ('CERTIFICATE_PDF'))",
+		"CHECK (content_type = 'application/pdf')",
+		"CHECK (byte_size > 0)",
+		"artifact_sha256 BYTEA NOT NULL",
+		"snapshot_sha256 BYTEA NOT NULL",
+		"renderer_version TEXT NOT NULL",
+		"UNIQUE (tenant_id, organization_id, id)",
+		"UNIQUE (tenant_id, organization_id, certificate_id, artifact_type)",
+		"UNIQUE (tenant_id, organization_id, object_key)",
+		"REFERENCES certificate_record(id)",
+		"ENABLE ROW LEVEL SECURITY",
+		"FORCE ROW LEVEL SECURITY",
+		"certificate_artifact_tenant_isolation",
+		"current_setting('integin.tenant_id', true)",
+		"current_setting('integin.organization_id', true)",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	downSQL, err := os.ReadFile("0015_certificate_artifact_metadata.down.candidate.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(downSQL), "DROP TABLE certificate_artifact") {
+		t.Fatal("0015 down migration missing DROP TABLE certificate_artifact")
+	}
+}
