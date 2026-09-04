@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS work_order_site_handover CASCADE;
+DROP TABLE IF EXISTS custody_chain CASCADE;
+
+COMMIT;
