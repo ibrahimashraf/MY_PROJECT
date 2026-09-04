@@ -257,3 +257,89 @@ func (r *Repository) GetHandover(ctx context.Context, actor custodyhandover.Acto
 	}
 	return req, nil
 }
+
+// UpdateHandoverState advances the handover state machine with optimistic concurrency locking.
+func (r *Repository) UpdateHandoverState(ctx context.Context, actor custodyhandover.ActorContext, id string, target custodyhandover.HandoverState, expectedRev int64, extra custodyhandover.HandoverTransitionMetadata) (custodyhandover.HandoverRequest, error) {
+	if err := actor.Validate(); err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	tx, err := r.begin(ctx, actor)
+	if err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	defer tx.Rollback()
+
+	current, err := r.GetHandover(ctx, actor, id)
+	if err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	if current.Revision != expectedRev {
+		return custodyhandover.HandoverRequest{}, custodyhandover.ErrStaleRevision
+	}
+	if !custodyhandover.CanTransition(current.State, target) {
+		return custodyhandover.HandoverRequest{}, custodyhandover.ErrInvalidTransition
+	}
+
+	current.State = target
+	current.Revision = expectedRev + 1
+	current.UpdatedAt = time.Now().UTC()
+
+	switch target {
+	case custodyhandover.HandoverStateAcknowledged:
+		current.AcknowledgedBy = extra.AcknowledgedBy
+		current.AcknowledgedAt = extra.AcknowledgedAt
+	case custodyhandover.HandoverStateApproved:
+		current.ApprovedBy = extra.ApprovedBy
+		current.ApprovedAt = extra.ApprovedAt
+	case custodyhandover.HandoverStateTransferred:
+		current.TransferredBy = extra.TransferredBy
+		current.TransferredAt = extra.TransferredAt
+	case custodyhandover.HandoverStateRejected:
+		current.RejectionReason = extra.RejectionReason
+	}
+
+	if err := current.Validate(); err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+
+	query := `
+		UPDATE work_order_site_handover
+		SET state = $1, acknowledged_by = $2, acknowledged_at = $3,
+		    approved_by = $4, approved_at = $5,
+		    transferred_by = $6, transferred_at = $7,
+		    rejection_reason = $8, revision = $9, updated_at = $10
+		WHERE id = $11 AND tenant_id = $12 AND organization_id = $13 AND revision = $14
+	`
+	res, err := tx.ExecContext(ctx, query,
+		string(current.State),
+		current.AcknowledgedBy,
+		current.AcknowledgedAt,
+		current.ApprovedBy,
+		current.ApprovedAt,
+		current.TransferredBy,
+		current.TransferredAt,
+		current.RejectionReason,
+		current.Revision,
+		current.UpdatedAt,
+		current.ID,
+		actor.TenantID,
+		actor.OrganizationID,
+		expectedRev,
+	)
+	if err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	if rows == 0 {
+		return custodyhandover.HandoverRequest{}, custodyhandover.ErrStaleRevision
+	}
+
+	if err := tx.Commit(); err != nil {
+		return custodyhandover.HandoverRequest{}, err
+	}
+	return current, nil
+}
+

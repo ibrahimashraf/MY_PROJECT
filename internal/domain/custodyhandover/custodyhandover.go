@@ -216,13 +216,21 @@ func CanTransition(current, next HandoverState) bool {
 	return transitions[current][next]
 }
 
-// Service defines domain operations on custody and handover.
-type Service interface {
+// Repository defines persistence operations on custody and handover under forced RLS.
+type Repository interface {
 	RecordCustody(ctx context.Context, actor ActorContext, record CustodyRecord) (CustodyRecord, error)
 	RequestHandover(ctx context.Context, actor ActorContext, req HandoverRequest) (HandoverRequest, error)
-	AcknowledgeHandover(ctx context.Context, actor ActorContext, id string, expectedRev int64) (HandoverRequest, error)
-	ApproveHandover(ctx context.Context, actor ActorContext, id string, expectedRev int64) (HandoverRequest, error)
-	CompleteHandover(ctx context.Context, actor ActorContext, id string, expectedRev int64) (HandoverRequest, error)
-	RejectHandover(ctx context.Context, actor ActorContext, id string, reason string, expectedRev int64) (HandoverRequest, error)
-	CancelHandover(ctx context.Context, actor ActorContext, id string, expectedRev int64) (HandoverRequest, error)
+	GetHandover(ctx context.Context, actor ActorContext, id string) (HandoverRequest, error)
+	UpdateHandoverState(ctx context.Context, actor ActorContext, id string, target HandoverState, expectedRev int64, extra HandoverTransitionMetadata) (HandoverRequest, error)
+}
+
+// HandoverTransitionMetadata carries optional metadata for state transitions.
+type HandoverTransitionMetadata struct {
+	AcknowledgedBy  string
+	AcknowledgedAt  *time.Time
+	ApprovedBy      string
+	ApprovedAt      *time.Time
+	TransferredBy   string
+	TransferredAt   *time.Time
+	RejectionReason string
 }
