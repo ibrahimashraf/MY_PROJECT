@@ -41,6 +41,9 @@ func TestAuthorizerAllowsCurrentRoleCapabilityMatrix(t *testing.T) {
 		{"request certificate validation as reviewer", matrixActor("reviewer", CapabilityRequestValidation, "reviewer-1"), func(actor workorder.ActorContext) error {
 			return authorizer.CanRequestCertificateValidation(ctx, actor, order)
 		}},
+		{"handover as inspector", matrixActor("inspector", CapabilityHandover, "inspector-1"), func(actor workorder.ActorContext) error {
+			return authorizer.CanHandover(ctx, actor, order)
+		}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -131,6 +134,9 @@ func TestAuthorizerDeniesOrderScopeMismatch(t *testing.T) {
 		}},
 		{"request certificate validation", matrixActor("reviewer", CapabilityRequestValidation, "reviewer-1"), func(actor workorder.ActorContext) error {
 			return authorizer.CanRequestCertificateValidation(ctx, actor, order)
+		}},
+		{"handover", matrixActor("inspector", CapabilityHandover, "inspector-1"), func(actor workorder.ActorContext) error {
+			return authorizer.CanHandover(ctx, actor, order)
 		}},
 	}
 	for _, test := range tests {

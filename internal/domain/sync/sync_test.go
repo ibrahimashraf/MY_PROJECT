@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 	"time"
@@ -82,6 +83,55 @@ func TestSyncHoldsSequenceGapsAndAppliesNextSequence(t *testing.T) {
 	}
 	if duplicate := processor.Submit(signedTransaction("tx-2", 2, []byte("second")), authority, at); duplicate.Outcome != Duplicate {
 		t.Fatalf("expected resumed transaction replay to be duplicate, got %#v", duplicate)
+	}
+}
+
+func TestSyncDrainHeldCascadesConsecutiveSequences(t *testing.T) {
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, authority := trustedDevice(t)
+	processor.RegisterDevice(device)
+	at := time.Date(2026, 8, 13, 12, 30, 0, 0, time.UTC)
+
+	// Submit out of order: tx-3 (seq 3) and tx-2 (seq 2)
+	gap3 := processor.Submit(signedTransaction("tx-3", 3, []byte("third")), authority, at)
+	if gap3.Outcome != Held || gap3.ExpectedSequence != 1 {
+		t.Fatalf("expected tx-3 held, got %#v", gap3)
+	}
+	gap2 := processor.Submit(signedTransaction("tx-2", 2, []byte("second")), authority, at)
+	if gap2.Outcome != Held || gap2.ExpectedSequence != 1 {
+		t.Fatalf("expected tx-2 held, got %#v", gap2)
+	}
+	if len(processor.HeldTransactions()) != 2 {
+		t.Fatalf("expected 2 held transactions, got %d", len(processor.HeldTransactions()))
+	}
+
+	// Submit tx-1 (seq 1)
+	first := processor.Submit(signedTransaction("tx-1", 1, []byte("first")), authority, at)
+	if first.Outcome != Applied {
+		t.Fatalf("expected tx-1 applied, got %#v", first)
+	}
+
+	// Now DrainHeld should cascade drain tx-2 (seq 2) then tx-3 (seq 3)
+	drained := processor.DrainHeld(context.Background(), "tenant-1", "device-1", at)
+	if len(drained) != 2 {
+		t.Fatalf("expected 2 transactions drained, got %d (%#v)", len(drained), drained)
+	}
+	if drained[0].TransactionID != "tx-2" || drained[0].Outcome != Applied || drained[0].ExpectedSequence != 2 {
+		t.Fatalf("expected tx-2 drained as seq 2 applied, got %#v", drained[0])
+	}
+	if drained[1].TransactionID != "tx-3" || drained[1].Outcome != Applied || drained[1].ExpectedSequence != 3 {
+		t.Fatalf("expected tx-3 drained as seq 3 applied, got %#v", drained[1])
+	}
+	if len(processor.HeldTransactions()) != 0 {
+		t.Fatalf("expected 0 held transactions remaining, got %d", len(processor.HeldTransactions()))
+	}
+
+	// Further replay should be duplicate
+	if dup := processor.Submit(signedTransaction("tx-3", 3, []byte("third")), authority, at); dup.Outcome != Duplicate {
+		t.Fatalf("expected tx-3 duplicate after drain, got %#v", dup)
 	}
 }
 

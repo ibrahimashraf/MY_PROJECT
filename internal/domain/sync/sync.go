@@ -266,6 +266,62 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	return result
 }
 
+// DrainHeld explicitly processes consecutive held transactions for the specified device.
+func (p *Processor) DrainHeld(ctx context.Context, tenantID, deviceID string, at time.Time) []Result {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.drainHeldLocked(ctx, tenantID, deviceID, at)
+}
+
+func (p *Processor) drainHeldLocked(ctx context.Context, tenantID, deviceID string, at time.Time) []Result {
+	_, exists := p.devices[deviceID]
+	if !exists {
+		return nil
+	}
+	var drained []Result
+	// Cascade drain consecutive sequence numbers
+	for {
+		nextSeq := p.lastSequence[deviceID] + 1
+		var candidate *Transaction
+		// Check in-memory held map
+		for _, tx := range p.held {
+			if tx.DeviceID == deviceID && tx.SequenceNumber == nextSeq {
+				c := tx
+				candidate = &c
+				break
+			}
+		}
+		// If not in memory, check durable state
+		if candidate == nil && p.state != nil {
+			heldList, err := p.state.ListHeld(ctx, tenantID, deviceID)
+			if err == nil {
+				for _, h := range heldList {
+					if h.Receipt.SequenceNumber == nextSeq {
+						var parsed Transaction
+						if json.Unmarshal(h.Envelope, &parsed) == nil {
+							candidate = &parsed
+							break
+						}
+					}
+				}
+			}
+		}
+		if candidate == nil {
+			break
+		}
+		res := Result{TransactionID: candidate.TransactionID, PayloadHash: candidate.PayloadHash, ExpectedSequence: nextSeq}
+		res.Outcome, res.Reason = Applied, "transaction applied from held queue"
+		if err := p.persistReceipt(ctx, *candidate, res, at); err != nil {
+			break
+		}
+		p.lastSequence[deviceID] = nextSeq
+		p.transactions[candidate.TransactionID] = candidate.PayloadHash
+		delete(p.held, candidate.TransactionID)
+		drained = append(drained, res)
+	}
+	return drained
+}
+
 func (p *Processor) persistReceipt(ctx context.Context, transaction Transaction, result Result, at time.Time) error {
 	if p.state == nil {
 		return nil

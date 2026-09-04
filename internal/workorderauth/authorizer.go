@@ -18,6 +18,7 @@ const (
 	CapabilityReconcileProvisional = "workorder.reconcile_provisional"
 	CapabilityRequestValidation    = "workorder.request_certificate_validation"
 	CapabilityAddEvidenceReference = "workorder.add_evidence_reference"
+	CapabilityHandover             = "workorder.handover"
 )
 
 type Authorizer struct{}
@@ -63,6 +64,10 @@ func (Authorizer) CanRequestCertificateValidation(_ context.Context, actor worko
 
 func (Authorizer) CanAddEvidenceReference(_ context.Context, actor workorder.ActorContext, order workorder.WorkOrder, _ workorder.EvidenceReference) error {
 	return authorizeOrder(actor, order, CapabilityAddEvidenceReference, "inspector", "manager", "administrator", "reviewer")
+}
+
+func (Authorizer) CanHandover(_ context.Context, actor workorder.ActorContext, order workorder.WorkOrder) error {
+	return authorizeOrder(actor, order, CapabilityHandover, "inspector", "manager", "administrator")
 }
 
 func authorizeOrder(actor workorder.ActorContext, order workorder.WorkOrder, capability string, roles ...string) error {

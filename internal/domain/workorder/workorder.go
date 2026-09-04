@@ -22,6 +22,7 @@ const (
 	ExecutionReady              ExecutionState = "ready"
 	ExecutionAssigned           ExecutionState = "assigned"
 	ExecutionInProgress         ExecutionState = "in_progress"
+	ExecutionSuspended          ExecutionState = "suspended"
 	ExecutionPartiallySubmitted ExecutionState = "partially_submitted"
 	ExecutionAwaitingClient     ExecutionState = "awaiting_client"
 	ExecutionAwaitingReview     ExecutionState = "awaiting_review"
@@ -215,7 +216,8 @@ func CanTransition(from, to ExecutionState) bool {
 	allowed := map[ExecutionState]map[ExecutionState]bool{
 		ExecutionReady:              {ExecutionAssigned: true},
 		ExecutionAssigned:           {ExecutionInProgress: true},
-		ExecutionInProgress:         {ExecutionPartiallySubmitted: true, ExecutionAwaitingClient: true, ExecutionAwaitingReview: true, ExecutionCompleted: true},
+		ExecutionInProgress:         {ExecutionSuspended: true, ExecutionPartiallySubmitted: true, ExecutionAwaitingClient: true, ExecutionAwaitingReview: true, ExecutionCompleted: true},
+		ExecutionSuspended:          {ExecutionInProgress: true, ExecutionCompleted: true},
 		ExecutionPartiallySubmitted: {ExecutionInProgress: true, ExecutionAwaitingReview: true, ExecutionCompleted: true},
 		ExecutionAwaitingClient:     {ExecutionInProgress: true, ExecutionCompleted: true},
 		ExecutionAwaitingReview:     {ExecutionInProgress: true, ExecutionCompleted: true},

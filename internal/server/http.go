@@ -35,6 +35,7 @@ type Dependencies struct {
 	OIDCSessionHandler             http.Handler
 	WorkOrderHandler               http.Handler
 	WorkOrderEvidenceHandler       http.Handler
+	WorkOrderHandoverHandler       http.Handler
 	WorkOrderReconciliationHandler http.Handler
 	CertificateHandler             http.Handler
 	CertificatePublicHandler       http.Handler

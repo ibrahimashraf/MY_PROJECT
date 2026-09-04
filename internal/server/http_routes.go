@@ -17,6 +17,9 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 	if d.WorkOrderHandler != nil {
 		mux.Handle("/work-orders/partial-submissions", d.WorkOrderHandler)
 	}
+	if d.WorkOrderHandoverHandler != nil {
+		mux.Handle("/work-orders/handovers/", d.WorkOrderHandoverHandler)
+	}
 	if d.WorkOrderEvidenceHandler != nil {
 		mux.Handle("/work-orders/", d.WorkOrderEvidenceHandler)
 	}
