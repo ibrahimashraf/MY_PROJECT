@@ -5,6 +5,7 @@ import { SettingsPage } from './admin/pages/SettingsPage'
 import { SearchAdminPage } from './admin/pages/SearchAdminPage'
 import { AuditLogPage } from './admin/pages/AuditLogPage'
 import { FieldApp } from './field/FieldApp'
+import { AdvisoryPanel } from './advisory/AdvisoryPanel'
 import './App.css'
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -30,10 +31,6 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       </main>
     </div>
   )
-}
-
-function AdvisoryPanel() {
-  return <div style={{ padding: 20 }}><h2>Advisory Panel</h2><p>Quiet Signal secondary advisor.</p></div>
 }
 
 export default function App() {
