@@ -201,7 +201,7 @@ func main() {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
 		var handlerErr error
-		certificateHandler, handlerErr = server.NewCertificateHandler(database, validator, activeResolver)
+		certificateHandler, handlerErr = server.NewCertificateHandlerWithStore(database, validator, activeResolver, evidenceStore)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
