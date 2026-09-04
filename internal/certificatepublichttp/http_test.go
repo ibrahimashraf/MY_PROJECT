@@ -187,6 +187,29 @@ func TestUntrustedProxyIgnoresForwardedHeaders(t *testing.T) {
 	}
 }
 
+func TestPublicProjectionServesHTMLWhenRequested(t *testing.T) {
+	v := &verifierStub{found: true}
+	h := &Handler{Verifier: v, Limit: 2}
+	r := httptest.NewRequest(http.MethodGet, "/verify/certificates/"+strings.Repeat("a", 43), nil)
+	r.RemoteAddr = "127.0.0.1:1"
+	r.Header.Set("Accept", "text/html,application/xhtml+xml")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	if !strings.Contains(w.Header().Get("Content-Type"), "text/html") {
+		t.Fatalf("expected text/html content-type, got %q", w.Header().Get("Content-Type"))
+	}
+	if !strings.Contains(w.Body.String(), "INTEGIN VERIFIED") {
+		t.Fatalf("missing verified banner in HTML body: %s", w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "CERT-00000001") {
+		t.Fatalf("missing certificate number in HTML body: %s", w.Body.String())
+	}
+}
+
+
 
 func BenchmarkPublicVerifierHandler(b *testing.B) {
 	handler := &Handler{Verifier: richVerifierStub{}, Limit: b.N + 1}

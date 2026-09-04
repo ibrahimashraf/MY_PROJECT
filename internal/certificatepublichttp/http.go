@@ -91,6 +91,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(view.TestScope) > 0 {
 		response["test_scope"] = json.RawMessage(view.TestScope)
 	}
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		replyHTML(w, http.StatusOK, view)
+		return
+	}
 	reply(w, http.StatusOK, response)
 }
 
