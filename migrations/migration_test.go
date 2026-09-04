@@ -76,9 +76,12 @@ func TestEventLogTenantRLSMigrationContract(t *testing.T) {
 }
 
 func TestAnomalyDetectionMigrationContract(t *testing.T) {
-	sql, err := os.ReadFile("0048_anomaly_detection.candidate.sql")
+	sql, err := os.ReadFile("0048_anomaly_detection.sql")
 	if err != nil {
-		t.Fatal(err)
+		sql, err = os.ReadFile("0048_anomaly_detection.candidate.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	text := string(sql)
 	required := []string{
@@ -101,15 +104,20 @@ func TestAnomalyDetectionMigrationContract(t *testing.T) {
 			t.Fatalf("migration missing %q", fragment)
 		}
 	}
-	if _, err := os.Stat("0048_anomaly_detection.down.candidate.sql"); err != nil {
-		t.Fatal(err)
+	if _, err := os.Stat("0048_anomaly_detection.down.sql"); err != nil {
+		if _, err := os.Stat("0048_anomaly_detection.down.candidate.sql"); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
 func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
-	sql, err := os.ReadFile("0015_certificate_artifact_metadata.candidate.sql")
+	sql, err := os.ReadFile("0015_certificate_artifact_metadata.sql")
 	if err != nil {
-		t.Fatal(err)
+		sql, err = os.ReadFile("0015_certificate_artifact_metadata.candidate.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	text := string(sql)
 	required := []string{
@@ -139,9 +147,12 @@ func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
 			t.Fatalf("migration missing %q", fragment)
 		}
 	}
-	downSQL, err := os.ReadFile("0015_certificate_artifact_metadata.down.candidate.sql")
+	downSQL, err := os.ReadFile("0015_certificate_artifact_metadata.down.sql")
 	if err != nil {
-		t.Fatal(err)
+		downSQL, err = os.ReadFile("0015_certificate_artifact_metadata.down.candidate.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 	if !strings.Contains(string(downSQL), "DROP TABLE certificate_artifact") {
 		t.Fatal("0015 down migration missing DROP TABLE certificate_artifact")
