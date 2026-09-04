@@ -23,6 +23,14 @@ func (h *Handler) allow(k string, n time.Time) bool {
 	if h.rates == nil {
 		h.rates = map[string]rateWindow{}
 	}
+	// Bounded cleanup: prevent slowloris/botnet memory creep
+	if len(h.rates) > 2048 {
+		for key, win := range h.rates {
+			if n.Sub(win.started) > 2*w {
+				delete(h.rates, key)
+			}
+		}
+	}
 	s := h.rates[k]
 	if s.started.IsZero() || n.Sub(s.started) >= w {
 		s = rateWindow{started: n}

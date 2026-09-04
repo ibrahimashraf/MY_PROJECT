@@ -49,21 +49,14 @@ type response struct {
 }
 
 func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request) {
+	writer.Header().Set("Deprecation", "true")
+	writer.Header().Set("Sunset", "2027-01-01T00:00:00Z")
 	if requestHTTP.Method != http.MethodPost {
 		writeJSON(writer, http.StatusMethodNotAllowed, response{Outcome: "REJECTED", Reason: "POST is required"})
 		return
 	}
 	if h.Validator == nil || h.Resolver == nil || h.Store == nil {
 		writeJSON(writer, http.StatusServiceUnavailable, response{Outcome: "REJECTED", Reason: "evidence store or identity service is unavailable"})
-		return
-	}
-	var incoming request
-	if err := json.NewDecoder(requestHTTP.Body).Decode(&incoming); err != nil {
-		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
-		return
-	}
-	if err := validate(incoming); err != nil {
-		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: err.Error()})
 		return
 	}
 	raw, ok := bearer(requestHTTP.Header.Get("Authorization"))
@@ -86,7 +79,24 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
 		return
 	}
-	// D-02: Overwrite caller-supplied tenant/org fields from the derived actor
+	var incoming request
+	if err := json.NewDecoder(requestHTTP.Body).Decode(&incoming); err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
+		return
+	}
+	if err := validate(incoming); err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: err.Error()})
+		return
+	}
+	// D-02: Strict authority binding - if caller supplies tenant_id or organization_id, it must match authenticated actor
+	if incoming.TenantID != "" && incoming.TenantID != actor.TenantID {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "tenant scope mismatch"})
+		return
+	}
+	if incoming.OrganizationID != "" && incoming.OrganizationID != actor.OrganizationID {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "organization scope mismatch"})
+		return
+	}
 	incoming.TenantID = actor.TenantID
 	incoming.OrganizationID = actor.OrganizationID
 	data, err := base64.StdEncoding.DecodeString(incoming.Base64Blob)
