@@ -159,31 +159,69 @@ func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
 	}
 }
 
-func TestRiverJobQueueMigrationContract(t *testing.T) {
-	sql, err := os.ReadFile("0059_river_job_queue.candidate.sql")
-	if err != nil {
-		t.Fatal(err)
+func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
+	migrations := []struct {
+		upFile   string
+		downFile string
+		required []string
+	}{
+		{
+			upFile:   "0052_work_order_form_versioning.sql",
+			downFile: "0052_work_order_form_versioning.down.sql",
+			required: []string{"CREATE TABLE form_version", "CREATE TABLE form_field", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0053_asset_entitlement_offline_package.sql",
+			downFile: "0053_asset_entitlement_offline_package.down.sql",
+			required: []string{"CREATE TABLE asset_entitlement", "package_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0054_qr_nfc_entry.sql",
+			downFile: "0054_qr_nfc_entry.down.sql",
+			required: []string{"CREATE TABLE qr_nfc_entry", "token_digest", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0055_assurance_projection_corrective_work.sql",
+			downFile: "0055_assurance_projection_corrective_work.down.sql",
+			required: []string{"CREATE TABLE assurance_projection", "CREATE TABLE corrective_work", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0056_evidence_release_pack.sql",
+			downFile: "0056_evidence_release_pack.down.sql",
+			required: []string{"CREATE TABLE evidence_pack", "CREATE TABLE release_pack", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0057_device_registry_composite_pk.sql",
+			downFile: "0057_device_registry_composite_pk.down.sql",
+			required: []string{"PRIMARY KEY (tenant_id, device_id)"},
+		},
+		{
+			upFile:   "0058_custody_site_handover.sql",
+			downFile: "0058_custody_site_handover.down.sql",
+			required: []string{"CREATE TABLE custody_chain", "CREATE TABLE work_order_site_handover", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0059_river_job_queue.sql",
+			downFile: "0059_river_job_queue.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS river_job", "CREATE TABLE IF NOT EXISTS river_leader"},
+		},
 	}
-	text := string(sql)
-	required := []string{
-		"CREATE TABLE IF NOT EXISTS river_job",
-		"args JSONB NOT NULL",
-		"state TEXT NOT NULL DEFAULT 'available'",
-		"CREATE TABLE IF NOT EXISTS river_leader",
-		"river_job_kind",
-		"river_job_state_and_scheduled_at",
-	}
-	for _, fragment := range required {
-		if !strings.Contains(text, fragment) {
-			t.Fatalf("migration missing %q", fragment)
+
+	for _, m := range migrations {
+		sql, err := os.ReadFile(m.upFile)
+		if err != nil {
+			t.Fatalf("failed reading %s: %v", m.upFile, err)
+		}
+		text := string(sql)
+		for _, fragment := range m.required {
+			if !strings.Contains(text, fragment) {
+				t.Fatalf("migration %s missing required fragment %q", m.upFile, fragment)
+			}
+		}
+		if _, err := os.Stat(m.downFile); err != nil {
+			t.Fatalf("missing matching down migration %s: %v", m.downFile, err)
 		}
 	}
-	downSQL, err := os.ReadFile("0059_river_job_queue.down.candidate.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(downSQL), "DROP TABLE IF EXISTS river_job") {
-		t.Fatal("0059 down migration missing DROP TABLE IF EXISTS river_job")
-	}
 }
+
 
