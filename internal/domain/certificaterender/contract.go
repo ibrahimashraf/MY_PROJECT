@@ -307,16 +307,16 @@ body {
 
 		// Render Header if Page 1
 		if page == 1 {
-			sb.WriteString(`  <div class="header-bar">
+			fmt.Fprintf(&sb, `  <div class="header-bar">
     <div>
       <div class="title-ar">شهادة فحص واختبار معتمدة</div>
       <div class="title-en" dir="ltr">Inspection &amp; Test Certificate</div>
     </div>
     <div style="text-align: left;" dir="ltr">
-      <div style="font-size: 11pt; font-weight: bold;">` + html.EscapeString(input.CertificateNumber) + `</div>
-      <div style="font-size: 8pt; color: #93c5fd;">` + input.IssuedAt.Format("2006-01-02") + `</div>
+      <div style="font-size: 11pt; font-weight: bold;">%s</div>
+      <div style="font-size: 8pt; color: #93c5fd;">%s</div>
     </div>
-  </div>` + "\n")
+  </div>`+"\n", html.EscapeString(input.CertificateNumber), input.IssuedAt.Format("2006-01-02"))
 		}
 
 		// Render Cells for this page
