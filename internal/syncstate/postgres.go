@@ -254,7 +254,7 @@ func (r *PostgresRepository) SaveReceipt(ctx context.Context, receipt Receipt) e
 		if existingOutcome != "HELD" || receipt.Outcome != "APPLIED" {
 			return ErrConflict
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE sync_receipt SET outcome = $1, reason = $2, received_at = $3 WHERE tenant_id = $4 AND transaction_id = $5 AND outcome = 'HELD'`, receipt.Outcome, receipt.Reason, receipt.ReceivedAt, receipt.TenantID, receipt.TransactionID); err != nil {
+		if _, err = tx.ExecContext(ctx, `UPDATE sync_receipt SET outcome = $1, reason = $2 WHERE tenant_id = $3 AND transaction_id = $4 AND outcome = 'HELD'`, receipt.Outcome, receipt.Reason, receipt.TenantID, receipt.TransactionID); err != nil {
 			return err
 		}
 	case errors.Is(err, sql.ErrNoRows):
