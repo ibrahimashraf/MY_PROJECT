@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
+	"integin/internal/domain/workorder"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 )
@@ -15,28 +15,51 @@ func (compositionTestResolver) Resolve(context.Context, identity.PrincipalKey) (
 	return identity.Membership{}, nil
 }
 
+type compositionTestWorkOrderService struct{}
+
+func (compositionTestWorkOrderService) CreateRequest(context.Context, workorder.CreateRequestCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) AssignScope(context.Context, workorder.AssignScopeCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) TransitionExecution(context.Context, workorder.TransitionExecutionCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) SubmitPartial(context.Context, workorder.SubmitPartialCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) ReassignScope(context.Context, workorder.ReassignScopeCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) ReconcileProvisional(context.Context, workorder.ReconcileProvisionalCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) RequestCertificateValidation(context.Context, workorder.RequestCertificateValidationCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+func (compositionTestWorkOrderService) AddEvidenceReference(context.Context, workorder.AddEvidenceReferenceCommand) (workorder.MutationReceipt, error) {
+	return workorder.MutationReceipt{}, nil
+}
+
 func TestNewWorkOrderPartialSubmissionHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
+	service := compositionTestWorkOrderService{}
 
 	tests := []struct {
 		name      string
-		database  *sql.DB
+		service   workorder.Service
 		validator *oidcauth.Validator
 		resolver  identity.Resolver
 	}{
-		{name: "missing database", database: nil, validator: validator, resolver: resolver},
-		{name: "missing validator", database: db, validator: nil, resolver: resolver},
-		{name: "missing resolver", database: db, validator: validator, resolver: nil},
+		{name: "missing service", service: nil, validator: validator, resolver: resolver},
+		{name: "missing validator", service: service, validator: nil, resolver: resolver},
+		{name: "missing resolver", service: service, validator: validator, resolver: nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if handler, err := NewWorkOrderPartialSubmissionHandler(test.database, test.validator, test.resolver); handler != nil || err == nil {
+			if handler, err := NewWorkOrderPartialSubmissionHandlerFromService(test.service, test.validator, test.resolver); handler != nil || err == nil {
 				t.Fatalf("expected dependency failure, handler=%T err=%v", handler, err)
 			}
 		})
@@ -44,13 +67,7 @@ func TestNewWorkOrderPartialSubmissionHandlerFailsClosedOnMissingDependency(t *t
 }
 
 func TestNewWorkOrderPartialSubmissionHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	handler, err := NewWorkOrderPartialSubmissionHandler(db, &oidcauth.Validator{}, compositionTestResolver{})
+	handler, err := NewWorkOrderPartialSubmissionHandlerFromService(compositionTestWorkOrderService{}, &oidcauth.Validator{}, compositionTestResolver{})
 	if err != nil {
 		t.Fatalf("expected local composition to succeed without connecting, got %v", err)
 	}
@@ -62,25 +79,21 @@ func TestNewWorkOrderPartialSubmissionHandlerBuildsWithoutConnecting(t *testing.
 func TestNewWorkOrderHandoverHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
+	service := compositionTestWorkOrderService{}
 
 	tests := []struct {
 		name      string
-		database  *sql.DB
+		service   workorder.Service
 		validator *oidcauth.Validator
 		resolver  identity.Resolver
 	}{
-		{name: "missing database", database: nil, validator: validator, resolver: resolver},
-		{name: "missing validator", database: db, validator: nil, resolver: resolver},
-		{name: "missing resolver", database: db, validator: validator, resolver: nil},
+		{name: "missing service", service: nil, validator: validator, resolver: resolver},
+		{name: "missing validator", service: service, validator: nil, resolver: resolver},
+		{name: "missing resolver", service: service, validator: validator, resolver: nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if handler, err := NewWorkOrderHandoverHandler(test.database, test.validator, test.resolver); handler != nil || err == nil {
+			if handler, err := NewWorkOrderHandoverHandlerFromService(test.service, test.validator, test.resolver); handler != nil || err == nil {
 				t.Fatalf("expected dependency failure, handler=%T err=%v", handler, err)
 			}
 		})
@@ -88,13 +101,7 @@ func TestNewWorkOrderHandoverHandlerFailsClosedOnMissingDependency(t *testing.T)
 }
 
 func TestNewWorkOrderHandoverHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	handler, err := NewWorkOrderHandoverHandler(db, &oidcauth.Validator{}, compositionTestResolver{})
+	handler, err := NewWorkOrderHandoverHandlerFromService(compositionTestWorkOrderService{}, &oidcauth.Validator{}, compositionTestResolver{})
 	if err != nil {
 		t.Fatalf("expected local composition to succeed without connecting, got %v", err)
 	}

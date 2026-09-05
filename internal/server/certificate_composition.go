@@ -19,18 +19,31 @@ func NewCertificateHandler(database *sql.DB, validator *oidcauth.Validator, reso
 }
 
 func NewCertificateHandlerWithStore(database *sql.DB, validator *oidcauth.Validator, resolver identity.Resolver, store storage.Store) (http.Handler, error) {
-	if database == nil || validator == nil || resolver == nil {
-		return nil, errors.New("certificate handler requires database, OIDC validator, and identity resolver")
+	if database == nil {
+		return nil, errors.New("certificate handler requires database")
 	}
 	repository, err := certificatepg.NewRepository(database)
 	if err != nil {
 		return nil, err
 	}
+	return NewCertificateHandlerFromLifecycleWithStore(repository, validator, resolver, store)
+}
+
+func NewCertificateHandlerFromLifecycle(lifecycle certificatehttp.Lifecycle, validator *oidcauth.Validator, resolver identity.Resolver) (http.Handler, error) {
+	return NewCertificateHandlerFromLifecycleWithStore(lifecycle, validator, resolver, nil)
+}
+
+func NewCertificateHandlerFromLifecycleWithStore(lifecycle certificatehttp.Lifecycle, validator *oidcauth.Validator, resolver identity.Resolver, store storage.Store) (http.Handler, error) {
+	if lifecycle == nil || validator == nil || resolver == nil {
+		return nil, errors.New("certificate handler requires lifecycle, OIDC validator, and identity resolver")
+	}
 	var artifactRetriever certificatehttp.ArtifactRetriever
 	if store != nil {
-		artifactRetriever = &certificateArtifactStoreAdapter{
-			repository: repository,
-			store:      store,
+		if repo, ok := lifecycle.(*certificatepg.Repository); ok {
+			artifactRetriever = &certificateArtifactStoreAdapter{
+				repository: repo,
+				store:      store,
+			}
 		}
 	}
 	return certificatehttp.Handler{
@@ -38,7 +51,7 @@ func NewCertificateHandlerWithStore(database *sql.DB, validator *oidcauth.Valida
 		Actors: certificatehttp.LocalActorResolver{
 			Memberships: resolver,
 		},
-		Lifecycle: repository,
+		Lifecycle: lifecycle,
 		Artifacts: artifactRetriever,
 	}, nil
 }

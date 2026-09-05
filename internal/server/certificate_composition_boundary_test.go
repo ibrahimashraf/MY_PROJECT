@@ -1,38 +1,66 @@
 package server
 
 import (
-	"database/sql"
+	"context"
 	"testing"
+	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-
+	"integin/internal/certificatehttp"
+	"integin/internal/certificatepg"
+	"integin/internal/domain/certificateauthority"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
 )
 
+type compositionTestLifecycle struct{}
+
+func (compositionTestLifecycle) CreateDraft(context.Context, certificateauthority.ActorContext, certificateauthority.CreateDraftRequest, time.Time) (*certificateauthority.Certificate, error) {
+	return nil, nil
+}
+func (compositionTestLifecycle) Submit(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Review(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {
+	return certificatepg.IssueResult{}, nil
+}
+func (compositionTestLifecycle) Revoke(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Renew(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Supersede(context.Context, certificateauthority.ActorContext, string, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Expire(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+	return nil
+}
+
 func TestNewCertificateHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
+	lifecycle := compositionTestLifecycle{}
 
 	tests := []struct {
 		name      string
-		database  *sql.DB
+		lifecycle certificatehttp.Lifecycle
 		validator *oidcauth.Validator
 		resolver  identity.Resolver
 	}{
-		{name: "missing database", database: nil, validator: validator, resolver: resolver},
-		{name: "missing validator", database: db, validator: nil, resolver: resolver},
-		{name: "missing resolver", database: db, validator: validator, resolver: nil},
+		{name: "missing lifecycle", lifecycle: nil, validator: validator, resolver: resolver},
+		{name: "missing validator", lifecycle: lifecycle, validator: nil, resolver: resolver},
+		{name: "missing resolver", lifecycle: lifecycle, validator: validator, resolver: nil},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if handler, err := NewCertificateHandler(test.database, test.validator, test.resolver); handler != nil || err == nil {
+			if handler, err := NewCertificateHandlerFromLifecycle(test.lifecycle, test.validator, test.resolver); handler != nil || err == nil {
 				t.Fatalf("expected dependency failure, handler=%T err=%v", handler, err)
 			}
 		})
@@ -40,13 +68,7 @@ func TestNewCertificateHandlerFailsClosedOnMissingDependency(t *testing.T) {
 }
 
 func TestNewCertificateHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	handler, err := NewCertificateHandler(db, &oidcauth.Validator{}, compositionTestResolver{})
+	handler, err := NewCertificateHandlerFromLifecycle(compositionTestLifecycle{}, &oidcauth.Validator{}, compositionTestResolver{})
 	if err != nil {
 		t.Fatalf("expected local composition to succeed without connecting, got %v", err)
 	}
@@ -56,14 +78,8 @@ func TestNewCertificateHandlerBuildsWithoutConnecting(t *testing.T) {
 }
 
 func TestNewCertificateHandlerWithArtifactStore(t *testing.T) {
-	db, err := sql.Open("pgx", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
 	store := storage.NewInMemoryStore()
-	handler, err := NewCertificateHandlerWithStore(db, &oidcauth.Validator{}, compositionTestResolver{}, store)
+	handler, err := NewCertificateHandlerFromLifecycleWithStore(compositionTestLifecycle{}, &oidcauth.Validator{}, compositionTestResolver{}, store)
 	if err != nil {
 		t.Fatalf("expected composition with store to succeed, got %v", err)
 	}
