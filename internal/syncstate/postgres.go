@@ -85,20 +85,35 @@ func (r *PostgresRepository) ListDevices(ctx context.Context, tenantID string) (
 	return devices, nil
 }
 
+func (r *PostgresRepository) beginTenantOrg(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
+	if r == nil || r.DB == nil {
+		return nil, errors.New("database handle is required")
+	}
+	tx, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *PostgresRepository) SaveDevice(ctx context.Context, device DeviceRecord) error {
 	if err := ValidateDeviceRecord(device); err != nil {
 		return err
 	}
-	tx, err := r.beginTenant(ctx, device.TenantID)
+	tx, err := r.beginTenantOrg(ctx, device.TenantID, device.OrganizationID)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `INSERT INTO device_registry (device_id, tenant_id, organization_id, user_id, key_id, public_key, state, authority_epoch, enrolled_at, updated_at, revoked_at, revocation_reason) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NULLIF($12,'')) ON CONFLICT (device_id) DO UPDATE SET organization_id = EXCLUDED.organization_id, user_id = EXCLUDED.user_id, key_id = EXCLUDED.key_id, public_key = EXCLUDED.public_key, state = EXCLUDED.state, authority_epoch = EXCLUDED.authority_epoch, updated_at = EXCLUDED.updated_at, revoked_at = EXCLUDED.revoked_at, revocation_reason = EXCLUDED.revocation_reason WHERE device_registry.tenant_id = EXCLUDED.tenant_id`, device.DeviceID, device.TenantID, device.OrganizationID, device.UserID, device.KeyID, device.PublicKey, string(device.State), device.AuthorityEpoch, device.EnrolledAt, device.UpdatedAt, device.RevokedAt, device.RevocationReason)
+	_, err = tx.ExecContext(ctx, `INSERT INTO device_registry (device_id, tenant_id, organization_id, user_id, key_id, public_key, state, authority_epoch, enrolled_at, updated_at, revoked_at, revocation_reason) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NULLIF($12,'')) ON CONFLICT (tenant_id, device_id) DO UPDATE SET organization_id = EXCLUDED.organization_id, user_id = EXCLUDED.user_id, key_id = EXCLUDED.key_id, public_key = EXCLUDED.public_key, state = EXCLUDED.state, authority_epoch = EXCLUDED.authority_epoch, updated_at = EXCLUDED.updated_at, revoked_at = EXCLUDED.revoked_at, revocation_reason = EXCLUDED.revocation_reason WHERE device_registry.tenant_id = EXCLUDED.tenant_id`, device.DeviceID, device.TenantID, device.OrganizationID, device.UserID, device.KeyID, device.PublicKey, string(device.State), device.AuthorityEpoch, device.EnrolledAt, device.UpdatedAt, device.RevokedAt, device.RevocationReason)
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO sync_device_state (device_id, tenant_id, organization_id, updated_at) VALUES ($1,$2,$3,$4) ON CONFLICT (device_id) DO NOTHING`, device.DeviceID, device.TenantID, device.OrganizationID, device.UpdatedAt)
+	_, err = tx.ExecContext(ctx, `INSERT INTO sync_device_state (device_id, tenant_id, organization_id, updated_at) VALUES ($1,$2,$3,$4) ON CONFLICT (tenant_id, device_id) DO NOTHING`, device.DeviceID, device.TenantID, device.OrganizationID, device.UpdatedAt)
 	if err != nil {
 		return err
 	}

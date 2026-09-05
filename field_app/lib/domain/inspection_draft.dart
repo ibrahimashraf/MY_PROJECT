@@ -118,4 +118,34 @@ class InspectionDraft {
         'notes': notes,
         'findings': findings.values.map((finding) => finding.toJson()).toList(),
       };
+
+  Map<String, Object?> toJson() => {
+        'context': context.toJson(),
+        'recorded_by': recordedBy,
+        'created_at': createdAt.toUtc().toIso8601String(),
+        'status': status.name,
+        'notes': notes,
+        'findings': findings.map((k, v) => MapEntry(k, v.toJson())),
+      };
+
+  void hydrateFindings(Map<String, Object?> rawFindings) {
+    rawFindings.forEach((k, v) {
+      if (v is Map<String, Object?>) {
+        findings[k] = FindingDraft(
+          id: v['id'] as String? ?? '',
+          inspectionId: v['inspection_id'] as String? ?? workPack.inspectionId,
+          assetId: v['asset_id'] as String? ?? '',
+          sectionId: v['section_id'] as String? ?? '',
+          itemId: v['item_id'] as String? ?? k,
+          itemPrompt: v['item_prompt'] as String? ?? '',
+          response: v['response'] as String? ?? '',
+          recordedBy: v['recorded_by'] as String? ?? recordedBy,
+          recordedAt: DateTime.tryParse(v['recorded_at'] as String? ?? '') ?? DateTime.now().toUtc(),
+          measuredValue: (v['measured_value'] as num?)?.toDouble(),
+          measuredUnit: v['measured_unit'] as String?,
+          notes: v['notes'] as String?,
+        );
+      }
+    });
+  }
 }
