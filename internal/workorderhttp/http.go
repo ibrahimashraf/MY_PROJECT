@@ -96,10 +96,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusBadRequest
 		code := "mutation_rejected"
 		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			status = http.StatusNotFound
-			code = "not_found"
-		case errors.Is(err, workorderauth.ErrDenied):
+		case errors.Is(err, workorderauth.ErrDenied), errors.Is(err, sql.ErrNoRows):
 			status = http.StatusForbidden
 			code = "authorization_failed"
 		case errors.Is(err, workorderpg.ErrStaleRevision):
@@ -176,10 +173,7 @@ func (h EvidenceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusBadRequest
 		code := "mutation_rejected"
 		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			status = http.StatusNotFound
-			code = "not_found"
-		case errors.Is(err, workorderauth.ErrDenied):
+		case errors.Is(err, workorderauth.ErrDenied), errors.Is(err, sql.ErrNoRows):
 			status = http.StatusForbidden
 			code = "authorization_failed"
 		case errors.Is(err, workorderpg.ErrStaleRevision):
