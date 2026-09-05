@@ -82,7 +82,7 @@ func openCertificateIntegrationDB(t *testing.T) (*sql.DB, context.Context, worko
 	db.SetMaxOpenConns(5)
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
-		t.Fatal(err)
+		t.Skipf("skipping integration test: database not reachable: %v", err)
 	}
 	actor := workorder.ActorContext{TenantID: "pilot-tenant-runtime", OrganizationID: "pilot-organization-runtime", ActorID: "integration-manager", Role: "manager"}
 	return db, ctx, actor, fmt.Sprintf("it-certificate-%d", time.Now().UnixNano())

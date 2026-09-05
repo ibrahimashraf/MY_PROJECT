@@ -4,6 +4,9 @@ import '../application/field_app_controller.dart';
 import '../domain/inspection_draft.dart';
 import '../sync/event_stream_client.dart';
 import '../workpackages/package_compatibility.dart';
+import 'adaptive_scaffold.dart';
+import 'custody_handover_view.dart';
+import 'dynamic_form_view.dart';
 
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
@@ -68,63 +71,101 @@ class _FieldHomePageState extends State<FieldHomePage> {
       cachedAuthorityEpoch: controller.authority.epoch,
       requiredAuthorityEpoch: controller.authority.epoch,
     );
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('INTEGIN Field'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
-                child: Text(
-                    '${controller.connectivity.name} · ${controller.queuedCount} queued')),
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-                maxWidth:
-                    constraints.maxWidth > 900 ? 900 : constraints.maxWidth),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _StatusCard(controller: controller),
-                const SizedBox(height: 20),
-                if (draft == null)
-                  _WorkPackCard(controller: controller, workPack: workPack)
-                else ...[
-                  _PackageCompatibilityCard(decision: compatibility),
-                  const SizedBox(height: 16),
-                  _CaptureCard(
-                    controller: controller,
-                    draft: draft,
-                    compatibility: compatibility,
-                    responseController: responseController,
-                    notesController: notesController,
+    return AdaptiveScaffold(
+      title: 'INTEGIN Field',
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+              child: Text(
+                  '${controller.connectivity.name} · ${controller.queuedCount} queued')),
+        ),
+      ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StatusCard(controller: controller),
+            const SizedBox(height: 20),
+            if (draft == null)
+              _WorkPackCard(controller: controller, workPack: workPack)
+            else ...[
+              _PackageCompatibilityCard(decision: compatibility),
+              const SizedBox(height: 16),
+              _CaptureCard(
+                controller: controller,
+                draft: draft,
+                compatibility: compatibility,
+                responseController: responseController,
+                notesController: notesController,
+              ),
+              const SizedBox(height: 16),
+              DynamicFormEngineView(
+                formTitle: 'Lifting Hook Geometry Verification (0052)',
+                fields: const [
+                  DynamicFormFieldDefinition(
+                    fieldId: 'throat_opening_mm',
+                    label: 'Hook Throat Opening (mm)',
+                    type: FieldPrimitiveType.numericTolerance,
+                    minValue: 45.0,
+                    maxValue: 55.0,
+                    unit: 'mm',
+                    helpText: 'Tolerance within +/- 10% of nominal',
+                  ),
+                  DynamicFormFieldDefinition(
+                    fieldId: 'latch_engagement',
+                    label: 'Safety Latch Lock Engagement',
+                    type: FieldPrimitiveType.booleanPassFail,
+                    helpText: 'Latch must self-lock under spring tension',
+                  ),
+                  DynamicFormFieldDefinition(
+                    fieldId: 'hook_tag_scan',
+                    label: 'NFC/RFID Asset Identification Tag',
+                    type: FieldPrimitiveType.qrConfirmation,
+                    helpText: 'Verify physical asset tag against 0054 manifest',
+                  ),
+                  DynamicFormFieldDefinition(
+                    fieldId: 'hook_crack_photo',
+                    label: 'Critical Hook Throat Stress Concentration Photo',
+                    type: FieldPrimitiveType.photoEvidence,
+                    helpText: 'Encrypted close-up photograph under high illumination',
                   ),
                 ],
-                const SizedBox(height: 16),
-                _PilotOperatorReviewCard(
-                  controller: controller,
-                  inspectionId: workPack.inspectionId,
-                ),
-                if (controller.recentEvents.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _StationLiveEventsCard(events: controller.recentEvents),
-                ],
-                if (controller.lastError != null) ...[
-                  const SizedBox(height: 16),
-                  Text(controller.lastError!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
-                ],
-              ],
+                onSave: (values) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Dynamic Form Primitives Stored Locally')),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              CustodyHandoverView(
+                workOrderId: workPack.inspectionId,
+                assetId: workPack.rootAssetId,
+                onHandoverCompleted: (handoverData) {},
+              ),
+            ],
+            const SizedBox(height: 16),
+            _PilotOperatorReviewCard(
+              controller: controller,
+              inspectionId: workPack.inspectionId,
             ),
-          ),
+            if (controller.lastError != null) ...[
+              const SizedBox(height: 16),
+              Text(controller.lastError!,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.error)),
+            ],
+          ],
         ),
       ),
+      secondaryBody: controller.recentEvents.isNotEmpty
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: _StationLiveEventsCard(events: controller.recentEvents),
+            )
+          : null,
     );
   }
 }

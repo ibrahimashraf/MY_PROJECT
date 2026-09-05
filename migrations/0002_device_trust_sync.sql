@@ -91,23 +91,28 @@ ALTER TABLE sync_held_transaction ENABLE ROW LEVEL SECURITY;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'device_registry' AND policyname = 'device_registry_tenant_isolation') THEN
-        CREATE POLICY device_registry_tenant_isolation ON device_registry
+        DROP POLICY IF EXISTS device_registry_tenant_isolation ON device_registry;
+CREATE POLICY device_registry_tenant_isolation ON device_registry
             USING (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'authority_package' AND policyname = 'authority_package_tenant_isolation') THEN
-        CREATE POLICY authority_package_tenant_isolation ON authority_package
+        DROP POLICY IF EXISTS authority_package_tenant_isolation ON authority_package;
+CREATE POLICY authority_package_tenant_isolation ON authority_package
             USING (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'sync_device_state' AND policyname = 'sync_device_state_tenant_isolation') THEN
-        CREATE POLICY sync_device_state_tenant_isolation ON sync_device_state
+        DROP POLICY IF EXISTS sync_device_state_tenant_isolation ON sync_device_state;
+CREATE POLICY sync_device_state_tenant_isolation ON sync_device_state
             USING (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'sync_receipt' AND policyname = 'sync_receipt_tenant_isolation') THEN
-        CREATE POLICY sync_receipt_tenant_isolation ON sync_receipt
+        DROP POLICY IF EXISTS sync_receipt_tenant_isolation ON sync_receipt;
+CREATE POLICY sync_receipt_tenant_isolation ON sync_receipt
             USING (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'sync_held_transaction' AND policyname = 'sync_held_transaction_tenant_isolation') THEN
-        CREATE POLICY sync_held_transaction_tenant_isolation ON sync_held_transaction
+        DROP POLICY IF EXISTS sync_held_transaction_tenant_isolation ON sync_held_transaction;
+CREATE POLICY sync_held_transaction_tenant_isolation ON sync_held_transaction
             USING (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
 END $$;

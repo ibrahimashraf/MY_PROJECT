@@ -83,6 +83,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "POST is required")
 		return
 	}
+	if r.ContentLength > 10<<20 {
+		writeError(w, http.StatusRequestEntityTooLarge, "request body exceeds 10 MiB limit")
+		return
+	}
+	if ct := r.Header.Get("Content-Type"); ct != "" {
+		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
+		if mediaType != "application/json" {
+			writeError(w, http.StatusUnsupportedMediaType, "Content-Type must be application/json")
+			return
+		}
+	}
 	if h.Processor == nil {
 		writeError(w, http.StatusServiceUnavailable, "sync processor is unavailable")
 		return

@@ -38,11 +38,17 @@ func main() {
 	if err := database.PingContext(context); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := database.ExecContext(context, "SELECT set_config('integin.tenant_id', $1, false)", tenantID); err != nil {
+	tx, err := database.BeginTx(context, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(context, "SELECT set_config('integin.tenant_id', $1, true)", tenantID); err != nil {
 		log.Fatal(err)
 	}
 
-	rows, err := database.QueryContext(context, `
+	rows, err := tx.QueryContext(context, `
 		SELECT outcome, COUNT(*)
 		FROM sync_receipt
 		WHERE tenant_id = $1

@@ -5,7 +5,7 @@
 BEGIN;
 
 -- form_version: immutable versioned form definitions for work-order field packages.
-CREATE TABLE form_version (
+CREATE TABLE IF NOT EXISTS form_version (
     id TEXT NOT NULL,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE form_version (
 );
 
 -- form_field: field definitions within a form version, referencing the nine-key catalog.
-CREATE TABLE form_field (
+CREATE TABLE IF NOT EXISTS form_field (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     form_id TEXT NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE form_field (
 );
 
 -- evidence_policy: per-field evidence requirements for form fields.
-CREATE TABLE evidence_policy (
+CREATE TABLE IF NOT EXISTS evidence_policy (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     form_id TEXT NOT NULL,
@@ -104,12 +104,6 @@ CREATE INDEX form_field_section_idx
     ON form_field (tenant_id, organization_id, form_id, section_id)
     WHERE section_id IS NOT NULL;
 
-CREATE INDEX evidence_policy_form_idx
-    ON evidence_policy (tenant_id, organization_id, form_id);
-
-CREATE INDEX evidence_policy_field_idx
-    ON evidence_policy (tenant_id, organization_id, form_id, field_id);
-
 -- Forced Row Level Security: tenant + organization isolation.
 ALTER TABLE form_version ENABLE ROW LEVEL SECURITY;
 ALTER TABLE form_version FORCE ROW LEVEL SECURITY;
@@ -118,6 +112,7 @@ ALTER TABLE form_field FORCE ROW LEVEL SECURITY;
 ALTER TABLE evidence_policy ENABLE ROW LEVEL SECURITY;
 ALTER TABLE evidence_policy FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS form_version_tenant_organization_isolation ON form_version;
 CREATE POLICY form_version_tenant_organization_isolation ON form_version
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
@@ -128,6 +123,7 @@ CREATE POLICY form_version_tenant_organization_isolation ON form_version
         AND organization_id = current_setting('integin.organization_id', true)
     );
 
+DROP POLICY IF EXISTS form_field_tenant_organization_isolation ON form_field;
 CREATE POLICY form_field_tenant_organization_isolation ON form_field
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
@@ -138,6 +134,7 @@ CREATE POLICY form_field_tenant_organization_isolation ON form_field
         AND organization_id = current_setting('integin.organization_id', true)
     );
 
+DROP POLICY IF EXISTS evidence_policy_tenant_organization_isolation ON evidence_policy;
 CREATE POLICY evidence_policy_tenant_organization_isolation ON evidence_policy
     USING (
         tenant_id = current_setting('integin.tenant_id', true)

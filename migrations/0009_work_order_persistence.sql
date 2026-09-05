@@ -1,6 +1,7 @@
 -- INTEGIN Ticket 02-02: work-order persistence foundation.
 -- Tenant isolation policies and runtime grants are a later separately gated slice.
 
+-- Removed redundant ALTER; created_at defined in table definition
 CREATE TABLE IF NOT EXISTS work_order (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
@@ -107,6 +108,7 @@ CREATE TABLE IF NOT EXISTS inspection_record (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (tenant_id, organization_id, id),
+    UNIQUE (id),
     CONSTRAINT inspection_record_order_fk
         FOREIGN KEY (tenant_id, organization_id, work_order_id)
         REFERENCES work_order (tenant_id, organization_id, id)
@@ -226,6 +228,7 @@ CREATE TABLE IF NOT EXISTS work_order_state_event (
         DEFERRABLE INITIALLY DEFERRED
 );
 
+ALTER TABLE work_order_state_event ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 CREATE INDEX IF NOT EXISTS work_order_state_event_order_idx
     ON work_order_state_event (tenant_id, organization_id, work_order_id, created_at);
 

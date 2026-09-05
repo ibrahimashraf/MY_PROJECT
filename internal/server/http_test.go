@@ -47,6 +47,25 @@ func TestNewMuxMountsHealthAndSyncRoutes(t *testing.T) {
 	}
 }
 
+func TestSecurityHeadersMiddlewareEnforcesOWASPBaseline(t *testing.T) {
+	mux := NewMux(Dependencies{})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+
+	if ct := rec.Header().Get("X-Content-Type-Options"); ct != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options: nosniff, got %q", ct)
+	}
+	if fo := rec.Header().Get("X-Frame-Options"); fo != "DENY" {
+		t.Errorf("expected X-Frame-Options: DENY, got %q", fo)
+	}
+	if rp := rec.Header().Get("Referrer-Policy"); rp != "strict-origin-when-cross-origin" {
+		t.Errorf("expected Referrer-Policy: strict-origin-when-cross-origin, got %q", rp)
+	}
+	if hsts := rec.Header().Get("Strict-Transport-Security"); !strings.Contains(hsts, "max-age=") {
+		t.Errorf("expected Strict-Transport-Security header, got %q", hsts)
+	}
+}
+
 func TestNewMuxDoesNotMountOIDCSessionRouteWithoutDependency(t *testing.T) {
 	mux := NewMux(Dependencies{})
 	response := httptest.NewRecorder()

@@ -1,0 +1,24 @@
+[general]
+host = "0.0.0.0"
+port = 6432
+admin_username = "pgcat_admin"
+admin_password = "admin_password_integin"
+autoreload = 15000
+
+[pools.integin_migration_test]
+pool_mode = "transaction"
+default_role = "primary"
+query_parser_enabled = false
+primary_reads_enabled = true
+
+[pools.integin_migration_test.users.0]
+username = "postgres"
+password = "postgres_local_test_password"
+pool_size = 80
+statement_timeout = 0
+
+[pools.integin_migration_test.shards.0]
+servers = [
+    ["172.17.0.2", 5432, "primary"]
+]
+database = "integin_migration_test"

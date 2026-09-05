@@ -581,6 +581,24 @@ func (s *Service) ResolveDLQEntry(ctx context.Context, id int64, resolvedBy stri
 	return s.repo.ResolveDLQEntry(ctx, id, resolvedBy)
 }
 
+// DeliverWebhookByID loads a delivery by ID and dispatches it.
+// Used by the River WebhookDeliveryWorker in the Hybrid Outbox architecture.
+func (s *Service) DeliverWebhookByID(ctx context.Context, deliveryID int64) error {
+	delivery, err := s.repo.GetWebhookDelivery(ctx, deliveryID)
+	if err != nil {
+		return err
+	}
+	sl, err := s.repo.Get(ctx, delivery.ShortLinkCode)
+	if err != nil {
+		return err
+	}
+	if sl.WebhookURL == nil || *sl.WebhookURL == "" {
+		return fmt.Errorf("webhook URL not configured for short link %s", delivery.ShortLinkCode)
+	}
+	return s.attemptWebhookDelivery(ctx, delivery, *sl.WebhookURL)
+}
+
+
 func generateCode(length int) string {
 	b := make([]byte, (length*3+3)/4) // base64url encoding overhead
 	rand.Read(b)

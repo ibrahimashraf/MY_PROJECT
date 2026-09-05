@@ -6,7 +6,7 @@ BEGIN;
 
 -- assurance_projection: read-only projection of certificate authority status.
 -- Derived from certificate_record and inspection_record; never mutates authority.
-CREATE TABLE assurance_projection (
+CREATE TABLE IF NOT EXISTS assurance_projection (
     id TEXT NOT NULL,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE assurance_projection (
 );
 
 -- corrective_work: actionable work items linked to inspection findings.
-CREATE TABLE corrective_work (
+CREATE TABLE IF NOT EXISTS corrective_work (
     id TEXT NOT NULL,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -66,9 +66,6 @@ CREATE TABLE corrective_work (
 );
 
 -- Indexes for lookup patterns.
-CREATE INDEX assurance_projection_certificate_idx
-    ON assurance_projection (tenant_id, organization_id, certificate_id);
-
 CREATE INDEX assurance_projection_inspection_idx
     ON assurance_projection (tenant_id, organization_id, inspection_id);
 
@@ -101,6 +98,7 @@ ALTER TABLE assurance_projection FORCE ROW LEVEL SECURITY;
 ALTER TABLE corrective_work ENABLE ROW LEVEL SECURITY;
 ALTER TABLE corrective_work FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS assurance_projection_tenant_organization_isolation ON assurance_projection;
 CREATE POLICY assurance_projection_tenant_organization_isolation ON assurance_projection
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
@@ -111,6 +109,7 @@ CREATE POLICY assurance_projection_tenant_organization_isolation ON assurance_pr
         AND organization_id = current_setting('integin.organization_id', true)
     );
 
+DROP POLICY IF EXISTS corrective_work_tenant_organization_isolation ON corrective_work;
 CREATE POLICY corrective_work_tenant_organization_isolation ON corrective_work
     USING (
         tenant_id = current_setting('integin.tenant_id', true)

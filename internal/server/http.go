@@ -159,7 +159,17 @@ func productionMiddleware(next http.Handler) http.Handler {
 
 func productionMiddlewareWithLimiter(next http.Handler, rateLimiter *middleware.RateLimiter) http.Handler {
 	gate := newConcurrencyGateFromEnv()
-	return requestLogger(withCorrelationID(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20)))
+	return withSecurityHeaders(requestLogger(withCorrelationID(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20))))
+}
+
+func withSecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("X-Content-Type-Options", "nosniff")
+		writer.Header().Set("X-Frame-Options", "DENY")
+		writer.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		next.ServeHTTP(writer, request)
+	})
 }
 
 func withCorrelationID(next http.Handler) http.Handler {

@@ -56,19 +56,22 @@ func TestPostgresResolveCanonicalInspectionTemplateIntegration(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, actor.TenantID, actor.OrganizationID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,created_by,updated_by) VALUES ($1,$2,$3,'client-1',$4,'approved','in_progress','open','pending',$5,$5)`, workOrderID, actor.TenantID, actor.OrganizationID, "JOB-"+fmt.Sprint(stamp), actor.ActorID); err != nil {
+	t.Cleanup(func() {
+		_, _ = db.ExecContext(context.Background(), `SELECT set_config('integin.tenant_id','',false), set_config('integin.organization_id','',false)`)
+	})
+	if _, err := db.ExecContext(ctx, `INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,revision,created_by,updated_by) VALUES ($1,$2,$3,'client-1',$4,'accepted','in_progress','ready_for_office_confirmation','pending_validation',1,$5,$5)`, workOrderID, actor.TenantID, actor.OrganizationID, "JOB-"+fmt.Sprint(stamp), actor.ActorID); err != nil {
 		t.Fatalf("seed work order: %v", err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,'client-1','location-1','asset-1','lifting')`, scopeID, actor.TenantID, actor.OrganizationID, workOrderID); err != nil {
 		t.Fatalf("seed scope item: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,'inspector-1','active',$5,$6,$6)`, assignmentID, actor.TenantID, actor.OrganizationID, workOrderID, now, actor.ActorID); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,revision,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,'inspector-1','active',1,$5,$6,$6)`, assignmentID, actor.TenantID, actor.OrganizationID, workOrderID, now, actor.ActorID); err != nil {
 		t.Fatalf("seed assignment: %v", err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment_scope (tenant_id,organization_id,assignment_id,scope_item_id) VALUES ($1,$2,$3,$4)`, actor.TenantID, actor.OrganizationID, assignmentID, scopeID); err != nil {
 		t.Fatalf("seed assignment scope: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,'asset-1','inspector-1','APPROVED',2,'FINALIZED',$7,$7,$8,$8)`, inspectionID, actor.TenantID, actor.OrganizationID, workOrderID, scopeID, assignmentID, actor.ActorID, now); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,'asset-1','inspector-1','COMPLETED',2,'SUBMITTED',$7,$7,$8,$8)`, inspectionID, actor.TenantID, actor.OrganizationID, workOrderID, scopeID, assignmentID, actor.ActorID, now); err != nil {
 		t.Fatalf("seed inspection: %v", err)
 	}
 	repository, err := NewRepository(db, certificatetemplate.DefaultCatalog())
@@ -93,7 +96,7 @@ func TestPostgresResolveCanonicalInspectionTemplateIntegration(t *testing.T) {
 	for _, cell := range resolved.Cells {
 		values[cell.CellID] = cell.RenderedText
 	}
-	if values["asset_id"] != "asset-1" || values["inspection_state"] != "APPROVED" {
+	if values["asset_id"] != "asset-1" || values["inspection_state"] != "COMPLETED" {
 		t.Fatalf("unexpected resolved canonical values: %#v", values)
 	}
 	if _, err := repository.ResolveInspectionTemplate(ctx, certificatetemplate.ActorContext{TenantID: actor.TenantID, OrganizationID: "org-2", ActorID: "template-admin-2"}, definition.TemplateCode, definition.Version, inspectionID); err != ErrNotFound {

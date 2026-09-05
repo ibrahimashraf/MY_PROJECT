@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # pgcat: Rust-based multi-threaded connection pooler
+  # Sits in front of PostgreSQL to multiplex 10,000 incoming API connections down to 80 backend DB processes.
+  pgcat:
+    image: ghcr.io/postgresml/pgcat:latest
+    container_name: integin-pgcat
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./pgcat.toml:/etc/pgcat/pgcat.toml:ro
+    restart: unless-stopped
+    command: ["pgcat", "/etc/pgcat/pgcat.toml"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M

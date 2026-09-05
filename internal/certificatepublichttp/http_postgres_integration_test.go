@@ -79,18 +79,23 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, tenantID, organizationID); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		_, _ = db.ExecContext(context.Background(), `SELECT set_config('integin.tenant_id','',false), set_config('integin.organization_id','',false)`)
+	})
+	jobNo := fmt.Sprintf("job-%d", stamp)
+	assetID := fmt.Sprintf("asset-%d", stamp)
 	for _, seed := range []struct {
 		query string
 		args  []any
 	}{
-		{`INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'OPEN','ASSIGNED','OPEN','OPEN',$6,$6)`, []any{workOrderID, tenantID, organizationID, "client-a", "job-a", actor.ActorID}},
-		{`INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, []any{scopeID, tenantID, organizationID, workOrderID, "client-a", "location-a", "asset-a", "lifting"}},
-		{`INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'ACTIVE',$6,$5,$5)`, []any{assignmentID, tenantID, organizationID, workOrderID, actor.ActorID, now}},
+		{`INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,revision,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'accepted','in_progress','ready_for_office_confirmation','pending_validation',1,$6,$6)`, []any{workOrderID, tenantID, organizationID, "client-a", jobNo, actor.ActorID}},
+		{`INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, []any{scopeID, tenantID, organizationID, workOrderID, "client-a", "location-a", assetID, "lifting"}},
+		{`INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,revision,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'active',1,$6,$5,$5)`, []any{assignmentID, tenantID, organizationID, workOrderID, actor.ActorID, now}},
 		{`INSERT INTO work_order_assignment_scope (tenant_id,organization_id,assignment_id,scope_item_id) VALUES ($1,$2,$3,$4)`, []any{tenantID, organizationID, assignmentID, scopeID}},
-		{`INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'APPROVED',7,'FINALIZED',$8,$8)`, []any{inspectionID, tenantID, organizationID, workOrderID, scopeID, assignmentID, "asset-a", actor.ActorID}},
+		{`INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'APPROVED',7,'FINALIZED',$8,$8)`, []any{inspectionID, tenantID, organizationID, workOrderID, scopeID, assignmentID, assetID, actor.ActorID}},
 		{`INSERT INTO certificate_template (id,tenant_id,organization_id,template_code,version,title,asset_type,status,catalog_version,page_count,page_width_points,page_height_points,created_by,approved_by,approved_at) VALUES ($1,$2,$3,'lifting',3,'Lifting certificate','lifting','APPROVED',1,1,612,792,$4,$4,$5)`, []any{templateID, tenantID, organizationID, actor.ActorID, now}},
 		{`INSERT INTO certificate_policy (id,tenant_id,organization_id,template_code,template_version,policy_version,validity_days,self_issue_allowed,status,created_by,approved_by,approved_at) VALUES ($1,$2,$3,'lifting',3,1,365,false,'APPROVED',$4,$4,$5)`, []any{policyID, tenantID, organizationID, actor.ActorID, now}},
-		{`INSERT INTO asset_registry (id,tenant_id,organization_id,asset_id,asset_type,serial_number,description,lifecycle_state,created_by,updated_by) VALUES ($1,$2,$3,'asset-a','lifting','SERIAL-A','Controlled lifting asset','ACTIVE',$4,$4)`, []any{assetRegistryID, tenantID, organizationID, actor.ActorID}},
+		{`INSERT INTO asset_registry (id,tenant_id,organization_id,asset_id,asset_type,serial_number,description,lifecycle_state,created_by,updated_by) VALUES ($1,$2,$3,$4,'lifting','SERIAL-A','Controlled lifting asset','ACTIVE',$5,$5)`, []any{assetRegistryID, tenantID, organizationID, assetID, actor.ActorID}},
 		{`INSERT INTO inspection_public_scope (id,tenant_id,organization_id,inspection_id,inspection_revision,inspection_type,taxonomy_version,result_state,created_by) VALUES ($1,$2,$3,$4,7,'periodic_lifting',1,'PASS',$5)`, []any{publicScopeID, tenantID, organizationID, inspectionID, actor.ActorID}},
 		{`INSERT INTO inspection_public_scope_item (id,tenant_id,organization_id,scope_id,scope_code,display_label,outcome,display_order) VALUES ($1,$2,$3,$4,'visual','Visual examination','PASS',1)`, []any{publicScopeID + "-item", tenantID, organizationID, publicScopeID}},
 	} {

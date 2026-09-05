@@ -41,32 +41,36 @@ func (h *StreamHub) Subscribe(tenantID string) chan StationEvent {
 	return ch
 }
 
-// Unsubscribe removes a client channel.
+// Unsubscribe removes a client channel without dangerous race conditions.
 func (h *StreamHub) Unsubscribe(tenantID string, ch chan StationEvent) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	if tenantClients, ok := h.clients[tenantID]; ok {
 		delete(tenantClients, ch)
-		close(ch)
 		if len(tenantClients) == 0 {
 			delete(h.clients, tenantID)
 		}
 	}
 }
 
-// Broadcast sends an event to all subscribers of that tenant via a non-blocking goroutine dispatch.
+// Broadcast sends an event to all subscribers of that tenant via a non-blocking safe dispatch.
 func (h *StreamHub) Broadcast(event StationEvent) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if tenantClients, ok := h.clients[event.TenantID]; ok {
 		for ch := range tenantClients {
-			select {
-			case ch <- event:
-			default:
-				// Skip slow clients to prevent blocking the hub
-			}
+			func() {
+				defer func() {
+					_ = recover() // Catch any concurrent closed channel write
+				}()
+				select {
+				case ch <- event:
+				default:
+					// Skip slow clients to prevent blocking the hub
+				}
+			}()
 		}
 	}
 }

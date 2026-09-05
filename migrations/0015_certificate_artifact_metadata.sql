@@ -2,7 +2,7 @@
 -- CANDIDATE ONLY. Do not apply without fresh backup and disposable up/down review.
 BEGIN;
 
-CREATE TABLE certificate_artifact (
+CREATE TABLE IF NOT EXISTS certificate_artifact (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -24,13 +24,11 @@ CREATE TABLE certificate_artifact (
     CHECK (btrim(renderer_version) <> '')
 );
 
-CREATE INDEX certificate_artifact_lookup_idx
-    ON certificate_artifact (tenant_id, organization_id, certificate_id, artifact_type);
+CREATE INDEX IF NOT EXISTS certificate_artifact_lookup_idx ON certificate_artifact (tenant_id, organization_id, certificate_id, artifact_type);
 
 ALTER TABLE certificate_artifact ENABLE ROW LEVEL SECURITY;
 ALTER TABLE certificate_artifact FORCE ROW LEVEL SECURITY;
-CREATE POLICY certificate_artifact_tenant_isolation ON certificate_artifact
-    USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
-    WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
+DROP POLICY IF EXISTS certificate_artifact_tenant_isolation ON certificate_artifact;
+CREATE POLICY certificate_artifact_tenant_isolation ON certificate_artifact USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true)) WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
 COMMIT;

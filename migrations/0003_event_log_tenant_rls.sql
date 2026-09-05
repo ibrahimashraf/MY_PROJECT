@@ -9,12 +9,14 @@ ALTER TABLE event_log_default FORCE ROW LEVEL SECURITY;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'event_log' AND policyname = 'event_log_tenant_isolation') THEN
-        CREATE POLICY event_log_tenant_isolation ON event_log
+        DROP POLICY IF EXISTS event_log_tenant_isolation ON event_log;
+CREATE POLICY event_log_tenant_isolation ON event_log
             USING (tenant_id = current_setting('integin.tenant_id', true))
             WITH CHECK (tenant_id = current_setting('integin.tenant_id', true));
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = current_schema() AND tablename = 'event_log_default' AND policyname = 'event_log_default_tenant_isolation') THEN
-        CREATE POLICY event_log_default_tenant_isolation ON event_log_default
+        DROP POLICY IF EXISTS event_log_default_tenant_isolation ON event_log_default;
+CREATE POLICY event_log_default_tenant_isolation ON event_log_default
             USING (tenant_id = current_setting('integin.tenant_id', true))
             WITH CHECK (tenant_id = current_setting('integin.tenant_id', true));
     END IF;

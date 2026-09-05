@@ -100,8 +100,15 @@ func TestAnomalyDetectionMigrationContract(t *testing.T) {
 		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_runtime",
 	}
 	for _, fragment := range required {
-		if !strings.Contains(text, fragment) {
-			t.Fatalf("migration missing %q", fragment)
+		if strings.HasPrefix(fragment, "CREATE TABLE ") && !strings.Contains(fragment, "IF NOT EXISTS") {
+			tableName := strings.TrimPrefix(fragment, "CREATE TABLE ")
+			if !strings.Contains(text, fragment) && !strings.Contains(text, "CREATE TABLE IF NOT EXISTS "+tableName) {
+				t.Fatalf("migration missing %q", fragment)
+			}
+		} else {
+			if !strings.Contains(text, fragment) {
+				t.Fatalf("migration missing %q", fragment)
+			}
 		}
 	}
 	if _, err := os.Stat("0048_anomaly_detection.down.sql"); err != nil {
@@ -120,8 +127,10 @@ func TestCertificateArtifactMetadataMigrationContract(t *testing.T) {
 		}
 	}
 	text := string(sql)
+	if !strings.Contains(text, "CREATE TABLE certificate_artifact") && !strings.Contains(text, "CREATE TABLE IF NOT EXISTS certificate_artifact") {
+		t.Fatalf("migration missing CREATE TABLE [IF NOT EXISTS] certificate_artifact")
+	}
 	required := []string{
-		"CREATE TABLE certificate_artifact",
 		"id TEXT PRIMARY KEY",
 		"tenant_id TEXT NOT NULL",
 		"organization_id TEXT NOT NULL",
@@ -173,7 +182,7 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		{
 			upFile:   "0053_asset_entitlement_offline_package.sql",
 			downFile: "0053_asset_entitlement_offline_package.down.sql",
-			required: []string{"CREATE TABLE asset_entitlement", "package_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+			required: []string{"CREATE TABLE asset_entitlement", "CREATE TABLE asset_tag", "package_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
 		},
 		{
 			upFile:   "0054_qr_nfc_entry.sql",
@@ -205,6 +214,156 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			downFile: "0059_river_job_queue.down.sql",
 			required: []string{"CREATE TABLE IF NOT EXISTS river_job", "CREATE TABLE IF NOT EXISTS river_leader"},
 		},
+		{
+			upFile:   "0034_license_entitlement.sql",
+			downFile: "0034_license_entitlement.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS tenant_license", "CREATE TABLE IF NOT EXISTS license_audit", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0035_feature_flag_overrides.sql",
+			downFile: "0035_feature_flag_overrides.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS feature_flag_override", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0019_hierarchical_register.sql",
+			downFile: "0019_hierarchical_register.down.sql",
+			required: []string{"CREATE TABLE location_branch", "CREATE TABLE location_area", "CREATE TABLE location_zone", "CREATE TABLE equipment_type", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0021_scheduling_calendar.sql",
+			downFile: "0021_scheduling_calendar.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS schedule_calendar_entry", "CREATE TABLE IF NOT EXISTS technician_competency", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0022_multi_inspect.sql",
+			downFile: "0022_multi_inspect.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS multi_inspect_batch", "CREATE TABLE IF NOT EXISTS multi_inspect_item", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0023_comments_traffic_light.sql",
+			downFile: "0023_comments_traffic_light.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS comment_library", "CREATE TABLE IF NOT EXISTS inspection_comment", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0024_escalation_overdue.sql",
+			downFile: "0024_escalation_overdue.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS notification_template", "CREATE TABLE IF NOT EXISTS escalation_rule", "CREATE TABLE IF NOT EXISTS escalation_event", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0026_custom_docx_templates.sql",
+			downFile: "0026_custom_docx_templates.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS certificate_template_docx", "CREATE TABLE IF NOT EXISTS certificate_pack", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0027_client_portal_domains_acls.sql",
+			downFile: "0027_client_portal_domains_acls.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS client_portal_domain", "CREATE TABLE IF NOT EXISTS client_portal_acl", "CREATE TABLE IF NOT EXISTS quick_link", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0030_hse_notification_csv_export.sql",
+			downFile: "0030_hse_notification_csv_export.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS hse_notification", "CREATE TABLE IF NOT EXISTS csv_export_job", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0032_full_dpp_regulatory_monitor.sql",
+			downFile: "0032_full_dpp_regulatory_monitor.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS product_passport_dpp", "CREATE TABLE IF NOT EXISTS regulatory_monitor", "CREATE TABLE IF NOT EXISTS compliance_action", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0020_bulk_import_export.sql",
+			downFile: "0020_bulk_import_export.down.sql",
+			required: []string{"CREATE TABLE bulk_import_job", "CREATE TABLE bulk_import_row", "CREATE TABLE bulk_export_job", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0025_job_linkage_failed_queue.sql",
+			downFile: "0025_job_linkage_failed_queue.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS job_linkage_config", "CREATE TABLE IF NOT EXISTS failed_inspection_queue", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0028_integrations_xero_m365_api.sql",
+			downFile: "0028_integrations_xero_m365_api.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS integration_config", "CREATE TABLE IF NOT EXISTS data_api_token", "CREATE TABLE IF NOT EXISTS sync_job", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0029_parts_charges_timesheet_auto.sql",
+			downFile: "0029_parts_charges_timesheet_auto.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS parts_catalog", "CREATE TABLE IF NOT EXISTS service_charge", "CREATE TABLE IF NOT EXISTS timesheet_auto_capture", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0031_nfc_rfid_qr_tagging_photo_markup.sql",
+			downFile: "0031_nfc_rfid_qr_tagging_photo_markup.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS photo_markup", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0033_configurable_settings_audit_export.sql",
+			downFile: "0033_configurable_settings_audit_export.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS tenant_setting", "CREATE TABLE IF NOT EXISTS audit_trail_export", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0036_full_text_search.sql",
+			downFile: "0036_full_text_search.down.sql",
+			required: []string{"search_vector tsvector", "GIN (search_vector)"},
+		},
+		{
+			upFile:   "0037_search_backfill.sql",
+			downFile: "0037_search_backfill.down.sql",
+			required: []string{"UPDATE asset_registry", "UPDATE work_order"},
+		},
+		{
+			upFile:   "0038_immutable_audit_log.sql",
+			downFile: "0038_immutable_audit_log.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS audit_log", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "audit_log_no_update"},
+		},
+		{
+			upFile:   "0046_webhook_delivery.sql",
+			downFile: "0046_webhook_delivery.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS webhook_deliveries", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0049_analytics_dashboard.sql",
+			downFile: "0049_analytics_dashboard.down.sql",
+			required: []string{"idx_scan_events_tenant_code_timestamp", "idx_scan_events_tenant_geo"},
+		},
+		{
+			upFile:   "0050_multi_tenant_scale_optimizations.sql",
+			downFile: "0050_multi_tenant_scale_optimizations.down.sql",
+			required: []string{"btree_gin", "asset_registry_tenant_search_idx", "asset_registry_tenant_created_idx"},
+		},
+		{
+			upFile:   "0051_runtime_scale_safeties.sql",
+			downFile: "0051_runtime_scale_safeties.down.sql",
+			required: []string{"statement_timeout", "idle_in_transaction_session_timeout", "deadlock_timeout"},
+		},
+		{
+			upFile:   "0039_short_links.sql",
+			downFile: "0039_short_links.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS short_links", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0040_short_link_scan_events.sql",
+			downFile: "0040_short_link_scan_events.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS short_link_scan_events", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0041_short_link_webhook.sql",
+			downFile: "0041_short_link_webhook.down.sql",
+			required: []string{"webhook_url TEXT"},
+		},
+		{
+			upFile:   "0042_short_link_custom_domain.sql",
+			downFile: "0042_short_link_custom_domain.down.sql",
+			required: []string{"custom_domain TEXT", "idx_short_links_custom_domain"},
+		},
+		{
+			upFile:   "0045_short_link_bulk_jobs.sql",
+			downFile: "0045_short_link_bulk_jobs.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS short_link_bulk_jobs", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
+		{
+			upFile:   "0047_short_link_hmac.sql",
+			downFile: "0047_short_link_hmac.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS short_link_hmac_secrets", "hmac_secret_ref TEXT", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
 	}
 
 	for _, m := range migrations {
@@ -214,8 +373,15 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		}
 		text := string(sql)
 		for _, fragment := range m.required {
-			if !strings.Contains(text, fragment) {
-				t.Fatalf("migration %s missing required fragment %q", m.upFile, fragment)
+			if strings.HasPrefix(fragment, "CREATE TABLE ") && !strings.Contains(fragment, "IF NOT EXISTS") {
+				tableName := strings.TrimPrefix(fragment, "CREATE TABLE ")
+				if !strings.Contains(text, fragment) && !strings.Contains(text, "CREATE TABLE IF NOT EXISTS "+tableName) {
+					t.Fatalf("migration %s missing required fragment %q", m.upFile, fragment)
+				}
+			} else {
+				if !strings.Contains(text, fragment) {
+					t.Fatalf("migration %s missing required fragment %q", m.upFile, fragment)
+				}
 			}
 		}
 		if _, err := os.Stat(m.downFile); err != nil {

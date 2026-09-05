@@ -17,7 +17,8 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/riverqueue/river"
 
 	"integin/internal/assetentitlementhttp"
 	"integin/internal/assetentitlementpg"
@@ -37,6 +38,7 @@ import (
 	"integin/internal/oidchttp"
 	"integin/internal/qrnfchttp"
 	"integin/internal/qrnfcpg"
+	"integin/internal/queue"
 	"integin/internal/server"
 	"integin/internal/shared/types"
 	"integin/internal/shortlinkhttp"
@@ -64,8 +66,15 @@ func main() {
 	var devices []device_trust.Device
 	var authorities []device_trust.AuthorityPackage
 	if dbURL := strings.TrimSpace(os.Getenv("INTEGIN_DB_URL")); dbURL != "" {
+		if strings.Contains(dbURL, "6432") && !strings.Contains(dbURL, "default_query_exec_mode") {
+			separator := "?"
+			if strings.Contains(dbURL, "?") {
+				separator = "&"
+			}
+			dbURL = dbURL + separator + "default_query_exec_mode=exec"
+		}
 		var err error
-		database, err = sql.Open("postgres", dbURL)
+		database, err = sql.Open("pgx", dbURL)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -241,7 +250,7 @@ func main() {
 	reportsHandler, _ := server.NewReportsHandler(database)
 
 	var shortLinkHandler http.Handler
-	var retryWorker *shortlinksvc.RetryWorker
+	var riverQueue *queue.Queue
 	var qrnfcHandler http.Handler
 	var assuranceHandler http.Handler
 	var formDefHandler http.Handler
@@ -302,15 +311,20 @@ func main() {
 		}
 		assetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
 
-		// Initialize and start webhook retry worker
-		retryInterval := 30 * time.Second
-		if v := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVAL")); v != "" {
-			if d, err := time.ParseDuration(v); err == nil {
-				retryInterval = d
-			}
+		// Initialize and start River queue with WebhookDeliveryWorker (Hybrid Outbox)
+		workers := river.NewWorkers()
+		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
+
+		var riverErr error
+		riverQueue, riverErr = queue.NewQueue(context.Background(), database, workers)
+		if riverErr != nil {
+			log.Fatalf("failed to initialize river queue: %v", riverErr)
 		}
-		retryWorker = shortlinksvc.NewRetryWorker(shortLinkSvc, retryInterval)
-		retryWorker.Start(context.Background())
+		if err := riverQueue.Start(context.Background()); err != nil {
+			log.Fatalf("failed to start river queue workers: %v", err)
+		}
+		// Start automated retention pruner (sweeps every 10m, retain for 1h) to prevent XID wraparound table bloat
+		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
 	}
 	httpServer := &http.Server{
 		Addr: address,
@@ -339,8 +353,10 @@ func main() {
 			log.Fatal(err)
 		}
 	case <-stop:
-		if retryWorker != nil {
-			retryWorker.Stop()
+		if riverQueue != nil {
+			queueStopCtx, queueCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_ = riverQueue.Stop(queueStopCtx)
+			queueCancel()
 		}
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()

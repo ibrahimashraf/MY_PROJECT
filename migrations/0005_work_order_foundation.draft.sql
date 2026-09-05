@@ -4,7 +4,7 @@
 
 BEGIN;
 
-CREATE TABLE work_order (
+CREATE TABLE IF NOT EXISTS work_order (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     client_id uuid NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE work_order (
     UNIQUE (organization_id, job_number)
 );
 
-CREATE TABLE work_order_scope_item (
+CREATE TABLE IF NOT EXISTS work_order_scope_item (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     work_order_id uuid NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE work_order_scope_item (
         REFERENCES work_order (organization_id, id)
 );
 
-CREATE TABLE work_order_assignment (
+CREATE TABLE IF NOT EXISTS work_order_assignment (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     work_order_id uuid NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE work_order_assignment (
     CHECK (effective_until IS NULL OR effective_until > effective_from)
 );
 
-CREATE TABLE work_order_assignment_scope (
+CREATE TABLE IF NOT EXISTS work_order_assignment_scope (
     organization_id uuid NOT NULL,
     assignment_id uuid NOT NULL,
     scope_item_id uuid NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE work_order_assignment_scope (
         REFERENCES work_order_scope_item (organization_id, id)
 );
 
-CREATE TABLE work_order_operation (
+CREATE TABLE IF NOT EXISTS work_order_operation (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     operation_id text NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE work_order_operation (
     UNIQUE (organization_id, operation_id)
 );
 
-CREATE TABLE work_order_submission_segment (
+CREATE TABLE IF NOT EXISTS work_order_submission_segment (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     work_order_id uuid NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE work_order_submission_segment (
         REFERENCES work_order_assignment (organization_id, id)
 );
 
-CREATE TABLE work_order_provisional_record (
+CREATE TABLE IF NOT EXISTS work_order_provisional_record (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     local_id text NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE work_order_provisional_record (
     UNIQUE (organization_id, id)
 );
 
-CREATE TABLE work_order_state_event (
+CREATE TABLE IF NOT EXISTS work_order_state_event (
     id uuid PRIMARY KEY,
     organization_id uuid NOT NULL,
     work_order_id uuid NOT NULL,

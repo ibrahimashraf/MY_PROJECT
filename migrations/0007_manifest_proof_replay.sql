@@ -22,8 +22,8 @@ CREATE INDEX IF NOT EXISTS manifest_proof_replay_expiry_idx
 
 ALTER TABLE manifest_proof_replay ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY manifest_proof_replay_tenant_isolation
-    ON manifest_proof_replay
+DROP POLICY IF EXISTS manifest_proof_replay_tenant_isolation ON manifest_proof_replay;
+CREATE POLICY manifest_proof_replay_tenant_isolation ON manifest_proof_replay
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
         AND organization_id = current_setting('integin.organization_id', true)

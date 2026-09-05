@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
@@ -614,10 +615,10 @@ func TestRequestBodyLimit(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	// Test with Content-Length just over the 10 MiB limit
-	req, _ := http.NewRequest("POST", srv.URL+"/sync", nil)
+	// Test with Content-Length just over the 10 MiB limit using an actual reader stream
+	body := io.LimitReader(zeroReader{}, 11*1024*1024)
+	req, _ := http.NewRequest("POST", srv.URL+"/sync", body)
 	req.ContentLength = 11 * 1024 * 1024 // 11 MiB
-	req.Body = http.NoBody
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -625,10 +626,19 @@ func TestRequestBodyLimit(t *testing.T) {
 	resp.Body.Close()
 
 	if resp.StatusCode == http.StatusRequestEntityTooLarge {
-		t.Log("Body limit correctly enforced at 10 MiB")
+		t.Log("Body limit correctly enforced at 10 MiB (HTTP 413)")
 	} else {
-		t.Logf("FINDING: 11 MiB Content-Length not rejected (status: %d)", resp.StatusCode)
+		t.Fatalf("EXPECTED 413 Payload Too Large, got status: %d", resp.StatusCode)
 	}
+}
+
+type zeroReader struct{}
+
+func (zeroReader) Read(p []byte) (int, error) {
+	for i := range p {
+		p[i] = 0
+	}
+	return len(p), nil
 }
 
 // ---------------------------------------------------------------------------

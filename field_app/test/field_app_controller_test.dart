@@ -5,21 +5,30 @@ import 'package:integin_field_app/domain/models.dart';
 import 'package:integin_field_app/outbox/outbox.dart';
 import 'package:integin_field_app/sync/sync_client.dart';
 
+import 'package:cryptography/cryptography.dart';
+import 'package:integin_field_app/security/transaction_signer.dart';
+
 class _AppliedTransport implements SyncTransport {
   @override
   Future<SyncResponse> submit(OfflineMutation mutation) async =>
       const SyncResponse(outcome: SyncOutcome.applied);
 }
 
-FieldAppController _controller({SyncClient? syncClient}) {
+Future<FieldAppController> _controller({SyncClient? syncClient}) async {
   final issued = DateTime.now().toUtc().subtract(const Duration(minutes: 1));
   const context = TenantContext(
       tenantId: 'tenant-1', organizationId: 'org-1', environment: 'LIVE');
+  final signer = DeviceSigner(
+    await Ed25519().newKeyPair(),
+    keyId: 'device-key-1',
+  );
   return FieldAppController(
     context: context,
     deviceId: 'device-1',
     userId: 'user-1',
     deviceState: DeviceTrustState.trusted,
+    deviceSigner: signer,
+    deviceKeyId: 'device-key-1',
     authority: OfflineAuthority(
       id: 'authority-1',
       deviceId: 'device-1',
@@ -61,7 +70,7 @@ void main() {
   test('flushOutbox maps applied result into durable controller state',
       () async {
     final store = InMemoryOutboxStore();
-    final controller = _controller(
+    final controller = await _controller(
         syncClient: SyncClient(store: store, transport: _AppliedTransport()));
     final workPack = _workPack();
     controller.beginInspection(workPack);
@@ -78,7 +87,7 @@ void main() {
   });
 
   test('flushOutbox reports a deliberate configuration boundary', () async {
-    final controller = _controller();
+    final controller = await _controller();
 
     expect(await controller.flushOutbox(), isEmpty);
     expect(controller.lastError, contains('not configured'));

@@ -4,9 +4,36 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/riverqueue/river"
+
+	"integin/internal/queue"
 )
 
-// RetryWorker processes pending webhook deliveries on a configurable interval.
+// WebhookDeliveryWorker executes webhook delivery jobs asynchronously via the River engine.
+// Implements the Hybrid Outbox pattern: pulls the minimal DeliveryID, loads the multi-tenant
+// audit record, and executes with exponential backoff and leader supervision.
+type WebhookDeliveryWorker struct {
+	river.WorkerDefaults[queue.WebhookDeliveryJobArgs]
+	svc *Service
+}
+
+// NewWebhookDeliveryWorker creates a new River worker for webhook delivery execution.
+func NewWebhookDeliveryWorker(svc *Service) *WebhookDeliveryWorker {
+	return &WebhookDeliveryWorker{svc: svc}
+}
+
+// Work executes the webhook delivery payload.
+func (w *WebhookDeliveryWorker) Work(ctx context.Context, job *river.Job[queue.WebhookDeliveryJobArgs]) error {
+	if w.svc == nil {
+		return nil
+	}
+	deliveryID := job.Args.DeliveryID
+	slog.Info("executing river webhook delivery job", "delivery_id", deliveryID, "attempt", job.Attempt)
+	return w.svc.DeliverWebhookByID(ctx, deliveryID)
+}
+
+// RetryWorker maintains periodic sweep fallback for expired links and legacy deliveries.
 type RetryWorker struct {
 	svc             *Service
 	interval        time.Duration

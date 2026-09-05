@@ -25,7 +25,7 @@ func TestProvisionalFingerprintConflictIntegration(t *testing.T) {
 	db.SetMaxOpenConns(5)
 	t.Cleanup(func() { _ = db.Close() })
 	if err := db.PingContext(ctx); err != nil {
-		t.Fatal(err)
+		t.Skipf("skipping integration test: database not reachable: %v", err)
 	}
 
 	actor := workorder.ActorContext{

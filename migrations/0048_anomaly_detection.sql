@@ -3,7 +3,7 @@
 
 BEGIN;
 
-CREATE TABLE anomaly_rules (
+CREATE TABLE IF NOT EXISTS anomaly_rules (
     id TEXT PRIMARY KEY,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -41,7 +41,7 @@ CREATE TRIGGER trigger_update_anomaly_rule_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_anomaly_rule_updated_at();
 
-CREATE TABLE anomaly_alerts (
+CREATE TABLE IF NOT EXISTS anomaly_alerts (
     id TEXT PRIMARY KEY,
     rule_id TEXT NOT NULL REFERENCES anomaly_rules(id) ON DELETE CASCADE,
     tenant_id TEXT NOT NULL,
@@ -61,7 +61,6 @@ CREATE TABLE anomaly_alerts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_anomaly_alerts_tenant_org ON anomaly_alerts (tenant_id, organization_id);
-CREATE INDEX IF NOT EXISTS idx_anomaly_alerts_rule ON anomaly_alerts (rule_id);
 CREATE INDEX IF NOT EXISTS idx_anomaly_alerts_short_link ON anomaly_alerts (short_link_code);
 CREATE INDEX IF NOT EXISTS idx_anomaly_alerts_status ON anomaly_alerts (tenant_id, organization_id, status);
 CREATE INDEX IF NOT EXISTS idx_anomaly_alerts_type ON anomaly_alerts (tenant_id, organization_id, type);

@@ -10,8 +10,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/lib/pq"
-
 	"integin/internal/domain/workorder"
 	"integin/internal/shared/pgtx"
 )
@@ -661,7 +659,7 @@ func insertAssignmentScope(ctx context.Context, tx *sql.Tx, actor workorder.Acto
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO work_order_assignment_scope (tenant_id, organization_id, assignment_id, scope_item_id)
 		SELECT $1::text, $2::text, $3::text, unnest($4::text[])
-	`, actor.TenantID, actor.OrganizationID, assignmentID, pq.Array(ids))
+	`, actor.TenantID, actor.OrganizationID, assignmentID, pqStringArray(ids))
 	return err
 }
 

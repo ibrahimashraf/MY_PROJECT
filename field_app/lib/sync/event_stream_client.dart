@@ -54,20 +54,51 @@ class EventStreamClient {
 
   Stream<StationEvent> get events => _eventController.stream;
 
+  bool _disposed = false;
+  int _retrySeconds = 1;
+
   Future<void> connect() async {
-    final request = http.Request('GET', endpoint.replace(queryParameters: {'tenant_id': tenantId}))
-      ..headers['Accept'] = 'text/event-stream'
-      ..headers['Cache-Control'] = 'no-cache';
+    _disposed = false;
+    _startConnection();
+  }
 
-    final response = await _client.send(request);
-    if (response.statusCode != 200) {
-      throw StateError('SSE connection failed with HTTP ${response.statusCode}');
+  Future<void> _startConnection() async {
+    if (_disposed) return;
+    try {
+      final request = http.Request('GET', endpoint.replace(queryParameters: {'tenant_id': tenantId}))
+        ..headers['Accept'] = 'text/event-stream'
+        ..headers['Cache-Control'] = 'no-cache';
+
+      final response = await _client.send(request);
+      if (response.statusCode != 200) {
+        _scheduleReconnect();
+        return;
+      }
+
+      _retrySeconds = 1; // Reset backoff upon successful connection
+
+      _subscription = response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen(
+            _handleLine,
+            onError: (_) => _scheduleReconnect(),
+            onDone: _scheduleReconnect,
+            cancelOnError: true,
+          );
+    } catch (_) {
+      _scheduleReconnect();
     }
+  }
 
-    _subscription = response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(_handleLine, onError: _eventController.addError);
+  void _scheduleReconnect() {
+    if (_disposed) return;
+    _subscription?.cancel();
+    _subscription = null;
+
+    final wait = Duration(seconds: _retrySeconds);
+    _retrySeconds = (_retrySeconds * 2).clamp(1, 30); // Max backoff 30s
+    Future.delayed(wait, _startConnection);
   }
 
   void _handleLine(String line) {
@@ -86,11 +117,13 @@ class EventStreamClient {
   }
 
   Future<void> disconnect() async {
+    _disposed = true;
     await _subscription?.cancel();
     _subscription = null;
   }
 
   void dispose() {
+    _disposed = true;
     disconnect();
     _eventController.close();
     _client.close();

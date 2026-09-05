@@ -72,13 +72,16 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, tenantID, organizationID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'OPEN','ASSIGNED','OPEN','OPEN',$6,$6)`, workOrderID, tenantID, organizationID, "client-a", "job-a", actor.ActorID); err != nil {
+	t.Cleanup(func() {
+		_, _ = db.ExecContext(context.Background(), `SELECT set_config('integin.tenant_id','',false), set_config('integin.organization_id','',false)`)
+	})
+	if _, err := db.ExecContext(ctx, `INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,revision,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'accepted','in_progress','ready_for_office_confirmation','pending_validation',1,$6,$6)`, workOrderID, tenantID, organizationID, "client-a", "job-a", actor.ActorID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, scopeID, tenantID, organizationID, workOrderID, "client-a", "location-a", "asset-a", "lifting"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'ACTIVE',$6,$5,$5)`, assignmentID, tenantID, organizationID, workOrderID, actor.ActorID, now); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,revision,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'active',1,$6,$5,$5)`, assignmentID, tenantID, organizationID, workOrderID, actor.ActorID, now); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.ExecContext(ctx, `INSERT INTO work_order_assignment_scope (tenant_id,organization_id,assignment_id,scope_item_id) VALUES ($1,$2,$3,$4)`, tenantID, organizationID, assignmentID, scopeID); err != nil {

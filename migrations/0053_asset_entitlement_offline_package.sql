@@ -6,7 +6,7 @@ BEGIN;
 
 -- asset_entitlement: server-authoritative entitlement for an asset within a work order scope.
 -- The asset is a durable domain anchor, not a second source of truth.
-CREATE TABLE asset_entitlement (
+CREATE TABLE IF NOT EXISTS asset_entitlement (
     id TEXT NOT NULL,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE asset_entitlement (
 
 -- asset_tag: untrusted physical pointers (QR, barcode, NFC) for assets.
 -- Tags are untrusted; the asset_id is the authoritative anchor.
-CREATE TABLE asset_tag (
+CREATE TABLE IF NOT EXISTS asset_tag (
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
     asset_id TEXT NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE asset_tag (
 );
 
 -- offline_package: server-reconciled, bounded, never client-authoritative offline data package.
-CREATE TABLE offline_package (
+CREATE TABLE IF NOT EXISTS offline_package (
     id TEXT NOT NULL,
     tenant_id TEXT NOT NULL,
     organization_id TEXT NOT NULL,
@@ -99,33 +99,33 @@ CREATE TABLE offline_package (
 );
 
 -- Indexes for lookup patterns.
-CREATE INDEX asset_entitlement_work_order_idx
+CREATE INDEX IF NOT EXISTS asset_entitlement_work_order_idx
     ON asset_entitlement (tenant_id, organization_id, work_order_id, status);
 
-CREATE INDEX asset_entitlement_asset_idx
+CREATE INDEX IF NOT EXISTS asset_entitlement_asset_idx
     ON asset_entitlement (tenant_id, organization_id, asset_id, status);
 
-CREATE INDEX asset_entitlement_inspector_idx
+CREATE INDEX IF NOT EXISTS asset_entitlement_inspector_idx
     ON asset_entitlement (tenant_id, organization_id, assigned_inspector_id)
     WHERE assigned_inspector_id IS NOT NULL;
 
-CREATE INDEX asset_entitlement_form_idx
+CREATE INDEX IF NOT EXISTS asset_entitlement_form_idx
     ON asset_entitlement (tenant_id, organization_id, form_version_id)
     WHERE form_version_id IS NOT NULL;
 
-CREATE INDEX asset_tag_asset_idx
+CREATE INDEX IF NOT EXISTS asset_tag_asset_idx
     ON asset_tag (tenant_id, organization_id, asset_id);
 
-CREATE INDEX asset_tag_digest_idx
+CREATE INDEX IF NOT EXISTS asset_tag_digest_idx
     ON asset_tag (tenant_id, organization_id, tag_type, tag_digest);
 
-CREATE INDEX offline_package_entitlement_idx
+CREATE INDEX IF NOT EXISTS offline_package_entitlement_idx
     ON offline_package (tenant_id, organization_id, entitlement_id, status);
 
-CREATE INDEX offline_package_status_idx
+CREATE INDEX IF NOT EXISTS offline_package_status_idx
     ON offline_package (tenant_id, organization_id, status, generated_at);
 
-CREATE INDEX offline_package_device_idx
+CREATE INDEX IF NOT EXISTS offline_package_device_idx
     ON offline_package (tenant_id, organization_id, delivered_to_device_id)
     WHERE delivered_to_device_id IS NOT NULL;
 
@@ -137,6 +137,7 @@ ALTER TABLE asset_tag FORCE ROW LEVEL SECURITY;
 ALTER TABLE offline_package ENABLE ROW LEVEL SECURITY;
 ALTER TABLE offline_package FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS asset_entitlement_tenant_organization_isolation ON asset_entitlement;
 CREATE POLICY asset_entitlement_tenant_organization_isolation ON asset_entitlement
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
@@ -147,6 +148,7 @@ CREATE POLICY asset_entitlement_tenant_organization_isolation ON asset_entitleme
         AND organization_id = current_setting('integin.organization_id', true)
     );
 
+DROP POLICY IF EXISTS asset_tag_tenant_organization_isolation ON asset_tag;
 CREATE POLICY asset_tag_tenant_organization_isolation ON asset_tag
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
@@ -157,6 +159,7 @@ CREATE POLICY asset_tag_tenant_organization_isolation ON asset_tag
         AND organization_id = current_setting('integin.organization_id', true)
     );
 
+DROP POLICY IF EXISTS offline_package_tenant_organization_isolation ON offline_package;
 CREATE POLICY offline_package_tenant_organization_isolation ON offline_package
     USING (
         tenant_id = current_setting('integin.tenant_id', true)
