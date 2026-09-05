@@ -88,8 +88,9 @@ func TestDeterministicSimulationChaosHarness(t *testing.T) {
 				t.Fatalf("generate ed25519 key: %v", err)
 			}
 			keyID := security.DeviceKeyID(pub)
-			devID := fmt.Sprintf("dev_%d_%d", tIdx, dIdx)
-			userID := fmt.Sprintf("user_%d_%d", tIdx, dIdx)
+			runStamp := time.Now().UnixNano()
+			devID := fmt.Sprintf("dev_%d_%d_%d", tIdx, dIdx, runStamp)
+			userID := fmt.Sprintf("user_%d_%d_%d", tIdx, dIdx, runStamp)
 
 			now := time.Now().UTC()
 			devRec := syncstate.DeviceRecord{

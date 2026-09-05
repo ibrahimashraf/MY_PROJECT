@@ -22,19 +22,23 @@ func NewPostgresRepository(db *sql.DB) (*PostgresRepository, error) {
 	return &PostgresRepository{DB: db}, nil
 }
 
+type orgContextKey struct{}
+
+// WithOrganizationContext binds an organization ID into context for repository transactions.
+func WithOrganizationContext(ctx context.Context, organizationID string) context.Context {
+	return context.WithValue(ctx, orgContextKey{}, organizationID)
+}
+
 func (r *PostgresRepository) beginTenant(ctx context.Context, tenantID string) (*sql.Tx, error) {
 	if r == nil || r.DB == nil {
 		return nil, errors.New("database handle is required")
 	}
-	tx, err := r.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
+	orgID, _ := ctx.Value(orgContextKey{}).(string)
+	if orgID == "" {
+		// If orgID not explicitly in context, attempt to derive or default to tenantID for system/test scope
+		orgID = tenantID
 	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true)`, tenantID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return r.beginTenantOrg(ctx, tenantID, orgID)
 }
 
 func (r *PostgresRepository) GetDevice(ctx context.Context, tenantID, deviceID string) (DeviceRecord, error) {
@@ -173,8 +177,8 @@ func (r *PostgresRepository) ListAuthorities(ctx context.Context, tenantID strin
 }
 
 func (r *PostgresRepository) SaveAuthority(ctx context.Context, authority AuthorityRecord) error {
-	if authority.AuthorityID == "" || authority.TenantID == "" || authority.OrganizationID == "" || authority.DeviceID == "" || authority.UserID == "" || authority.AuthorityEpoch == 0 || authority.ProcedureVersion == "" || authority.IssuedAt.IsZero() || authority.ExpiresAt.IsZero() || !authority.ExpiresAt.After(authority.IssuedAt) || len(authority.Signature) == 0 {
-		return errors.New("authority identity, scope, validity, and signature are required")
+	if authority.AuthorityID == "" || authority.TenantID == "" || authority.OrganizationID == "" || authority.DeviceID == "" || authority.UserID == "" || authority.AuthorityEpoch == 0 || authority.AuthorityEpoch > maxSafeSequence || authority.ProcedureVersion == "" || authority.IssuedAt.IsZero() || authority.ExpiresAt.IsZero() || !authority.ExpiresAt.After(authority.IssuedAt) || len(authority.Signature) == 0 {
+		return errors.New("authority identity, scope, validity, safe epoch, and signature are required")
 	}
 	scopes, err := json.Marshal(authority.Scopes)
 	if err != nil {
@@ -232,7 +236,7 @@ func (r *PostgresRepository) SaveReceipt(ctx context.Context, receipt Receipt) e
 	if err := ValidateReceipt(receipt); err != nil {
 		return err
 	}
-	tx, err := r.beginTenant(ctx, receipt.TenantID)
+	tx, err := r.beginTenantOrg(ctx, receipt.TenantID, receipt.OrganizationID)
 	if err != nil {
 		return err
 	}
@@ -303,7 +307,7 @@ func (r *PostgresRepository) SaveHeld(ctx context.Context, held HeldTransaction)
 	if len(held.Envelope) == 0 || held.ExpectedSequence == 0 || held.FirstHeldAt.IsZero() || held.LastAttemptAt.IsZero() || held.LastError == "" {
 		return errors.New("held transaction envelope, sequence, timestamps, and error are required")
 	}
-	tx, err := r.beginTenant(ctx, held.Receipt.TenantID)
+	tx, err := r.beginTenantOrg(ctx, held.Receipt.TenantID, held.Receipt.OrganizationID)
 	if err != nil {
 		return err
 	}

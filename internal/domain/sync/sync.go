@@ -269,7 +269,7 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	if transaction.SequenceNumber > expected {
 		result.Outcome, result.Code, result.Reason = Held, types.ErrHeld, fmt.Sprintf("sequence gap: expected %d", expected)
 		if err := p.persistHeld(ctx, transaction, result, at); err != nil {
-			return p.fail(result, types.ErrRejected, SecurityFailure, "durable held-transaction state is unavailable")
+			return p.fail(result, types.ErrRejected, SecurityFailure, fmt.Sprintf("durable held-transaction state is unavailable: %v", err))
 		}
 		p.mu.Lock()
 		p.held[transaction.TransactionID] = cloneTransaction(transaction)

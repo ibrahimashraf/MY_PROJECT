@@ -102,12 +102,17 @@ type SyncStateRepository interface {
 
 var ErrNotFound = errors.New("sync-state record not found")
 
+const maxSafeSequence = 1<<63 - 1
+
 func ValidateDeviceRecord(device DeviceRecord) error {
 	if device.DeviceID == "" || device.TenantID == "" || device.OrganizationID == "" || device.UserID == "" || device.KeyID == "" || len(device.PublicKey) == 0 {
 		return errors.New("device identity, key, and tenant scope are required")
 	}
 	if device.AuthorityEpoch == 0 {
 		return errors.New("device authority epoch must be positive")
+	}
+	if device.AuthorityEpoch > maxSafeSequence {
+		return errors.New("device authority epoch exceeds safe integer bounds")
 	}
 	return nil
 }
@@ -118,6 +123,9 @@ func ValidateReceipt(receipt Receipt) error {
 	}
 	if receipt.SequenceNumber == 0 {
 		return errors.New("receipt sequence must be positive")
+	}
+	if receipt.SequenceNumber > maxSafeSequence {
+		return errors.New("receipt sequence exceeds safe integer bounds")
 	}
 	return nil
 }

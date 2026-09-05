@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -133,7 +134,15 @@ func (p Package) ValidateSubmission(binding SubmissionBinding, values map[string
 		return errors.New("submission captured-field sequence does not match approved work package")
 	}
 
-	for fieldID, value := range values {
+	// Sort incoming value keys for deterministic error reporting
+	valueKeys := make([]string, 0, len(values))
+	for k := range values {
+		valueKeys = append(valueKeys, k)
+	}
+	sort.Strings(valueKeys)
+
+	for _, fieldID := range valueKeys {
+		value := values[fieldID]
 		field, found := fields[fieldID]
 		if !found {
 			return fmt.Errorf("submission includes unknown field %q", fieldID)
@@ -142,7 +151,10 @@ func (p Package) ValidateSubmission(binding SubmissionBinding, values map[string
 			return err
 		}
 	}
-	for fieldID, field := range fields {
+
+	// Validate required fields in the author-approved sequence
+	for _, fieldID := range expectedSequence {
+		field := fields[fieldID]
 		value, present := values[fieldID]
 		if field.Required && (!present || isBlank(value)) {
 			return fmt.Errorf("required field %q is missing", fieldID)
