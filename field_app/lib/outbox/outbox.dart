@@ -9,7 +9,7 @@ extension OutboxStateSemantics on OutboxState {
 }
 
 class OutboxEntry {
-  OutboxEntry({required this.mutation}) : state = OutboxState.queued;
+  OutboxEntry({required this.mutation, this.chainHash}) : state = OutboxState.queued;
 
   OutboxEntry.fromJson(Map<String, Object?> json)
       : mutation = OfflineMutation.fromJson(
@@ -21,6 +21,7 @@ class OutboxEntry {
         ),
         attempts = json['attempts'] as int? ?? 0,
         lastError = json['last_error'] as String?,
+        chainHash = json['chain_hash'] as String?,
         acknowledgedAt = json['acknowledged_at'] == null
             ? null
             : DateTime.parse(json['acknowledged_at'] as String);
@@ -29,6 +30,7 @@ class OutboxEntry {
   OutboxState state;
   int attempts = 0;
   String? lastError;
+  String? chainHash;
   DateTime? acknowledgedAt;
 
   bool get isPending => state.isPending;
@@ -37,6 +39,7 @@ class OutboxEntry {
         'mutation': mutation.toJson(),
         'state': state.name.toUpperCase(),
         'attempts': attempts,
+        if (chainHash != null) 'chain_hash': chainHash,
         if (lastError != null) 'last_error': lastError,
         if (acknowledgedAt != null) 'acknowledged_at': acknowledgedAt!.toUtc().toIso8601String(),
       };

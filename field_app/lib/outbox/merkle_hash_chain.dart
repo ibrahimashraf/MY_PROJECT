@@ -30,6 +30,9 @@ class CryptographicMerkleHashChain {
       final payloadToHash =
           '$expectedPrevious|${entry.mutation.deviceId}|${entry.mutation.sequenceNumber}|${entry.mutation.payloadHash}|${entry.mutation.capturedAt.toUtc().toIso8601String()}';
       final computed = sha256.convert(utf8.encode(payloadToHash)).toString();
+      if (entry.chainHash != null && entry.chainHash != computed) {
+        return false;
+      }
       expectedPrevious = computed;
     }
     return true;
