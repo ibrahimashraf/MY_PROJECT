@@ -160,7 +160,9 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	if transaction.PayloadHash != calculatedHash {
 		return p.fail(result, types.ErrRejected, SecurityFailure, "payload hash mismatch")
 	}
+	p.mu.RLock()
 	device, exists := p.devices[transaction.DeviceID]
+	p.mu.RUnlock()
 	if !exists {
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, "device is not registered")
 	}
@@ -185,11 +187,13 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	// For ValidateAuthorityPackage, we can use any active secret if we assume it validates HMACs. 
 	// Actually, ValidateAuthorityPackage might not need the HMAC secret for its core logic unless it decrypts something.
 	// But it requires a string secret. Let's pass the default or first one.
+	p.mu.RLock()
 	var defaultSecret string
 	for _, v := range p.secrets {
 		defaultSecret = v
 		break
 	}
+	p.mu.RUnlock()
 	if err := device_trust.ValidateAuthorityPackage(authority, device, defaultSecret, at); err != nil {
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, err.Error())
 	}
@@ -201,10 +205,12 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction Ed25519 signature is invalid")
 		}
 	} else {
+		p.mu.RLock()
 		secret, ok := p.secrets[transaction.KeyID]
 		if !ok && transaction.KeyID == "" {
 			secret, ok = p.secrets["default"]
 		}
+		p.mu.RUnlock()
 		if !ok {
 			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC key ID is unknown")
 		}
