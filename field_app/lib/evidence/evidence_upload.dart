@@ -52,7 +52,7 @@ class HttpEvidenceUploadTransport implements EvidenceUploadTransport {
           'ciphertext_sha256': evidence.ciphertextSha256,
           'base64_blob': evidence.base64Blob,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
       final outcome = response.statusCode >= 500
           ? EvidenceUploadOutcome.queued
           : response.statusCode == 409
@@ -79,10 +79,11 @@ class HttpEvidenceUploadTransport implements EvidenceUploadTransport {
 }
 
 class RetryingEvidenceUploader {
-  const RetryingEvidenceUploader({required this.transport, this.maxAttempts = 3});
+  const RetryingEvidenceUploader({required this.transport, this.maxAttempts = 3, this.backoffBaseMs = 50});
 
   final EvidenceUploadTransport transport;
   final int maxAttempts;
+  final int backoffBaseMs;
 
   Future<EvidenceUploadResult> upload({
     required EvidenceScope scope,
@@ -92,6 +93,9 @@ class RetryingEvidenceUploader {
   }) async {
     EvidenceUploadResult? result;
     for (var attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (attempt > 0 && backoffBaseMs > 0) {
+        await Future<void>.delayed(Duration(milliseconds: backoffBaseMs * (1 << (attempt - 1))));
+      }
       result = await transport.upload(
         scope: scope,
         evidence: evidence,

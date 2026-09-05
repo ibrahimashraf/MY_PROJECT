@@ -590,13 +590,20 @@ func finishMutation(ctx context.Context, tx *sql.Tx, actor workorder.ActorContex
 	if err != nil {
 		return err
 	}
+	payloadHash := requestHash
+	if len(payloadHash) != 64 {
+		sum := sha256.Sum256(raw)
+		payloadHash = hex.EncodeToString(sum[:])
+	}
+	signature := "sig_system_generated"
+	signingKeyID := "key_system_internal"
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO work_order_operation
-			(id, tenant_id, organization_id, operation_id, idempotency_key, request_hash, operation_type, aggregate_id, expected_revision, resulting_revision, status, receipt, completed_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())`,
+			(id, tenant_id, organization_id, operation_id, idempotency_key, request_hash, operation_type, aggregate_id, expected_revision, resulting_revision, status, receipt, payload_hash, signature, signing_key_id, completed_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now())`,
 		operation.OperationID, actor.TenantID, actor.OrganizationID, operation.OperationID,
 		operation.IdempotencyKey, requestHash, operationType, aggregateID, expected, resulting,
-		workorder.ReceiptAccepted, raw)
+		workorder.ReceiptAccepted, raw, payloadHash, signature, signingKeyID)
 	return err
 }
 
@@ -707,7 +714,9 @@ type stringArray []string
 func (a stringArray) Value() (driver.Value, error) {
 	quoted := make([]string, len(a))
 	for i, value := range a {
-		quoted[i] = `"` + strings.ReplaceAll(value, `"`, `\\"`) + `"`
+		escaped := strings.ReplaceAll(value, `\`, `\\`)
+		escaped = strings.ReplaceAll(escaped, `"`, `\"`)
+		quoted[i] = `"` + escaped + `"`
 	}
 	return "{" + strings.Join(quoted, ",") + "}", nil
 }

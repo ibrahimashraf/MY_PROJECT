@@ -19,7 +19,7 @@ class HttpSyncTransport implements SyncTransport {
         endpoint,
         headers: const {'content-type': 'application/json'},
         body: jsonEncode(mutation.toJson()),
-      );
+      ).timeout(const Duration(seconds: 15));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return SyncResponse(
           outcome: SyncOutcome.rejected,
