@@ -102,6 +102,16 @@ type Processor struct {
 	held                map[string]Transaction
 	state               syncstate.SyncStateRepository
 	preAcceptancePolicy PreAcceptancePolicy
+	deviceLocks         [64]syncpkg.Mutex
+}
+
+func (p *Processor) deviceLock(deviceID string) *syncpkg.Mutex {
+	var h uint32 = 2166136261
+	for i := 0; i < len(deviceID); i++ {
+		h ^= uint32(deviceID[i])
+		h *= 16777619
+	}
+	return &p.deviceLocks[h%64]
 }
 
 func NewProcessor(secrets map[string]string) (*Processor, error) {
@@ -138,8 +148,10 @@ func (p *Processor) Submit(transaction Transaction, authority device_trust.Autho
 }
 
 func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, authority device_trust.AuthorityPackage, at time.Time) Result {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	devLock := p.deviceLock(transaction.DeviceID)
+	devLock.Lock()
+	defer devLock.Unlock()
+
 	result := Result{TransactionID: transaction.TransactionID, PayloadHash: transaction.PayloadHash}
 	if strings.TrimSpace(transaction.TransactionID) == "" || strings.TrimSpace(transaction.TenantID) == "" || strings.TrimSpace(transaction.DeviceID) == "" || strings.TrimSpace(transaction.UserID) == "" || strings.TrimSpace(transaction.Operation) == "" || transaction.SequenceNumber == 0 {
 		return p.fail(result, types.ErrValidation, Rejected, "transaction identity and sequence are required")
@@ -220,7 +232,10 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 			return p.fail(result, types.ErrRejected, SecurityFailure, "durable sync state is unavailable")
 		}
 	}
-	if existingHash, exists := p.transactions[transaction.TransactionID]; exists {
+	p.mu.RLock()
+	existingHash, exists := p.transactions[transaction.TransactionID]
+	p.mu.RUnlock()
+	if exists {
 		if existingHash == transaction.PayloadHash {
 			result.Outcome = Duplicate
 			result.Reason = "transaction already applied"
@@ -228,10 +243,15 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 		}
 		return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
 	}
-	if heldTransaction, exists := p.held[transaction.TransactionID]; exists && heldTransaction.PayloadHash != transaction.PayloadHash {
+	p.mu.RLock()
+	heldTransaction, exists := p.held[transaction.TransactionID]
+	p.mu.RUnlock()
+	if exists && heldTransaction.PayloadHash != transaction.PayloadHash {
 		return p.fail(result, types.ErrConflict, Conflict, "transaction id was reused with different payload")
 	}
+	p.mu.RLock()
 	expected := p.lastSequence[transaction.DeviceID] + 1
+	p.mu.RUnlock()
 	if p.state != nil {
 		if persisted, err := p.state.GetLastAcceptedSequence(ctx, transaction.TenantID, transaction.DeviceID); err == nil {
 			expected = persisted + 1
@@ -245,7 +265,9 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 		if err := p.persistHeld(ctx, transaction, result, at); err != nil {
 			return p.fail(result, types.ErrRejected, SecurityFailure, "durable held-transaction state is unavailable")
 		}
+		p.mu.Lock()
 		p.held[transaction.TransactionID] = cloneTransaction(transaction)
+		p.mu.Unlock()
 		return result
 	}
 	if transaction.SequenceNumber < expected {
@@ -260,9 +282,11 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	if err := p.persistReceipt(ctx, transaction, result, at); err != nil {
 		return p.fail(result, types.ErrRejected, SecurityFailure, "durable receipt state is unavailable")
 	}
+	p.mu.Lock()
 	p.lastSequence[transaction.DeviceID] = transaction.SequenceNumber
 	p.transactions[transaction.TransactionID] = transaction.PayloadHash
 	delete(p.held, transaction.TransactionID)
+	p.mu.Unlock()
 	return result
 }
 
