@@ -13,6 +13,7 @@ import (
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/workorderauth"
+	"integin/internal/workorderpg"
 )
 
 type TokenValidator interface {
@@ -94,9 +95,16 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := http.StatusBadRequest
 		code := "mutation_rejected"
-		if errors.Is(err, workorderauth.ErrDenied) || errors.Is(err, sql.ErrNoRows) {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			status = http.StatusNotFound
+			code = "not_found"
+		case errors.Is(err, workorderauth.ErrDenied):
 			status = http.StatusForbidden
 			code = "authorization_failed"
+		case errors.Is(err, workorderpg.ErrStaleRevision):
+			status = http.StatusConflict
+			code = "stale_revision"
 		}
 		write(w, status, code, nil)
 		return
@@ -167,9 +175,16 @@ func (h EvidenceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := http.StatusBadRequest
 		code := "mutation_rejected"
-		if errors.Is(err, workorderauth.ErrDenied) || errors.Is(err, sql.ErrNoRows) {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			status = http.StatusNotFound
+			code = "not_found"
+		case errors.Is(err, workorderauth.ErrDenied):
 			status = http.StatusForbidden
 			code = "authorization_failed"
+		case errors.Is(err, workorderpg.ErrStaleRevision):
+			status = http.StatusConflict
+			code = "stale_revision"
 		}
 		write(w, status, code, nil)
 		return

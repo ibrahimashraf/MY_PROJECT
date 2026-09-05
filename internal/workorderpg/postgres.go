@@ -1,6 +1,7 @@
 package workorderpg
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -8,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"sort"
 	"strings"
 
 	"integin/internal/domain/workorder"
@@ -701,8 +703,62 @@ func hashPayload(value any) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sum := sha256.Sum256(encoded)
+	// Canonicalize via generic map/array sorting to guarantee field-order independence
+	var generic any
+	if err := json.Unmarshal(encoded, &generic); err != nil {
+		return "", err
+	}
+	canonicalBytes, err := canonicalJSONBytes(generic)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(canonicalBytes)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+func canonicalJSONBytes(v any) ([]byte, error) {
+	switch val := v.(type) {
+	case map[string]any:
+		keys := make([]string, 0, len(val))
+		for k := range val {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var buf bytes.Buffer
+		buf.WriteByte('{')
+		for i, k := range keys {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			kb, _ := json.Marshal(k)
+			buf.Write(kb)
+			buf.WriteByte(':')
+			vb, err := canonicalJSONBytes(val[k])
+			if err != nil {
+				return nil, err
+			}
+			buf.Write(vb)
+		}
+		buf.WriteByte('}')
+		return buf.Bytes(), nil
+	case []any:
+		var buf bytes.Buffer
+		buf.WriteByte('[')
+		for i, item := range val {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			ib, err := canonicalJSONBytes(item)
+			if err != nil {
+				return nil, err
+			}
+			buf.Write(ib)
+		}
+		buf.WriteByte(']')
+		return buf.Bytes(), nil
+	default:
+		return json.Marshal(val)
+	}
 }
 
 func pqStringArray(values []string) interface{ driver.Valuer } {
