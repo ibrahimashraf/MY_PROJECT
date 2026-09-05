@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/workorder"
 	"integin/internal/identity"
@@ -33,7 +33,7 @@ func TestSignedOIDCPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled signed-OIDC PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

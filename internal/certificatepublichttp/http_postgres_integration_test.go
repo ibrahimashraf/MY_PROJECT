@@ -16,7 +16,7 @@ import (
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/server"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
@@ -24,7 +24,7 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	if dsn == "" {
 		t.Skip("INTEGIN_TEST_DATABASE_URL is not set")
 	}
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

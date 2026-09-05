@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"integin/internal/domain/evidence"
 	"integin/internal/evidencepg"
 	"integin/internal/exportmanifest"
@@ -26,7 +26,7 @@ func TestPostgresRustFSVerifiedExportIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL and INTEGIN_S3_* to run the controlled evidence export integration test")
 	}
 	store := integrationStore(t)
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,19 +7,20 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // PostgresResolver invokes the migration-owned resolver function; the runtime role receives no direct identity-table grants.
 type PostgresResolver struct {
 	db *sql.DB
+	m  *pgtype.Map
 }
 
 func NewPostgresResolver(db *sql.DB) (*PostgresResolver, error) {
 	if db == nil {
 		return nil, errors.New("identity resolver database is required")
 	}
-	return &PostgresResolver{db: db}, nil
+	return &PostgresResolver{db: db, m: pgtype.NewMap()}, nil
 }
 
 func (r *PostgresResolver) Resolve(ctx context.Context, principal PrincipalKey) (Membership, error) {
@@ -34,8 +35,8 @@ func (r *PostgresResolver) Resolve(ctx context.Context, principal PrincipalKey) 
 	result := make([]Membership, 0, 2)
 	for rows.Next() {
 		var membership Membership
-		var capabilities pq.StringArray
-		if err := rows.Scan(&membership.ActorID, &membership.TenantID, &membership.OrganizationID, &membership.WorkOrderRole, &capabilities); err != nil {
+		var capabilities []string
+		if err := rows.Scan(&membership.ActorID, &membership.TenantID, &membership.OrganizationID, &membership.WorkOrderRole, r.m.SQLScanner(&capabilities)); err != nil {
 			return Membership{}, fmt.Errorf("scan local identity membership: %w", err)
 		}
 		membership.Capabilities = append([]string(nil), capabilities...)

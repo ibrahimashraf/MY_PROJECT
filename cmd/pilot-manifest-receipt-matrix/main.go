@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"database/sql"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/sync"
 	"integin/internal/domain/workpackage"
@@ -238,7 +238,7 @@ func run(serverURL, fixturePath, privateKeyPath, runID, receiptsDir string, rest
 	if dbURL == "" {
 		return errDBInput
 	}
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		return errDBConnection
 	}

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/workorder"
 	"integin/internal/identity"
@@ -35,7 +35,7 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL and all INTEGIN_KEYCLOAK_TEST_* values to run the disposable Keycloak integration test")
 	}
 	ctx := context.Background()
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/storage"
 )
@@ -82,7 +82,7 @@ func cleanupDatabase(ctx context.Context, value receipt) error {
 	if dsn == "" {
 		return errors.New("INTEGIN_DB_URL is required")
 	}
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
@@ -144,7 +144,7 @@ func cleanupEvidence(ctx context.Context, value receipt) error {
 
 func verifyDatabaseCleanup(ctx context.Context, value receipt) error {
 	dsn := strings.TrimSpace(os.Getenv("INTEGIN_DB_URL"))
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("open database for verification: %w", err)
 	}

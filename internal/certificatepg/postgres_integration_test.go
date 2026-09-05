@@ -11,7 +11,7 @@ import (
 
 	"integin/internal/domain/certificateauthority"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
@@ -19,7 +19,7 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if dsn == "" {
 		t.Skip("INTEGIN_TEST_DATABASE_URL is not set")
 	}
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,26 +45,31 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	t.Cleanup(func() {
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		for _, statement := range []string{
-			`DELETE FROM certificate_audit_event WHERE tenant_id = $1`,
-			`DELETE FROM certificate_snapshot WHERE tenant_id = $1`,
-			`DELETE FROM certificate_record WHERE tenant_id = $1`,
-			`DELETE FROM certificate_number_sequence WHERE tenant_id = $1`,
-			`DELETE FROM certificate_policy_public_binding WHERE tenant_id = $1`,
-			`DELETE FROM certificate_policy WHERE tenant_id = $1`,
-			`DELETE FROM certificate_template_cell WHERE tenant_id = $1`,
-			`DELETE FROM certificate_template WHERE tenant_id = $1`,
-			`DELETE FROM inspection_public_scope_item WHERE tenant_id = $1`,
-			`DELETE FROM inspection_public_scope WHERE tenant_id = $1`,
-			`DELETE FROM asset_registry WHERE tenant_id = $1`,
-			`DELETE FROM inspection_record WHERE tenant_id = $1`,
-			`DELETE FROM work_order_assignment_scope WHERE tenant_id = $1`,
-			`DELETE FROM work_order_assignment WHERE tenant_id = $1`,
-			`DELETE FROM work_order_scope_item WHERE tenant_id = $1`,
-			`DELETE FROM work_order WHERE tenant_id = $1`,
-		} {
-			if _, err := db.ExecContext(cleanupCtx, statement, tenantID); err != nil {
-				t.Errorf("cleanup %q: %v", statement, err)
+		conn, err := db.Conn(cleanupCtx)
+		if err == nil {
+			defer conn.Close()
+			_, _ = conn.ExecContext(cleanupCtx, `SELECT set_config('integin.tenant_id',$1,false), set_config('integin.organization_id',$2,false)`, tenantID, organizationID)
+			for _, statement := range []string{
+				`DELETE FROM certificate_audit_event WHERE tenant_id = $1`,
+				`DELETE FROM certificate_snapshot WHERE tenant_id = $1`,
+				`DELETE FROM certificate_record WHERE tenant_id = $1`,
+				`DELETE FROM certificate_number_sequence WHERE tenant_id = $1`,
+				`DELETE FROM certificate_policy_public_binding WHERE tenant_id = $1`,
+				`DELETE FROM certificate_policy WHERE tenant_id = $1`,
+				`DELETE FROM certificate_template_cell WHERE tenant_id = $1`,
+				`DELETE FROM certificate_template WHERE tenant_id = $1`,
+				`DELETE FROM inspection_public_scope_item WHERE tenant_id = $1`,
+				`DELETE FROM inspection_public_scope WHERE tenant_id = $1`,
+				`DELETE FROM asset_registry WHERE tenant_id = $1`,
+				`DELETE FROM inspection_record WHERE tenant_id = $1`,
+				`DELETE FROM work_order_assignment_scope WHERE tenant_id = $1`,
+				`DELETE FROM work_order_assignment WHERE tenant_id = $1`,
+				`DELETE FROM work_order_scope_item WHERE tenant_id = $1`,
+				`DELETE FROM work_order WHERE tenant_id = $1`,
+			} {
+				if _, err := conn.ExecContext(cleanupCtx, statement, tenantID); err != nil {
+					t.Errorf("cleanup %q: %v", statement, err)
+				}
 			}
 		}
 	})

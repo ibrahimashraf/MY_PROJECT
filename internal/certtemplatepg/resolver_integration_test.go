@@ -10,7 +10,7 @@ import (
 
 	"integin/internal/domain/certificatetemplate"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func TestPostgresResolveCanonicalInspectionTemplateIntegration(t *testing.T) {
@@ -20,7 +20,7 @@ func TestPostgresResolveCanonicalInspectionTemplateIntegration(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatalf("open database: %v", err)
 	}

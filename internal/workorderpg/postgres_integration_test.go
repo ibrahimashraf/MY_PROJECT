@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"integin/internal/domain/workorder"
 )
 
@@ -25,7 +25,7 @@ func TestCreateRequestIdempotencyAndRLSIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestCrossOrganizationWorkOrderIsolationIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestAssignmentTransitionAndPartialSubmissionIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ func TestAddEvidenceReference(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func requiredEnvironment(name string) string {
@@ -27,7 +27,7 @@ func main() {
 	databaseURL := requiredEnvironment("INTEGIN_DB_URL")
 	tenantID := requiredEnvironment("INTEGIN_TENANT_ID")
 
-	database, err := sql.Open("postgres", databaseURL)
+	database, err := sql.Open("pgx", databaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}

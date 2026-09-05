@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/workorder"
 	"integin/internal/identity"
@@ -41,7 +41,7 @@ func TestAuthenticatedPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled HTTP PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func openHTTPFixtureDatabase(t *testing.T, ctx context.Context) *sql.DB {
 	if dsn == "" {
 		t.Skip("set INTEGIN_TEST_FIXTURE_DATABASE_URL to run HTTP PostgreSQL fixture setup")
 	}
-	fixtureDatabase, err := sql.Open("postgres", dsn)
+	fixtureDatabase, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,7 +357,7 @@ func TestAuthenticatedEvidenceReferenceHTTPPostgresIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled HTTP PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

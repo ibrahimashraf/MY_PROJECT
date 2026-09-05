@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"integin/internal/evidencepg"
 	"integin/internal/evidenceregistration"
 	"integin/internal/identity"
@@ -36,7 +36,7 @@ func TestAuthenticatedEvidenceMetadataRegistrationPostgresIntegration(t *testing
 		t.Skip("set INTEGIN_TEST_DATABASE_URL and INTEGIN_S3_* to run the controlled evidence registration integration test")
 	}
 	store := integrationRegistrationStore(t)
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
@@ -50,7 +50,7 @@ func main() {
 	var authorities []device_trust.AuthorityPackage
 	if dbURL := strings.TrimSpace(os.Getenv("INTEGIN_DB_URL")); dbURL != "" {
 		var err error
-		database, err = sql.Open("postgres", dbURL)
+		database, err = sql.Open("pgx", dbURL)
 		if err != nil {
 			log.Fatal(err)
 		}

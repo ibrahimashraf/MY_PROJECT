@@ -11,7 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
@@ -33,9 +34,9 @@ func errorCode(err error) string {
 	case "isolated DB connection failed":
 		return "DB_CONNECTION_FAILED"
 	default:
-		var databaseError *pq.Error
+		var databaseError *pgconn.PgError
 		if errors.As(err, &databaseError) {
-			return "SQLSTATE_" + string(databaseError.Code)
+			return "SQLSTATE_" + databaseError.Code
 		}
 		return "UNCLASSIFIED"
 	}
@@ -59,7 +60,7 @@ func apply(sqlPath string) error {
 	if dbURL == "" {
 		return errors.New("isolated DB input is unavailable")
 	}
-	db, err := sql.Open("postgres", dbURL)
+	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		return errors.New("isolated DB connection failed")
 	}

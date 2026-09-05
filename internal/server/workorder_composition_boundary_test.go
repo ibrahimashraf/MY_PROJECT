@@ -18,7 +18,7 @@ func (compositionTestResolver) Resolve(context.Context, identity.PrincipalKey) (
 func TestNewWorkOrderPartialSubmissionHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestNewWorkOrderPartialSubmissionHandlerFailsClosedOnMissingDependency(t *t
 }
 
 func TestNewWorkOrderPartialSubmissionHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +62,7 @@ func TestNewWorkOrderPartialSubmissionHandlerBuildsWithoutConnecting(t *testing.
 func TestNewWorkOrderHandoverHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestNewWorkOrderHandoverHandlerFailsClosedOnMissingDependency(t *testing.T)
 }
 
 func TestNewWorkOrderHandoverHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}

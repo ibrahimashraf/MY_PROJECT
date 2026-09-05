@@ -40,7 +40,7 @@ func policySeed() error {
 	if err := json.Unmarshal(content, &value); err != nil {
 		return err
 	}
-	database, err := sql.Open("postgres", databaseURL)
+	database, err := sql.Open("pgx", databaseURL)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func policyExercise() error {
 	if err != nil {
 		return err
 	}
-	database, err := sql.Open("postgres", databaseURL)
+	database, err := sql.Open("pgx", databaseURL)
 	if err != nil {
 		return err
 	}

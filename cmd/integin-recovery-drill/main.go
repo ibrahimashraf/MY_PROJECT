@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/storage"
 )
@@ -404,7 +404,7 @@ func openDatabase() (*sql.DB, func(), error) {
 	if dsn == "" {
 		return nil, nil, errors.New("INTEGIN_RECOVERY_DB_URL is required")
 	}
-	database, err := sql.Open("postgres", dsn)
+	database, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, nil, err
 	}

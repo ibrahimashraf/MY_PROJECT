@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/certificatehttp"
 	"integin/internal/certificatepg"
@@ -92,7 +92,7 @@ func TestSignedOIDCCertificateTransportUsesLocalMembership(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

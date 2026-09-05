@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
@@ -12,7 +14,7 @@ import (
 func TestNewCertificateHandlerFailsClosedOnMissingDependency(t *testing.T) {
 	resolver := compositionTestResolver{}
 	validator := &oidcauth.Validator{}
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,7 @@ func TestNewCertificateHandlerFailsClosedOnMissingDependency(t *testing.T) {
 }
 
 func TestNewCertificateHandlerBuildsWithoutConnecting(t *testing.T) {
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +56,7 @@ func TestNewCertificateHandlerBuildsWithoutConnecting(t *testing.T) {
 }
 
 func TestNewCertificateHandlerWithArtifactStore(t *testing.T) {
-	db, err := sql.Open("postgres", "")
+	db, err := sql.Open("pgx", "")
 	if err != nil {
 		t.Fatal(err)
 	}

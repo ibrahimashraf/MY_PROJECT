@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
@@ -107,7 +107,7 @@ func seed() error {
 	if err != nil {
 		return err
 	}
-	db, err := sql.Open("postgres", databaseURL)
+	db, err := sql.Open("pgx", databaseURL)
 	if err != nil {
 		return err
 	}

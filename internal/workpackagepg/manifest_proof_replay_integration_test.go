@@ -16,7 +16,7 @@ import (
 
 	"integin/internal/domain/workpackage"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const manifestReplayIntegrationDSNEnv = "INTEGIN_MANIFEST_REPLAY_TEST_DSN"
@@ -26,7 +26,7 @@ func TestManifestProofReplayStorePostgresIntegration(t *testing.T) {
 	if dsn == "" {
 		t.Skip("set INTEGIN_MANIFEST_REPLAY_TEST_DSN to run disposable PostgreSQL replay integration tests")
 	}
-	adminDB, err := sql.Open("postgres", dsn)
+	adminDB, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatalf("open integration database: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestManifestProofReplayStorePostgresIntegration(t *testing.T) {
 
 	role := "integin_manifest_replay_test"
 	roleDSN := integrationRoleDSN(t, dsn, role, rolePassword)
-	appDB, err := sql.Open("postgres", roleDSN)
+	appDB, err := sql.Open("pgx", roleDSN)
 	if err != nil {
 		t.Fatalf("open scoped integration database: %v", err)
 	}

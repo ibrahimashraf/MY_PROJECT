@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"integin/internal/domain/formdefinition"
 )
 
@@ -262,7 +264,7 @@ func TestRLSOrganizationIsolation(t *testing.T) {
 func testDB(t *testing.T) *sql.DB {
 	t.Helper()
 	dsn := "postgres://integin:integin@localhost:5432/integin_test?sslmode=disable"
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Skipf("skipping: %v", err)
 	}

@@ -18,7 +18,7 @@ func TestProvisionalFingerprintConflictIntegration(t *testing.T) {
 		t.Skip("set INTEGIN_TEST_DATABASE_URL to run the controlled PostgreSQL integration test")
 	}
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
