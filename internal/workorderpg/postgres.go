@@ -11,6 +11,7 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"sync"
 
 	"integin/internal/domain/workorder"
 	"integin/internal/shared/pgtx"
@@ -716,7 +717,26 @@ func hashPayload(value any) (string, error) {
 	return hex.EncodeToString(sum[:]), nil
 }
 
+var bufferPool = sync.Pool{
+	New: func() any {
+		return bytes.NewBuffer(make([]byte, 0, 2048))
+	},
+}
+
 func canonicalJSONBytes(v any) ([]byte, error) {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufferPool.Put(buf)
+
+	if err := writeCanonicalJSON(buf, v); err != nil {
+		return nil, err
+	}
+	res := make([]byte, buf.Len())
+	copy(res, buf.Bytes())
+	return res, nil
+}
+
+func writeCanonicalJSON(buf *bytes.Buffer, v any) error {
 	switch val := v.(type) {
 	case map[string]any:
 		keys := make([]string, 0, len(val))
@@ -724,7 +744,6 @@ func canonicalJSONBytes(v any) ([]byte, error) {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		var buf bytes.Buffer
 		buf.WriteByte('{')
 		for i, k := range keys {
 			if i > 0 {
@@ -733,31 +752,31 @@ func canonicalJSONBytes(v any) ([]byte, error) {
 			kb, _ := json.Marshal(k)
 			buf.Write(kb)
 			buf.WriteByte(':')
-			vb, err := canonicalJSONBytes(val[k])
-			if err != nil {
-				return nil, err
+			if err := writeCanonicalJSON(buf, val[k]); err != nil {
+				return err
 			}
-			buf.Write(vb)
 		}
 		buf.WriteByte('}')
-		return buf.Bytes(), nil
+		return nil
 	case []any:
-		var buf bytes.Buffer
 		buf.WriteByte('[')
 		for i, item := range val {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			ib, err := canonicalJSONBytes(item)
-			if err != nil {
-				return nil, err
+			if err := writeCanonicalJSON(buf, item); err != nil {
+				return err
 			}
-			buf.Write(ib)
 		}
 		buf.WriteByte(']')
-		return buf.Bytes(), nil
+		return nil
 	default:
-		return json.Marshal(val)
+		b, err := json.Marshal(val)
+		if err != nil {
+			return err
+		}
+		buf.Write(b)
+		return nil
 	}
 }
 
