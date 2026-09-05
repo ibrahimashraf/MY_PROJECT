@@ -288,6 +288,9 @@ func certificateToken(t *testing.T, key *rsa.PrivateKey, kid, issuer, subject st
 }
 func insertCertificateMembership(t *testing.T, ctx context.Context, db *sql.DB, issuer, subject, tenant, organization, actor string, caps []string) {
 	t.Helper()
+	if _, err := db.ExecContext(ctx, "INSERT INTO identity_actor (actor_id, tenant_id, organization_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING", actor, tenant, organization); err != nil {
+		t.Fatal(err)
+	}
 	var sid, mid int64
 	if err := db.QueryRowContext(ctx, "INSERT INTO identity_subject (issuer,subject) VALUES ($1,$2) RETURNING subject_id", issuer, subject).Scan(&sid); err != nil {
 		t.Fatal(err)
