@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../outbox/merkle_hash_chain.dart';
 import '../outbox/outbox.dart';
 
 abstract interface class KeyValueStore {
@@ -24,12 +25,19 @@ class SharedPreferencesKeyValueStore implements KeyValueStore {
 }
 
 class JsonOutboxStore implements OutboxStore {
-  JsonOutboxStore({required this.storage, this.key = 'integin.outbox.v1'});
+  JsonOutboxStore({
+    required this.storage,
+    this.key = 'integin.outbox.v1',
+    CryptographicMerkleHashChain? hashChain,
+  }) : _hashChain = hashChain ?? CryptographicMerkleHashChain();
 
   final KeyValueStore storage;
   final String key;
+  final CryptographicMerkleHashChain _hashChain;
   final List<OutboxEntry> _entries = [];
   bool _loaded = false;
+
+  CryptographicMerkleHashChain get hashChain => _hashChain;
 
   Future<void> load() async {
     if (_loaded) return;
@@ -63,6 +71,10 @@ class JsonOutboxStore implements OutboxStore {
     if (_entries.any((candidate) =>
         candidate.mutation.transactionId == entry.mutation.transactionId)) {
       return;
+    }
+    // Automatically seal mutation with Merkle hash chain if not already sealed
+    if (entry.chainHash == null || entry.chainHash!.isEmpty) {
+      entry.chainHash = _hashChain.seal(entry.mutation);
     }
     _entries.add(entry);
     await _persist();

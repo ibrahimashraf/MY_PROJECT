@@ -68,8 +68,11 @@ void main() {
     final pending = await second.pending();
     expect(pending, hasLength(1));
     expect(pending.single.mutation.transactionId, 'tx-1');
+    expect(pending.single.chainHash, isNotNull);
+    expect(pending.single.chainHash, isNotEmpty);
     await second.mark(pending.single, OutboxState.held, error: 'sequence gap');
     expect((await second.pending()).single.lastError, 'sequence gap');
+    expect((await second.pending()).single.chainHash, isNotEmpty);
   });
 
   test('JSON outbox recovers an interrupted upload into a retryable queue state', () async {
