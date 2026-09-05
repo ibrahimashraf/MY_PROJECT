@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
@@ -31,9 +31,9 @@ func TestDeterministicSimulationChaosHarness(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		t.Fatalf("failed to open database: %v", err)
+		t.Fatalf("failed to open database with pgx: %v", err)
 	}
 	defer db.Close()
 	db.SetMaxOpenConns(50)
