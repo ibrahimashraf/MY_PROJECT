@@ -88,6 +88,28 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
 		return
 	}
+	var replayBefore, replayAfter *int64
+	if h.Observer != nil && h.ReplayCounter != nil {
+		if before, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
+			replayBefore = &before
+		}
+	}
+	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
+		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
+			h.observe(r.Context(), "replay_rejected", "replay", http.StatusConflict, false)
+			writeError(w, http.StatusConflict, "manifest proof was already used")
+			return
+		}
+		h.observe(r.Context(), "proof_rejected", "expired", http.StatusUnauthorized, false)
+		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
+		return
+	}
+	if replayBefore != nil && h.ReplayCounter != nil {
+		if after, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
+			replayAfter = &after
+		}
+	}
+
 	manifest, err := h.Issuer.Issue(r.Context(), verified, body.Proof.InspectionID, now)
 	if err != nil {
 		if errors.Is(err, packagemanifest.ErrNotFound) {
@@ -110,27 +132,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "manifest issuance failed")
 		return
 	}
-	var replayBefore, replayAfter *int64
-	if h.Observer != nil && h.ReplayCounter != nil {
-		if before, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
-			replayBefore = &before
-		}
-	}
-	if err := h.ReplayStore.Consume(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, body.Proof.RequestID, body.Proof.ExpiresAt); err != nil {
-		if errors.Is(err, packagemanifest.ErrReplayAlreadyConsumed) {
-			h.observe(r.Context(), "replay_rejected", "replay", http.StatusConflict, false)
-			writeError(w, http.StatusConflict, "manifest proof was already used")
-			return
-		}
-		h.observe(r.Context(), "proof_rejected", "expired", http.StatusUnauthorized, false)
-		writeError(w, http.StatusUnauthorized, "manifest authentication failed")
-		return
-	}
-	if replayBefore != nil && h.ReplayCounter != nil {
-		if after, countErr := h.ReplayCounter.Count(r.Context(), verified.TenantID, verified.OrganizationID, verified.DeviceID, body.Proof.Purpose, now); countErr == nil {
-			replayAfter = &after
-		}
-	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(manifest)

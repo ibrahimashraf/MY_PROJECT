@@ -23,9 +23,16 @@ func (c AssignmentContext) Validate() error {
 	if strings.TrimSpace(c.RootAssetID) == "" || strings.TrimSpace(c.InspectionType) == "" || strings.TrimSpace(c.ProcedureVersion) == "" || c.ScheduledAt.IsZero() {
 		return errors.New("assignment context is incomplete")
 	}
+	if strings.Contains(c.RootAssetID, "|") || strings.Contains(c.InspectionType, "|") || strings.Contains(c.ProcedureVersion, "|") {
+		return errors.New("assignment context fields cannot contain pipe delimiter '|'")
+	}
 	for fieldID, assetID := range c.FieldAssetIDs {
 		if strings.TrimSpace(fieldID) == "" || strings.TrimSpace(assetID) == "" {
 			return errors.New("assignment context field asset mapping is invalid")
+		}
+		if strings.Contains(fieldID, "|") || strings.Contains(fieldID, "=") || strings.Contains(fieldID, ",") ||
+			strings.Contains(assetID, "|") || strings.Contains(assetID, "=") || strings.Contains(assetID, ",") {
+			return errors.New("assignment context field asset mapping contains reserved delimiters")
 		}
 	}
 	return nil

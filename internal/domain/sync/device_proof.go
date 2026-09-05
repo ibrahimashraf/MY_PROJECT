@@ -81,6 +81,9 @@ func (p *Processor) VerifyDeviceProof(
 	if strings.TrimSpace(proof.RequestID) == "" || strings.TrimSpace(proof.DeviceID) == "" || strings.TrimSpace(proof.InspectionID) == "" {
 		return VerifiedDeviceContext{}, errors.New("device proof request, device, and inspection are required")
 	}
+	if strings.Contains(proof.RequestID, "|") || strings.Contains(proof.DeviceID, "|") || strings.Contains(proof.AuthorityID, "|") || strings.Contains(proof.InspectionID, "|") || strings.Contains(proof.KeyID, "|") {
+		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureSignatureInvalid, errors.New("device proof fields cannot contain pipe delimiter '|'"))
+	}
 	if proof.IssuedAt.IsZero() || proof.ExpiresAt.IsZero() {
 		return VerifiedDeviceContext{}, errors.New("device proof issuance and expiry are required")
 	}

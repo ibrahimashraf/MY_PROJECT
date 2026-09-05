@@ -22,4 +22,16 @@ func TestAssignmentContextValidate(t *testing.T) {
 	if err := invalid.Validate(); err == nil {
 		t.Fatal("expected invalid field asset mapping rejection")
 	}
+
+	invalidDelimiter := valid
+	invalidDelimiter.RootAssetID = "asset|root"
+	if err := invalidDelimiter.Validate(); err == nil {
+		t.Fatal("expected delimiter injection rejection in RootAssetID")
+	}
+
+	invalidMapDelimiter := valid
+	invalidMapDelimiter.FieldAssetIDs = map[string]string{"field=1": "asset"}
+	if err := invalidMapDelimiter.Validate(); err == nil {
+		t.Fatal("expected delimiter injection rejection in field asset key")
+	}
 }

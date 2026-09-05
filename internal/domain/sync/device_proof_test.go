@@ -46,6 +46,17 @@ func TestVerifyDeviceProofRequiresManifestReadCapability(t *testing.T) {
 	}
 }
 
+func TestVerifyDeviceProofRejectsPipeDelimiterInjection(t *testing.T) {
+	now := time.Date(2026, 8, 17, 9, 0, 0, 0, time.UTC)
+	processor, device, authority, privateKey := proofFixture(t, now, []string{"work_package.read"})
+	proof := signedDeviceProof(now, device, authority, privateKey)
+	proof.RequestID = "request|injected"
+
+	if _, err := processor.VerifyDeviceProof(context.Background(), proof, authority, now); err == nil {
+		t.Fatal("expected pipe delimiter injection rejection")
+	}
+}
+
 func proofFixture(t *testing.T, now time.Time, scopes []string) (*Processor, device_trust.Device, device_trust.AuthorityPackage, ed25519.PrivateKey) {
 	t.Helper()
 	publicKey, privateKey, err := security.GenerateDeviceKeyPair()

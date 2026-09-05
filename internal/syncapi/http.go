@@ -145,6 +145,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	result := h.Processor.SubmitContext(r.Context(), transaction, authority, h.Now().UTC())
+	if result.Outcome == domainsync.Applied {
+		// Server-side cascade drain of any held transactions awaiting this sequence
+		h.Processor.DrainHeld(r.Context(), transaction.TenantID, transaction.DeviceID, h.Now().UTC())
+	}
 	writeJSON(w, http.StatusOK, response{Outcome: result.Outcome, Reason: result.Reason, TransactionID: result.TransactionID, ExpectedSequence: result.ExpectedSequence, PayloadHash: result.PayloadHash})
 }
 

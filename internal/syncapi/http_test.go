@@ -104,3 +104,57 @@ func requestBody(t *testing.T, transaction domainsync.Transaction, authorityID s
 	}
 	return body
 }
+
+func TestHandlerDrainsHeldTransactionsWhenSequenceArrives(t *testing.T) {
+	processor, authority := testProcessor(t)
+	handler := NewHandler(processor)
+	handler.Now = func() time.Time { return time.Date(2026, 8, 13, 11, 0, 0, 0, time.UTC) }
+	handler.RegisterAuthority(authority)
+
+	payload := []byte(`{"finding":"pass"}`)
+
+	// Send tx-2 first (sequence 2) -> should be HELD
+	tx2 := domainsync.NewTransaction("tx-2", "tenant-1", "device-1", "user-1", 2, "FindingRecorded", payload)
+	tx2.OrganizationID = "org-1"
+	tx2.EntityID = "inspection-1"
+	tx2.AuthorityID = authority.ID
+	tx2.AuthorityEpoch = authority.Epoch
+	tx2 = domainsync.SignTransaction(tx2, "secret", "default")
+	body2 := requestBody(t, tx2, authority.ID)
+
+	rec2 := httptest.NewRecorder()
+	handler.ServeHTTP(rec2, httptest.NewRequest(http.MethodPost, "/sync", bytes.NewReader(body2)))
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("tx2 status = %d", rec2.Code)
+	}
+	var res2 response
+	_ = json.Unmarshal(rec2.Body.Bytes(), &res2)
+	if res2.Outcome != domainsync.Held {
+		t.Fatalf("expected tx2 held, got %s", res2.Outcome)
+	}
+
+	// Now send tx-1 (sequence 1) -> should apply tx-1 AND automatically cascade drain tx-2
+	tx1 := domainsync.NewTransaction("tx-1", "tenant-1", "device-1", "user-1", 1, "FindingRecorded", payload)
+	tx1.OrganizationID = "org-1"
+	tx1.EntityID = "inspection-1"
+	tx1.AuthorityID = authority.ID
+	tx1.AuthorityEpoch = authority.Epoch
+	tx1 = domainsync.SignTransaction(tx1, "secret", "default")
+	body1 := requestBody(t, tx1, authority.ID)
+
+	rec1 := httptest.NewRecorder()
+	handler.ServeHTTP(rec1, httptest.NewRequest(http.MethodPost, "/sync", bytes.NewReader(body1)))
+	if rec1.Code != http.StatusOK {
+		t.Fatalf("tx1 status = %d", rec1.Code)
+	}
+	var res1 response
+	_ = json.Unmarshal(rec1.Body.Bytes(), &res1)
+	if res1.Outcome != domainsync.Applied {
+		t.Fatalf("expected tx1 applied, got %s", res1.Outcome)
+	}
+
+	// Verify processor state: tx-2 is no longer held, it was cascaded to applied!
+	if len(processor.HeldTransactions()) != 0 {
+		t.Fatalf("expected 0 held transactions after cascade drain, got %d", len(processor.HeldTransactions()))
+	}
+}
