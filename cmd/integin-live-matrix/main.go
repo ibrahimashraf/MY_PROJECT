@@ -27,6 +27,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/oidcauth"
 	"integin/internal/security"
 	"integin/internal/shared/types"
 	"integin/internal/syncstate"
@@ -197,6 +198,23 @@ func exercise() error {
 		return err
 	}
 	client := &http.Client{Timeout: 15 * time.Second}
+
+	// Acquire OIDC token for authenticated evidence calls
+	tokenEndpoint := strings.TrimSuffix(os.Getenv("INTEGIN_OIDC_ISSUER"), "/") + "/protocol/openid-connect/token"
+	tokenProvider, err := oidcauth.NewClientCredentialsTokenProvider(oidcauth.ClientCredentialsConfig{
+		TokenEndpoint: tokenEndpoint,
+		ClientID:      os.Getenv("INTEGIN_OIDC_CLIENT_ID"),
+		ClientSecret:  os.Getenv("INTEGIN_OIDC_CLIENT_SECRET"),
+		RefreshBuffer: 30 * time.Second,
+	}, client)
+	if err != nil {
+		return fmt.Errorf("creating token provider: %w", err)
+	}
+	token, err := tokenProvider.GetToken(context.Background())
+	if err != nil {
+		return fmt.Errorf("obtaining OIDC token: %w", err)
+	}
+
 	payload := []byte(`{"inspection_id":"integin-live-inspection","status":"submitted"}`)
 	txPrefix := "integin-live-" + value.DeviceID
 	base := signedTransaction(txPrefix+"-applied", 1, value, ed25519.PrivateKey(privateKey), payload)
@@ -220,7 +238,7 @@ func exercise() error {
 		return err
 	}
 
-	return exerciseEvidence(client, serverURL, value)
+	return exerciseEvidence(client, serverURL, value, token)
 }
 
 func signedTransaction(id string, sequence uint64, value fixture, privateKey ed25519.PrivateKey, payload []byte) domainsync.Transaction {
@@ -249,18 +267,18 @@ func expectSync(client *http.Client, serverURL string, tx domainsync.Transaction
 	return nil
 }
 
-func exerciseEvidence(client *http.Client, serverURL string, value fixture) error {
+func exerciseEvidence(client *http.Client, serverURL string, value fixture, token string) error {
 	ciphertext := []byte("INTEGIN live encrypted evidence matrix bytes")
 	plaintext := []byte("INTEGIN live plaintext evidence matrix bytes")
 	requestValue := evidenceRequest{TenantID: value.TenantID, OrganizationID: value.Organization, EvidenceID: "integin-live-evidence-" + value.DeviceID, InspectionID: "integin-live-inspection", ContentType: "application/octet-stream", PlaintextSHA256: digest(plaintext), CiphertextSHA256: digest(ciphertext), Base64Blob: base64.StdEncoding.EncodeToString(ciphertext)}
-	response, err := postJSON(client, serverURL+"/evidence", requestValue)
+	response, err := postJSONAuth(client, serverURL+"/evidence", requestValue, token)
 	if err != nil {
 		return err
 	}
 	if response.Outcome != "APPLIED" {
 		return fmt.Errorf("evidence applied outcome=%s reason=%s", response.Outcome, response.Reason)
 	}
-	response, err = postJSON(client, serverURL+"/evidence", requestValue)
+	response, err = postJSONAuth(client, serverURL+"/evidence", requestValue, token)
 	if err != nil {
 		return err
 	}
@@ -270,7 +288,7 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture) erro
 	conflicting := requestValue
 	conflicting.Base64Blob = base64.StdEncoding.EncodeToString([]byte("different ciphertext"))
 	conflicting.CiphertextSHA256 = digest([]byte("different ciphertext"))
-	response, err = postJSON(client, serverURL+"/evidence", conflicting)
+	response, err = postJSONAuth(client, serverURL+"/evidence", conflicting, token)
 	if err != nil {
 		return err
 	}
@@ -279,17 +297,18 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture) erro
 	}
 	tampered := requestValue
 	tampered.CiphertextSHA256 = strings.Repeat("0", 64)
-	response, err = postJSON(client, serverURL+"/evidence", tampered)
+	response, err = postJSONAuth(client, serverURL+"/evidence", tampered, token)
 	if err != nil {
 		return err
 	}
 	if response.Outcome != "SECURITY_FAILURE" {
-		return fmt.Errorf("evidence security outcome=%s reason=%s", response.Outcome, response.Reason)
+		return fmt.Errorf("evidence security_failure outcome=%s reason=%s", response.Outcome, response.Reason)
 	}
 	return nil
 }
 
-func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse, error) {
+// postJSONAuth performs an authenticated POST request with a Bearer token (used for /evidence endpoints).
+func postJSONAuth(client *http.Client, endpoint string, value any, token string) (outcomeResponse, error) {
 	body, err := json.Marshal(value)
 	if err != nil {
 		return outcomeResponse{}, err
@@ -298,7 +317,14 @@ func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse,
 	if err != nil || u.Scheme != "http" && u.Scheme != "https" || u.Host == "" {
 		return outcomeResponse{}, fmt.Errorf("invalid endpoint URL: %s", endpoint)
 	}
-	response, err := client.Post(endpoint, "application/json", bytes.NewReader(body)) //nolint:gosec // endpoint validated above
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return outcomeResponse{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	response, err := client.Do(req) //nolint:gosec // endpoint validated above
 	if err != nil {
 		return outcomeResponse{}, err
 	}
@@ -315,6 +341,49 @@ func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse,
 	return result, nil
 }
 
+// postJSON performs an unauthenticated POST request (used for /sync endpoints).
+func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse, error) {
+	body, err := json.Marshal(value)
+	if err != nil {
+		return outcomeResponse{}, err
+	}
+
+
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Scheme != "http" && u.Scheme != "https" || u.Host == "" {
+		return outcomeResponse{}, fmt.Errorf("invalid endpoint URL: %s", endpoint)
+	}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return outcomeResponse{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	// Authorization header not needed for unauthenticated postJSON
+	response, err := client.Do(req) //nolint:gosec // endpoint validated above
+	if err != nil {
+		return outcomeResponse{}, err
+	}
+	defer response.Body.Close()
+	resultBody, _ := io.ReadAll(response.Body)
+	var result outcomeResponse
+	if err := json.Unmarshal(resultBody, &result); err != nil {
+		return outcomeResponse{}, fmt.Errorf("decode %s response %d: %w", endpoint, response.StatusCode, err)
+	}
+	// Evidence conflicts and integrity failures intentionally use non-2xx HTTP
+	// statuses while still returning a structured authoritative outcome. Callers
+	// assert the outcome instead of treating an expected conflict as transport
+	// failure.
+	return result, nil
+}
+
+
+
+func digest(value []byte) string {
+	hash := sha256.Sum256(value)
+	return hex.EncodeToString(hash[:])
+}
+
 func localConfig() (databaseURL, tenantID, secret, fixturePath string, err error) {
 	databaseURL = strings.TrimSpace(os.Getenv("INTEGIN_DB_URL"))
 	tenantID = strings.TrimSpace(os.Getenv("INTEGIN_TENANT_ID"))
@@ -329,7 +398,3 @@ func localConfig() (databaseURL, tenantID, secret, fixturePath string, err error
 	return databaseURL, tenantID, secret, fixturePath, nil
 }
 
-func digest(value []byte) string {
-	hash := sha256.Sum256(value)
-	return hex.EncodeToString(hash[:])
-}
