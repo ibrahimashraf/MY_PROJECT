@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -46,6 +47,14 @@ func main() {
 	fmt.Printf("Target: %s\n", dbURL)
 	fmt.Printf("Jobs: %d | Batch Size: %d | Concurrency: %d | AsyncCommit: %v\n", totalJobs, batchSize, concurrency, asyncCommit)
 	fmt.Printf("============================================================\n")
+
+	if strings.Contains(dbURL, "6432") && !strings.Contains(dbURL, "default_query_exec_mode") {
+		separator := "?"
+		if strings.Contains(dbURL, "?") {
+			separator = "&"
+		}
+		dbURL = dbURL + separator + "default_query_exec_mode=exec"
+	}
 
 	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
