@@ -4,7 +4,7 @@ This document defines the local development sequence for the live integration ga
 
 ## Start order
 
-Install and verify Docker Desktop with WSL 2, PostgreSQL, and the pinned RustFS `1.0.0-rc.1` development release. Start PostgreSQL with a persistent data volume and create a dedicated `integin` database plus an application role. Start RustFS with persistent data and log volumes, expose its S3 endpoint on local port `9000`, restrict the administration console on `9001`, and create the `integin-evidence` bucket with a dedicated access key.
+Install and verify Docker Desktop with WSL 2, PostgreSQL (port `15432`), and RustFS. Start PostgreSQL with a persistent data volume and create a dedicated `integin_dev` database plus an application role (`integin_runtime`). Start RustFS with persistent data and log volumes, expose its S3 endpoint on local port `19000`, restrict the administration console on `19001`, and create the `integin-pilot-evidence` bucket with dedicated access credentials (see `WORKSPACE.md` for live environment variables).
 
 The exact RustFS binary or container command must follow the official release instructions for the installed package. Do not substitute `latest`, and record the binary checksum or container digest in the integration record. RustFS is an integration-test dependency here, not a production approval.
 
@@ -27,8 +27,8 @@ Verify that `event_log`, `device_registry`, `authority_package`, `sync_device_st
 Export the values in `INTEGIN_LOCAL_ENV.example`, start `cmd/integin-server`, and wait for both endpoints:
 
 ```powershell
-Invoke-WebRequest http://127.0.0.1:8080/healthz
-Invoke-WebRequest http://127.0.0.1:8080/readyz
+Invoke-WebRequest http://127.0.0.1:18080/healthz
+Invoke-WebRequest http://127.0.0.1:18080/readyz
 ```
 
 `/healthz` proves the process is alive. `/readyz` must remain the gate for PostgreSQL and RustFS dependency readiness. Do not run the Flutter-to-Go acceptance matrix if readiness is not successful.
