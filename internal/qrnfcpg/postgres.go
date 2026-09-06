@@ -42,14 +42,14 @@ func (r *Repository) Issue(ctx context.Context, actor qrnfc.ActorContext, entry 
 	if entry.TokenVersion <= 0 {
 		entry.TokenVersion = 1
 	}
-	if err := entry.Validate(); err != nil {
-		return qrnfc.Entry{}, "", err
-	}
 	rawToken, digest, err := qrnfc.GenerateToken()
 	if err != nil {
 		return qrnfc.Entry{}, "", err
 	}
 	entry.TokenDigest = digest
+	if err := entry.Validate(); err != nil {
+		return qrnfc.Entry{}, "", err
+	}
 	tx, err := r.begin(ctx, actor)
 	if err != nil {
 		return qrnfc.Entry{}, "", err
