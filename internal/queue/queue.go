@@ -61,9 +61,15 @@ func NewQueue(ctx context.Context, db *sql.DB, workers *river.Workers) (*Queue, 
 	}
 
 	driver := riverdatabasesql.New(db)
-	client, err := river.NewClient[*sql.Tx](driver, &river.Config{
+	cfg := &river.Config{
 		Workers: workers,
-	})
+	}
+	if workers != nil {
+		cfg.Queues = map[string]river.QueueConfig{
+			river.QueueDefault: {MaxWorkers: 20},
+		}
+	}
+	client, err := river.NewClient[*sql.Tx](driver, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize river client: %w", err)
 	}
