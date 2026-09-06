@@ -75,9 +75,9 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to begin seed tx: %v", err)
 		}
-		if _, err := seedTx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := seedTx.ExecContext(ctx, "SET LOCAL ROLE integin_runtime"); err != nil {
 			seedTx.Rollback()
-			t.Fatalf("set role failed: %v", err)
+			t.Fatalf("set local role failed: %v", err)
 		}
 		if _, err := seedTx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", f.tenantID, f.orgID); err != nil {
 			seedTx.Rollback()
@@ -152,10 +152,10 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 					return
 				}
 
-				// Step 2: Switch to integin_runtime and set transaction-local GUC
-				if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+				// Step 2: Switch to integin_runtime locally and set transaction-local GUC
+				if _, err := tx.ExecContext(ctx, "SET LOCAL ROLE integin_runtime"); err != nil {
 					tx.Rollback()
-					errChan <- fmt.Errorf("worker %d: set role: %w", workerID, err)
+					errChan <- fmt.Errorf("worker %d: set local role: %w", workerID, err)
 					return
 				}
 				if _, err := tx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", current.tenantID, current.orgID); err != nil {
