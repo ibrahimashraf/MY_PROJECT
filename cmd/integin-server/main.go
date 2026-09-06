@@ -26,6 +26,8 @@ import (
 	"integin/internal/assurancepg"
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
+	"integin/internal/certificaterender"
+	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/evidencepackhttp"
@@ -311,9 +313,17 @@ func main() {
 		}
 		assetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
 
-		// Initialize and start River queue with WebhookDeliveryWorker (Hybrid Outbox)
+		// Initialize and start River queue with WebhookDeliveryWorker and CertificateRenderWorker
 		workers := river.NewWorkers()
 		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
+		if evidenceStore != nil && certificateRepository != nil {
+			renderer := domainrender.NewDeterministicPDFRenderer()
+			renderSvc, renderErr := certificaterender.NewRenderService(renderer, evidenceStore, certificateRepository)
+			if renderErr != nil {
+				log.Fatalf("failed to initialize certificate render service: %v", renderErr)
+			}
+			river.AddWorker(workers, certificaterender.NewCertificateRenderWorker(renderSvc, certificateRepository))
+		}
 
 		var riverErr error
 		riverQueue, riverErr = queue.NewQueue(context.Background(), database, workers)
