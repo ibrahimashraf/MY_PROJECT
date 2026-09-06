@@ -102,6 +102,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/asset-entitlements", d.AssetEntitlementHandler)
 		mux.Handle("/api/v1/asset-entitlements/", d.AssetEntitlementHandler)
 	}
+	if d.DPPHandler != nil {
+		mux.Handle("/dpp/", d.DPPHandler)
+		mux.Handle("/api/v1/dpp/", d.DPPHandler)
+	}
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {

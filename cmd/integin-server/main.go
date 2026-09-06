@@ -29,6 +29,9 @@ import (
 	"integin/internal/certificaterender"
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/device_trust"
+	"integin/internal/domain/dpp"
+	"integin/internal/dpphttp"
+	"integin/internal/dpppg"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/evidencepackhttp"
 	"integin/internal/evidencepackpg"
@@ -258,6 +261,7 @@ func main() {
 	var formDefHandler http.Handler
 	var evidencePackHandler http.Handler
 	var assetEntitlementHandler http.Handler
+	var dppHandler http.Handler
 
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
@@ -313,6 +317,31 @@ func main() {
 		}
 		assetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
 
+		dppRepo, dppErr := dpppg.NewRepository(database)
+		if dppErr != nil {
+			log.Fatal(dppErr)
+		}
+		dppResolver := func(r *http.Request) (dpp.ActorContext, error) {
+			if activeValidator == nil || activeResolver == nil {
+				return dpp.ActorContext{TenantID: "default", OrganizationID: "default", ActorID: "system"}, nil
+			}
+			authHeader := r.Header.Get("Authorization")
+			if !strings.HasPrefix(authHeader, "Bearer ") {
+				return dpp.ActorContext{}, errors.New("bearer token required")
+			}
+			token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+			principal, err := activeValidator.Validate(r.Context(), token)
+			if err != nil {
+				return dpp.ActorContext{}, err
+			}
+			mem, err := activeResolver.Resolve(r.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject})
+			if err != nil {
+				return dpp.ActorContext{}, err
+			}
+			return dpp.ActorContext{TenantID: mem.TenantID, OrganizationID: mem.OrganizationID, ActorID: mem.ActorID}, nil
+		}
+		dppHandler = dpphttp.NewHandler(dppRepo, activeValidator, dppResolver)
+
 		// Initialize and start River queue with WebhookDeliveryWorker and CertificateRenderWorker
 		workers := river.NewWorkers()
 		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
@@ -344,7 +373,7 @@ func main() {
 			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-			EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler}),
+			EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler}),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
