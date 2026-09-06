@@ -20,6 +20,7 @@ docs/evidence/pilot-backups/
 **/.venv/ 
 **/.verification-venv/ 
 **/__pycache__/ 
+**/.pytest_cache/ 
 **/node_modules/ 
 *.log 
  
