@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Go Application Architecture",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "all-components",
+        "label": "Full Component Map",
+        "focus": [
+          "domain",
+          "licensing",
+          "onboarding"
+        ],
+        "note": "Scanned directly from repository packages."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "domain",
+      "type": "database",
+      "label": "domain",
+      "sublabel": "domain",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "licensing",
+      "type": "security",
+      "label": "licensing",
+      "sublabel": "licensing",
+      "pos": [
+        280,
+        80
+      ],
+      "size": [
+        160,
+        60
+      ]
+    },
+    {
+      "id": "onboarding",
+      "type": "backend",
+      "label": "onboarding",
+      "sublabel": "onboarding",
+      "pos": [
+        520,
+        80
+      ],
+      "size": [
+        160,
+        60
+      ]
+    }
+  ],
+  "connections": [],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Codebase Scan",
+      "items": [
+        "Extracted 3 Go packages automatically from integin-pilot-source/pkg"
+      ]
+    }
+  ]
+}

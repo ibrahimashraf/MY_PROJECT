@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Go Module Architecture & Dependencies",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "all-components",
+        "label": "Full Component Map",
+        "focus": [
+          "domain",
+          "licensing",
+          "onboarding"
+        ],
+        "note": "Scanned directly from Go AST and internal package imports."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "domain",
+      "type": "database",
+      "label": "domain",
+      "sublabel": "domain",
+      "pos": [
+        50,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "licensing",
+      "type": "security",
+      "label": "licensing",
+      "sublabel": "licensing",
+      "pos": [
+        310,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "onboarding",
+      "type": "backend",
+      "label": "onboarding",
+      "sublabel": "onboarding",
+      "pos": [
+        570,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "connections": [],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "AST Architecture Scan",
+      "items": [
+        "Discovered 3 Go packages across integin-pilot-source/pkg",
+        "Mapped 0 live import relationships automatically"
+      ]
+    }
+  ]
+}

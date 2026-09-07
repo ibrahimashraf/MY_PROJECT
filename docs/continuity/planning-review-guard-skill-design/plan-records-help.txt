@@ -1,0 +1,12 @@
+usage: plan_records.py [-h] [--format {text,json}]
+                       {init,resolve,set-active,status,check-complete,ledger-append,ledger-summary,attest,verify-attestation,snapshot,reconcile,render-context,doctor}
+                       ...
+
+Explicit local utilities for planning records.
+
+positional arguments:
+  {init,resolve,set-active,status,check-complete,ledger-append,ledger-summary,attest,verify-attestation,snapshot,reconcile,render-context,doctor}
+
+options:
+  -h, --help            show this help message and exit
+  --format {text,json}

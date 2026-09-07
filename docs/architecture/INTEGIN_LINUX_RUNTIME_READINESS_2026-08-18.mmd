@@ -1,0 +1,55 @@
+flowchart TB
+  subgraph Build["Build and release inputs"]
+    Source["Reviewed INTEGIN source<br/>Go • Flutter • Python • React"]
+    CI["Linux cross-build validation<br/>Go server and candidate: passed"]
+    SecretPack["Private Linux environment files<br/>root-owned, mode 0600<br/>not stored in source"]
+  end
+
+  subgraph Linux["Target Linux host — proposed, not deployed"]
+    subgraph Native["Native host services"]
+      GoSvc["INTEGIN Go server<br/>Linux binary managed by systemd"]
+      Proxy["Optional reverse proxy<br/>Caddy or Nginx for TLS and routing"]
+      Advisor["Optional FastAPI advisory service<br/>systemd or container; non-blocking"]
+    end
+    subgraph Compose["Docker Compose durable services"]
+      PG[("PostgreSQL<br/>named Docker volume")]
+      RustFS[("RustFS<br/>named Docker volumes")]
+    end
+    Logs["Host and container logs<br/>backup and restore procedures"]
+  end
+
+  subgraph Clients["Client delivery"]
+    Field["INTEGIN Field<br/>Android/iOS/native device app"]
+    Web["Operator and advisory web UI<br/>static browser delivery"]
+  end
+
+  subgraph Safety["Migration safeguards"]
+    WinAcceptance["Current Windows acceptance<br/>remains protected until Linux verification completes"]
+    PilotLinux["Separate Linux pilot first<br/>isolated database and evidence volumes"]
+    Gate["Explicit review gate<br/>backup restore • health • tenant isolation • rollback • cutover"]
+  end
+
+  Source --> CI
+  CI --> GoSvc
+  SecretPack --> GoSvc
+  SecretPack --> Advisor
+  GoSvc --> PG
+  GoSvc --> RustFS
+  Proxy --> GoSvc
+  Advisor -. "advisory only" .-> GoSvc
+  Field -->|"signed sync"| Proxy
+  Web --> Proxy
+  PG --> Logs
+  RustFS --> Logs
+  WinAcceptance --> PilotLinux
+  PilotLinux --> Gate
+  Gate -. "only after acceptance criteria" .-> GoSvc
+
+  classDef verified fill:#D9F1E4,stroke:#2B6A4A,color:#173A29,stroke-width:1.5px;
+  classDef proposed fill:#DCEBFA,stroke:#27689B,color:#173A58,stroke-width:1.5px;
+  classDef boundary fill:#FFF1D8,stroke:#A56D12,color:#573700,stroke-width:1.5px;
+  classDef advisory fill:#F7E3F1,stroke:#92517E,color:#4D263E,stroke-width:1.5px;
+  class CI,WinAcceptance verified;
+  class GoSvc,Proxy,PG,RustFS,Logs,Field,Web proposed;
+  class SecretPack,PilotLinux,Gate boundary;
+  class Advisor advisory;

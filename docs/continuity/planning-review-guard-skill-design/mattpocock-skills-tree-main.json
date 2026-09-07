@@ -1,0 +1,1970 @@
+[1;37m{[m
+  [1;34m"sha"[m[1;37m:[m [32m"6654f6b60cd9d5be8b54c6fafe44346dabeb3b76"[m[1;37m,[m
+  [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/6654f6b60cd9d5be8b54c6fafe44346dabeb3b76"[m[1;37m,[m
+  [1;34m"tree"[m[1;37m:[m [1;37m[[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"160e3a2d11d1f697522be4855a918bd40eb093dd"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/160e3a2d11d1f697522be4855a918bd40eb093dd"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/adr"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8e29ab7e6991911fd22493ddc3e7fc80baa646d0"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/8e29ab7e6991911fd22493ddc3e7fc80baa646d0"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/adr/0001-explicit-setup-pointer-only-for-hard-dependencies.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"56b348d9fea2d7ee2e326fe1838215d0c94c413b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1154[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/56b348d9fea2d7ee2e326fe1838215d0c94c413b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/adr/0002-ship-as-a-claude-code-plugin.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"263d10290d60ea15119d2d3c51af5f4f08b5f178"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 5528[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/263d10290d60ea15119d2d3c51af5f4f08b5f178"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/install-block.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a93751108599407637bec35c08dde6c4eb1afefe"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2780[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a93751108599407637bec35c08dde6c4eb1afefe"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/invocation.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c13b8a5ea97466e14259de602c6b66e72133fef1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3848[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c13b8a5ea97466e14259de602c6b66e72133fef1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".agents/writing-docs.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"68f9216230f2bbafefc985eccf81fcc506c14b3b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 12688[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/68f9216230f2bbafefc985eccf81fcc506c14b3b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8066456f2309881c401da9d31a0e381e1b8c8d31"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/8066456f2309881c401da9d31a0e381e1b8c8d31"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"654c6d4750dca19541bd9803371735943bb3fe4e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 512[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/654c6d4750dca19541bd9803371735943bb3fe4e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/add-implement-spec-skill.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2128b7d4220ed30503e957fe8c8bbcf9b521931d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 450[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/2128b7d4220ed30503e957fe8c8bbcf9b521931d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/config.json"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"06c7350518b33bdaedd0eae254f75fd887f16963"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 380[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/06c7350518b33bdaedd0eae254f75fd887f16963"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/domain-modeling-trigger-context-adr.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8ab6722a781dedf4d52456d6a02f83e358e62f1f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 437[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/8ab6722a781dedf4d52456d6a02f83e358e62f1f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/fix-yaml-frontmatter-colons.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"64f830b202aaef799c5dabe2ba53d0ab05f87efa"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 387[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/64f830b202aaef799c5dabe2ba53d0ab05f87efa"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/grilling-add-hr-between-questions.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0fc8ee080d9d5b7ed6709af70a5d66a4b65ca5cb"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 169[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0fc8ee080d9d5b7ed6709af70a5d66a4b65ca5cb"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/grilling-remove-em-dashes.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6cd562fb6a8b46afb9db06756deb76a2bd6688aa"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 162[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6cd562fb6a8b46afb9db06756deb76a2bd6688aa"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/remove-em-dashes-repo-wide.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a3909afb95f471194fe96430127799bb7e7df5b1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 350[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a3909afb95f471194fe96430127799bb7e7df5b1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/skill-tool-invocation-terminology.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"153b5564e6ab98f85ddb36988f72a00adfe1a716"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1006[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/153b5564e6ab98f85ddb36988f72a00adfe1a716"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/user-invoked-skill-invocation.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"18e6a7c38d55a5fb75f3b4bfceb6807e95060032"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1565[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/18e6a7c38d55a5fb75f3b4bfceb6807e95060032"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".changeset/wait-what-context-map.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"edaa4d6a86c16095fef8e18f8214487627a9cba2"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 191[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/edaa4d6a86c16095fef8e18f8214487627a9cba2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".claude-plugin"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c4ced06aeb9911dd285a5907fedd4d0bb693cb5b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/c4ced06aeb9911dd285a5907fedd4d0bb693cb5b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".claude-plugin/marketplace.json"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1f868cee17708d691ad71d963e847dad209d0c07"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 605[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1f868cee17708d691ad71d963e847dad209d0c07"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".claude-plugin/plugin.json"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0a2e3088d2bcaaabcc02ff1c691c5e6c0f81d01d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1636[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0a2e3088d2bcaaabcc02ff1c691c5e6c0f81d01d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".github"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"93fa3f4faa6e26e4b9480e92abb45e09842fb04e"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/93fa3f4faa6e26e4b9480e92abb45e09842fb04e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".github/workflows"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"bd47e4c315e87d2809df6dfdb2089bae03aad91d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/bd47e4c315e87d2809df6dfdb2089bae03aad91d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".github/workflows/release.yml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b503eff7b073afe8a08d0b25cc31efca78caea02"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 780[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/b503eff7b073afe8a08d0b25cc31efca78caea02"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".gitignore"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"98dd2d8dd55043ee7a28c5ecbf08cc6a18afacaf"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 21[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/98dd2d8dd55043ee7a28c5ecbf08cc6a18afacaf"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".out-of-scope"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ae6715b3375866e95ad986f14aecc811416b4903"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/ae6715b3375866e95ad986f14aecc811416b4903"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".out-of-scope/mainstream-issue-trackers-only.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"72f09fe5a9cb64bd55a46d45e116cd538d48fe20"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1573[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/72f09fe5a9cb64bd55a46d45e116cd538d48fe20"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".out-of-scope/question-limits.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5a3a7f677027a48a9e2a08df7c6d601b322f38da"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1259[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/5a3a7f677027a48a9e2a08df7c6d601b322f38da"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m".out-of-scope/setup-skill-verify-mode.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"418dba12c17b2cd77e0b3161b107c624b7b2ee97"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1125[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/418dba12c17b2cd77e0b3161b107c624b7b2ee97"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"AGENTS.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"120000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"681311eb9cf453d0faddf3aacaec7357e97ba8e9"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/681311eb9cf453d0faddf3aacaec7357e97ba8e9"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"CHANGELOG.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"26d68ffa7cf2f58471abd578042dded7b75675aa"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 44408[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/26d68ffa7cf2f58471abd578042dded7b75675aa"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"CLAUDE.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6a2cd2bdf88f8ced8ee9b82ba1a1ef2f0bb70519"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3703[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6a2cd2bdf88f8ced8ee9b82ba1a1ef2f0bb70519"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"CONTEXT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"76ebd23dbb8266dab9491425b39f3c4857fb4a52"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1768[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/76ebd23dbb8266dab9491425b39f3c4857fb4a52"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"LICENSE"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f1dd2c09108dde1a5f56097cee8461b3ea834499"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1068[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/f1dd2c09108dde1a5f56097cee8461b3ea834499"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ff9b797a342d3a64b52f9f5a83d9fc4ce28709dc"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 15587[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ff9b797a342d3a64b52f9f5a83d9fc4ce28709dc"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"85d9c9c637bc9b0bdf9c951a6748002edfc1cca7"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/85d9c9c637bc9b0bdf9c951a6748002edfc1cca7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a25874e29e5dc51788793c6e67fdabddbd9f317d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/a25874e29e5dc51788793c6e67fdabddbd9f317d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/ask-matt.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"67d1e46192cc22f2f93f6d463dbd831ce174518e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10723[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/67d1e46192cc22f2f93f6d463dbd831ce174518e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/code-review.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"46353162627210af65296c6dee62e422a3400373"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10553[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/46353162627210af65296c6dee62e422a3400373"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/codebase-design.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"706365ca56fc2c5253fe407a72c494c51cb91c2e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 12370[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/706365ca56fc2c5253fe407a72c494c51cb91c2e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/diagnosing-bugs.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"cd6887ac414d40695b52c6a121ba033cb8d5ce98"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10701[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/cd6887ac414d40695b52c6a121ba033cb8d5ce98"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/domain-modeling.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fb8100db71dca3bb044076f537a2e6ba1ed7c3ef"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10742[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/fb8100db71dca3bb044076f537a2e6ba1ed7c3ef"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/grill-with-docs.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"26ac9de3bbdf49db18c7a1aa0ff508c6bf680cda"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9922[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/26ac9de3bbdf49db18c7a1aa0ff508c6bf680cda"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/implement.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"25f9980d382ba65d1fa44fc8849412469200d626"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10259[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/25f9980d382ba65d1fa44fc8849412469200d626"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/improve-codebase-architecture.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"076fad04c9d16903334baf8ecee8e14b47fd2d1b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 11814[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/076fad04c9d16903334baf8ecee8e14b47fd2d1b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/prototype.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"03703cac77b4d361e7b06c9e6ef4366501c12087"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9630[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/03703cac77b4d361e7b06c9e6ef4366501c12087"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/research.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a2b2074c426720af9ef50dc1cd697b3064eb8844"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9674[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a2b2074c426720af9ef50dc1cd697b3064eb8844"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/resolving-merge-conflicts.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ee5e0e2db00c994a1cb5eaf4a49efdc379f93ac7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 5326[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ee5e0e2db00c994a1cb5eaf4a49efdc379f93ac7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/setup-matt-pocock-skills.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d7f4933af11e6dfaf2dd307b7a69d3edb2b74dbc"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9359[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/d7f4933af11e6dfaf2dd307b7a69d3edb2b74dbc"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/tdd.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"63aae75be887420c21bad0f837c444332ec683c1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10453[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/63aae75be887420c21bad0f837c444332ec683c1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/to-spec.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e72c71c44c170114d7d83ebbda594a772f955441"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 8790[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e72c71c44c170114d7d83ebbda594a772f955441"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/to-tickets.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6f6f894fe0bfecd2a8b05fb1053b22da74985d90"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10724[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6f6f894fe0bfecd2a8b05fb1053b22da74985d90"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/triage.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"10ddf79c6fbfb8c27e86f2e03998905fefa90ec1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 13140[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/10ddf79c6fbfb8c27e86f2e03998905fefa90ec1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/wayfinder.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1efc4b18bd8a1d7733852813873474475abb3a2b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 15976[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1efc4b18bd8a1d7733852813873474475abb3a2b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/engineering/wizard.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"84e047b2481c2afe4e5247231a8600d9721f1b88"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9877[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/84e047b2481c2afe4e5247231a8600d9721f1b88"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d81ef4a23c8fb0c70892fb4e8bf7bae1a8f75759"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/d81ef4a23c8fb0c70892fb4e8bf7bae1a8f75759"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/grill-me.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d79d4864eca912ed2ed4ea3c13137c384e0868fb"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6489[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/d79d4864eca912ed2ed4ea3c13137c384e0868fb"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/grilling.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"512d76af564bc0899c59c90a5287a442f7846530"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10413[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/512d76af564bc0899c59c90a5287a442f7846530"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/handoff.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"72aa2f0d292a2b6f22c12ac54e9e0c9afa42f672"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 8746[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/72aa2f0d292a2b6f22c12ac54e9e0c9afa42f672"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/teach.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"012113bd2379a4318ad3c1c7e4f4e848bbc29990"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 13260[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/012113bd2379a4318ad3c1c7e4f4e848bbc29990"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/to-questionnaire.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"52f0e437bb241630c9960f02c7e6fd7091a3030f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 7828[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/52f0e437bb241630c9960f02c7e6fd7091a3030f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/wait-what.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0b14100932844507dc8b3de6e3b6bc2002d493e1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3528[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0b14100932844507dc8b3de6e3b6bc2002d493e1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"docs/productivity/writing-for-agents.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"de12e66714721f305af1ded601f7a570c6331a72"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 7784[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/de12e66714721f305af1ded601f7a570c6331a72"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"package-lock.json"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"db12f086c92da55b5d724f0dd3afecfebd2d793f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 49290[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/db12f086c92da55b5d724f0dd3afecfebd2d793f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"package.json"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2200fefca3d8c1ebac5a823681915eec736dfa07"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 597[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/2200fefca3d8c1ebac5a823681915eec736dfa07"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"scripts"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c807cbcb09f0e22d32696f0864b92a7160d94a38"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/c807cbcb09f0e22d32696f0864b92a7160d94a38"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"scripts/link-skills.sh"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100755"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c753dffca5d517098b3c3e867a056a76f6d5bfc7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1815[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c753dffca5d517098b3c3e867a056a76f6d5bfc7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"scripts/list-skills.sh"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100755"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f13da41774c8bffea798e64505a4c3adc528ee63"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 168[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/f13da41774c8bffea798e64505a4c3adc528ee63"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"scripts/sync-plugin-version.mjs"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"44063fc0d14a78927caf3990882ea3809157bc21"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1429[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/44063fc0d14a78927caf3990882ea3809157bc21"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fa7abc9c6000d0e276c2b5d2e7ce8e3983101b35"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/fa7abc9c6000d0e276c2b5d2e7ce8e3983101b35"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/deprecated"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"178a388cb542203659a945d64a2988044020c433"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/178a388cb542203659a945d64a2988044020c433"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/deprecated/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"aa1242c27b1f5e3f762bd5743affbd966811b5b4"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 160[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/aa1242c27b1f5e3f762bd5743affbd966811b5b4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"44709f81e0e99fdbfad95a07bf5bdb571b0e9527"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/44709f81e0e99fdbfad95a07bf5bdb571b0e9527"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"676977ee31f86172f4a5653ab719f6b5be3072d1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3840[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/676977ee31f86172f4a5653ab719f6b5be3072d1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/ask-matt"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"85f3ba59f22c16de988e36b781ae46d0d9098f94"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/85f3ba59f22c16de988e36b781ae46d0d9098f94"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/ask-matt/PHASE-BOUNDARIES.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fb58ef9febcfd558cdb4517e370f19034869ba26"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 4249[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/fb58ef9febcfd558cdb4517e370f19034869ba26"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/ask-matt/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ae8eb9b211972d9ae584b41d0f1439c644494fc7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 11417[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ae8eb9b211972d9ae584b41d0f1439c644494fc7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/ask-matt/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"61fae70dcff7acf7aee91ce9cdafd09dff73e89b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/61fae70dcff7acf7aee91ce9cdafd09dff73e89b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/ask-matt/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5c60d51b5b1248d7210bff8c6b42a5a06524b8a4"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 137[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/5c60d51b5b1248d7210bff8c6b42a5a06524b8a4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/code-review"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d8e341cee7980127dddda05159bedf25dc853615"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/d8e341cee7980127dddda05159bedf25dc853615"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/code-review/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e28d7acbf7b3bb4d7817b7eb5d9c105af03f6ec4"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6589[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e28d7acbf7b3bb4d7817b7eb5d9c105af03f6ec4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/code-review/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8bacfedbf90e1a083c7cbd86f313d50cdd1d0165"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/8bacfedbf90e1a083c7cbd86f313d50cdd1d0165"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/code-review/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"9076774ba327f49068db9273feceda03bfe940fa"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 100[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/9076774ba327f49068db9273feceda03bfe940fa"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"344e3efc88ee60663b2e989555c2efdb548fbd42"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/344e3efc88ee60663b2e989555c2efdb548fbd42"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design/DEEPENING.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"cd94075cfd754d147555c5d747a16431ed4c7dd8"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2553[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/cd94075cfd754d147555c5d747a16431ed4c7dd8"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design/DESIGN-IT-TWICE.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7edc861a31b1b219b933af18079f66b564c5de67"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2664[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7edc861a31b1b219b933af18079f66b564c5de67"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3f63c8146dd2604b419c929e9876b90c30d410e9"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6446[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3f63c8146dd2604b419c929e9876b90c30d410e9"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f4eed2af42f99ada31a12e14b19189aea4dcc72f"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/f4eed2af42f99ada31a12e14b19189aea4dcc72f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/codebase-design/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3180715edb37f6e96bec42f92f00169faa8886ef"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 102[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3180715edb37f6e96bec42f92f00169faa8886ef"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"99bd56983e42bc752c52da67f1112e4121781cd1"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/99bd56983e42bc752c52da67f1112e4121781cd1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"061c25a524acaa93d4534e9e08a793c0a5fe45fd"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 8529[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/061c25a524acaa93d4534e9e08a793c0a5fe45fd"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"58c19f15c6ddc4ca50c700669811d853deebe711"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/58c19f15c6ddc4ca50c700669811d853deebe711"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a13a755a77634ce61a649a3a0d905a66d3865b35"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 103[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a13a755a77634ce61a649a3a0d905a66d3865b35"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs/scripts"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2bac8f8a3452029182df85798732e26ab6465db1"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/2bac8f8a3452029182df85798732e26ab6465db1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/diagnosing-bugs/scripts/hitl-loop.template.sh"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"243198464a8401a7ba1d63b3708fa43c3d067665"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1316[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/243198464a8401a7ba1d63b3708fa43c3d067665"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"388c9822641805ca2dcd5038e68a1d5282437ee5"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/388c9822641805ca2dcd5038e68a1d5282437ee5"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling/ADR-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d7e61f30a9fd8ca70d9ee68f019c2a9ebf2d13f7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2733[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/d7e61f30a9fd8ca70d9ee68f019c2a9ebf2d13f7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling/CONTEXT-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"79bbb32f6fda55758b377c980f72a6cb2b8c670e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2290[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/79bbb32f6fda55758b377c980f72a6cb2b8c670e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"9b97707e19ef1f590aada356f2b3f6bb881f91be"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3331[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/9b97707e19ef1f590aada356f2b3f6bb881f91be"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f142d14320695e1004d43997f20d2e98ff40e62c"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/f142d14320695e1004d43997f20d2e98ff40e62c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/domain-modeling/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7f1522d2f11506ee205275ab7c282aa52366ecf6"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 101[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7f1522d2f11506ee205275ab7c282aa52366ecf6"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/grill-with-docs"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"eedaf2562c83155115e9c649fa3ecaac2e10e81d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/eedaf2562c83155115e9c649fa3ecaac2e10e81d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/grill-with-docs/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"62b9efb6f991d1b229adee7506962f13ced0c499"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 247[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/62b9efb6f991d1b229adee7506962f13ced0c499"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/grill-with-docs/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3715f0eaf6fcc837da99f7b18bf908bec43f360a"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3715f0eaf6fcc837da99f7b18bf908bec43f360a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/grill-with-docs/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5dbe2780a51be3e9b118bd7758a73e54a9384e11"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 145[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/5dbe2780a51be3e9b118bd7758a73e54a9384e11"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/implement"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f07d230f645fc9ac390cf13a450bbff12ad791a3"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/f07d230f645fc9ac390cf13a450bbff12ad791a3"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/implement/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7a0b11f5f4fe9505ea5c7983c3083ba1bf754f69"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 433[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7a0b11f5f4fe9505ea5c7983c3083ba1bf754f69"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/implement/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0038b921a1e87de17b068d200a2284f5681a6ced"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0038b921a1e87de17b068d200a2284f5681a6ced"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/implement/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f8794dc153b409052a9167baf10858cf01b36175"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 139[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/f8794dc153b409052a9167baf10858cf01b36175"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/improve-codebase-architecture"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3d35cd438f4067b03c8b3792e038960e4ac11526"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3d35cd438f4067b03c8b3792e038960e4ac11526"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/improve-codebase-architecture/HTML-REPORT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e39e8255b8797cf8257d014fb6658fb533f3a399"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6641[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e39e8255b8797cf8257d014fb6658fb533f3a399"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/improve-codebase-architecture/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a578dd0a34ad0a8886abe7e7642b100106ba86d6"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 5993[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a578dd0a34ad0a8886abe7e7642b100106ba86d6"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/improve-codebase-architecture/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7c39fbb2cce2baee4f7c4e22b04358534aa79206"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/7c39fbb2cce2baee4f7c4e22b04358534aa79206"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/improve-codebase-architecture/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"706fdca096da5937fe57875a9154017d50668c42"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 166[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/706fdca096da5937fe57875a9154017d50668c42"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e41d92e171f074a2b6887d8f6faca4a15c83d1ca"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/e41d92e171f074a2b6887d8f6faca4a15c83d1ca"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype/LOGIC.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"32be86a0a5d9928db84b3988e55f9debe476ab40"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6036[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/32be86a0a5d9928db84b3988e55f9debe476ab40"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a0044501fe0d385b4d8575b610188ede9b236ccf"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2931[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a0044501fe0d385b4d8575b610188ede9b236ccf"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype/UI.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3977951663490882c2632b40695d9f59a2fe2408"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6913[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3977951663490882c2632b40695d9f59a2fe2408"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"675949db356200842ab314c5e243274732563d51"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/675949db356200842ab314c5e243274732563d51"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/prototype/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1618b147965bc729b7bf3e8da5f130132067aadc"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 100[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1618b147965bc729b7bf3e8da5f130132067aadc"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/research"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0a6796c5667e95ed2301ba7381c123b4acb2ae1a"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0a6796c5667e95ed2301ba7381c123b4acb2ae1a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/research/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fecee97e9457ba039678d2fcf1b1bc9fca78307d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 794[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/fecee97e9457ba039678d2fcf1b1bc9fca78307d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/research/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"594c816ffc0393d64c92c42d440be0904fc9648c"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/594c816ffc0393d64c92c42d440be0904fc9648c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/research/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e18b96ca0ccc1003889d5d6991386207c2454bc2"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 94[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e18b96ca0ccc1003889d5d6991386207c2454bc2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/resolving-merge-conflicts"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"77f0d7de3143abbf03e55a63522d30bff31ae908"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/77f0d7de3143abbf03e55a63522d30bff31ae908"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/resolving-merge-conflicts/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"bfb7e5606e231e6808979f623fce76a9aad4b71c"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 918[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/bfb7e5606e231e6808979f623fce76a9aad4b71c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/resolving-merge-conflicts/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"194f859796049eb26413278d3905fa6e6ea8fc03"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/194f859796049eb26413278d3905fa6e6ea8fc03"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/resolving-merge-conflicts/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"331ffb9d38937877f51a5f867a66dc61eee259ae"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 113[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/331ffb9d38937877f51a5f867a66dc61eee259ae"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ec07f82df54064d01aa1648670e81da41e2cbdc2"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/ec07f82df54064d01aa1648670e81da41e2cbdc2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7f6f576e2e54e0d287cbb9731ebe0343f54e50cf"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6841[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7f6f576e2e54e0d287cbb9731ebe0343f54e50cf"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f9e04d6e5228bdda9ccbac73f499cb672e23102d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/f9e04d6e5228bdda9ccbac73f499cb672e23102d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"65a0da8128c98051183235e490767a8065310868"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 152[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/65a0da8128c98051183235e490767a8065310868"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/domain.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"35249041162b1eed5b873d97fc430fb3e4adb18f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2033[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/35249041162b1eed5b873d97fc430fb3e4adb18f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/issue-tracker-github.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b258aeb3c44420a2464b72ba228b77b4b3abbaea"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3731[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/b258aeb3c44420a2464b72ba228b77b4b3abbaea"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/issue-tracker-gitlab.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"251035a6d74b4af8d68f066b8d7f1cef90904570"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3809[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/251035a6d74b4af8d68f066b8d7f1cef90904570"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/issue-tracker-local.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0209a19af92c9c485cf3acc3d9e253171517ea17"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1810[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0209a19af92c9c485cf3acc3d9e253171517ea17"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/setup-matt-pocock-skills/triage-labels.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b716855d485f3865f9dfde2a82141721f065b2e7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1045[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/b716855d485f3865f9dfde2a82141721f065b2e7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"79288be15c67b849f22b6572056601090fd20913"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/79288be15c67b849f22b6572056601090fd20913"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8fc086710806190ee7c4baa32089cb877a75736a"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3549[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/8fc086710806190ee7c4baa32089cb877a75736a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"55d7815f7a20e77d38dc82abe8b01f7c71bc8664"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/55d7815f7a20e77d38dc82abe8b01f7c71bc8664"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"651b838a7663e027b1b8884491e867f26bb9a021"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 87[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/651b838a7663e027b1b8884491e867f26bb9a021"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd/mocking.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"71cbfee674d93244ce81d1830b930ca9a69200bd"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1481[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/71cbfee674d93244ce81d1830b930ca9a69200bd"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/tdd/tests.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7ab86479f925a1f9e8ba680af33cb3b12e015381"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2214[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7ab86479f925a1f9e8ba680af33cb3b12e015381"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-spec"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"136b9651747cfccbfbb7c50a6b0dfb757e7547d2"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/136b9651747cfccbfbb7c50a6b0dfb757e7547d2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-spec/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3f52599ae2a4347aee5a07432c2707518e691a7f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3043[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3f52599ae2a4347aee5a07432c2707518e691a7f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-spec/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7d1b433d25c266f934f4ade97a6bbd8525392ff9"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/7d1b433d25c266f934f4ade97a6bbd8525392ff9"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-spec/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"549e6f76f020a1b9ba65f52ccda336566ee6222a"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 135[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/549e6f76f020a1b9ba65f52ccda336566ee6222a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-tickets"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b32c94e5a51c24ee9c41fcb7fe9ea9fff9af6369"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/b32c94e5a51c24ee9c41fcb7fe9ea9fff9af6369"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-tickets/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e868c831fcfb1e124e010bcdf84a429ec879160f"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 5671[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e868c831fcfb1e124e010bcdf84a429ec879160f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-tickets/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"4b6bae5ffba2e5300d013880aefebbaaec71a53c"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/4b6bae5ffba2e5300d013880aefebbaaec71a53c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/to-tickets/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"24605a5db64e4fc750b999aa94aea126bee814ee"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 146[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/24605a5db64e4fc750b999aa94aea126bee814ee"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"95fa21bf236993cd9af25bd3670476c17fdb95a4"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/95fa21bf236993cd9af25bd3670476c17fdb95a4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage/AGENT-BRIEF.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1462fcd9e8cc21921158c296149dc05d9be39d20"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 7942[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1462fcd9e8cc21921158c296149dc05d9be39d20"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage/OUT-OF-SCOPE.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c9fba2f77ee0619975ec8488c0d4861a0c7e3151"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 4667[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c9fba2f77ee0619975ec8488c0d4861a0c7e3151"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"37ddea1e3dcf8fb5be5b92e4e45f2c34b8e61d3e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 6557[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/37ddea1e3dcf8fb5be5b92e4e45f2c34b8e61d3e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"42aafadffab73310f2c1501d3a9328d2e3a58a71"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/42aafadffab73310f2c1501d3a9328d2e3a58a71"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/triage/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"acb366cf0f2527e8925ff1223b77610ac0b1be4c"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 135[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/acb366cf0f2527e8925ff1223b77610ac0b1be4c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wayfinder"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8ec0462658381bd1606d3f9db14ffc67df6a2a43"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/8ec0462658381bd1606d3f9db14ffc67df6a2a43"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wayfinder/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"812805b760baf328db0ebdef6f3807e381f97016"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 11908[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/812805b760baf328db0ebdef6f3807e381f97016"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wayfinder/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"43fb277f74a0e65c9fd674935d0860a845ac3eb4"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/43fb277f74a0e65c9fd674935d0860a845ac3eb4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wayfinder/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b37544751e0570f9df8de6c02aef238de8c3e1e0"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 144[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/b37544751e0570f9df8de6c02aef238de8c3e1e0"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wizard"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0a163daf092c6f361158ca9627e81f2cb5230574"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0a163daf092c6f361158ca9627e81f2cb5230574"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wizard/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c4294ad8298b9b95fc727496b1b802b1f7363fba"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 4123[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c4294ad8298b9b95fc727496b1b802b1f7363fba"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wizard/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0390248e6862d908ba4657b734e8d4ff4d5c1a97"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0390248e6862d908ba4657b734e8d4ff4d5c1a97"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wizard/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b601bdf3a321e7d32d5714681540b811287d3988"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 96[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/b601bdf3a321e7d32d5714681540b811287d3988"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/engineering/wizard/template.sh"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1b3cdf40ad4923a9845fd682653d8cc4510f516e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 8567[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1b3cdf40ad4923a9845fd682653d8cc4510f516e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"919ea336f830deb86f82dfbc35644ac5f0b3f600"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/919ea336f830deb86f82dfbc35644ac5f0b3f600"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ee394b7985a8c296ffa068e63e4f5dcf23b8969b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2177[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ee394b7985a8c296ffa068e63e4f5dcf23b8969b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/claude-handoff"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6845c30e62e1c0c2c0fbdea8307379197f0b4dc4"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/6845c30e62e1c0c2c0fbdea8307379197f0b4dc4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/claude-handoff/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"9ab14e312a0d5cffe926eeeab12cef7dc8f84d54"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1301[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/9ab14e312a0d5cffe926eeeab12cef7dc8f84d54"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/claude-handoff/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5572458bdf828210baef5c90a8b6bef13c23d3f1"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/5572458bdf828210baef5c90a8b6bef13c23d3f1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/claude-handoff/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0a7aa5da50d0e73248fc17fb8fe82409ec071eaf"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 141[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0a7aa5da50d0e73248fc17fb8fe82409ec071eaf"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/implement-spec"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1ec4cd3fbcc62d57cd32cf1d907c4c4761355e2b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/1ec4cd3fbcc62d57cd32cf1d907c4c4761355e2b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/implement-spec/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d5097f847fc003935599a7f7bf8f0f7186427910"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2043[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/d5097f847fc003935599a7f7bf8f0f7186427910"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/implement-spec/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"dc6c05759aef7b34590eb9e9d5ccba242543f7b9"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/dc6c05759aef7b34590eb9e9d5ccba242543f7b9"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/implement-spec/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"043f27f43eed1a8a3c0e3fdbf920f07935faf05d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 143[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/043f27f43eed1a8a3c0e3fdbf920f07935faf05d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/loop-me"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a0dfdc3562686d920900973b50289b36e2f7eafe"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/a0dfdc3562686d920900973b50289b36e2f7eafe"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/loop-me/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e58a474ca80feffdeb28842bc3bdee37da6510e7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2522[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e58a474ca80feffdeb28842bc3bdee37da6510e7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/loop-me/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"4961e291bf0aabae1ba0e01ed3dc424917b93142"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/4961e291bf0aabae1ba0e01ed3dc424917b93142"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/loop-me/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1a4f4111192ff75b4771e8a248c603994d5eafdc"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 140[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1a4f4111192ff75b4771e8a248c603994d5eafdc"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/retro"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5831252c5e3692fa01645b0279ea5c444facec9d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/5831252c5e3692fa01645b0279ea5c444facec9d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/retro/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f5fed82c7b8597a852a4fa8d292b00a1d5c8bd16"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3388[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/f5fed82c7b8597a852a4fa8d292b00a1d5c8bd16"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/retro/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0ab2bf3ce75ade73a809792bf25801d024eb541b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0ab2bf3ce75ade73a809792bf25801d024eb541b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/retro/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a2f0bac3f9cebf29beee2e79960cb876e0adc65d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 146[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a2f0bac3f9cebf29beee2e79960cb876e0adc65d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/setup-ts-deep-modules"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b32508a8a7d62c07d32d7c5cff84d357719def7f"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/b32508a8a7d62c07d32d7c5cff84d357719def7f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/setup-ts-deep-modules/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7e30047eaeda175de5d93886596a37baf365bb90"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 7546[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/7e30047eaeda175de5d93886596a37baf365bb90"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/setup-ts-deep-modules/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"32327210e4f02cc765bf938fb44bda41a6c755d1"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/32327210e4f02cc765bf938fb44bda41a6c755d1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/setup-ts-deep-modules/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5d0581bdd4f9337cfb1e13feb7e1e18f43ea9db1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 149[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/5d0581bdd4f9337cfb1e13feb7e1e18f43ea9db1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/setup-ts-deep-modules/dependency-cruiser.config.cjs"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"54030ede7d36b7f72fc0f645fa414efa9b6f63ed"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3712[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/54030ede7d36b7f72fc0f645fa414efa9b6f63ed"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-beats"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3a28fb076fdaaec0927080718abb98fc0f340011"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3a28fb076fdaaec0927080718abb98fc0f340011"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-beats/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3d3b25b605491adc5c62ae5423127717a94b9632"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 4855[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3d3b25b605491adc5c62ae5423127717a94b9632"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-beats/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"879971020d99454498793f60a71c1a38895852bd"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/879971020d99454498793f60a71c1a38895852bd"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-beats/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e8eaa188d4c70b582eed2d1775fe4c4ea3562b25"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 142[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e8eaa188d4c70b582eed2d1775fe4c4ea3562b25"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-fragments"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"98e500e0097ec80f52f6a024c5a2ff6d15235bdb"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/98e500e0097ec80f52f6a024c5a2ff6d15235bdb"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-fragments/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c7c889b880cf9c8d289119dea5ff240641b615ca"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3558[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c7c889b880cf9c8d289119dea5ff240641b615ca"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-fragments/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"343878ac39008f2b36efd8b01ef85affedb63e74"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/343878ac39008f2b36efd8b01ef85affedb63e74"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-fragments/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"be3713e91e3ddc6c71e04e6b512b6ad6502d7cc8"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 140[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/be3713e91e3ddc6c71e04e6b512b6ad6502d7cc8"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-shape"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ac92229646fccf7315ae139c37b479b3790617f2"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/ac92229646fccf7315ae139c37b479b3790617f2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-shape/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"02f2866d13e72504e010f2ad3458eb9b36b876db"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 5922[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/02f2866d13e72504e010f2ad3458eb9b36b876db"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-shape/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3c6ba7952b51309c1adbeb219235ba1a84092d2a"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3c6ba7952b51309c1adbeb219235ba1a84092d2a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/in-progress/writing-shape/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"87e0c736be148002f9db275258cd2f405643ad7b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 144[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/87e0c736be148002f9db275258cd2f405643ad7b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2a7202912b68a4523d6026daf88da6a70cd58685"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/2a7202912b68a4523d6026daf88da6a70cd58685"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6b169d22be12c078f1e70763d367fe693de342e2"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 684[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6b169d22be12c078f1e70763d367fe693de342e2"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ceed97af09633b300826d0ca0b1464c527ec9a35"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/ceed97af09633b300826d0ca0b1464c527ec9a35"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"58bcdd875b164093b95f436fa32a65c6cb5eb572"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2313[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/58bcdd875b164093b95f436fa32a65c6cb5eb572"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fc0e93f60a719f73e17602eb90a3f3f6d4d02649"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/fc0e93f60a719f73e17602eb90a3f3f6d4d02649"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3f5d756f1b9b97d94cef1473fb480ccda5fdfbc1"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 112[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3f5d756f1b9b97d94cef1473fb480ccda5fdfbc1"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code/scripts"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"b91370b1a2b0ca1b4f3650dccbbd08adee74618e"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/b91370b1a2b0ca1b4f3650dccbbd08adee74618e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/git-guardrails-claude-code/scripts/block-dangerous-git.sh"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100755"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c40b59cb47880fc9da8fe4179bd742f51f09d17d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 507[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c40b59cb47880fc9da8fe4179bd742f51f09d17d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/migrate-to-shoehorn"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0aea91a3599a4bf7aeec17e3262d4cbcfcbeec23"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/0aea91a3599a4bf7aeec17e3262d4cbcfcbeec23"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/migrate-to-shoehorn/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ae4f965e204fc93cedbc4e2c306e92829d93f800"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2795[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ae4f965e204fc93cedbc4e2c306e92829d93f800"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/migrate-to-shoehorn/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6d0b115f0b6247aa024a80e983c1600d505ce78f"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/6d0b115f0b6247aa024a80e983c1600d505ce78f"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/migrate-to-shoehorn/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3bd79ee2b502075c6d1fe40e6fe98f4fe3f3c5f5"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 110[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3bd79ee2b502075c6d1fe40e6fe98f4fe3f3c5f5"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/scaffold-exercises"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"44a0ee332b9d67ebbd59389c7eb4e5aff1ce845c"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/44a0ee332b9d67ebbd59389c7eb4e5aff1ce845c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/scaffold-exercises/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d87df28e7d8abb4e57ecc6e47d71c274d16054c7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 3589[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/d87df28e7d8abb4e57ecc6e47d71c274d16054c7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/scaffold-exercises/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3c0517e749a0b39a50160a5d2c87c7fdd5dbb448"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3c0517e749a0b39a50160a5d2c87c7fdd5dbb448"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/scaffold-exercises/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"963723a58973effa256cbfe0f23a7bcc03a374b8"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 108[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/963723a58973effa256cbfe0f23a7bcc03a374b8"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/setup-pre-commit"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"5b63f9f665bacc9be04cae51982e9ef1469d6699"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/5b63f9f665bacc9be04cae51982e9ef1469d6699"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/setup-pre-commit/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1b9708168263067adb4684d06ebb8f4ccfe9682c"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2258[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/1b9708168263067adb4684d06ebb8f4ccfe9682c"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/setup-pre-commit/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fbd6f7f72c3a80ce1b0cc5c45c0d5089f26dfffa"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/fbd6f7f72c3a80ce1b0cc5c45c0d5089f26dfffa"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/misc/setup-pre-commit/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e5a1c63df9e0703893cdad799bd5e2a6b5e6939d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 99[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/e5a1c63df9e0703893cdad799bd5e2a6b5e6939d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"e558f1f3c91f83f0eed9245f8b3d29b5a02a26ce"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/e558f1f3c91f83f0eed9245f8b3d29b5a02a26ce"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/README.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"0ac94ab2de3dfa98639c2cc17c12a291f4924f54"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1480[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/0ac94ab2de3dfa98639c2cc17c12a291f4924f54"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grill-me"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3df14e2d3a89459bf300614be9247e3ce74798f8"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/3df14e2d3a89459bf300614be9247e3ce74798f8"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grill-me/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3947ff9c4ad980d14fc07fccbf659d47c114e81d"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 157[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3947ff9c4ad980d14fc07fccbf659d47c114e81d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grill-me/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"07f595a948444a6d67c2ebd26af9c370d324fffd"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/07f595a948444a6d67c2ebd26af9c370d324fffd"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grill-me/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"4d6fb0c746c5d21364dce5d0cf8c51eab9712e7b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 137[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/4d6fb0c746c5d21364dce5d0cf8c51eab9712e7b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grilling"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f0732035b8b1b60ae39454e4191caef32fa91903"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/f0732035b8b1b60ae39454e4191caef32fa91903"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grilling/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"8ca78c6d8f901aab0c5a1f896034b70e666ff2a3"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1987[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/8ca78c6d8f901aab0c5a1f896034b70e666ff2a3"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grilling/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d8adf71d95e60b320608cf0aaf32f8587bc5cb0a"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/d8adf71d95e60b320608cf0aaf32f8587bc5cb0a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/grilling/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ddbdb96139c0c1dfe6bca698f39d0465674b8a39"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 113[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/ddbdb96139c0c1dfe6bca698f39d0465674b8a39"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/handoff"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2242e8f05424b8c2ae94194a90d97b88d16108ec"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/2242e8f05424b8c2ae94194a90d97b88d16108ec"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/handoff/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2eb98a51b97bb5bac461a26ad14828eeac827909"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 894[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/2eb98a51b97bb5bac461a26ad14828eeac827909"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/handoff/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d3633c2ea1653808784e627a98337b6e9c86349d"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/d3633c2ea1653808784e627a98337b6e9c86349d"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/handoff/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6e1d8da121beceddc2f9ec7fa8714c1d914dd11a"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 141[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6e1d8da121beceddc2f9ec7fa8714c1d914dd11a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"2ab11f2f51f3c29771edb5d4258d807a49462491"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/2ab11f2f51f3c29771edb5d4258d807a49462491"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/GLOSSARY-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"fdd7e366ad9760588b28981e42b3d3b561e56aca"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2122[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/fdd7e366ad9760588b28981e42b3d3b561e56aca"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/LEARNING-RECORD-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"953c61422776b47612c3c945920358ad7b5daee7"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2747[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/953c61422776b47612c3c945920358ad7b5daee7"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/MISSION-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"45250bb1bad70988bf381625931df64645e10246"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1540[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/45250bb1bad70988bf381625931df64645e10246"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/RESOURCES-FORMAT.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"18b588c8b6f96a50ae2352f264928c643d2782e4"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 1924[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/18b588c8b6f96a50ae2352f264928c643d2782e4"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c679eeccd48ca720c8196e5d9a9e58223abf213b"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 9506[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/c679eeccd48ca720c8196e5d9a9e58223abf213b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"7552a1a296689bb84090ef3a8d4dd2fe63fe4860"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/7552a1a296689bb84090ef3a8d4dd2fe63fe4860"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/teach/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"3452a850e3b0c1f0a3d41b2bfd45164d2d38d7f6"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 139[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/3452a850e3b0c1f0a3d41b2bfd45164d2d38d7f6"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/to-questionnaire"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"46dfbeeba12a9e52eef446676f42e7551023d9a9"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/46dfbeeba12a9e52eef446676f42e7551023d9a9"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/to-questionnaire/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"dadd0c00d6a350acaa15bb9ca1b96b20ead684ca"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2904[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/dadd0c00d6a350acaa15bb9ca1b96b20ead684ca"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/to-questionnaire/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a6c8a4c1c89e76b6fd08d3196a754fc0a381575a"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/a6c8a4c1c89e76b6fd08d3196a754fc0a381575a"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/to-questionnaire/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a58d14765beb4acb4c9708b516310558e1308a22"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 166[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a58d14765beb4acb4c9708b516310558e1308a22"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/wait-what"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"c119d66111cc1bac94cbc51322cd34ed21aa0446"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/c119d66111cc1bac94cbc51322cd34ed21aa0446"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/wait-what/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"f8854f1b4527bca90378baf5430557172136a1bf"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 394[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/f8854f1b4527bca90378baf5430557172136a1bf"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/wait-what/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"d71c7b743836f2f414a3e267bc0fece0f56f311b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/d71c7b743836f2f414a3e267bc0fece0f56f311b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/wait-what/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"6f7a9c33f99ec4ba70d986d6fc0de06c8b811bc3"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 158[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/6f7a9c33f99ec4ba70d986d6fc0de06c8b811bc3"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/writing-for-agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"ad2925850efb8973a72d2e666f7a975f9a2d4a9b"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/ad2925850efb8973a72d2e666f7a975f9a2d4a9b"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/writing-for-agents/SKILL-MECHANICS.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"9cdbdb22aadc438755392216e75ad9a14cc9832e"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 2629[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/9cdbdb22aadc438755392216e75ad9a14cc9832e"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/writing-for-agents/SKILL.md"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"a37608daf6e835e767deecfb498facecaaba82ba"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 10886[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/a37608daf6e835e767deecfb498facecaaba82ba"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/writing-for-agents/agents"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"040000"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"tree"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"1a0e4610dc7305e776f9619417bad296bc99ca01"[m[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/trees/1a0e4610dc7305e776f9619417bad296bc99ca01"[m
+    [1;37m}[m[1;37m,[m
+    [1;37m{[m
+      [1;34m"path"[m[1;37m:[m [32m"skills/productivity/writing-for-agents/agents/openai.yaml"[m[1;37m,[m
+      [1;34m"mode"[m[1;37m:[m [32m"100644"[m[1;37m,[m
+      [1;34m"type"[m[1;37m:[m [32m"blob"[m[1;37m,[m
+      [1;34m"sha"[m[1;37m:[m [32m"079c933b75743dec18b5d0c01006def20b6aad26"[m[1;37m,[m
+      [1;34m"size"[m[1;37m:[m 102[1;37m,[m
+      [1;34m"url"[m[1;37m:[m [32m"https://api.github.com/repos/mattpocock/skills/git/blobs/079c933b75743dec18b5d0c01006def20b6aad26"[m
+    [1;37m}[m
+  [1;37m][m[1;37m,[m
+  [1;34m"truncated"[m[1;37m:[m [33mfalse[m
+[1;37m}[m

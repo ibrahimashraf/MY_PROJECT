@@ -1,0 +1,156 @@
+[
+  {
+    "skill": "content-gap-analysis",
+    "line": 76,
+    "target": "chart_traffic_by_type.png",
+    "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_traffic_by_type.png",
+    "exists": false
+  },
+  {
+    "skill": "content-gap-analysis",
+    "line": 103,
+    "target": "chart_cluster_sizing.png",
+    "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_cluster_sizing.png",
+    "exists": false
+  },
+  {
+    "skill": "content-gap-analysis",
+    "line": 117,
+    "target": "chart_<cluster>_pages.png",
+    "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_<cluster>_pages.png",
+    "exists": false
+  },
+  {
+    "skill": "data-backup-restoration",
+    "line": 21,
+    "target": "references/websites.md",
+    "resolved": "/home/ubuntu/skills/data-backup-restoration/references/websites.md",
+    "exists": true
+  },
+  {
+    "skill": "data-backup-restoration",
+    "line": 25,
+    "target": "references/mobile-apps.md",
+    "resolved": "/home/ubuntu/skills/data-backup-restoration/references/mobile-apps.md",
+    "exists": true
+  },
+  {
+    "skill": "internet-skill-finder",
+    "line": 38,
+    "target": "import_url",
+    "resolved": "/home/ubuntu/skills/internet-skill-finder/import_url",
+    "exists": false
+  },
+  {
+    "skill": "listicle-blog-writer",
+    "line": 52,
+    "target": "{client_url}",
+    "resolved": "/home/ubuntu/skills/listicle-blog-writer/{client_url}",
+    "exists": false
+  },
+  {
+    "skill": "listicle-blog-writer",
+    "line": 55,
+    "target": "{tool_url}",
+    "resolved": "/home/ubuntu/skills/listicle-blog-writer/{tool_url}",
+    "exists": false
+  },
+  {
+    "skill": "listicle-blog-writer",
+    "line": 57,
+    "target": "images/{tool-slug}-homepage.png",
+    "resolved": "/home/ubuntu/skills/listicle-blog-writer/images/{tool-slug}-homepage.png",
+    "exists": false
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 76,
+    "target": "templates/task_plan.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/task_plan.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 77,
+    "target": "templates/findings.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/findings.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 78,
+    "target": "templates/progress.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/progress.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 212,
+    "target": "templates/task_plan.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/task_plan.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 213,
+    "target": "templates/findings.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/findings.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 214,
+    "target": "templates/progress.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/templates/progress.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 442,
+    "target": "reference.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/reference.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 443,
+    "target": "examples.md",
+    "resolved": "/home/ubuntu/skills/planning-with-files/examples.md",
+    "exists": true
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 456,
+    "target": "../../docs/attestation-locking.md",
+    "resolved": "/home/ubuntu/docs/attestation-locking.md",
+    "exists": false
+  },
+  {
+    "skill": "planning-with-files",
+    "line": 456,
+    "target": "../../docs/perf-notes.md",
+    "resolved": "/home/ubuntu/docs/perf-notes.md",
+    "exists": false
+  },
+  {
+    "skill": "seo-competitor-analysis-will",
+    "line": 75,
+    "target": "charts/global_organic_trend.png",
+    "resolved": "/home/ubuntu/skills/seo-competitor-analysis-will/charts/global_organic_trend.png",
+    "exists": false
+  },
+  {
+    "skill": "website-traffic-checker",
+    "line": 91,
+    "target": "references/api_reference.md",
+    "resolved": "/home/ubuntu/skills/website-traffic-checker/references/api_reference.md",
+    "exists": true
+  },
+  {
+    "skill": "website-traffic-checker",
+    "line": 92,
+    "target": "templates/report_template.md",
+    "resolved": "/home/ubuntu/skills/website-traffic-checker/templates/report_template.md",
+    "exists": true
+  }
+]

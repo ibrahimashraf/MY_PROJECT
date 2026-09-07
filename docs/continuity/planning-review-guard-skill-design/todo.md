@@ -1,0 +1,104 @@
+# Review and Guard Skill Design TODO
+
+- [x] Define the separate evidence-governed review debate skill and its no-mutation boundaries.
+- [x] Define the separate code, test, and documentation guard skill and its evidence-first boundaries.
+- [x] Initialize both clean-room internal skill packages.
+- [x] Validate both packages and confirm they contain no external code, prompts, adapters, or automation.
+- [x] Deliver the two skills for user installation and iterative use.
+- [ ] Inventory all available skill packages and determine the authoritative audit scope.
+- [x] Inventory all available skill packages and determine the authoritative audit scope.
+- [x] Evaluate skill metadata, internal structure, overlap, stale guidance, and validation readiness.
+- [x] Produce an evidence-led revision register and obtain approval for material changes.
+- [ ] Apply approved corrections and improvements only to skills within the confirmed scope.
+- [ ] Validate revised skills and deliver the audit record with remaining deferrals.
+- [x] Create an immutable baseline inventory for all 54 installed skills.
+- [x] Classify every skill’s ownership, provenance evidence, host dependency, and safe update eligibility.
+- [x] Verify currency only for skills with an identified authoritative upstream source.
+- [ ] Submit per-skill revision proposals for material behavior changes before applying them.
+- [ ] Apply owner-approved revisions in bounded batches and validate every updated package.
+- [ ] Deliver the complete provenance, compatibility, and revision dossier.
+- [x] Finalize the owner-approved full-collection audit closure and deferred-update record.
+- [x] Define a clean-room, host-compatible update contract for planning-with-files without activating hooks.
+- [x] Capture the external planning-with-files checksum and create the separate hook-free INTEGIN persistent-planning successor.
+- [x] Validate the new INTEGIN persistent-planning package and confirm the external package remains unchanged.
+- [x] Deliver the completed audit closure and the planning-skill update result.
+- [x] Capture pre-reconciliation checksums and initialize the planning-skill change ledger.
+- [x] Map v3.11.2 change categories to independently written, host-compatible internal behavior.
+- [x] Apply clean-room planning-skill enhancements and record every disposition in the ledger.
+- [x] Validate the reconciled internal skill and verify the external package has not changed.
+- [x] Deliver the completed reconciliation ledger and explicitly excluded external behavior.
+- [x] Re-read the clean-room and skill-authoring rules, then capture a full rollback baseline for planning-with-files.
+- [x] Define the clean-room replacement contract under the existing planning-with-files name and successor-retirement treatment.
+- [x] Replace planning-with-files with the independently written host-compatible workflow and update the ledger.
+- [x] Validate the replacement, retained rollback copy, and retirement of the separate successor from active use.
+- [x] Deliver the final active-skill status and tracked change record.
+- [x] Compare the archived original planning-with-files package with the active replacement.
+- [x] Deliver the exact capability, automation, safety, and rollback differences.
+- [x] Record the retired persistent-planning invocation and assess the proposed active-skill hybrid against review and evidence boundaries.
+- [x] Design clean-room templates and an explicitly invoked local validation helper for planning-with-files.
+- [x] Implement and track the approved hybrid revision under the active planning-with-files name.
+- [x] Validate the hybrid package, templates, and explicit helper without enabling hooks or hidden automation.
+- [x] Deliver the reviewed hybrid revision and its explicit exclusions.
+- [x] Classify requested automation capabilities by host support, authority, privacy, and clean-room risk.
+- [x] Inspect scheduling, host-hook, external-execution, and network constraints without enabling automation.
+- [x] Produce a per-capability authorization and implementation matrix with safe alternatives.
+- [ ] Implement only owner-approved, host-compatible automation capabilities in bounded batches.
+- [ ] Validate any enabled automation and deliver the final capability/exclusion record.
+- [x] Restore the complete online-package coverage register and active-package baseline for the full local rebuild.
+- [x] Produce a no-omissions capability reconciliation register covering every audited online artifact and behavior.
+- [x] Design all local equivalents and explicit activation gates for host-dependent features.
+- [x] Implement all approved local equivalents in reversible validated batches.
+- [x] Validate every capability disposition and deliver the complete active/pending/blocked/rejected register.
+- [x] Define the PC-hosted injection and completion-gate security contract, safeguards, and bypass requirements.
+- [x] Inspect available PC/session event and persistence support without enabling automation.
+- [x] Design a disabled-by-default local bridge protocol, configuration, audit log, and test plan.
+- [x] Implement only supported local bridge components without activating them.
+- [ ] Run bounded tests and request final activation confirmation before enabling any automatic behavior.
+- [x] Read mandatory INTEGIN workspace guidance and identify C:\MY_PROJECT\tools\planning-bridge as the non-product local bridge location.
+- [x] Define the connected-PC bridge deployment, bypass, and rollback contract.
+- [ ] Deploy disabled-by-default local bridge assets without enabling session lifecycle automation.
+- [x] Test explicit PC-local bridge behavior, bypass, and rollback recovery.
+- [x] Deliver the active local status and the remaining session-lifecycle integration gap.
+- [x] Re-establish the active local package baseline and prior online-source clean-room evidence.
+- [x] Define exact direct-installation constraints and clean-room-compatible alternatives.
+- [ ] Present the bounded update decision before any source-derived package change.
+- [x] Define the new combined skill identity, rollback baseline, source boundary, and no-omissions acceptance criteria.
+- [x] Map every audited online role and current local capability into a new independently written skill module.
+- [x] Author the new combined local skill, templates, utilities, and explicit host-integration modules.
+- [x] Validate the new package, no-omissions ledger, and rollback boundary.
+- [x] Deliver the combined skill and the exact activation requirements for automatic behavior.
+- [x] Capture activation safeguards and rollback baselines for the combined skill and deployed PC bridge.
+- [x] Inspect session lifecycle and PC invocation support without activating automation.
+- [x] Record the configuration/activation step as blocked because no verified session lifecycle interface exists.
+- [x] Verify that no unintended activation occurred and that rollback preservation remains intact; lifecycle-event tests remain unsupported.
+- [x] Deliver the explicit unsupported-interface finding, preserved disabled bridge status, rollback baselines, and bypass evidence.
+- [x] Verify the supported workflow for exposing the validated local planning-orchestrator package through an importable My Skills card.
+- [x] Audit planning-with-files and integin-planning-orchestrator capabilities: command surfaces are equivalent and all predecessor supplemental guidance is included in the new package.
+- [x] Create a new consolidated planning skill without altering either existing source package.
+- [x] Validate the consolidated package, compile utilities, prove isolated template validation and bridge fail-open behavior, and verify both source packages remain unchanged.
+- [x] Deliver the validated consolidated package as a My Skills import card.
+- [x] Assess mobtag.io as an external component source without importing, installing, executing, or integrating any artifact.
+- [x] Refine the proposed INTEGIN capability additions into a dependency-aware design sequence without authorizing implementation.
+- [x] Inspect the provided Railway deployment read-only and assess its relevance to INTEGIN without logging in or changing it.
+- [x] Record the selected controlled-launcher architecture, its API task boundary, and its non-native-completion limitation.
+- [x] Implement a disabled PC-side launcher that invokes the fixed-root planning bridge before future API task creation.
+- [x] Implement completion-review recording for task-stop notifications without claiming a native completion veto.
+- [x] Validate offline and disposable-root safety behavior without credentials, a project binding, or task creation.
+- [ ] Obtain a dedicated API credential and separate canonical-root binding approval before activation.
+- [ ] Activate and test the controlled launcher only after explicit owner confirmation.
+- [x] Enable the root-bound launcher for one approved private test task and capture preflight/task evidence; completion review remained unverified because both documented status endpoints returned HTTP 404.
+- [x] Restore bridge and launcher configurations to disabled state and verify no listener, scheduler, or background process remains.
+- [x] Create the owner-approved `C:\MY_PROJECT` root binding in disabled bridge and launcher configurations.
+- [x] Obtain confirmation that the dedicated local API credential has been configured without disclosing the replacement key in chat.
+- [x] Validate the locally configured API credential with a read-only official API request while the launcher remains disabled.
+- [x] Retrieve and review the exact INTEGIN project identifier before adding it to the still-disabled task-project allow-list.
+- [x] Verify whether session-created planning, Mobtag, Railway, and launcher records are synchronized with the authoritative INTEGIN handoff.
+- [x] Classify any documented-only, stale, or missing synchronization links without editing protected records.
+- [x] Deliver a synchronization status and safe correction sequence.
+
+> Note: This is a read-only verification task; no protected runtime or handoff record is authorized for editing by the current request.
+
+- [ ] Inventory all locally created non-secret planning, assessment, skill, bridge, launcher, and evidence materials for synchronization to C:\MY_PROJECT.
+- [ ] Stage a non-destructive synchronization manifest with explicit exclusions for secrets, external source, credentials, and runtime state.
+- [ ] Copy approved materials without overwriting existing files and verify checksums and protected-runtime preservation.
+- [ ] Deliver the synchronization manifest and completion status.

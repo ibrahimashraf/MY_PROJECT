@@ -1,0 +1,75 @@
+{
+  "checked_relative_links": 22,
+  "missing_relative_links": [
+    {
+      "skill": "content-gap-analysis",
+      "line": 76,
+      "target": "chart_traffic_by_type.png",
+      "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_traffic_by_type.png",
+      "exists": false
+    },
+    {
+      "skill": "content-gap-analysis",
+      "line": 103,
+      "target": "chart_cluster_sizing.png",
+      "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_cluster_sizing.png",
+      "exists": false
+    },
+    {
+      "skill": "content-gap-analysis",
+      "line": 117,
+      "target": "chart_<cluster>_pages.png",
+      "resolved": "/home/ubuntu/skills/content-gap-analysis/chart_<cluster>_pages.png",
+      "exists": false
+    },
+    {
+      "skill": "internet-skill-finder",
+      "line": 38,
+      "target": "import_url",
+      "resolved": "/home/ubuntu/skills/internet-skill-finder/import_url",
+      "exists": false
+    },
+    {
+      "skill": "listicle-blog-writer",
+      "line": 52,
+      "target": "{client_url}",
+      "resolved": "/home/ubuntu/skills/listicle-blog-writer/{client_url}",
+      "exists": false
+    },
+    {
+      "skill": "listicle-blog-writer",
+      "line": 55,
+      "target": "{tool_url}",
+      "resolved": "/home/ubuntu/skills/listicle-blog-writer/{tool_url}",
+      "exists": false
+    },
+    {
+      "skill": "listicle-blog-writer",
+      "line": 57,
+      "target": "images/{tool-slug}-homepage.png",
+      "resolved": "/home/ubuntu/skills/listicle-blog-writer/images/{tool-slug}-homepage.png",
+      "exists": false
+    },
+    {
+      "skill": "planning-with-files",
+      "line": 456,
+      "target": "../../docs/attestation-locking.md",
+      "resolved": "/home/ubuntu/docs/attestation-locking.md",
+      "exists": false
+    },
+    {
+      "skill": "planning-with-files",
+      "line": 456,
+      "target": "../../docs/perf-notes.md",
+      "resolved": "/home/ubuntu/docs/perf-notes.md",
+      "exists": false
+    },
+    {
+      "skill": "seo-competitor-analysis-will",
+      "line": 75,
+      "target": "charts/global_organic_trend.png",
+      "resolved": "/home/ubuntu/skills/seo-competitor-analysis-will/charts/global_organic_trend.png",
+      "exists": false
+    }
+  ]
+}

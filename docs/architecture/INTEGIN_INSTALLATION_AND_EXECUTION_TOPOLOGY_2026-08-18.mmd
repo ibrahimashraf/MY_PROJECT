@@ -1,0 +1,63 @@
+flowchart TB
+  subgraph PC["Your Windows computer — actual local environment"]
+    subgraph WS["C:\MY PROJECT workspace"]
+      Source["Source trees<br/>integin-pilot-source • integin-source"]
+      Ops["Operations and runtime artifacts<br/>launchers • health checks • candidate controls"]
+      Private["Private boundary<br/>credentials and generated private fixtures<br/>opaque; never committed"]
+      Docs["Architecture, governance, continuity records"]
+    end
+
+    subgraph Host["Direct Windows host processes"]
+      Acceptance["Acceptance Go executable<br/>operations\acceptance\integin-server-provision.exe<br/>127.0.0.1:8080 — running"]
+      PilotCandidate["Pilot candidate executable<br/>operations\pilot\runtime\...candidate.exe<br/>127.0.0.1:18080 — stopped unless separately governed"]
+      Toolchain["Developer toolchain<br/>Go • Flutter/Dart • Python • Docker Desktop"]
+    end
+
+    subgraph Docker["Docker Desktop — containerized durable services"]
+      subgraph AC["Acceptance data services"]
+        APG[("integin-postgres<br/>PostgreSQL 18<br/>Docker volume: integin-postgres-data")]
+        ARFS[("integin-rustfs<br/>RustFS<br/>Docker volumes: integin-rustfs-data / logs")]
+      end
+      subgraph PCandidate["Isolated pilot data services"]
+        PPG[("integin-pilot-postgres<br/>PostgreSQL 18<br/>host port 15432")]
+        PRFS[("integin-pilot-rustfs<br/>RustFS<br/>host ports 19000 / 19001")]
+      end
+    end
+  end
+
+  subgraph Device["Field devices — installed application"]
+    FieldApp["INTEGIN Field<br/>Flutter native application<br/>offline cache • draft store • signed outbox"]
+  end
+
+  subgraph Managed["Separate managed environment"]
+    AdvisoryUI["Advisory console<br/>React / TypeScript web interface"]
+    AdvisoryAPI["Python FastAPI advisory service source<br/>advisory only; not a local authority process"]
+  end
+
+  Source -->|"builds"| Acceptance
+  Source -. "builds only for separately governed exercise" .-> PilotCandidate
+  Toolchain -->|"builds and validates"| Source
+  Toolchain -->|"builds native package"| FieldApp
+  Acceptance -->|"local Docker network / loopback"| APG
+  Acceptance -->|"local Docker network / loopback"| ARFS
+  PilotCandidate -. "only during candidate exercise" .-> PPG
+  PilotCandidate -. "only during candidate exercise" .-> PRFS
+  FieldApp -->|"signed sync when connected"| Acceptance
+  AdvisoryUI -. "read-only advisory presentation" .-> AdvisoryAPI
+  AdvisoryAPI -. "non-blocking guidance only" .-> Acceptance
+  Ops --> Acceptance
+  Ops -. "explicit launch / rollback only" .-> PilotCandidate
+  Private --- Acceptance
+  Private -. "never copied into source or diagram" .-> PilotCandidate
+  Docs --- Source
+
+  classDef host fill:#D9F1E4,stroke:#2B6A4A,color:#173A29,stroke-width:1.5px;
+  classDef container fill:#DCEBFA,stroke:#27689B,color:#173A58,stroke-width:1.5px;
+  classDef device fill:#F7E3F1,stroke:#92517E,color:#4D263E,stroke-width:1.5px;
+  classDef boundary fill:#FFF1D8,stroke:#A56D12,color:#573700,stroke-width:1.5px;
+  classDef deferred fill:#F2F2F2,stroke:#707070,color:#404040,stroke-dasharray: 5 4;
+  class Source,Ops,Docs,Acceptance,Toolchain host;
+  class APG,ARFS,PPG,PRFS container;
+  class FieldApp device;
+  class Private boundary;
+  class PilotCandidate deferred;

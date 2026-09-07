@@ -1,0 +1,23 @@
+{
+  "audit_id": "source-audit-20260824-planning-with-files-v3.11.2",
+  "purpose": "Determine whether the sole externally identified installed-skill update candidate has a safe, compatible, clean-room revision path for this host.",
+  "scope_rules": {
+    "read_only": true,
+    "execute_external_source": false,
+    "install_dependencies": false,
+    "copy_external_code_or_prompts": false,
+    "retain_raw_external_content": false
+  },
+  "sources": [
+    {
+      "url": "https://github.com/OthmanAdi/planning-with-files",
+      "revision_or_branch": "v3.11.2 (commit 9e94390e5912b1ff296556505cd999ff84838160)",
+      "kind": "repository subtree: .agents/skills/planning-with-files",
+      "status": "complete",
+      "manifest_artifact_count": 29,
+      "audit_record_count": 29,
+      "coverage_exception": null,
+      "provenance_notes": "The installed package declares version 3.10.0. Upstream repository metadata identifies v3.11.2. All 29 canonical subtree artifacts were retrieved and statically scanned. No source content was executed, installed, or copied."
+    }
+  ]
+}

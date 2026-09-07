@@ -1,0 +1,51 @@
+﻿# INTEGIN Post-Manifest and Stage 0 Reconciliation Matrix — 2026-08-22
+
+> **Read-only findings record.** This matrix makes no correction, implementation, migration, commit, runtime, deployment, tracker, or security-state change.
+
+## Permanent Safety Preamble
+
+Protected acceptance at `127.0.0.1:8080` was not modified or restarted. The pilot candidate at `127.0.0.1:18080` was not launched or altered. Package enforcement remains disabled in persistent runtimes; OIDC remains disabled; OpenBao remains sealed and unwired. `private\integin-secrets\` was not inspected, printed, logged, uploaded, or included. No migration, deployment, runtime, security, Git, or tracker state was changed.
+
+## Evidence Basis
+
+The comparison used the four root handoff records, `INTEGIN_PILOT_MANIFEST_EIGHT_CASE_MATRIX_EVIDENCE_2026-08-20.md`, `INTEGIN_HIGH_VOLUME_WORK_ORDER_OPERATING_MODEL_DRAFT_2026-08-19.md`, `INTEGIN_HIGH_LEVEL_OPERATING_MODEL_REVIEW_2026-08-21.md`, and the current Stage 0 work-order roadmap, RLS/identifier, migration, service-contract, and evidence-ledger records.
+
+## Reconciliation Matrix
+
+| Record and section | Current statement | Evidence or source record | Confirmed current fact | Factual drift or stale wording | Missing link or evidence reference | Required correction | Risk if not corrected | Owner confirmation required |
+|---|---|---|---|---|---|---|---|---|
+| Root `task_plan.md`: Active Gate | Names an authorized isolated manifest runtime exercise as active. | Manifest Eight-Case Matrix Evidence, 2026-08-20. | The authorized isolated-pilot eight-case matrix passed; it names post-manifest work-order foundation as next priority. | Active-gate wording is stale after recorded matrix closure. | No direct link to the closure evidence and next-priority statement. | Replace active wording with closed evidence and a link to the post-manifest work-order design gate. | Work may be routed back to a completed manifest exercise or accidentally rerun. | No. |
+| `CURRENT_STATE.md`: operational priority summary | Identifies handoff hierarchy and protected acceptance, but is last reconciled 2026-08-20. | Manifest matrix 2026-08-20; Stage 0 evidence ledger and operating-model review 2026-08-21. | Protected acceptance remains a boundary; later Stage 0 evidence exists. | The reconciliation date and summary do not visibly carry the later post-manifest and Stage 0 state. | Missing direct post-manifest closure and Stage 0 evidence-ledger references. | Refresh summary and add links; do not imply production or external proof. | Engineers may follow an obsolete gate or overstate what runtime proof means. | No. |
+| `ENGINEERING_CONTINUATION_GUIDE.md`: handoff order | Provides canonical handoff discipline and hierarchy. | Workspace map, manifest evidence, Stage 0 architecture records. | The guide correctly requires evidence-led work and bounded claims. | No direct conflict found. | Missing explicit post-manifest handoff pointer and permanent safety-preamble link. | Add a short current-state pointer after owner approval. | A future engineer may use broad historical guidance without the current gate. | No. |
+| `WORKSPACE_MAP.md`: detailed hierarchy | Maps root handoff and detailed documentation hierarchy. | Stage 0 architecture and governance records listed in evidence basis. | No direct conflict found. | Map does not visibly promote the accepted high-volume model and post-manifest Stage 0 records as the current design source. | Missing current work-order design and matrix links. | Add current design-source pointers after owner approval. | Designers may rely on an older draft without the later governed boundaries. | No. |
+| High-volume work-order operating model: baseline and offline scope | User-directed design baseline; not implemented; defines separate job/session/asset states and bounded offline behavior. | High-Level Operating Model Review, 2026-08-21; Stage 0 service-contract decision. | The work-order foundation must preserve server authority, separate states, bounded offline scope, and no client-side bypass. | No conflict found with Stage 0 records. | Root handoff lacks a direct reference to these accepted boundaries. | Link the current handoff to the operating-model baseline and identify it as design-only. | A later implementation sequence could omit offline/state boundaries or treat the draft as implemented. | No. |
+| Stage 0 roadmap and evidence ledger | Roadmap is source/design-gated; ledger bounds claims by proof. | Stage 0 Evidence Ledger, 2026-08-21. | Stage 0 proof is more advanced than the 2026-08-20 roadmap summary, while hosted identity and external proof remain unproven. | Roadmap can read as pre-proof if not cross-linked to the ledger. | Missing explicit roadmap-to-ledger link. | Add evidence-ledger reference and maintain proof limits. | Duplicate work or false production-readiness claim. | No. |
+| Stage 0 RLS/identifier and migration decisions | Candidate reviewed; no automatic SQL application. | RLS/Identifier Decision and Migration Decision, 2026-08-20. | Tenant/org scope remains server-derived and RLS-protected; migration execution is a separately governed gate. | No conflict found. | Root handoff lacks the explicit no-migration-before-design/evidence pointer. | Add a concise migration-order and RLS boundary reference. | Premature schema action or tenant-isolation regression. | Yes, before any migration change. |
+| Stage 0 service-contract decision: testing seam | Source-only contract requires explicit negative cases and later independent evidence. | Stage 0 Service Contract Decision, 2026-08-20; Stage 0 Evidence Ledger, 2026-08-21. | The design must name a public testing seam before implementation. | No authority conflict found. | Root handoff does not state the work-order seam or its negative-proof requirement. | Add the chosen seam and evidence boundary to the synchronized plan after design approval. | Implementation can begin without an agreed observable proof boundary. | Yes, before implementation. |
+| Protected acceptance and pilot candidate | Root records mention acceptance and historical candidate gate wording. | Permanent safety preamble; manifest evidence scope. | Acceptance at 8080 and candidate at 18080 are protected and out of scope for this design task. | Root handoff does not consolidate both restrictions in current post-manifest wording. | Missing single persistent safety-preamble reference. | Add a short cross-reference, not runtime instructions. | An engineer could run a forbidden exercise while doing document or design work. | No. |
+| Package enforcement, OIDC, and OpenBao | Historical Stage 0 evidence may mention isolated/disposable identity proof. | Permanent safety preamble; Stage 0 Evidence Ledger. | Persistent package enforcement stays disabled; persistent OIDC stays disabled; OpenBao stays sealed and unwired. | No conflict if disposable proof remains clearly historical and bounded. | Root handoff lacks one current no-persistent-activation statement. | Add a safety-preamble link and preserve proof-scope qualifiers. | Scope creep from design into runtime/security activation. | Yes, before any configuration change. |
+| Private material and tracker/runtime state | Root handoff describes workspace structure. | Permanent safety preamble. | `private\integin-secrets\` is opaque; no private, tracker, deployment, or runtime state is in scope. | No conflict found. | No single explicit cross-reference in the listed root records. | Add safety-preamble pointer after approval. | Secret exposure or unauthorized operational action. | Yes, before any access or external action. |
+| Authority, tenant isolation, RLS, offline scope, migration order | Operating model and Stage 0 records separate server authority, tenant/org RLS, bounded offline work, and governed migrations. | High-volume operating model; RLS/Identifier; Migration; Service Contract; Evidence Ledger. | No material conflict found in the reviewed records. | None confirmed. | Root handoff needs concise links so the constraints travel with the next work-order design task. | Add references only; do not reinterpret these boundaries. | Later design could accidentally weaken authority, isolation, offline, or migration sequencing. | Yes, if any boundary is proposed to change. |
+
+## Reconciliation Status
+
+**Status: correctable drift.** The reviewed records have no confirmed conflict in authority, tenant isolation, RLS, offline scope, or migration order. The drift is documentary: stale manifest-active wording, missing current post-manifest links, incomplete safety-preamble references, and no consolidated testing-seam wording.
+
+## Exact Documents Requiring Correction
+
+1. `C:\MY PROJECT\task_plan.md` — replace stale active manifest-gate wording and point to post-manifest work-order design.
+2. `C:\MY PROJECT\CURRENT_STATE.md` — refresh the reconciliation summary and add current post-manifest/Stage 0 evidence links.
+3. `C:\MY PROJECT\ENGINEERING_CONTINUATION_GUIDE.md` — add a current post-manifest pointer and safety-preamble cross-reference.
+4. `C:\MY PROJECT\WORKSPACE_MAP.md` — add current work-order operating-model, Stage 0, and reconciliation-matrix pointers.
+
+## Proposed Correction Sequence
+
+First update root `task_plan.md`; second update `CURRENT_STATE.md`; third align the continuation guide and workspace map; fourth prepare the bounded work-order specification with a named testing seam. Re-read the matrix after each document change. Do not start implementation, migrations, or runtime exercises in this sequence.
+
+## Escalation Assessment
+
+Requirements alignment and delegate-and-debate are not required for the documented drift. Escalate to requirements alignment if root correction reveals a conflict with the accepted operating model. Escalate to delegate-and-debate if a proposed design changes authority, RLS, offline scope, migration order, or any protected runtime/security boundary.
+
+## Authorization Hold
+
+This findings matrix authorizes no implementation, runtime action, migration, acceptance/candidate operation, package-enforcement change, OIDC/OpenBao change, private-material access, deployment, publication, tracker action, staging, or commit. Owner approval is required before editing the listed handoff records.

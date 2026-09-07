@@ -1,0 +1,11 @@
+{
+  "enabled": false,
+  "project_root": "C:\\MY_PROJECT",
+  "bridge_script": "C:\\MY_PROJECT\\tools\\planning-bridge\\scripts\\planning_bridge.py",
+  "api_base_url": "https://api.manus.ai",
+  "api_key_env": "MANUS_PLANNING_LAUNCHER_API_KEY",
+  "allowed_project_ids": ["PETzWctatnQVziik9UYnpL"],
+  "network_timeout_seconds": 10,
+  "poll_interval_seconds": 10,
+  "max_prompt_chars": 8000
+}

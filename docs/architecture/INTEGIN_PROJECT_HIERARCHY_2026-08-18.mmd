@@ -1,0 +1,89 @@
+flowchart TB
+  Root["INTEGIN<br/>Integrated Inspection & Assurance"]
+
+  subgraph S[Product surfaces]
+    Field["INTEGIN Field<br/>Flutter offline-first field app"]
+    Operator["INTEGIN Operator<br/>web/PWA-oriented review and governance surface"]
+    AdvisorUI["Advisory console<br/>React / TypeScript"]
+  end
+
+  subgraph F[Field device boundary]
+    Forms["Approved work-package cache<br/>versioned checklist schema"]
+    Drafts["Inspection drafts and local evidence queue"]
+    Outbox["Persistent outbox<br/>signed, sequence-aware sync"]
+    FieldSecurity["Device signer and local proof verification"]
+  end
+
+  subgraph B[Server-authoritative platform - Go modular monolith]
+    HTTP["HTTP API and server composition"]
+    Domain["Domain modules<br/>inspection • templates • certificates • authorization"]
+    Sync["Sync API and processor<br/>device trust • ordering • receipts"]
+    Packages["Work packages<br/>approval • assignment • manifest issuance"]
+    Evidence["Evidence API and export manifests"]
+    Audit["Audit checkpoints • events • reporting"]
+    Security["Tenant scope • signatures • authority and key checks"]
+  end
+
+  subgraph D[Durable services]
+    PG[("PostgreSQL<br/>tenant-scoped authoritative records")]
+    RustFS[("RustFS<br/>encrypted evidence objects")]
+  end
+
+  subgraph A[Advisory-only intelligence]
+    FastAPI["Python FastAPI advisory service"]
+    Advice["Non-blocking suggestions,<br/>reasoning traces, limitations"]
+  end
+
+  subgraph R[Runtime and governance boundary]
+    Acceptance["Protected acceptance<br/>Go server :8080<br/>healthy and ready"]
+    Pilot["Disposable pilot candidate<br/>loopback :18080<br/>currently stopped"]
+    Controls["OIDC disabled by default<br/>OpenBao sealed and unwired<br/>persistent package enforcement disabled"]
+    Deferred["Deferred manifest activation<br/>route unmounted • migrations unapplied"]
+  end
+
+  Root --> Field
+  Root --> Operator
+  Root --> AdvisorUI
+
+  Field --> Forms
+  Field --> Drafts
+  Field --> Outbox
+  Field --> FieldSecurity
+  Forms --> FieldSecurity
+  Drafts --> Outbox
+  Outbox -->|"signed transaction sync"| Sync
+  FieldSecurity -->|"device proof / manifest request when separately enabled"| Packages
+
+  Operator --> HTTP
+  AdvisorUI -. "read-only advisory view" .-> FastAPI
+  FastAPI -. "advisory only; never blocks workflow" .-> Advice
+  Advice -. "non-blocking context" .-> HTTP
+
+  HTTP --> Domain
+  HTTP --> Sync
+  HTTP --> Packages
+  HTTP --> Evidence
+  HTTP --> Audit
+  Domain --> Security
+  Sync --> Security
+  Packages --> Security
+  Security --> PG
+  Domain --> PG
+  Sync --> PG
+  Packages --> PG
+  Audit --> PG
+  Evidence --> RustFS
+  Evidence --> PG
+
+  Acceptance --> HTTP
+  Pilot -. "candidate-only composition" .-> HTTP
+  Pilot -. "only when separately governed" .-> Deferred
+  Controls --- Acceptance
+  Controls --- Pilot
+
+  classDef active fill:#D9F1E4,stroke:#2B6A4A,color:#173A29,stroke-width:1.5px;
+  classDef boundary fill:#FFF1D8,stroke:#A56D12,color:#573700,stroke-width:1.5px;
+  classDef deferred fill:#F2F2F2,stroke:#707070,color:#404040,stroke-dasharray: 5 4;
+  class Field,Operator,AdvisorUI,Forms,Drafts,Outbox,FieldSecurity,HTTP,Domain,Sync,Packages,Evidence,Audit,Security,PG,RustFS,FastAPI,Advice,Acceptance active;
+  class Pilot,Controls boundary;
+  class Deferred deferred;

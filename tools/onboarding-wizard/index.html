@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INTEGIN — Enterprise Onboarding & Trust Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="executive-theme">
+  <!-- Top Global Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-logo">
+        <div class="logo-shield">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">INTEGIN</span>
+          <span class="brand-tagline" data-i18n="tagline">Integrated Inspection & Assurance</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Persistence Status Indicator -->
+        <div class="system-status-chip" id="persistenceStatus">
+          <span class="pulse-dot"></span>
+          <span id="saveStatusText" data-i18n="autoSaved">Draft Auto-Persisted</span>
+        </div>
+
+        <button class="btn btn-outline btn-sm" id="simulateCrashBtn" title="Test Power-Cut / Crash Recovery">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          <span data-i18n="simulateCrash">Simulate Crash/Restart</span>
+        </button>
+
+        <!-- Bilingual Toggle -->
+        <button class="btn btn-glass btn-sm" id="langToggleBtn">
+          <span id="langText">العربية (RTL)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Multi-Tier Interactive Onboarding Container -->
+  <main class="main-wrapper">
+    <div class="onboarding-card">
+
+      <!-- Trust Progress & Multi-Step Navigation -->
+      <div class="stepper-header">
+        <div class="trust-meter-container">
+          <div class="trust-meter-info">
+            <span class="trust-meter-label" data-i18n="trustReadiness">Trust & Regulatory Readiness</span>
+            <span class="trust-meter-value" id="trustScore">20%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="trustProgressBar" style="width: 20%;"></div>
+          </div>
+        </div>
+
+        <nav class="stepper-nav" aria-label="Onboarding Progress">
+          <button class="step-btn active" data-step="1" id="stepBtn1">
+            <span class="step-num">1</span>
+            <span class="step-text" data-i18n="step1">Legal Identity</span>
+          </button>
+          <div class="step-connector"></div>
+          <button class="step-btn" data-step="2" id="stepBtn2">
+            <span class="step-num">2</span>
+            <span class="step-text" data-i18n="step2">Accreditation</span>
+          </button>
+          <div class="step-connector"></div>
+          <button class="step-btn" data-step="3" id="stepBtn3">
+            <span class="step-num">3</span>
+            <span class="step-text" data-i18n="step3">Certificate Rules</span>
+          </button>
+          <div class="step-connector"></div>
+          <button class="step-btn" data-step="4" id="stepBtn4">
+            <span class="step-num">4</span>
+            <span class="step-text" data-i18n="step4">Disciplines</span>
+          </button>
+          <div class="step-connector"></div>
+          <button class="step-btn" data-step="5" id="stepBtn5">
+            <span class="step-num">5</span>
+            <span class="step-text" data-i18n="step5">Edge Pairing & Launch</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- STEP 1: Legal Identity & Company Setup -->
+      <section class="step-content active" id="stepContent1">
+        <div class="step-intro">
+          <h2 class="step-heading" data-i18n="step1Title">Organization Legal Identity</h2>
+          <p class="step-desc" data-i18n="step1Desc">Establish your company’s legal entity and tax identifiers to anchor Row-Level Security (RLS) data partitioning.</p>
+        </div>
+
+        <form class="form-grid" id="step1Form" onsubmit="return false;">
+          <div class="form-group col-span-2">
+            <label class="form-label" data-i18n="companyName">Inspection Company Legal Name *</label>
+            <input type="text" class="form-control" id="companyName" placeholder="e.g. Apex Industrial Inspection Services LLC" value="Apex Industrial Inspection Services LLC" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="crNumber">Commercial Registration (CR) Number *</label>
+            <input type="text" class="form-control" id="crNumber" placeholder="e.g. 1010894218" value="1010894218" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="vatNumber">VAT / Tax Identification (ZATCA) *</label>
+            <input type="text" class="form-control" id="vatNumber" placeholder="e.g. 300192837400003" value="300192837400003" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="country">Jurisdiction / Country *</label>
+            <select class="form-control" id="countrySelect">
+              <option value="SA" selected>Saudi Arabia (KSA - ZATCA/SASO)</option>
+              <option value="AE">United Arab Emirates (UAE)</option>
+              <option value="QA">Qatar (QG)</option>
+              <option value="KW">Kuwait</option>
+              <option value="GLOBAL">International / Global</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" data-i18n="subdomain">Tenant Domain Slug</label>
+            <div class="input-addon-group">
+              <input type="text" class="form-control" id="subdomainSlug" placeholder="apex" value="apex" required>
+              <span class="input-addon">.integin.com</span>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- STEP 2: Accreditations & Branding -->
+      <section class="step-content" id="stepContent2">
+        <div class="step-intro">
+          <h2 class="step-heading" data-i18n="step2Title">Accreditations, Badges & Official Stamp</h2>
+          <p class="step-desc" data-i18n="step2Desc">Configure your official accreditation marks (LEEA, ISO 17020, ASME) to be cryptographically embedded in issued certificates.</p>
+        </div>
+
+        <div class="branding-grid">
+          <div class="upload-card">
+            <span class="upload-title" data-i18n="companyLogo">Company Official Logo</span>
+            <div class="upload-dropzone" id="logoDropzone">
+              <div class="logo-preview-box" id="logoPreviewBox">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <span data-i18n="dropLogoText">Drag logo or click to upload PNG</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="upload-card">
+            <span class="upload-title" data-i18n="officialStamp">Digital Seal / Watermark Stamp</span>
+            <div class="upload-dropzone" id="stampDropzone">
+              <div class="logo-preview-box" id="stampPreviewBox">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                <span data-i18n="dropStampText">Upload Official Inspection Stamp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accreditation-badges-group">
+          <label class="form-label" data-i18n="selectAccreditations">Select Recognized Accreditation Bodies</label>
+          <div class="badge-chips-grid">
+            <label class="badge-checkbox-card">
+              <input type="checkbox" name="accreditation" value="LEEA" checked>
+              <div class="badge-card-body">
+                <span class="badge-code">LEEA</span>
+                <span class="badge-name">Lifting Equipment Engineers Association</span>
+              </div>
+            </label>
+
+            <label class="badge-checkbox-card">
+              <input type="checkbox" name="accreditation" value="ISO_17020" checked>
+              <div class="badge-card-body">
+                <span class="badge-code">ISO/IEC 17020</span>
+                <span class="badge-name">Accredited Inspection Body</span>
+              </div>
+            </label>
+
+            <label class="badge-checkbox-card">
+              <input type="checkbox" name="accreditation" value="ASNT">
+              <div class="badge-card-body">
+                <span class="badge-code">ASNT / PCN</span>
+                <span class="badge-name">Non-Destructive Testing Society</span>
+              </div>
+            </label>
+
+            <label class="badge-checkbox-card">
+              <input type="checkbox" name="accreditation" value="ASME">
+              <div class="badge-card-body">
+                <span class="badge-code">ASME / API</span>
+                <span class="badge-name">Pressure Vessel & Piping Standard</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: Certificate Governance & Numbering Policy -->
+      <section class="step-content" id="stepContent3">
+        <div class="step-intro">
+          <h2 class="step-heading" data-i18n="step3Title">Certificate Governance & Numbering</h2>
+          <p class="step-desc" data-i18n="step3Desc">Define strict legal certificate formats and enforce whether single or four-eyes sign-off is required.</p>
+        </div>
+
+        <div class="form-grid">
+          <!-- Smart Pattern Builder Card -->
+          <div class="form-group col-span-2 pattern-builder-card">
+            <label class="form-label" data-i18n="certPrefixPattern">Certificate Numbering Template Pattern</label>
+            
+            <!-- Quick-insert Variables Toolbar -->
+            <div class="pattern-chips-bar">
+              <span class="pattern-chips-title" data-i18n="insertTag">Insert Dynamic Tags:</span>
+              <button type="button" class="tag-chip-btn" data-insert="{PREFIX}">{PREFIX}</button>
+              <button type="button" class="tag-chip-btn" data-insert="{DISCIPLINE}">{DISCIPLINE}</button>
+              <button type="button" class="tag-chip-btn" data-insert="{YEAR}">{YEAR}</button>
+              <button type="button" class="tag-chip-btn" data-insert="{MONTH}">{MONTH}</button>
+              <button type="button" class="tag-chip-btn" data-insert="{SEQ:5}">{SEQ:5}</button>
+              <button type="button" class="tag-chip-btn btn-reset-pattern" id="resetPatternBtn">↺ Reset Default</button>
+            </div>
+
+            <input type="text" class="form-control" id="certPattern" value="APEX-{DISCIPLINE}-{YEAR}-{SEQ:5}">
+            
+            <div class="cert-preview-pill">
+              <span data-i18n="livePreview">Live Rendered Sample:</span> 
+              <strong id="certPreviewOutput" class="text-accent">APEX-CRN-2026-00001</strong>
+            </div>
+          </div>
+
+          <div class="form-group col-span-2">
+            <label class="form-label" data-i18n="signingPolicy">Technical Signing Authority Policy</label>
+            <div class="policy-options-grid">
+              <label class="policy-card selected">
+                <input type="radio" name="signPolicy" value="FOUR_EYES" checked>
+                <div class="policy-card-body">
+                  <div class="policy-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </div>
+                  <div class="policy-text">
+                    <strong data-i18n="fourEyesTitle">Mandatory Four-Eyes Verification (Recommended)</strong>
+                    <p data-i18n="fourEyesDesc">Inspector completes field inspection on tablet ➔ Technical Authority/QA Manager must review and counter-sign before official PDF release.</p>
+                  </div>
+                </div>
+              </label>
+
+              <label class="policy-card">
+                <input type="radio" name="signPolicy" value="DIRECT_SIGN">
+                <div class="policy-card-body">
+                  <div class="policy-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="policy-text">
+                    <strong data-i18n="directSignTitle">Direct Field Release</strong>
+                    <p data-i18n="directSignDesc">Authorized Level III inspectors can issue legally binding certificates directly upon sealing tablet report.</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 4: Inspection Disciplines & Governed Packages -->
+      <section class="step-content" id="stepContent4">
+        <div class="step-intro">
+          <h2 class="step-heading" data-i18n="step4Title">Active Inspection Disciplines</h2>
+          <p class="step-desc" data-i18n="step4Desc">Enable standardized test packages with automated engineering calculation limits.</p>
+        </div>
+
+        <div class="disciplines-grid">
+          <label class="discipline-card active">
+            <input type="checkbox" name="discipline" value="MOBILE_CRANES" checked>
+            <div class="discipline-card-content">
+              <div class="discipline-header">
+                <span class="discipline-tag">BS 7121 / ASME B30.5</span>
+                <span class="check-icon">✓</span>
+              </div>
+              <h3 class="discipline-title" data-i18n="cranesTitle">Mobile & Crawler Cranes</h3>
+              <p class="discipline-desc" data-i18n="cranesDesc">Boom deflection, load moment indicators (LMI), outrigger hydraulics, wire rope defect scoring (ISO 4309).</p>
+            </div>
+          </label>
+
+          <label class="discipline-card active">
+            <input type="checkbox" name="discipline" value="LIFTING_TACKLE" checked>
+            <div class="discipline-card-content">
+              <div class="discipline-header">
+                <span class="discipline-tag">LEEA / EN 1492</span>
+                <span class="check-icon">✓</span>
+              </div>
+              <h3 class="discipline-title" data-i18n="tackleTitle">Lifting Accessories & Shackles</h3>
+              <p class="discipline-desc" data-i18n="tackleDesc">Webbing slings, chain blocks, bow shackles, proof load tests, color coding schemes.</p>
+            </div>
+          </label>
+
+          <label class="discipline-card">
+            <input type="checkbox" name="discipline" value="NDT_TESTING">
+            <div class="discipline-card-content">
+              <div class="discipline-header">
+                <span class="discipline-tag">ASNT / ISO 9712</span>
+                <span class="check-icon">✓</span>
+              </div>
+              <h3 class="discipline-title" data-i18n="ndtTitle">Non-Destructive Testing (NDT)</h3>
+              <p class="discipline-desc" data-i18n="ndtDesc">Magnetic Particle (MPI), Dye Penetrant (DPT), and Ultrasonic Thickness Gauging (UT).</p>
+            </div>
+          </label>
+
+          <label class="discipline-card">
+            <input type="checkbox" name="discipline" value="PRESSURE_VESSELS">
+            <div class="discipline-card-content">
+              <div class="discipline-header">
+                <span class="discipline-tag">API 510 / ASME VIII</span>
+                <span class="check-icon">✓</span>
+              </div>
+              <h3 class="discipline-title" data-i18n="vesselsTitle">Pressure Vessels & Boilers</h3>
+              <p class="discipline-desc" data-i18n="vesselsDesc">Hydrostatic pressure testing, relief valve calibration, internal corrosion logging.</p>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- STEP 5: Realistic Interactive Field Sandbox -->
+      <section class="step-content" id="stepContent5">
+        <div class="step-intro">
+          <h2 class="step-heading" data-i18n="step5Title">Live Inspection Simulation & Dynamic Physics Sandbox</h2>
+          <p class="step-desc" data-i18n="step5Desc">Control real-time engineering parameters, trigger overload/fault alerts, pair edge tablets, and see the official certificate generate live.</p>
+        </div>
+
+        <!-- Realistic Dynamic Engineering Sandbox Container -->
+        <div class="step5-unified-wrapper">
+          <div class="pairing-sandbox-layout">
+            
+            <!-- Left Column: Tablet Pairing & Field Telemetry -->
+            <div class="subpanel-col">
+              <div class="subpanel-header">
+                <h3 class="subpanel-title" data-i18n="qrPairingTitle">1. Field Tablet Scan-to-Pair</h3>
+                <p class="subpanel-desc" data-i18n="qrPairingDesc">Scan with the INTEGIN Field App to generate local hardware keys in the device Secure Keystore.</p>
+              </div>
+
+              <div class="qr-box-container">
+                <div class="dynamic-qr-placeholder" id="qrCanvas">
+                  <svg width="120" height="120" viewBox="0 0 100 100" fill="currentColor">
+                    <path d="M0 0h30v30H0zM5 5h20v20H5zM10 10h10v10H10zM70 0h30v30H70zM75 5h20v20H75zM80 10h10v10H80zM0 70h30v30H0zM5 75h20v20H5zM10 80h10v10H10zM35 10h10v10H35zM50 10h10v10H50zM35 25h10v10H35zM50 25h10v10H50zM10 35h10v10H10zM25 35h10v10H25zM10 50h10v10H10zM25 50h10v10H25zM35 70h10v10H35zM50 70h10v10H50zM35 85h10v10H35zM50 85h10v10H50zM70 35h10v10H70zM85 35h10v10H85zM70 50h10v10H70zM85 50h10v10H85zM70 70h30v30H70zM75 75h20v20H75zM80 80h10v10H80z"/>
+                  </svg>
+                </div>
+                <div class="device-status-badge" id="deviceStatusBadge">
+                  <span class="status-indicator"></span>
+                  <span id="deviceStatusText" data-i18n="awaitingScan">Awaiting Tablet Scan...</span>
+                </div>
+              </div>
+
+              <!-- Inspector & Field Telemetry Card -->
+              <div class="field-meta-box">
+                <div class="meta-row">
+                  <span class="meta-lbl">Assigned Inspector:</span>
+                  <strong class="meta-val">Tariq Mansoor (LEEA #88319)</strong>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-lbl">Client & Site:</span>
+                  <strong class="meta-val">Al-Sharq Petrochemicals (Jubail Yard 4)</strong>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-lbl">Asset Under Test:</span>
+                  <strong class="meta-val">Kato NK-1000 (100T Hydraulic Mobile)</strong>
+                </div>
+              </div>
+
+              <div class="subpanel-footer">
+                <button class="btn btn-primary btn-block" id="simulatePairBtn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>
+                  <span data-i18n="simulateScanBtn">Simulate Tablet QR Scan</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Vertical Divider -->
+            <div class="subpanel-divider"></div>
+
+            <!-- Right Column: Interactive Real-time Test Sandbox -->
+            <div class="subpanel-col">
+              <div class="subpanel-header">
+                <h3 class="subpanel-title" data-i18n="sandboxTitle">2. Live Crane Inspection Sandbox</h3>
+                <p class="subpanel-desc" data-i18n="sandboxDesc">Simulate load tests and defect evaluations in real-time. Altering parameters dynamically impacts the certificate status.</p>
+              </div>
+
+              <!-- Dynamic Engineering Sliders -->
+              <div class="physics-controls-grid">
+                <div class="control-card">
+                  <div class="control-hdr">
+                    <span class="control-lbl">Applied Test Load (SWL 100T):</span>
+                    <strong class="control-val" id="appliedLoadVal">105.0 Tonnes (105% Proof)</strong>
+                  </div>
+                  <input type="range" class="range-slider" id="loadRange" min="50" max="130" value="105" step="1">
+                  <div class="range-marks">
+                    <span>50T</span>
+                    <span>100T (SWL)</span>
+                    <span>110T (Max Proof)</span>
+                    <span>130T (Overload)</span>
+                  </div>
+                </div>
+
+                <div class="control-card">
+                  <div class="control-hdr">
+                    <span class="control-lbl">ISO 4309 Wire Rope Defect Scoring:</span>
+                    <strong class="control-val text-warning" id="wireRopeVal">Minor Surface Wear (Allowable)</strong>
+                  </div>
+                  <select class="form-control form-control-sm" id="wireRopeSelect">
+                    <option value="EXCELLENT">No Detectable Defects (Grade A)</option>
+                    <option value="MINOR" selected>Minor Surface Wear & Lubrication Needed (PASS)</option>
+                    <option value="BROKEN_WIRES">Excessive Broken Wires (>10% per Lay) (FAIL / QUARANTINE)</option>
+                    <option value="CORE_COLLAPSE">Core Collapse & Kinking (CRITICAL HAZARD / FAIL)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Real-time Status Banner -->
+              <div class="sim-live-verdict" id="simVerdictBox">
+                <div class="verdict-icon" id="verdictIcon">✓</div>
+                <div class="verdict-text">
+                  <strong id="verdictHeading">TECHNICAL VERDICT: SAFE FOR OPERATION</strong>
+                  <p id="verdictDetail">105T Proof load verified without permanent deflection. Outriggers, boom, and LMI systems fully functional.</p>
+                </div>
+              </div>
+
+              <div class="subpanel-footer">
+                <button class="btn btn-accent btn-block" id="generateCertBtn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span data-i18n="issueCertBtn">Cryptographically Issue Live Certificate</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Stepper Action Footer -->
+      <footer class="stepper-footer">
+        <button class="btn btn-outline" id="prevStepBtn" disabled data-i18n="prevBtn">
+          ← Previous
+        </button>
+
+        <div class="footer-center">
+          <button class="btn btn-ghost text-danger" id="resetWizardBtn" data-i18n="resetBtn">
+            Reset Setup
+          </button>
+        </div>
+
+        <button class="btn btn-primary" id="nextStepBtn" data-i18n="nextBtn">
+          Continue Next →
+        </button>
+      </footer>
+
+    </div>
+  </main>
+
+  <!-- Live Modal Certificate Viewer with Dedicated Internal Document Zoom Controls -->
+  <div class="cert-modal-backdrop" id="certModal">
+    <div class="cert-modal-dialog">
+      <div class="cert-modal-header">
+        <div class="cert-header-left">
+          <h3>Verified Safety Certificate / شهادة فحص واختبار</h3>
+        </div>
+        
+        <!-- Document Zoom Controls Toolbar -->
+        <div class="cert-zoom-toolbar">
+          <button class="btn-zoom" id="certZoomOutBtn" title="Zoom Out Document (-)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <span class="zoom-level-badge" id="certZoomValue">100%</span>
+          <button class="btn-zoom" id="certZoomInBtn" title="Zoom In Document (+)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <button class="btn-zoom" id="certZoomResetBtn" title="Reset Zoom (100%)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+        </div>
+
+        <button class="btn-close" id="closeCertModalBtn" title="Close">×</button>
+      </div>
+
+      <div class="cert-modal-body" id="certModalBody">
+        <div class="cert-zoom-wrapper" id="certZoomWrapper">
+          <div id="certRenderBody">
+            <!-- Dynamically populated certificate -->
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-modal-footer">
+        <button class="btn btn-primary" id="finishOnboardingBtn" data-i18n="finishBtn">Complete Onboarding & Enter Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

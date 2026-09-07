@@ -1,0 +1,17 @@
+# Copy this file to a private local environment file and export the values.
+# Never commit the copied file or real credentials.
+
+INTEGIN_SYNC_SECRET=replace-with-a-long-random-local-secret
+INTEGIN_HTTP_ADDR=:8080
+
+# PostgreSQL is authoritative when this is set.
+INTEGIN_DB_URL=postgres://integin_runtime:replace-me@127.0.0.1:5432/integin?sslmode=disable
+INTEGIN_TENANT_ID=replace-with-an-existing-tenant-id
+
+# RustFS integration target; use the pinned development release only.
+INTEGIN_EVIDENCE_STORE=rustfs
+INTEGIN_S3_ENDPOINT=http://127.0.0.1:9000
+INTEGIN_S3_BUCKET=integin-evidence
+INTEGIN_S3_ACCESS_KEY=replace-with-a-dedicated-bucket-key
+INTEGIN_S3_SECRET_KEY=replace-with-the-matching-secret
+INTEGIN_S3_REGION=us-east-1

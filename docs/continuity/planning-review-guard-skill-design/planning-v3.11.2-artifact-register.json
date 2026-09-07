@@ -1,0 +1,445 @@
+{
+  "artifact_count": 29,
+  "records": [
+    {
+      "source_path": ".agents/skills/planning-with-files/SKILL.md",
+      "artifact_type": "blob",
+      "source_size": 29422,
+      "source_blob_sha": "d7a3fc6a015ca0a8b66e8ce2b8ead6565e9acd85",
+      "retrieved": true,
+      "retrieved_sha256": "675846d0a6a1f4c83b0c8f6e112b29c72d6563876c386127d6013897974a4810",
+      "line_count": 473,
+      "static_signals": [
+        "install_or_dependency",
+        "network_or_remote",
+        "process_execution",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/examples.md",
+      "artifact_type": "blob",
+      "source_size": 4518,
+      "source_blob_sha": "f228f8edc277f4a360a4ffe7b919be3d8591f1b9",
+      "retrieved": true,
+      "retrieved_sha256": "450355fac69e0fac93453b6c7383c8fb9ba3470662f6c8291080028f73ce00dc",
+      "line_count": 202,
+      "static_signals": [
+        "process_execution",
+        "credential_or_secret",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/reference.md",
+      "artifact_type": "blob",
+      "source_size": 8455,
+      "source_blob_sha": "9a742ab0c2037a46ea4e7ec9c89ceddc5b18fc91",
+      "retrieved": true,
+      "retrieved_sha256": "8f7d9cfe1971c5a32f3e5edb63ddfad73a11cc7de19d5065a6ec75fd118c0fdb",
+      "line_count": 218,
+      "static_signals": [
+        "network_or_remote",
+        "credential_or_secret"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/attest-plan.ps1",
+      "artifact_type": "blob",
+      "source_size": 5041,
+      "source_blob_sha": "52b9f99d1398f7f31c8849d2f527e4cdd02c09c2",
+      "retrieved": true,
+      "retrieved_sha256": "6d059c1306023c0e793a6eb43d0a5e8c928eb881f2253f08080506995c057724",
+      "line_count": 137,
+      "static_signals": [
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/attest-plan.sh",
+      "artifact_type": "blob",
+      "source_size": 8771,
+      "source_blob_sha": "f89e08c1153bfc38848c08fc0e338c16da3586fa",
+      "retrieved": true,
+      "retrieved_sha256": "fae1c8faf2c01da03d4673a909de1cb0fa9d1b582033b14b3dcd54be2b605974",
+      "line_count": 206,
+      "static_signals": [
+        "process_execution"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/check-complete.ps1",
+      "artifact_type": "blob",
+      "source_size": 9919,
+      "source_blob_sha": "78d358c23cfb8f5bd666b746bc4d0eee5ad525ed",
+      "retrieved": true,
+      "retrieved_sha256": "51a99ef1b1d38710e9fb318771ea1ad326a32c5b4322b7ef19598e7fbea10d04",
+      "line_count": 253,
+      "static_signals": [
+        "process_execution",
+        "credential_or_secret",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/check-complete.sh",
+      "artifact_type": "blob",
+      "source_size": 10085,
+      "source_blob_sha": "bd25e0ec9b989306dc4a82cb6b50d3fdb7d85423",
+      "retrieved": true,
+      "retrieved_sha256": "4fb617e802e7b7ce0849dea1d46d194608d511e74c3d6b82e3653e150fd95724",
+      "line_count": 253,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/gate-stop.sh",
+      "artifact_type": "blob",
+      "source_size": 1452,
+      "source_blob_sha": "ae1682f35d33e85dba4319fd290ec7d6b7bbb6c8",
+      "retrieved": true,
+      "retrieved_sha256": "ed4f138ccd9ec727ccc5d966a523c8f8506779d93a30ec0329282b23c511c0e6",
+      "line_count": 32,
+      "static_signals": [
+        "install_or_dependency",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/init-session.ps1",
+      "artifact_type": "blob",
+      "source_size": 6490,
+      "source_blob_sha": "057a66dc1806dcfb7bd44e417efeb29e15874f9f",
+      "retrieved": true,
+      "retrieved_sha256": "4d854b872b9255412fee506b2438029c58b9cb4edcbae4fd29a60732cc83a4f6",
+      "line_count": 230,
+      "static_signals": [
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/init-session.sh",
+      "artifact_type": "blob",
+      "source_size": 11163,
+      "source_blob_sha": "f3b3e286098ab365b3114cee6054ded173429d2e",
+      "retrieved": true,
+      "retrieved_sha256": "6580294356d670a80ac28fd9a6c38e65efa8f3899ed8ad340e2c9cd8154bfd42",
+      "line_count": 370,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/inject-plan.sh",
+      "artifact_type": "blob",
+      "source_size": 31507,
+      "source_blob_sha": "466328dd9323cf5a37b32180d05db3b050901850",
+      "retrieved": true,
+      "retrieved_sha256": "f36056a6de18b2a0b51a9e98310edd37ee08a5ac37b8f7265a5eec71c63bc38d",
+      "line_count": 645,
+      "static_signals": [
+        "process_execution",
+        "credential_or_secret",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/ledger-append.ps1",
+      "artifact_type": "blob",
+      "source_size": 6379,
+      "source_blob_sha": "e89d8812619a3d86efbea92424771a77ee94ad94",
+      "retrieved": true,
+      "retrieved_sha256": "89c817cd17cf982feb30c44ac69fa62064f8af113ef2aad063a59e04638bd110",
+      "line_count": 180,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/ledger-append.sh",
+      "artifact_type": "blob",
+      "source_size": 11699,
+      "source_blob_sha": "07bda6d4d7e80dac233a8c043865aa906462f97a",
+      "retrieved": true,
+      "retrieved_sha256": "302ffa8346e99870bab1539413164bac26bf960ccfa2f6ebd1abc9c3da73e3ba",
+      "line_count": 337,
+      "static_signals": [
+        "process_execution",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/ledger-summary.ps1",
+      "artifact_type": "blob",
+      "source_size": 4550,
+      "source_blob_sha": "4e606c865bd39ae783c8b3b517e78f9ea4bbfc2f",
+      "retrieved": true,
+      "retrieved_sha256": "65ed2d8bcf250e64b8ee34965dbdd86e5b7f5ffceb69ec647f278ea234bf43ea",
+      "line_count": 128,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/ledger-summary.sh",
+      "artifact_type": "blob",
+      "source_size": 6136,
+      "source_blob_sha": "f9df51ba3497a9b8214dd73277c177a8b962c447",
+      "retrieved": true,
+      "retrieved_sha256": "56030727eb67a82c04303b255123956e2abc5ce017bfe706115dc722155e8478",
+      "line_count": 162,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/phase-status.ps1",
+      "artifact_type": "blob",
+      "source_size": 6603,
+      "source_blob_sha": "70c032f780f3d691b31ac4c43488b21671e19a1a",
+      "retrieved": true,
+      "retrieved_sha256": "94ada0defa0424970a721fbc2704285a27f6e2bfbe730a55373a9dd36c95f101",
+      "line_count": 175,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/phase-status.sh",
+      "artifact_type": "blob",
+      "source_size": 4827,
+      "source_blob_sha": "5df7c19dd8f99730101c81a16587f5bdecb273c9",
+      "retrieved": true,
+      "retrieved_sha256": "6d1001cafc18cd57d7d91c987c70415cc64f5380b39fabc841bbf935b43c8f64",
+      "line_count": 158,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/plan-doctor.sh",
+      "artifact_type": "blob",
+      "source_size": 6857,
+      "source_blob_sha": "b02dc05383998eea7161b0961da4c0740be78a6c",
+      "retrieved": true,
+      "retrieved_sha256": "9bdca6f1dc6bab9f9b5260476c014dacbf6af77dbed73611f72018e58114425f",
+      "line_count": 148,
+      "static_signals": [
+        "install_or_dependency",
+        "process_execution",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/resolve-plan-dir.ps1",
+      "artifact_type": "blob",
+      "source_size": 4334,
+      "source_blob_sha": "a488cf23cd041511895aa8369efdb63e785050da",
+      "retrieved": true,
+      "retrieved_sha256": "1302cfaec3fee85d65c84ccef521bae8a5f3a68d4c61abf8e5e720248ab5b2f2",
+      "line_count": 106,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/resolve-plan-dir.sh",
+      "artifact_type": "blob",
+      "source_size": 11015,
+      "source_blob_sha": "a65f748b2d00d63542681d3cafce1f85656a92f7",
+      "retrieved": true,
+      "retrieved_sha256": "031f1de0ff0605f9fd964682b080996bb1052257eef287ac76de22dc785ee97b",
+      "line_count": 263,
+      "static_signals": [
+        "process_execution",
+        "credential_or_secret"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/session-catchup.py",
+      "artifact_type": "blob",
+      "source_size": 31548,
+      "source_blob_sha": "77b686375933da1691b767493931f933ab4995ae",
+      "retrieved": true,
+      "retrieved_sha256": "6476fd9024d0cbb9bfb850119fd0beff7fb7cfab9c6683ce10e4cc8d830ce6de",
+      "line_count": 876,
+      "static_signals": [
+        "install_or_dependency",
+        "process_execution",
+        "hook_or_automation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/set-active-plan.ps1",
+      "artifact_type": "blob",
+      "source_size": 1645,
+      "source_blob_sha": "d1d36aaee787df5ea41d12987cb326e2e717a092",
+      "retrieved": true,
+      "retrieved_sha256": "31d99a29389cbfe0ab7c097729a7289ef622f261c3b70fd7712a43e2d37aece1",
+      "line_count": 51,
+      "static_signals": [
+        "process_execution"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/scripts/set-active-plan.sh",
+      "artifact_type": "blob",
+      "source_size": 1505,
+      "source_blob_sha": "50ec5cc8ba288804fa66198deba6bb1cb503d111",
+      "retrieved": true,
+      "retrieved_sha256": "72e3e2b3dcd9cb40018ebd86491f54deb84b540f723dd4a0e78ac47931c5db6c",
+      "line_count": 50,
+      "static_signals": [
+        "process_execution"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/analytics_findings.md",
+      "artifact_type": "blob",
+      "source_size": 3336,
+      "source_blob_sha": "01ca57cddcf4c7320ac17d305c0a72a7aea201d0",
+      "retrieved": true,
+      "retrieved_sha256": "32273b4731fadf31a7e361f353eb6863d168c4c82374fe913bad2e393362fa43",
+      "line_count": 85,
+      "static_signals": [
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/analytics_task_plan.md",
+      "artifact_type": "blob",
+      "source_size": 3980,
+      "source_blob_sha": "040ca715c1ad72003f7acf488f598088e1d57143",
+      "retrieved": true,
+      "retrieved_sha256": "9a3489af0abcded777ce81913ef1049040f1cac27e956a5987dcb57d6a539feb",
+      "line_count": 106,
+      "static_signals": [],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/findings.md",
+      "artifact_type": "blob",
+      "source_size": 3561,
+      "source_blob_sha": "056536d9f1bb3d538cd9b034bce767a888569b4f",
+      "retrieved": true,
+      "retrieved_sha256": "b5e64d73704daefa8492356d2c2c67ffeb78d79d448b316c0a0debc9226ad785",
+      "line_count": 95,
+      "static_signals": [
+        "network_or_remote",
+        "credential_or_secret",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/progress.md",
+      "artifact_type": "blob",
+      "source_size": 4001,
+      "source_blob_sha": "dba9af9172be334c5dee175961f6b4a18eeaa46f",
+      "retrieved": true,
+      "retrieved_sha256": "a2366167ed178bc4a3c1d72ec6c5f6ea9e38aed67c6f3dd2c1a8cbdb4cde76b6",
+      "line_count": 114,
+      "static_signals": [
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/task_plan.md",
+      "artifact_type": "blob",
+      "source_size": 4950,
+      "source_blob_sha": "b83a9ee6d65da3d7ff8078b8df7005bb4b08bbde",
+      "retrieved": true,
+      "retrieved_sha256": "fef51835c7567d334c019f355a5794e9fe6124f49fcbe0e9e2694b7406ad2c37",
+      "line_count": 140,
+      "static_signals": [
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    },
+    {
+      "source_path": ".agents/skills/planning-with-files/templates/task_plan_autonomous.md",
+      "artifact_type": "blob",
+      "source_size": 10720,
+      "source_blob_sha": "c7c041ac2aabceec7f92e251068435bf6f29d1c8",
+      "retrieved": true,
+      "retrieved_sha256": "3c480832bc1b5128698d4c4ec23e2965c4c6536deae855a1a6405c104228fbbd",
+      "line_count": 228,
+      "static_signals": [
+        "process_execution",
+        "hook_or_automation",
+        "destructive_operation"
+      ],
+      "review_state": "scanned_static",
+      "semantic_limit": "Static scan only; it does not prove behavior, safety, or compatibility."
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Controlled launcher verification only. Do not modify files, run commands, access a browser, contact an external service, or perform any action. Reply exactly with: `Controlled planning-task launcher test acknowledged.`

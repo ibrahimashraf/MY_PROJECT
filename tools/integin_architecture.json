@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "INTEGIN Global Trust Platform Architecture",
+    "quality_profile": "standard",
+    "views": [
+      { "id": "hybrid-discovery", "label": "Hybrid Standards Discovery", "focus": ["client", "hybrid_rag", "standards_index", "rules_engine"], "note": "Natural language query to official standards & dynamic AST rules." },
+      { "id": "work-execution", "label": "Work Order & Tablet Execution", "focus": ["rules_engine", "workorder", "tablet_enclave", "merkle_ledger"], "note": "Offline FIPS 140-3 hardware execution to bitemporal Merkle audit log." },
+      { "id": "trust-verification", "label": "Public Verification & Regulators", "focus": ["merkle_ledger", "cert_service", "public_verifier", "regulator_gateway"], "note": "Client-side WebCrypto zero-knowledge verification across global regulators." }
+    ]
+  },
+  "components": [
+    { "id": "client", "type": "frontend", "label": "Web & Portal UI", "sublabel": "Quality Manager / Inspector", "pos": [40, 260], "size": [130, 60] },
+    { "id": "hybrid_rag", "type": "backend", "label": "Hybrid AI Synthesizer", "sublabel": "Perplexity-Grade Search", "pos": [260, 110], "size": [150, 64], "tag": "pkg/standardsync" },
+    { "id": "standards_index", "type": "database", "label": "Standards Federation", "sublabel": "ASME / API / ISO / BSI", "pos": [510, 110], "size": [160, 64], "tag": "Copyright-Safe" },
+    { "id": "rules_engine", "type": "backend", "label": "Dynamic Rules Engine", "sublabel": "AST / CEL Evaluator", "pos": [510, 260], "size": [160, 64], "tag": "Zero-Hardcoding" },
+    { "id": "workorder", "type": "backend", "label": "Work Order & Scoping", "sublabel": "Manifest Engine (L4)", "pos": [260, 260], "size": [150, 64] },
+    { "id": "tablet_enclave", "type": "security", "label": "Field Tablet Enclave", "sublabel": "FIPS 140-3 Ed25519 (L8)", "pos": [260, 420], "size": [150, 64], "tag": "Air-Gapped" },
+    { "id": "merkle_ledger", "type": "database", "label": "Bitemporal Ledger", "sublabel": "Merkle-CRDT Log (L10)", "pos": [510, 420], "size": [160, 64], "tag": "<800ns Log" },
+    { "id": "cert_service", "type": "backend", "label": "Certificate Service", "sublabel": "Immutable Issuance (L5)", "pos": [760, 260], "size": [150, 64] },
+    { "id": "public_verifier", "type": "cloud", "label": "Zero-Knowledge QR", "sublabel": "WebCrypto Verifier (L11)", "pos": [760, 420], "size": [150, 64] },
+    { "id": "regulator_gateway", "type": "external", "label": "7-Pillar Regulators", "sublabel": "ZATCA / OSHA / HSE / EPA", "pos": [760, 110], "size": [150, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Cloud & Edge Trust Mesh (L0 - L11)", "wraps": ["hybrid_rag", "standards_index", "rules_engine", "workorder", "tablet_enclave", "merkle_ledger", "cert_service", "public_verifier"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "client", "to": "hybrid_rag", "label": "Query", "fromSide": "top", "toSide": "left", "via": [[105, 142]] },
+    { "id": "c2", "from": "hybrid_rag", "to": "standards_index" },
+    { "id": "c3", "from": "standards_index", "to": "rules_engine" },
+    { "id": "c4", "from": "client", "to": "workorder" },
+    { "id": "c5", "from": "workorder", "to": "tablet_enclave", "variant": "security" },
+    { "id": "c6", "from": "tablet_enclave", "to": "merkle_ledger", "variant": "security" },
+    { "id": "c7", "from": "rules_engine", "to": "cert_service" },
+    { "id": "c8", "from": "cert_service", "to": "merkle_ledger" },
+    { "id": "c9", "from": "cert_service", "to": "public_verifier" },
+    { "id": "c10", "from": "cert_service", "to": "regulator_gateway", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Discovery & Rules", "items": ["Perplexity-grade semantic search over global bodies", "100% dynamic CEL evaluation without recompilation"] },
+    { "dot": "emerald", "title": "Air-Gapped Field Execution", "items": ["Offline hardware cryptographic signing with Ed25519", "Bitemporal Merkle-CRDT tamper-proof forensic blackbox"] },
+    { "dot": "rose", "title": "Global Sovereign Compliance", "items": ["7-Pillar regulatory alignment (ZATCA, OSHA, HSE, DIN, EPA, SDAIA)", "Zero-knowledge client-side WebCrypto QR verification"] }
+  ]
+}

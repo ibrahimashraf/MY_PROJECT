@@ -1,0 +1,3114 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Go Module Architecture & Dependencies",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "all-components",
+        "label": "Full Component Map",
+        "focus": [
+          "advisorview",
+          "advisory",
+          "aiintegration",
+          "analyticshttp",
+          "analyticspg",
+          "auditcheckpoint",
+          "auditloghttp",
+          "auditlogpg",
+          "canary",
+          "certificatehttp",
+          "certificatepg",
+          "certificatepublichttp",
+          "certificaterender",
+          "certtemplatepg",
+          "deployconfig",
+          "domain_analytics",
+          "domain_auditlog",
+          "domain_authorization",
+          "domain_billing",
+          "domain_certificate",
+          "domain_certificateauthority",
+          "domain_certificatetemplate",
+          "domain_comment",
+          "domain_completeness",
+          "domain_compliance",
+          "domain_device_trust",
+          "domain_dpp",
+          "domain_equipment",
+          "domain_escalation",
+          "domain_evidence",
+          "domain_inspection",
+          "domain_integration",
+          "domain_license",
+          "domain_portal",
+          "domain_reports",
+          "domain_scheduling",
+          "domain_search",
+          "domain_settings",
+          "domain_shortlink",
+          "domain_sync",
+          "domain_tag",
+          "domain_template",
+          "domain_training",
+          "domain_workflow",
+          "domain_workorder",
+          "domain_workpackage",
+          "email",
+          "eventbus",
+          "eventstore",
+          "evidenceapi",
+          "evidenceexport",
+          "evidencehttp",
+          "evidencepg",
+          "evidenceregistration",
+          "exportmanifest",
+          "fixturesignals",
+          "flaghttp",
+          "flagpg",
+          "identity",
+          "inspectionhttp",
+          "licensehttp",
+          "licensepg",
+          "localprovision",
+          "manifestreceiptbridge",
+          "manifestreceipts",
+          "middleware",
+          "monitoring",
+          "oidcauth",
+          "oidchttp",
+          "packagemanifest",
+          "packagemanifestapi",
+          "phase6",
+          "platform_audit",
+          "platform_calibration",
+          "platform_environment",
+          "platform_featureconsole",
+          "platform_featureflag",
+          "platform_integration",
+          "platform_notification",
+          "platform_openapi",
+          "platform_planning",
+          "platform_qrverification",
+          "platform_reporting",
+          "platform_standards_vault",
+          "reports",
+          "reportshandler",
+          "reportspg",
+          "repository",
+          "searchhttp",
+          "searchpg",
+          "security",
+          "server",
+          "settingshttp",
+          "settingspg",
+          "shared_calibration",
+          "shared_events",
+          "shared_featureflags",
+          "shared_httpresponse",
+          "shared_notifications",
+          "shared_response",
+          "shared_types",
+          "shortlinkhttp",
+          "shortlinkpg",
+          "shortlinksvc",
+          "storage",
+          "sync",
+          "syncapi",
+          "syncstate",
+          "traininghttp",
+          "trainingpg",
+          "workorderauth",
+          "workorderhttp",
+          "workorderpg",
+          "workpackageenforcement",
+          "workpackagepg"
+        ],
+        "note": "Scanned directly from Go AST and internal package imports."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "advisorview",
+      "type": "backend",
+      "label": "advisorview",
+      "sublabel": "advisorview",
+      "pos": [
+        50,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "advisory",
+      "type": "backend",
+      "label": "advisory",
+      "sublabel": "advisory",
+      "pos": [
+        310,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "aiintegration",
+      "type": "backend",
+      "label": "aiintegration",
+      "sublabel": "aiintegration",
+      "pos": [
+        570,
+        80
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "analyticshttp",
+      "type": "frontend",
+      "label": "analyticshttp",
+      "sublabel": "analyticshttp",
+      "pos": [
+        50,
+        240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "analyticspg",
+      "type": "database",
+      "label": "analyticspg",
+      "sublabel": "analyticspg",
+      "pos": [
+        310,
+        240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "auditcheckpoint",
+      "type": "backend",
+      "label": "auditcheckpoint",
+      "sublabel": "auditcheckpoint",
+      "pos": [
+        570,
+        240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "auditloghttp",
+      "type": "frontend",
+      "label": "auditloghttp",
+      "sublabel": "auditloghttp",
+      "pos": [
+        50,
+        400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "auditlogpg",
+      "type": "database",
+      "label": "auditlogpg",
+      "sublabel": "auditlogpg",
+      "pos": [
+        310,
+        400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "canary",
+      "type": "backend",
+      "label": "canary",
+      "sublabel": "canary",
+      "pos": [
+        570,
+        400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "certificatehttp",
+      "type": "frontend",
+      "label": "certificatehttp",
+      "sublabel": "certificatehttp",
+      "pos": [
+        50,
+        560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "certificatepg",
+      "type": "database",
+      "label": "certificatepg",
+      "sublabel": "certificatepg",
+      "pos": [
+        310,
+        560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "certificatepublichttp",
+      "type": "frontend",
+      "label": "certificatepublichttp",
+      "sublabel": "certificatepublichttp",
+      "pos": [
+        570,
+        560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "certificaterender",
+      "type": "backend",
+      "label": "certificaterender",
+      "sublabel": "certificaterender",
+      "pos": [
+        50,
+        720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "certtemplatepg",
+      "type": "database",
+      "label": "certtemplatepg",
+      "sublabel": "certtemplatepg",
+      "pos": [
+        310,
+        720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "deployconfig",
+      "type": "backend",
+      "label": "deployconfig",
+      "sublabel": "deployconfig",
+      "pos": [
+        570,
+        720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_analytics",
+      "type": "database",
+      "label": "analytics",
+      "sublabel": "domain/analytics",
+      "pos": [
+        50,
+        880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_auditlog",
+      "type": "database",
+      "label": "auditlog",
+      "sublabel": "domain/auditlog",
+      "pos": [
+        310,
+        880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_authorization",
+      "type": "database",
+      "label": "authorization",
+      "sublabel": "domain/authorization",
+      "pos": [
+        570,
+        880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_billing",
+      "type": "database",
+      "label": "billing",
+      "sublabel": "domain/billing",
+      "pos": [
+        50,
+        1040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_certificate",
+      "type": "database",
+      "label": "certificate",
+      "sublabel": "domain/certificate",
+      "pos": [
+        310,
+        1040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_certificateauthority",
+      "type": "database",
+      "label": "certificateauthority",
+      "sublabel": "domain/certificateauthority",
+      "pos": [
+        570,
+        1040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_certificatetemplate",
+      "type": "database",
+      "label": "certificatetemplate",
+      "sublabel": "domain/certificatetemplate",
+      "pos": [
+        50,
+        1200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_comment",
+      "type": "database",
+      "label": "comment",
+      "sublabel": "domain/comment",
+      "pos": [
+        310,
+        1200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_completeness",
+      "type": "database",
+      "label": "completeness",
+      "sublabel": "domain/completeness",
+      "pos": [
+        570,
+        1200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_compliance",
+      "type": "database",
+      "label": "compliance",
+      "sublabel": "domain/compliance",
+      "pos": [
+        50,
+        1360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_device_trust",
+      "type": "database",
+      "label": "device_trust",
+      "sublabel": "domain/device_trust",
+      "pos": [
+        310,
+        1360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_dpp",
+      "type": "database",
+      "label": "dpp",
+      "sublabel": "domain/dpp",
+      "pos": [
+        570,
+        1360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_equipment",
+      "type": "database",
+      "label": "equipment",
+      "sublabel": "domain/equipment",
+      "pos": [
+        50,
+        1520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_escalation",
+      "type": "database",
+      "label": "escalation",
+      "sublabel": "domain/escalation",
+      "pos": [
+        310,
+        1520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_evidence",
+      "type": "database",
+      "label": "evidence",
+      "sublabel": "domain/evidence",
+      "pos": [
+        570,
+        1520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_inspection",
+      "type": "database",
+      "label": "inspection",
+      "sublabel": "domain/inspection",
+      "pos": [
+        50,
+        1680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_integration",
+      "type": "database",
+      "label": "integration",
+      "sublabel": "domain/integration",
+      "pos": [
+        310,
+        1680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_license",
+      "type": "database",
+      "label": "license",
+      "sublabel": "domain/license",
+      "pos": [
+        570,
+        1680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_portal",
+      "type": "database",
+      "label": "portal",
+      "sublabel": "domain/portal",
+      "pos": [
+        50,
+        1840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_reports",
+      "type": "database",
+      "label": "reports",
+      "sublabel": "domain/reports",
+      "pos": [
+        310,
+        1840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_scheduling",
+      "type": "database",
+      "label": "scheduling",
+      "sublabel": "domain/scheduling",
+      "pos": [
+        570,
+        1840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_search",
+      "type": "database",
+      "label": "search",
+      "sublabel": "domain/search",
+      "pos": [
+        50,
+        2000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_settings",
+      "type": "database",
+      "label": "settings",
+      "sublabel": "domain/settings",
+      "pos": [
+        310,
+        2000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_shortlink",
+      "type": "database",
+      "label": "shortlink",
+      "sublabel": "domain/shortlink",
+      "pos": [
+        570,
+        2000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_sync",
+      "type": "database",
+      "label": "sync",
+      "sublabel": "domain/sync",
+      "pos": [
+        50,
+        2160
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_tag",
+      "type": "database",
+      "label": "tag",
+      "sublabel": "domain/tag",
+      "pos": [
+        310,
+        2160
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_template",
+      "type": "database",
+      "label": "template",
+      "sublabel": "domain/template",
+      "pos": [
+        570,
+        2160
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_training",
+      "type": "database",
+      "label": "training",
+      "sublabel": "domain/training",
+      "pos": [
+        50,
+        2320
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_workflow",
+      "type": "database",
+      "label": "workflow",
+      "sublabel": "domain/workflow",
+      "pos": [
+        310,
+        2320
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_workorder",
+      "type": "database",
+      "label": "workorder",
+      "sublabel": "domain/workorder",
+      "pos": [
+        570,
+        2320
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "domain_workpackage",
+      "type": "database",
+      "label": "workpackage",
+      "sublabel": "domain/workpackage",
+      "pos": [
+        50,
+        2480
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "email",
+      "type": "backend",
+      "label": "email",
+      "sublabel": "email",
+      "pos": [
+        310,
+        2480
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "eventbus",
+      "type": "backend",
+      "label": "eventbus",
+      "sublabel": "eventbus",
+      "pos": [
+        570,
+        2480
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "eventstore",
+      "type": "database",
+      "label": "eventstore",
+      "sublabel": "eventstore",
+      "pos": [
+        50,
+        2640
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "evidenceapi",
+      "type": "frontend",
+      "label": "evidenceapi",
+      "sublabel": "evidenceapi",
+      "pos": [
+        310,
+        2640
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "evidenceexport",
+      "type": "backend",
+      "label": "evidenceexport",
+      "sublabel": "evidenceexport",
+      "pos": [
+        570,
+        2640
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "evidencehttp",
+      "type": "frontend",
+      "label": "evidencehttp",
+      "sublabel": "evidencehttp",
+      "pos": [
+        50,
+        2800
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "evidencepg",
+      "type": "database",
+      "label": "evidencepg",
+      "sublabel": "evidencepg",
+      "pos": [
+        310,
+        2800
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "evidenceregistration",
+      "type": "backend",
+      "label": "evidenceregistration",
+      "sublabel": "evidenceregistration",
+      "pos": [
+        570,
+        2800
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "exportmanifest",
+      "type": "backend",
+      "label": "exportmanifest",
+      "sublabel": "exportmanifest",
+      "pos": [
+        50,
+        2960
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "fixturesignals",
+      "type": "backend",
+      "label": "fixturesignals",
+      "sublabel": "fixturesignals",
+      "pos": [
+        310,
+        2960
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "flaghttp",
+      "type": "frontend",
+      "label": "flaghttp",
+      "sublabel": "flaghttp",
+      "pos": [
+        570,
+        2960
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "flagpg",
+      "type": "database",
+      "label": "flagpg",
+      "sublabel": "flagpg",
+      "pos": [
+        50,
+        3120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "identity",
+      "type": "backend",
+      "label": "identity",
+      "sublabel": "identity",
+      "pos": [
+        310,
+        3120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "inspectionhttp",
+      "type": "frontend",
+      "label": "inspectionhttp",
+      "sublabel": "inspectionhttp",
+      "pos": [
+        570,
+        3120
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "licensehttp",
+      "type": "frontend",
+      "label": "licensehttp",
+      "sublabel": "licensehttp",
+      "pos": [
+        50,
+        3280
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "licensepg",
+      "type": "database",
+      "label": "licensepg",
+      "sublabel": "licensepg",
+      "pos": [
+        310,
+        3280
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "localprovision",
+      "type": "backend",
+      "label": "localprovision",
+      "sublabel": "localprovision",
+      "pos": [
+        570,
+        3280
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "manifestreceiptbridge",
+      "type": "backend",
+      "label": "manifestreceiptbridge",
+      "sublabel": "manifestreceiptbridge",
+      "pos": [
+        50,
+        3440
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "manifestreceipts",
+      "type": "backend",
+      "label": "manifestreceipts",
+      "sublabel": "manifestreceipts",
+      "pos": [
+        310,
+        3440
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "middleware",
+      "type": "backend",
+      "label": "middleware",
+      "sublabel": "middleware",
+      "pos": [
+        570,
+        3440
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "monitoring",
+      "type": "backend",
+      "label": "monitoring",
+      "sublabel": "monitoring",
+      "pos": [
+        50,
+        3600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "oidcauth",
+      "type": "security",
+      "label": "oidcauth",
+      "sublabel": "oidcauth",
+      "pos": [
+        310,
+        3600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "oidchttp",
+      "type": "frontend",
+      "label": "oidchttp",
+      "sublabel": "oidchttp",
+      "pos": [
+        570,
+        3600
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "packagemanifest",
+      "type": "backend",
+      "label": "packagemanifest",
+      "sublabel": "packagemanifest",
+      "pos": [
+        50,
+        3760
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "packagemanifestapi",
+      "type": "frontend",
+      "label": "packagemanifestapi",
+      "sublabel": "packagemanifestapi",
+      "pos": [
+        310,
+        3760
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "phase6",
+      "type": "backend",
+      "label": "phase6",
+      "sublabel": "phase6",
+      "pos": [
+        570,
+        3760
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_audit",
+      "type": "backend",
+      "label": "audit",
+      "sublabel": "platform/audit",
+      "pos": [
+        50,
+        3920
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_calibration",
+      "type": "backend",
+      "label": "calibration",
+      "sublabel": "platform/calibration",
+      "pos": [
+        310,
+        3920
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_environment",
+      "type": "backend",
+      "label": "environment",
+      "sublabel": "platform/environment",
+      "pos": [
+        570,
+        3920
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_featureconsole",
+      "type": "backend",
+      "label": "featureconsole",
+      "sublabel": "platform/featureconsole",
+      "pos": [
+        50,
+        4080
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_featureflag",
+      "type": "backend",
+      "label": "featureflag",
+      "sublabel": "platform/featureflag",
+      "pos": [
+        310,
+        4080
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_integration",
+      "type": "backend",
+      "label": "integration",
+      "sublabel": "platform/integration",
+      "pos": [
+        570,
+        4080
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_notification",
+      "type": "backend",
+      "label": "notification",
+      "sublabel": "platform/notification",
+      "pos": [
+        50,
+        4240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_openapi",
+      "type": "frontend",
+      "label": "openapi",
+      "sublabel": "platform/openapi",
+      "pos": [
+        310,
+        4240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_planning",
+      "type": "backend",
+      "label": "planning",
+      "sublabel": "platform/planning",
+      "pos": [
+        570,
+        4240
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_qrverification",
+      "type": "backend",
+      "label": "qrverification",
+      "sublabel": "platform/qrverification",
+      "pos": [
+        50,
+        4400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_reporting",
+      "type": "backend",
+      "label": "reporting",
+      "sublabel": "platform/reporting",
+      "pos": [
+        310,
+        4400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "platform_standards_vault",
+      "type": "backend",
+      "label": "standards_vault",
+      "sublabel": "platform/standards_vault",
+      "pos": [
+        570,
+        4400
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "reports",
+      "type": "backend",
+      "label": "reports",
+      "sublabel": "reports",
+      "pos": [
+        50,
+        4560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "reportshandler",
+      "type": "backend",
+      "label": "reportshandler",
+      "sublabel": "reportshandler",
+      "pos": [
+        310,
+        4560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "reportspg",
+      "type": "database",
+      "label": "reportspg",
+      "sublabel": "reportspg",
+      "pos": [
+        570,
+        4560
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "repository",
+      "type": "backend",
+      "label": "repository",
+      "sublabel": "repository",
+      "pos": [
+        50,
+        4720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "searchhttp",
+      "type": "frontend",
+      "label": "searchhttp",
+      "sublabel": "searchhttp",
+      "pos": [
+        310,
+        4720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "searchpg",
+      "type": "database",
+      "label": "searchpg",
+      "sublabel": "searchpg",
+      "pos": [
+        570,
+        4720
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "security",
+      "type": "security",
+      "label": "security",
+      "sublabel": "security",
+      "pos": [
+        50,
+        4880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "server",
+      "type": "backend",
+      "label": "server",
+      "sublabel": "server",
+      "pos": [
+        310,
+        4880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "settingshttp",
+      "type": "frontend",
+      "label": "settingshttp",
+      "sublabel": "settingshttp",
+      "pos": [
+        570,
+        4880
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "settingspg",
+      "type": "database",
+      "label": "settingspg",
+      "sublabel": "settingspg",
+      "pos": [
+        50,
+        5040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_calibration",
+      "type": "backend",
+      "label": "calibration",
+      "sublabel": "shared/calibration",
+      "pos": [
+        310,
+        5040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_events",
+      "type": "backend",
+      "label": "events",
+      "sublabel": "shared/events",
+      "pos": [
+        570,
+        5040
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_featureflags",
+      "type": "backend",
+      "label": "featureflags",
+      "sublabel": "shared/featureflags",
+      "pos": [
+        50,
+        5200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_httpresponse",
+      "type": "frontend",
+      "label": "httpresponse",
+      "sublabel": "shared/httpresponse",
+      "pos": [
+        310,
+        5200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_notifications",
+      "type": "backend",
+      "label": "notifications",
+      "sublabel": "shared/notifications",
+      "pos": [
+        570,
+        5200
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_response",
+      "type": "backend",
+      "label": "response",
+      "sublabel": "shared/response",
+      "pos": [
+        50,
+        5360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shared_types",
+      "type": "backend",
+      "label": "types",
+      "sublabel": "shared/types",
+      "pos": [
+        310,
+        5360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shortlinkhttp",
+      "type": "frontend",
+      "label": "shortlinkhttp",
+      "sublabel": "shortlinkhttp",
+      "pos": [
+        570,
+        5360
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shortlinkpg",
+      "type": "database",
+      "label": "shortlinkpg",
+      "sublabel": "shortlinkpg",
+      "pos": [
+        50,
+        5520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "shortlinksvc",
+      "type": "backend",
+      "label": "shortlinksvc",
+      "sublabel": "shortlinksvc",
+      "pos": [
+        310,
+        5520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "backend",
+      "label": "storage",
+      "sublabel": "storage",
+      "pos": [
+        570,
+        5520
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "sync",
+      "type": "backend",
+      "label": "sync",
+      "sublabel": "sync",
+      "pos": [
+        50,
+        5680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "syncapi",
+      "type": "frontend",
+      "label": "syncapi",
+      "sublabel": "syncapi",
+      "pos": [
+        310,
+        5680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "syncstate",
+      "type": "backend",
+      "label": "syncstate",
+      "sublabel": "syncstate",
+      "pos": [
+        570,
+        5680
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "traininghttp",
+      "type": "frontend",
+      "label": "traininghttp",
+      "sublabel": "traininghttp",
+      "pos": [
+        50,
+        5840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "trainingpg",
+      "type": "database",
+      "label": "trainingpg",
+      "sublabel": "trainingpg",
+      "pos": [
+        310,
+        5840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "workorderauth",
+      "type": "security",
+      "label": "workorderauth",
+      "sublabel": "workorderauth",
+      "pos": [
+        570,
+        5840
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "workorderhttp",
+      "type": "frontend",
+      "label": "workorderhttp",
+      "sublabel": "workorderhttp",
+      "pos": [
+        50,
+        6000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "workorderpg",
+      "type": "database",
+      "label": "workorderpg",
+      "sublabel": "workorderpg",
+      "pos": [
+        310,
+        6000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "workpackageenforcement",
+      "type": "backend",
+      "label": "workpackageenforcement",
+      "sublabel": "workpackageenforcement",
+      "pos": [
+        570,
+        6000
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "workpackagepg",
+      "type": "database",
+      "label": "workpackagepg",
+      "sublabel": "workpackagepg",
+      "pos": [
+        50,
+        6160
+      ],
+      "size": [
+        170,
+        64
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c_1",
+      "from": "advisorview",
+      "to": "advisory",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_2",
+      "from": "aiintegration",
+      "to": "advisory",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_3",
+      "from": "analyticshttp",
+      "to": "domain_analytics",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_4",
+      "from": "analyticshttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_5",
+      "from": "analyticspg",
+      "to": "domain_analytics",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_6",
+      "from": "auditloghttp",
+      "to": "domain_auditlog",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_7",
+      "from": "auditloghttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_8",
+      "from": "auditlogpg",
+      "to": "domain_auditlog",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_9",
+      "from": "certificatehttp",
+      "to": "domain_certificate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_10",
+      "from": "certificatehttp",
+      "to": "domain_certificateauthority",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_11",
+      "from": "certificatehttp",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_12",
+      "from": "certificatehttp",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_13",
+      "from": "certificatehttp",
+      "to": "certificatepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_14",
+      "from": "certificatepg",
+      "to": "domain_certificate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_15",
+      "from": "certificatepg",
+      "to": "domain_certificateauthority",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_16",
+      "from": "certificatepg",
+      "to": "domain_certificatetemplate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_17",
+      "from": "certificatepublichttp",
+      "to": "certificatepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_18",
+      "from": "certificatepublichttp",
+      "to": "certificaterender",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_19",
+      "from": "certificatepublichttp",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_20",
+      "from": "certificatepublichttp",
+      "to": "platform_featureflag",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_21",
+      "from": "certificatepublichttp",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_22",
+      "from": "certificaterender",
+      "to": "domain_certificate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_23",
+      "from": "certificaterender",
+      "to": "domain_certificatetemplate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_24",
+      "from": "certificaterender",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_25",
+      "from": "certtemplatepg",
+      "to": "domain_certificate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_26",
+      "from": "certtemplatepg",
+      "to": "domain_certificatetemplate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_27",
+      "from": "domain_authorization",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_28",
+      "from": "domain_authorization",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_29",
+      "from": "domain_certificate",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_30",
+      "from": "domain_certificate",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_31",
+      "from": "domain_device_trust",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_32",
+      "from": "domain_device_trust",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_33",
+      "from": "domain_inspection",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_34",
+      "from": "domain_inspection",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_35",
+      "from": "domain_sync",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_36",
+      "from": "domain_sync",
+      "to": "domain_workpackage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_37",
+      "from": "domain_sync",
+      "to": "security",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_38",
+      "from": "domain_sync",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_39",
+      "from": "domain_sync",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_40",
+      "from": "domain_sync",
+      "to": "syncstate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_41",
+      "from": "email",
+      "to": "shared_notifications",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_42",
+      "from": "eventbus",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_43",
+      "from": "eventbus",
+      "to": "eventstore",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_44",
+      "from": "eventbus",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_45",
+      "from": "eventstore",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_46",
+      "from": "eventstore",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_47",
+      "from": "evidenceapi",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_48",
+      "from": "evidenceexport",
+      "to": "domain_evidence",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_49",
+      "from": "evidenceexport",
+      "to": "exportmanifest",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_50",
+      "from": "evidenceexport",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_51",
+      "from": "evidencehttp",
+      "to": "domain_evidence",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_52",
+      "from": "evidencehttp",
+      "to": "evidencepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_53",
+      "from": "evidencehttp",
+      "to": "evidenceregistration",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_54",
+      "from": "evidencehttp",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_55",
+      "from": "evidencehttp",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_56",
+      "from": "evidencehttp",
+      "to": "workorderauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_57",
+      "from": "evidencepg",
+      "to": "domain_evidence",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_58",
+      "from": "evidencepg",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_59",
+      "from": "evidenceregistration",
+      "to": "domain_evidence",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_60",
+      "from": "evidenceregistration",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_61",
+      "from": "evidenceregistration",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_62",
+      "from": "evidenceregistration",
+      "to": "workorderauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_63",
+      "from": "flaghttp",
+      "to": "flagpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_64",
+      "from": "flaghttp",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_65",
+      "from": "flaghttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_66",
+      "from": "flagpg",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_67",
+      "from": "inspectionhttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_68",
+      "from": "licensehttp",
+      "to": "domain_license",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_69",
+      "from": "licensehttp",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_70",
+      "from": "licensehttp",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_71",
+      "from": "licensehttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_72",
+      "from": "licensepg",
+      "to": "domain_license",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_73",
+      "from": "localprovision",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_74",
+      "from": "localprovision",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_75",
+      "from": "localprovision",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_76",
+      "from": "localprovision",
+      "to": "security",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_77",
+      "from": "localprovision",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_78",
+      "from": "localprovision",
+      "to": "syncstate",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_79",
+      "from": "manifestreceiptbridge",
+      "to": "manifestreceipts",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_80",
+      "from": "manifestreceiptbridge",
+      "to": "packagemanifest",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_81",
+      "from": "manifestreceiptbridge",
+      "to": "packagemanifestapi",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_82",
+      "from": "manifestreceipts",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_83",
+      "from": "middleware",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_84",
+      "from": "monitoring",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_85",
+      "from": "monitoring",
+      "to": "advisory",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_86",
+      "from": "oidcauth",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_87",
+      "from": "oidchttp",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_88",
+      "from": "oidchttp",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_89",
+      "from": "packagemanifest",
+      "to": "domain_workpackage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_90",
+      "from": "packagemanifest",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_91",
+      "from": "packagemanifest",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_92",
+      "from": "packagemanifestapi",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_93",
+      "from": "packagemanifestapi",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_94",
+      "from": "packagemanifestapi",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_95",
+      "from": "packagemanifestapi",
+      "to": "packagemanifest",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_96",
+      "from": "phase6",
+      "to": "advisory",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_97",
+      "from": "platform_audit",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_98",
+      "from": "platform_calibration",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_99",
+      "from": "platform_calibration",
+      "to": "shared_calibration",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_100",
+      "from": "platform_calibration",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_101",
+      "from": "platform_featureconsole",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_102",
+      "from": "platform_featureflag",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_103",
+      "from": "platform_integration",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_104",
+      "from": "platform_notification",
+      "to": "shared_notifications",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_105",
+      "from": "platform_openapi",
+      "to": "platform_featureflag",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_106",
+      "from": "platform_openapi",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_107",
+      "from": "platform_qrverification",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_108",
+      "from": "platform_standards_vault",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_109",
+      "from": "platform_standards_vault",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_110",
+      "from": "reportshandler",
+      "to": "domain_reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_111",
+      "from": "reportshandler",
+      "to": "reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_112",
+      "from": "reportshandler",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_113",
+      "from": "reportspg",
+      "to": "domain_reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_114",
+      "from": "reportspg",
+      "to": "reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_115",
+      "from": "repository",
+      "to": "eventstore",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_116",
+      "from": "repository",
+      "to": "shared_events",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_117",
+      "from": "searchhttp",
+      "to": "domain_search",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_118",
+      "from": "searchhttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_119",
+      "from": "searchpg",
+      "to": "domain_search",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_120",
+      "from": "server",
+      "to": "analyticshttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_121",
+      "from": "server",
+      "to": "analyticspg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_122",
+      "from": "server",
+      "to": "auditloghttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_123",
+      "from": "server",
+      "to": "auditlogpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_124",
+      "from": "server",
+      "to": "certificatehttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_125",
+      "from": "server",
+      "to": "certificatepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_126",
+      "from": "server",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_127",
+      "from": "server",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_128",
+      "from": "server",
+      "to": "evidencehttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_129",
+      "from": "server",
+      "to": "evidencepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_130",
+      "from": "server",
+      "to": "evidenceregistration",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_131",
+      "from": "server",
+      "to": "storage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_132",
+      "from": "server",
+      "to": "flaghttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_133",
+      "from": "server",
+      "to": "flagpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_134",
+      "from": "server",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_135",
+      "from": "server",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_136",
+      "from": "server",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_137",
+      "from": "server",
+      "to": "middleware",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_138",
+      "from": "server",
+      "to": "packagemanifest",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_139",
+      "from": "server",
+      "to": "packagemanifestapi",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_140",
+      "from": "server",
+      "to": "syncapi",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_141",
+      "from": "server",
+      "to": "evidenceapi",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_142",
+      "from": "server",
+      "to": "inspectionhttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_143",
+      "from": "server",
+      "to": "domain_license",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_144",
+      "from": "server",
+      "to": "licensehttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_145",
+      "from": "server",
+      "to": "licensepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_146",
+      "from": "server",
+      "to": "workpackagepg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_147",
+      "from": "server",
+      "to": "shared_featureflags",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_148",
+      "from": "server",
+      "to": "manifestreceiptbridge",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_149",
+      "from": "server",
+      "to": "workpackageenforcement",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_150",
+      "from": "server",
+      "to": "domain_reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_151",
+      "from": "server",
+      "to": "reports",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_152",
+      "from": "server",
+      "to": "reportshandler",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_153",
+      "from": "server",
+      "to": "reportspg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_154",
+      "from": "server",
+      "to": "searchhttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_155",
+      "from": "server",
+      "to": "searchpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_156",
+      "from": "server",
+      "to": "settingshttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_157",
+      "from": "server",
+      "to": "settingspg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_158",
+      "from": "server",
+      "to": "traininghttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_159",
+      "from": "server",
+      "to": "trainingpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_160",
+      "from": "server",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_161",
+      "from": "server",
+      "to": "workorderauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_162",
+      "from": "server",
+      "to": "workorderhttp",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_163",
+      "from": "server",
+      "to": "workorderpg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_164",
+      "from": "settingshttp",
+      "to": "settingspg",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_165",
+      "from": "settingshttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_166",
+      "from": "shared_calibration",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_167",
+      "from": "shared_events",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_168",
+      "from": "shared_response",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_169",
+      "from": "shortlinkhttp",
+      "to": "domain_shortlink",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_170",
+      "from": "shortlinkhttp",
+      "to": "shortlinksvc",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_171",
+      "from": "shortlinkpg",
+      "to": "domain_shortlink",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_172",
+      "from": "shortlinksvc",
+      "to": "domain_shortlink",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_173",
+      "from": "storage",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_174",
+      "from": "sync",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_175",
+      "from": "sync",
+      "to": "security",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_176",
+      "from": "sync",
+      "to": "shared_types",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_177",
+      "from": "syncapi",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_178",
+      "from": "syncapi",
+      "to": "domain_device_trust",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_179",
+      "from": "syncapi",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_180",
+      "from": "syncapi",
+      "to": "workpackageenforcement",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_181",
+      "from": "traininghttp",
+      "to": "domain_training",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_182",
+      "from": "traininghttp",
+      "to": "shared_httpresponse",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_183",
+      "from": "trainingpg",
+      "to": "domain_training",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_184",
+      "from": "workorderauth",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_185",
+      "from": "workorderauth",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_186",
+      "from": "workorderhttp",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_187",
+      "from": "workorderhttp",
+      "to": "identity",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_188",
+      "from": "workorderhttp",
+      "to": "oidcauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_189",
+      "from": "workorderhttp",
+      "to": "workorderauth",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_190",
+      "from": "workorderpg",
+      "to": "domain_workorder",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_191",
+      "from": "workpackageenforcement",
+      "to": "domain_sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_192",
+      "from": "workpackageenforcement",
+      "to": "sync",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_193",
+      "from": "workpackageenforcement",
+      "to": "domain_workpackage",
+      "label": "uses",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_194",
+      "from": "workpackagepg",
+      "to": "domain_workpackage",
+      "label": "uses",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "AST Architecture Scan",
+      "items": [
+        "Discovered 115 Go packages across integin-pilot-source/internal",
+        "Mapped 194 live import relationships automatically"
+      ]
+    }
+  ]
+}
