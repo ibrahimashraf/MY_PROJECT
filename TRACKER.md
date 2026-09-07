@@ -110,7 +110,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [ ] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)**:
     *   Automatic calibration expiry gating: hard-block work order submission if inspection tool calibration has expired.
     *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances.
-    *   🚀 **D3.1 progress (2026-09-07, orchestrator + `opencode/big-pickle` relay `ses_f81f09fb3ffevExMV7Dyv9Ny6u`, $0, UNCOMMITTED)**: persistent registry landed — `migrations/0073_tool_calibration_registry.sql` (+ `.down.sql`, contract-test registration) creates `tool_calibration_registry` (PK `tenant/org/id`, `next_due_date > calibration_date`, equipment/status indexes, FORCE RLS NULLIF policy, GRANT to `integin_runtime`); `internal/platform/calibration/postgres.go` adds `Store.Upsert` + `SubmissionBlocked` (expired-or-missing blocks, `pgtx.BeginScope`, `$n` only, hermetic fake-driver tests, no new deps). Gates: `gofmt` CLEAN, `go vet` CLEAN, full `go test -count=1 ./...` PASS (0 failures). Open: serial/lab/tolerance columns default `''` (Record has no such fields — fenced off); `SubmissionBlocked` vs `Service.SubmissionAllowed` stale-expired-row edge noted in relay report; live-DB migration apply + `integin-live-matrix` re-verify still pending; changes left uncommitted per AGENTS.md commit boundary.
+    *   🚀 **D3.1 progress (2026-09-08, COMMITTED `92cef08` in `integin-pilot-source`)**: persistent registry landed — `migrations/0073_tool_calibration_registry.sql` (+ `.down.sql`, contract-test registration) creates `tool_calibration_registry` (PK `tenant/org/id`, `next_due_date > calibration_date`, equipment/status indexes, FORCE RLS NULLIF policy, GRANT to `integin_runtime`); `internal/platform/calibration/postgres.go` adds `Store.Upsert` + `SubmissionBlocked` (expired-or-missing blocks, `pgtx.BeginScope`, `$n` only, hermetic fake-driver tests, no new deps). Gates: `gofmt` CLEAN, `go vet` CLEAN, full `go test -count=1 ./...` PASS (0 failures). Open: serial/lab/tolerance columns default `''` (Record has no such fields — fenced off); `SubmissionBlocked` vs `Service.SubmissionAllowed` stale-expired-row edge noted in relay report; live-DB migration apply + `integin-live-matrix` re-verify next on live stack.
 *   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)**:
     *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.
@@ -282,7 +282,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ### 3. Big Tech Nanocell & Google CEL Suitability
 *   Traditional Wasm runtimes (Wasmer, Wasmtime) introduce excessive binary size (20MB+) and startup overhead for rugged mobile tablets.
-*   **Google CEL (`github.com/google/cel-go`)** is non-Turing complete, has zero-allocation memory pools, evaluates in $< 15\mu\text{s}$, and provides compile-time type-safety for ASME B30.5 / ISO 4309 formulas with zero server recompile.
+*   **Google CEL (`cel.dev/cel-go`)** is non-Turing complete, has zero-allocation memory pools, evaluates in $< 15\mu\text{s}$, and provides compile-time type-safety for ASME B30.5 / ISO 4309 formulas with zero server recompile.
 
 ### 4. PostgreSQL HOT (Heap-Only Tuple) Optimization
 *   Updating rows in append-heavy tables (`sync_receipt`) normally causes B-tree index splits and flash wear.
@@ -295,11 +295,19 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 11. 🎯 Immediate Execution Command: Deliverable 2.1 Resumption
+## 11. 🎯 Immediate Execution Command: Sprint 3 Active Frontier
 
-To proceed with Step 1 of Deliverable 2.1:
-```powershell
-cd c:\MY_PROJECT\integin-pilot-source
-go get github.com/google/cel-go
-```
-Followed by implementing `pkg/rulesengine/schema.go`, `versioning.go`, and `evaluator.go`.
+With Sprint 2 (D2.1–D2.5) 100% complete and D3.1 committed (`92cef08`), active frontier is:
+
+1. **Verify D3.1 on Live Database Container**:
+   Apply `migrations/0073_tool_calibration_registry.sql` to local PostgreSQL container (port 15432) and run package verification:
+   ```powershell
+   cd c:\MY_PROJECT\integin-pilot-source
+   go test -v -count=1 ./internal/platform/calibration/...
+   ```
+
+2. **Proceed to Deliverable 3.2: FIPS 140-3 Hardware Tablet Attestation**:
+   ```powershell
+   # Target: pkg/onboarding/onboarding_engine.go, field_app, packagemanifest
+   ```
+
