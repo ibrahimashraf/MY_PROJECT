@@ -22,8 +22,8 @@ The product is INTEGIN (Integrated Inspection & Assurance), with the modular Go 
 ### Strict Operating Rules:
 - Zero New Root Files: Never create new markdown or tracking files in the root directory.
 - Single Active Source: Make all code changes in `c:\MY_PROJECT\integin-pilot-source/`. Never modify `integin-source/` (it is a read-only comparison snapshot).
-- Mandatory Agent Memory Codex (40 Grand Hazards): You MUST read and obey `.agents/rules/agent-immunity-harness.md` before writing code. Defend actively against all 40 cognitive, mechanical, concurrency, and behavioral LLM hazards from line one.
-- Token & Cost Optimization: Obey `docs/architecture/AI_TOKEN_AND_COST_OPTIMIZATION_GUIDE.md` (surgical line-slices, concise output, no conversational fluff, and prompt session resets after milestones to slash token burn by 80–95%).
+- Mandatory Agent Memory Codex: You MUST obey `.agents/rules/agent-immunity-harness.md` and `integin-pilot-source/AGENTS.md` before writing code. Defend actively against all 40 hazards from line one.
+- Token & Cost Optimization (8 Levers): Obey `docs/architecture/AI_TOKEN_AND_COST_OPTIMIZATION_GUIDE.md` (surgical line-slices, concise output, prompt resets, and Lever 8 headless implementer delegation via `opencode-delegate` to slash token burn by 85–96%).
 - Multi-Tenant RLS: Every query on domain tables must set session tenant GUCs (`SELECT set_config('integin.tenant_id', ..., true)` with `is_local = true`).
 - Opaque Secrets: Never read, print, or log anything inside `c:\MY_PROJECT\private/`.
 - Quality Gate: Every change must pass `go test -count=1 ./...`, `go vet ./...`, and `integin-live-matrix`.
