@@ -27,7 +27,22 @@ Every agent executing commands or modifying files within this repository MUST fo
 
 ---
 
-## 2. 🚦 Model Catalog & Usage Guidelines
+## 2. ⚡ Concrete Mechanical Guardrails (Low-Model Immunity Shield)
+
+Autonomous coders—especially compact and free-tier models—must strictly adhere to these syntax-level negative constraints:
+
+- **NO Silent Error Swallowing (Hazard 32)**: NEVER write `_ = err` or ignore errors. Always return or handle: `if err != nil { return ..., err }`.
+- **NO Defer-in-Loop Resource Leaks (Hazard 28)**: NEVER put `defer file.Close()` or `defer rows.Close()` inside a `for` loop. Close immediately or wrap loop bodies in an inline closure (`func() { ... }()`).
+- **NO Floating-Point NaN / Inf Poisoning (Hazard 31)**: ALWAYS guard divisors before dividing (`if denom == 0 { return ..., err }`). Never allow `NaN` or `Inf` to enter database columns, struct fields, or JSON payloads.
+- **NO Reward Hacking (Hazard 2)**: NEVER delete, comment out, or weaken test assertions (e.g. relaxing exact equality to `!= ""` or ignoring errors) to make tests pass. If a test fails, fix the code under test.
+- **NO Hyper-Generative Boilerplate (Hazard 11)**: NEVER create unprompted interfaces, mock factories, or adapter hierarchies. Write concrete structs and direct methods.
+- **NO Concurrency Data Races (Hazard 26)**: ALWAYS synchronize shared map or slice access across goroutines with `sync.RWMutex` or `sync.Mutex`. Tests must pass `go test -race` cleanly.
+- **NO Transitive CGO Dependencies (Hazard 40)**: Pure Go only (`CGO_ENABLED=0`). Do not import packages that require external C libraries or native host headers, ensuring builds remain portable to rugged ARM64 tablets.
+- **NO Parameterized SQL String Concat (Hazard 21)**: Always use parameterized `$1, $2, ...` placeholders. Never use `fmt.Sprintf` or string concatenation to inject user-supplied values into SQL statements.
+
+---
+
+## 3. 🚦 Model Catalog & Usage Guidelines
 
 OpenCode requires an explicit model on fresh runs (`--model`). Only the human owns billing approvals:
 
@@ -38,7 +53,7 @@ OpenCode requires an explicit model on fresh runs (`--model`). Only the human ow
 
 ---
 
-## 3. 🛠️ Standard Verification & Gate Commands
+## 4. 🛠️ Standard Verification & Gate Commands
 
 Run these from the `integin-pilot-source` directory before declaring any implementation step complete:
 
@@ -52,13 +67,13 @@ go vet ./...
 # 3. Clean-Cache Test Suite
 go test -count=1 ./...
 
-# 4. Memory Escapes on Hot Paths (Latency < 50µs, 0 allocs/op)
-go test -benchmem -run=^$ ./pkg/rulesengine/...
+# 4. Concurrency Race Detection (Clean)
+go test -race -count=1 ./...
 ```
 
 ---
 
-## 4. 📋 Structured Output Contract
+## 5. 📋 Structured Output Contract
 
 When stopping after an implementation run, always end with a closing summary in this format:
 
