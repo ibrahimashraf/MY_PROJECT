@@ -139,9 +139,42 @@ Because output tokens are up to **5x more expensive** than input tokens:
 
 * **The Waste:** Frontier models (Claude 3.5 Sonnet, GPT-4o) cost $15–$60 per million output tokens. Having a frontier model write 600 lines of CRUD boilerplate, parse test output, fix typos, and re-run tests burns massive dollar credits directly in your primary interactive context window.
 * **The Practice (The 3-Tier Sandwich):**
-  1. **Orchestrator (Frontier / High Reasoner)**: Writes an atomic, blind XML brief (`<task>`, `<verification_loop>`, `<action_safety>`, `<structured_output_contract>`) in under 40 lines.
-  2. **Implementer (Free / Low-Tier CLI)**: Dispatches via `.agents/skills/opencode-delegate/scripts/relay.mjs` to a free or flat-rate model (e.g. `opencode/big-pickle`, `muse-spark-1.3-contributor-free`). The implementer runs in its own headless session, reads `integin-pilot-source/AGENTS.md`, writes code, and iterates against compiler errors locally at **$0.00 cost**.
-  3. **Verification & Commit**: The implementer stops without committing. The orchestrator re-runs `go vet` and `go test`, verifies git diff for scope creep, and commits the work from the main session.
+  1. **Orchestrator (Frontier / High Reasoner - Claude, Antigravity/Gemini, GPT-4o, Grok)**: Writes an atomic, block-structured brief in under 45 lines containing the immutable invariants and exact blast radius.
+  2. **Implementer (Free / Low-Tier CLI - DeepSeek, Qwen, Kimi, big-pickle, mimo via OpenCode)**: Dispatches via `.agents/skills/opencode-delegate/scripts/relay.mjs`. The implementer runs headlessly, reads `integin-pilot-source/AGENTS.md`, writes code, and iterates against compiler errors locally at **$0.00 cost**.
+  3. **Verification & Commit**: Implementer stops without committing. The orchestrator re-runs `go vet` and `go test -race`, verifies diff for scope creep, and commits the work from the main session.
+* **The Canonical Relay Dispatch Brief Skeleton:**
+  ```xml
+  <task>
+    <id><!-- e.g., S2-RLS-04 --></id>
+    <tracker_ref><!-- e.g., TRACKER.md#S2-RLS-04 --></tracker_ref>
+    <objective>1-2 sentence description of concrete outcome.</objective>
+    <target_files>
+      <touch>integin-pilot-source/internal/exact/path.go</touch>
+    </target_files>
+    <leave_untouched>../integin-source/, ../private/, C:\MY_PROJECT root</leave_untouched>
+  </task>
+
+  <invariants>
+    - RLS GUCs: SELECT set_config('integin.tenant_id', $1, true) with is_local = true (Hazard 21).
+    - SQL: Strict $1, $2 parameter binding. Zero fmt.Sprintf or string concatenation.
+    - Go Flags: Pure Go only (CGO_ENABLED=0) for ARM64 portability (Hazard 40).
+    - Math: Zero LLM math. All load calculations via Google CEL in pkg/rulesengine/ (Hazard 7).
+    - Sandbox: Strictly NO git add, commit, or push. Leave changes uncommitted for orchestrator.
+    - Evidence: Hazard 9 guard. Never claim pass without raw terminal stdout.
+  </invariants>
+
+  <verification_loop>
+    Run from integin-pilot-source/:
+      1. gofmt -l .
+      2. go vet ./...
+      3. go test -count=1 ./...
+      4. go test -race -count=1 ./...
+  </verification_loop>
+
+  <structured_output_contract>
+    Report: (1) What changed and why, (2) Files touched, (3) Raw test/vet stdout evidence, (4) Edge cases/deviations.
+  </structured_output_contract>
+  ```
 * **The Measured Result:** Yields a **90%–96% net reduction in feature delivery cost** while completely keeping compiler churn out of your main chat history.
 
 ---

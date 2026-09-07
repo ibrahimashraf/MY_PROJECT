@@ -199,6 +199,18 @@ go run ./cmd/integin-live-matrix seed
 go run ./cmd/integin-live-matrix exercise
 ```
 
+### Relay Dispatch Standard (Headless Implementers: OpenCode / Codex / Subagents)
+
+When delegating implementation work via `opencode-delegate` / `relay.mjs` (Lever 8), orchestrator agents across all platforms (Claude, Antigravity, Codex, Qwen, DeepSeek, Kimi, Grok) must structure briefs with block-fenced XML and enforce the 5 mandatory boundaries:
+
+1. **Target Blast Radius**: Pinpoint 1–3 explicit files to touch (`internal/...`, `migrations/...`); strictly forbid touching `integin-source/`, `private/`, or the root directory.
+2. **Multi-Tenant RLS & SQL**: Every domain query must set tenant GUCs with `is_local = true` and use strictly `$1, $2` placeholders (no string concatenation).
+3. **Portability & Determinism**: Pure Go (`CGO_ENABLED=0`), zero runtime LLM math (Google CEL ASTs only).
+4. **Git Sandbox Boundary**: Worker strictly never runs `git commit`, `add`, or `push`. Modifications remain uncommitted in the working tree for orchestrator review.
+5. **Expected Evidence (Hazard 9)**: Completion reports must include raw terminal stdout from `go test -race` and `go vet`. No live terminal output = unverified.
+
+Reference the full dispatch skeleton in [`docs/architecture/AI_TOKEN_AND_COST_OPTIMIZATION_GUIDE.md`](./docs/architecture/AI_TOKEN_AND_COST_OPTIMIZATION_GUIDE.md).
+
 ### Core Architecture & Coding Rules
 1. **Sub-Nano Struct Alignment**: Order mutation structs with descending alignment (8-byte, 4-byte, 2-byte, 1-byte) with explicit padding to prevent L1 cache-line splits. Verify zero heap escapes with `go build -gcflags="-m"`.
 2. **Deterministic Outcomes**: Sync endpoints return structured JSON outcomes (`APPLIED`, `DUPLICATE`, `HELD`, `CONFLICT`, `SECURITY_FAILURE`). Expected conflicts and rejections must never crash as naked 500s.
