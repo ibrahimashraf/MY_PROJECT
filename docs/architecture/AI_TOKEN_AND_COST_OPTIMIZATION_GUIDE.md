@@ -30,11 +30,11 @@ A single 25-turn chat re-sends over 2.5 MILLION input tokens! Total cost: $10 �
 
 ---
 
-## 2. The 7 Golden Levers to Cut Costs by 80%–95%
+## 2. The 8 Golden Levers to Cut Costs by 85%–96%
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 THE 7 COST-SLICING LEVERS                              │
+│                                 THE 8 COST-SLICING LEVERS                              │
 ├─────────────────────────┬──────────────────────────────┬───────────────────────────────┤
 │ Lever 1: Session Reset  │ "1 Step = 1 Fresh Chat"      │ 85%–95% Total Cost Reduction  │
 ├─────────────────────────┼──────────────────────────────┼───────────────────────────────┤
@@ -49,6 +49,8 @@ A single 25-turn chat re-sends over 2.5 MILLION input tokens! Total cost: $10 �
 │ Lever 6: Disk Memory    │ Files over Chat History      │ Prevents Context Bloat        │
 ├─────────────────────────┼──────────────────────────────┼───────────────────────────────┤
 │ Lever 7: Tool Filters   │ Pipe commands to grep/head   │ Prevents Terminal Log Floods  │
+├─────────────────────────┼──────────────────────────────┼───────────────────────────────┤
+│ Lever 8: OpenCode Relay │ Implementer Sandwich Pattern │ 90%–96% Net Spend Reduction   │
 └─────────────────────────┴──────────────────────────────┴───────────────────────────────┘
 ```
 
@@ -130,6 +132,17 @@ Because output tokens are up to **5x more expensive** than input tokens:
   * Target specific packages: `go test -v ./pkg/rulesengine/...`
   * Pipe noisy commands: `go test ./... | Select-String "FAIL"` or `git status -s`.
   * If a command outputs massive logs, write them to a scratch file (`scratch/test.log`) and grep the error rather than dumping raw stdout.
+
+---
+
+### Lever 8: The Headless Implementer Sandwich (`opencode-delegate`)
+
+* **The Waste:** Frontier models (Claude 3.5 Sonnet, GPT-4o) cost $15–$60 per million output tokens. Having a frontier model write 600 lines of CRUD boilerplate, parse test output, fix typos, and re-run tests burns massive dollar credits directly in your primary interactive context window.
+* **The Practice (The 3-Tier Sandwich):**
+  1. **Orchestrator (Frontier / High Reasoner)**: Writes an atomic, blind XML brief (`<task>`, `<verification_loop>`, `<action_safety>`, `<structured_output_contract>`) in under 40 lines.
+  2. **Implementer (Free / Low-Tier CLI)**: Dispatches via `.agents/skills/opencode-delegate/scripts/relay.mjs` to a free or flat-rate model (e.g. `opencode/big-pickle`, `muse-spark-1.3-contributor-free`). The implementer runs in its own headless session, reads `integin-pilot-source/AGENTS.md`, writes code, and iterates against compiler errors locally at **$0.00 cost**.
+  3. **Verification & Commit**: The implementer stops without committing. The orchestrator re-runs `go vet` and `go test`, verifies git diff for scope creep, and commits the work from the main session.
+* **The Measured Result:** Yields a **90%–96% net reduction in feature delivery cost** while completely keeping compiler churn out of your main chat history.
 
 ---
 

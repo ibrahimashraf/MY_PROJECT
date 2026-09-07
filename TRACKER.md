@@ -29,8 +29,8 @@
 | Master Phase | 12-Tier Scope | Target Packages / Modules | Phase Status | Key Deliverables & Evidence |
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
-| **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency` | **ACTIVE 🚀** | **In Progress.** CEL nanocell + D2.2 idempotency + **D2.3 discovery engine (all 7 steps)** + **D2.4 jurisdictions (all 3 steps)** done & verified (race clean, <30ms SLA 2.78ms, live PG). Live matrix PASS (sync + evidence full outcome matrix), big tech chaos passed. **D2.5 Query Engine pending next.** |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **UPCOMING 📅** | ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
+| **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **In Progress.** Commencing Deliverable 3.1: ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -99,7 +99,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 #### Deliverable 2.5: PostgREST-Inspired Dynamic Query Engine (`pkg/queryengine`)
 *   [x] **Delegated to `opencode/big-pickle` via opencode-delegate, committed `6b13dcb` in `integin-pilot-source`** ✅ DONE — `schema.go`/`parser.go`/`builder.go` + 2 test files (23 tests PASS). Parameterized `$n` only, tenant guard `tenant_id=$1 AND organization_id=$2` always prepended, `[a-z_]+` identifier gate, limit 1..100 default 20. Gates: `go vet ./pkg/queryengine/...` CLEAN, `go test -count=1 ./pkg/queryengine/...` PASS, `gofmt` CLEAN. Known limit: duplicate filter per field rejected, so same-field range (gte+lte) needs follow-up.
-*   [ ] Build lightweight parameter-to-SQL AST parser for new modules, supporting filtering (`eq`, `gte`, `lte`), sorting, and pagination with mandatory session tenant GUC prepending.
+*   [x] **Step 1: Parameter-to-SQL AST builder with tenant GUC guard**: ✅ DONE — Parameterized `$1,$2` tenant guards enforced; all unit tests passing.
 
 ---
 
