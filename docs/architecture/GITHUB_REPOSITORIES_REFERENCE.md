@@ -95,6 +95,37 @@
 *   **Domain**: Multi-provider AI coordination and local PTY agent supervisor.
 *   **Role in INTEGIN**: Active multi-agent execution skills for structured debates and local CLI dispatch.
 
+### 22. [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+*   **Domain**: AI design-intelligence skill (MIT) — deterministic BM25-ranked UI styles (50 active), 192 industry palettes, 74 font pairings, 119 UX/accessibility guidelines, stack-specific rules for 22 frameworks.
+*   **Role in INTEGIN**:
+    *   Advisory design reference for `quiet-signal/` (React 19 + TS), `field_app/` (Flutter is a supported stack), and `tools/onboarding-wizard/` + lifting-simulator HTML/Canvas surfaces.
+    *   Pre-delivery checklist (4.5:1 contrast, visible focus, `prefers-reduced-motion`, resilient text reflow) aligns with bilingual Arabic/Latin certificate surfaces (Sprint 3.9) and sovereign gov-console expectations.
+    *   Install via `uipro init --ai universal` (`.agents/skills/`) if trialed; output is advisory only — never commits, never touches the Go engine or migrations.
+
+### 23. [gemini-cli-extensions/conductor](https://github.com/gemini-cli-extensions/conductor)
+*   **Domain**: Spec-driven development plugin (Apache-2.0) — Context → Spec & Plan → Implement lifecycle with per-track `spec.md`/`plan.md`, review and git-aware revert.
+*   **Role in INTEGIN**: Methodology reference for Sprint 3+ tracks: plan-before-build with human plan approval matches our orchestrator/implementer sandwich (Lever 8). Caution: author notes higher token burn on large projects — keep tracks micro-scoped per Lever 1.
+
+### 24. [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+*   **Domain**: 25 production-grade lifecycle skills (MIT) — spec, plan, TDD, code review, security hardening, CI/CD — each with anti-rationalization tables and mandatory verification evidence.
+*   **Role in INTEGIN**: Closest external match to our immunity harness: verification-non-negotiable, `code-simplification` mirrors Hazard 14, `constraint-driven-development` mirrors our quality gates. Candidate source for cherry-picking checklist content into `.agents/` (adopt selectively, never wholesale).
+
+### 25. [sickn33/agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills)
+*   **Domain**: 2,100+ skill catalog with local agent-first control plane (AAS Core) — read-only MCP catalog search, agent-owned selection pinned in `aas-stack.json`, immutable plan preview before writes.
+*   **Role in INTEGIN**: Distribution/curation reference only. Caution: full-catalog installs can exhaust agent context / crash-loop watchers — our standing rule (narrow installs into `.agents/skills/`, e.g. `--risk safe,none`) already matches their own guidance. Approval-before-writes model matches our orchestrator review gate.
+
+### 26. [wshobson/agents](https://github.com/wshobson/agents)
+*   **Domain**: Multi-harness plugin marketplace (MIT) — 94 plugins / 202 agents / 183 skills / 105 commands from one Markdown source, with OpenCode + Antigravity adapters and a 3-layer `plugin-eval` quality framework.
+*   **Role in INTEGIN**: Single richest skill source for our two harnesses (OpenCode relay implementers, Antigravity orchestration). Of interest: orchestrator workflows (16) for debate patterns and `plugin-eval` static scoring as a model for our own skill quality bars. Install per-plugin only, never the marketplace whole.
+
+### 27. [mksglu/context-mode](https://github.com/mksglu/context-mode)
+*   **Domain**: Context-window optimizer — MCP sandbox tools (98% claimed raw-output reduction), SQLite FTS5 session memory across compactions, hook-enforced routing on 17 platforms incl. OpenCode.
+*   **Role in INTEGIN**: Directly serves Token Guide Levers 1/6/7 (session resets, disk-backed memory, tool-output filters). Trial candidate for orchestrator sessions only — relay implementers stay lean. Caution: hook-enforced routing must never override Hazard 9 (raw `go test` stdout is the only proof) or mask RLS/security evidence.
+
+### 28. [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+*   **Domain**: Minimalism skill (MIT) — 7-rung reuse ladder (YAGNI → stdlib → native → one-liner → minimum), measured −54% LOC / −20% cost on agentic benchmarks with safety guards intact. OpenCode plugin supported.
+*   **Role in INTEGIN**: Enforces Hazard 11 (Rule of Three) and Hazard 14 (net-lines-removed) inside headless implementers where hyper-generative boilerplate (Hazard 2/11) is the top failure mode. `/ponytail-review` over-engineering pass fits our review step before landing relay diffs.
+
 ---
 
 ## 🗄️ Group 4: Database Engineering, RLS & Object-Relational Models
