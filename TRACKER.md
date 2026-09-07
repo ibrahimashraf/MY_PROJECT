@@ -1,7 +1,7 @@
 # 🚀 INTEGIN Master Sprint & Session Tracker
 
 **Document Version:** 3.3.0 (Comprehensive Global Architecture & 12-Tier Reconciliation Standard)  
-**Last Reconciled:** 2026-09-07  
+**Last Reconciled:** 2026-09-08  
 **Master Architectural Authority:** [`docs/architecture/GLOBAL_ARCHITECTURE_PLAN.md`](./docs/architecture/GLOBAL_ARCHITECTURE_PLAN.md)  
 **Governing Topology:** The Master 12-Tier Architecture (L0–L11), The 7 Sovereign Compliance Pillars (§ 3.5), & The 4-Phase Transition Roadmap (§ 7)  
 **Historical Planning Archives (>600KB):** [`archive/planning-history-august-2026/`](./archive/planning-history-august-2026/)
@@ -16,13 +16,13 @@
 ├──────────────────────┬──────────────────────┬───────────────────┬──────────────────────┤
 │ Phase 1: Core PKI &  │ Phase 2: Hybrid      │ Phase 3: Hardware │ Phase 4: K8s Svc Mesh│
 │ Dynamic Licensing    │ Standards Discovery  │ & Audit Ledger    │ & Global Verification│
-│ (Sprint 1)           │ (Sprint 2 - ACTIVE)  │ (Sprint 3)        │ (Sprint 4)           │
+│ (Sprint 1)           │ (Sprint 2)           │ (Sprint 3 - ACTIVE│ (Sprint 4)           │
 ├──────────────────────┼──────────────────────┼───────────────────┼──────────────────────┤
 │ • pkg/domain & DIDs  │ • pkg/rulesengine    │ • Tool Registry   │ • Stateless Resolver │
 │ • pkg/licensing      │ • pkg/standardsync   │ • Merkle-CRDT Log │ • Public Verifier App│
 │ • CLI Token Issuer   │ • pkg/jurisdictions  │ • FIPS Enclave Att│ • Helm / K8s Matrix  │
 │                      │ • idempotency cache  │ • Asset Passport  │ • Sovereign Appliance│
-│ STATUS: COMPLETE ✅  │ STATUS: ACTIVE 🚀    │ STATUS: UPCOMING  │ STATUS: PLANNED      │
+│ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅  │ STATUS: ACTIVE 🚀 │ STATUS: PLANNED      │
 └──────────────────────┴──────────────────────┴───────────────────┴──────────────────────┘
 ```
 
@@ -42,8 +42,8 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | Tier | Tier Classification & Name | Implementation Status | Active Go Internal Packages | Database Migrations Covered (0001–0070+) |
 | :---: | :--- | :---: | :--- | :--- |
 | **L0** | **Global Root PKI Authority & Asymmetric Licensing Engine** | **COMPLETE ✅** | `pkg/domain`, `pkg/licensing`, `licensehttp`, `licensepg`, `flaghttp`, `flagpg`, `platform`, `deployconfig` | `0034_license_entitlement`, `0035_feature_flag_overrides`, `0062_harden_all_remaining_rls`, `0066_wal_suppression_and_xid_freeze_safeties` |
-| **L1** | **Hybrid Standards Discovery & Dynamic AST Calculation Engine** | **ACTIVE 🚀** | `pkg/standardsync`, `pkg/rulesengine`, `inspectionhttp`, `advisorview`, `advisory`, `aiintegration` | `0023_comments_traffic_light`, `0048_anomaly_detection` |
-| **L2** | **Tenant Legal Entity, Multi-Currency & Dynamic Jurisdiction Adapters** | **ACTIVE 🚀** | `pkg/jurisdictions`, `internal/idempotency`, `identity`, `tenant`, `settingshttp`, `settingspg`, `middleware` | `0003_event_log_tenant_rls`, `0004_identity_subject_membership`, `0008_identity_actor_alignment`, `0033_configurable_settings_audit_export`, `0062_harden_all_remaining_rls`, `0067_async_tenant_purge_tombstones`, `0071_sync_idempotency_cache`, `0072_river_poison_quarantine` |
+| **L1** | **Hybrid Standards Discovery & Dynamic AST Calculation Engine** | **COMPLETE ✅** | `pkg/standardsync`, `pkg/rulesengine`, `inspectionhttp`, `advisorview`, `advisory`, `aiintegration` | `0023_comments_traffic_light`, `0048_anomaly_detection` |
+| **L2** | **Tenant Legal Entity, Multi-Currency & Dynamic Jurisdiction Adapters** | **COMPLETE ✅** | `pkg/jurisdictions`, `internal/idempotency`, `identity`, `tenant`, `settingshttp`, `settingspg`, `middleware` | `0003_event_log_tenant_rls`, `0004_identity_subject_membership`, `0008_identity_actor_alignment`, `0033_configurable_settings_audit_export`, `0062_harden_all_remaining_rls`, `0067_async_tenant_purge_tombstones`, `0071_sync_idempotency_cache`, `0072_river_poison_quarantine` |
 | **L3** | **Dynamic Discipline & Inspection Package Scoping Engine** | **COMPLETE ✅** | `traininghttp`, `trainingpg`, `equipment` | `0018_timesheets_courses`, `0032_full_dpp_regulatory_monitor` |
 | **L4** | **Global Enterprise Hierarchy & Operational Work Orders** | **COMPLETE ✅** | `workorderhttp`, `workorderpg`, `workorderauth`, `domain/workorder`, `riverqueue` | `0005_work_order_foundation`, `0009_work_order_persistence`, `0010_work_order_rls`, `0012_work_order_handover`, `0019_hierarchical_register`, `0029_parts_charges_timesheet_auto`, `0050`–`0060` (River queue scale), `0063_fix_unindexed_foreign_keys`, `0064_river_hot_updates`, `0065_river_canonical_v047`, `0069_state_machine_and_sequence_bounds` |
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
@@ -56,7 +56,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 3. ⚡ Current Active Sprint: Sprint 2 (Hybrid Standards & Dynamic Rules Engine)
+## 3. ⚡ Sprint 2 (Hybrid Standards & Dynamic Rules Engine) — COMPLETE ✅
 
 ### Sprint 2 Deliverables Matrix & Technical Acceptance Gates:
 
@@ -110,6 +110,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [ ] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)**:
     *   Automatic calibration expiry gating: hard-block work order submission if inspection tool calibration has expired.
     *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances.
+    *   🚀 **D3.1 progress (2026-09-07, orchestrator + `opencode/big-pickle` relay `ses_f81f09fb3ffevExMV7Dyv9Ny6u`, $0, UNCOMMITTED)**: persistent registry landed — `migrations/0073_tool_calibration_registry.sql` (+ `.down.sql`, contract-test registration) creates `tool_calibration_registry` (PK `tenant/org/id`, `next_due_date > calibration_date`, equipment/status indexes, FORCE RLS NULLIF policy, GRANT to `integin_runtime`); `internal/platform/calibration/postgres.go` adds `Store.Upsert` + `SubmissionBlocked` (expired-or-missing blocks, `pgtx.BeginScope`, `$n` only, hermetic fake-driver tests, no new deps). Gates: `gofmt` CLEAN, `go vet` CLEAN, full `go test -count=1 ./...` PASS (0 failures). Open: serial/lab/tolerance columns default `''` (Record has no such fields — fenced off); `SubmissionBlocked` vs `Service.SubmissionAllowed` stale-expired-row edge noted in relay report; live-DB migration apply + `integin-live-matrix` re-verify still pending; changes left uncommitted per AGENTS.md commit boundary.
 *   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)**:
     *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.

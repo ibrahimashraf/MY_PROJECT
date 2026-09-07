@@ -2,7 +2,7 @@
 
 **Workspace Root:** `C:\MY_PROJECT`  
 **Document Version:** 3.0.0 (Unified Canonical Standard)  
-**Last Reconciled:** 2026-09-07  
+**Last Reconciled:** 2026-09-08  
 **Authority:** The single permanent reference document for all human engineers and AI agents (Claude, Gemini, Codex, Manus).
 
 ---
@@ -147,8 +147,8 @@ INTEGIN is an **Integrated Inspection & Assurance Platform** designed for worldw
 | Tier | Name | Key Components & Scope | Active Packages / Status |
 |---|---|---|---|
 | **L0** | **Root PKI & Licensing** | Asymmetric Ed25519 license keys, offline covenants, feature flags | `pkg/licensing`, `licensehttp`, `licensepg` ✅ |
-| **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` 🚀 *(In Progress)* |
-| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `identity`, `tenant` 🚀 *(Planned)* |
+| **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` ✅ |
+| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `identity`, `tenant` ✅ |
 | **L3** | **Discipline Package Scoping**| Inspector competency gating, training validation, courses | `traininghttp`, `trainingpg`, `equipment` ✅ |
 | **L4** | **Operational Hierarchy** | Work orders, assignments, hierarchical branch/area/zone registers | `workorderhttp`, `workorderpg`, `domain/workorder` ✅ |
 | **L5** | **Certificate Governance** | Deterministic PDF rendering, 4-eyes review, authority lifecycle | `certificatehttp`, `certificatepg`, `certificaterender` ✅ |
