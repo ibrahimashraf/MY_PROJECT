@@ -9,15 +9,18 @@ import (
 )
 
 type Record struct {
-	ID                string                  `json:"id"`
-	TenantID          string                  `json:"tenant_id"`
-	EquipmentID       string                  `json:"equipment_id"`
-	StandardReference string                  `json:"standard_reference"`
-	CalibrationDate   time.Time               `json:"calibration_date"`
-	NextDueDate       time.Time               `json:"next_due_date"`
-	TechnicianID      string                  `json:"technician_id"`
-	Result            string                  `json:"result"`
-	Status            types.CalibrationStatus `json:"status"`
+	ID                   string                  `json:"id"`
+	TenantID             string                  `json:"tenant_id"`
+	EquipmentID          string                  `json:"equipment_id"`
+	StandardReference    string                  `json:"standard_reference"`
+	SerialNumber         string                  `json:"serial_number"`
+	LabCertificateRef    string                  `json:"lab_certificate_ref"`
+	UncertaintyTolerance string                  `json:"uncertainty_tolerance"`
+	CalibrationDate      time.Time               `json:"calibration_date"`
+	NextDueDate          time.Time               `json:"next_due_date"`
+	TechnicianID         string                  `json:"technician_id"`
+	Result               string                  `json:"result"`
+	Status               types.CalibrationStatus `json:"status"`
 }
 
 func (r Record) Validate() error {

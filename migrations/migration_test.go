@@ -374,6 +374,11 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			downFile: "0072_river_poison_quarantine.down.sql",
 			required: []string{"CREATE TABLE IF NOT EXISTS river_poison_quarantine", "job_id         BIGINT      PRIMARY KEY", "river_poison_quarantine_kind_idx", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
 		},
+		{
+			upFile:   "0073_tool_calibration_registry.sql",
+			downFile: "0073_tool_calibration_registry.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS tool_calibration_registry", "PRIMARY KEY (tenant_id, organization_id, id)", "tool_calibration_registry_equipment_due_idx", "tool_calibration_registry_status_idx", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "tool_calibration_registry_tenant_isolation", "NULLIF(current_setting('integin.tenant_id', true), '')"},
+		},
 	}
 
 	for _, m := range migrations {
@@ -399,5 +404,3 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		}
 	}
 }
-
-
