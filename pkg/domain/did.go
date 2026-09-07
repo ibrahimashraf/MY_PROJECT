@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	DIDMethodIntegin = "did:integin"
-	DIDTypeAsset     = "asset"
-	DIDTypeStandard  = "standard"
-	DIDTypeTenant    = "tenant"
-	DIDTypeDevice    = "device"
+	DIDMethodIntegin    = "did:integin"
+	DIDTypeAsset        = "asset"
+	DIDTypeStandard     = "standard"
+	DIDTypeTenant       = "tenant"
+	DIDTypeDevice       = "device"
+	DIDTypeJurisdiction = "jurisdiction"
 )
 
 var (
@@ -97,6 +98,16 @@ func GenerateTenantDID(tenantUUID string) DID {
 		Method:     DIDMethodIntegin,
 		Type:       DIDTypeTenant,
 		Identifier: strings.ToLower(strings.TrimSpace(tenantUUID)),
+	}
+}
+
+// GenerateJurisdictionDID creates a canonical DID for a sovereign jurisdiction using ISO 3166-1 alpha-2.
+// e.g. "did:integin:jurisdiction:SA"
+func GenerateJurisdictionDID(countryISO2 string) DID {
+	return DID{
+		Method:     DIDMethodIntegin,
+		Type:       DIDTypeJurisdiction,
+		Identifier: strings.ToUpper(strings.TrimSpace(countryISO2)),
 	}
 }
 

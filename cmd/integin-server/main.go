@@ -30,9 +30,9 @@ import (
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/device_trust"
 	"integin/internal/domain/dpp"
+	domainsync "integin/internal/domain/sync"
 	"integin/internal/dpphttp"
 	"integin/internal/dpppg"
-	domainsync "integin/internal/domain/sync"
 	"integin/internal/evidencepackhttp"
 	"integin/internal/evidencepackpg"
 	"integin/internal/formdefinitionhttp"
@@ -344,6 +344,10 @@ func main() {
 
 		// Initialize and start River queue with WebhookDeliveryWorker and CertificateRenderWorker
 		workers := river.NewWorkers()
+		poisonRecorder, poisonErr := queue.NewPostgresQuarantineRecorder(database)
+		if poisonErr != nil {
+			log.Fatalf("failed to initialize poison-pill quarantine recorder: %v", poisonErr)
+		}
 		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
 		if evidenceStore != nil && certificateRepository != nil {
 			renderer := domainrender.NewDeterministicPDFRenderer()
@@ -355,7 +359,7 @@ func main() {
 		}
 
 		var riverErr error
-		riverQueue, riverErr = queue.NewQueue(context.Background(), database, workers)
+		riverQueue, riverErr = queue.NewQueue(context.Background(), database, workers, queue.WithMiddleware(queue.NewPoisonQuarantineMiddleware(poisonRecorder)))
 		if riverErr != nil {
 			log.Fatalf("failed to initialize river queue: %v", riverErr)
 		}
@@ -509,6 +513,7 @@ func envList(primary, fallback string) []string {
 
 // safeReadFile validates and canonicalizes path before reading.
 // For server config files, we accept absolute paths from config/env.
+//
 //nolint:gosec // path canonicalized via Clean+Abs; from config/env
 func safeReadFile(path string) ([]byte, error) {
 	if path == "" {

@@ -14,6 +14,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/idempotency"
 	"integin/internal/identity"
 	"integin/internal/middleware"
 	"integin/internal/oidcauth"
@@ -83,8 +84,19 @@ func NewMux(dependencies Dependencies) http.Handler {
 		provisioner.SetAuthorityRegistrar(syncHandler.RegisterAuthority)
 	}
 
+	var syncHTTP http.Handler = syncHandler
+	var withIdempotency idempotencyWrapper
+	if dependencies.DB != nil {
+		if store, storeErr := idempotency.NewPostgresStore(dependencies.DB); storeErr == nil {
+			withIdempotency = func(h http.Handler) http.Handler {
+				return idempotency.NewMiddleware(store, idempotency.EndpointEvidence, idempotency.EvidenceScopeResolver).Wrap(h)
+			}
+			syncHTTP = idempotency.NewMiddleware(store, idempotency.EndpointSync, idempotency.SyncScopeResolver).Wrap(syncHTTP)
+		}
+	}
+
 	mux := http.NewServeMux()
-	registerCoreRoutes(mux, dependencies, syncHandler)
+	registerCoreRoutes(mux, dependencies, syncHTTP, withIdempotency)
 	registerLicensedAPIRoutes(mux, dependencies)
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writeOperationalJSON(writer, http.StatusOK, `{"status":"ok","service":"integin"}`)

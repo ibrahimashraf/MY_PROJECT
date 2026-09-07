@@ -9,6 +9,7 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivertype"
 )
 
 // CertificateRenderJobArgs defines the durable River payload for background PDF/A-4b rendering.
@@ -54,8 +55,19 @@ type Queue struct {
 	db     *sql.DB
 }
 
+// Option configures the River client before it is constructed.
+type Option func(*river.Config)
+
+// WithMiddleware attaches global job middleware (worker + insert) to every
+// job executed by the queue.
+func WithMiddleware(middleware ...rivertype.Middleware) Option {
+	return func(cfg *river.Config) {
+		cfg.Middleware = append(cfg.Middleware, middleware...)
+	}
+}
+
 // NewQueue initializes a River client backed by database/sql PostgreSQL connection pool.
-func NewQueue(ctx context.Context, db *sql.DB, workers *river.Workers) (*Queue, error) {
+func NewQueue(ctx context.Context, db *sql.DB, workers *river.Workers, opts ...Option) (*Queue, error) {
 	if db == nil {
 		return nil, errors.New("database handle is required")
 	}
@@ -63,6 +75,9 @@ func NewQueue(ctx context.Context, db *sql.DB, workers *river.Workers) (*Queue, 
 	driver := riverdatabasesql.New(db)
 	cfg := &river.Config{
 		Workers: workers,
+	}
+	for _, opt := range opts {
+		opt(cfg)
 	}
 	if workers != nil {
 		cfg.Queues = map[string]river.QueueConfig{
@@ -164,4 +179,3 @@ func (q *Queue) InsertManyTx(ctx context.Context, tx *sql.Tx, batch []river.Inse
 	_, err := q.client.InsertManyTx(ctx, tx, batch)
 	return err
 }
-

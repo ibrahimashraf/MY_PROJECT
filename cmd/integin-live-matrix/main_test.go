@@ -43,7 +43,7 @@ func TestExplicitPilotServerURL(t *testing.T) {
 
 func TestPostJSON_InvalidURL(t *testing.T) {
 	client := &http.Client{}
-	_, err := postJSON(client, "ftp://bad-scheme.example/sync", struct{}{})
+	_, err := postJSON(client, "ftp://bad-scheme.example/sync", struct{}{}, "test-key-000")
 	if err == nil || !strings.Contains(err.Error(), "invalid endpoint URL") {
 		t.Fatalf("expected invalid endpoint URL error, got %v", err)
 	}
@@ -51,7 +51,7 @@ func TestPostJSON_InvalidURL(t *testing.T) {
 
 func TestPostJSON_EmptyHost(t *testing.T) {
 	client := &http.Client{}
-	_, err := postJSON(client, "http:///no-host", struct{}{})
+	_, err := postJSON(client, "http:///no-host", struct{}{}, "test-key-000")
 	if err == nil || !strings.Contains(err.Error(), "invalid endpoint URL") {
 		t.Fatalf("expected invalid endpoint URL error, got %v", err)
 	}
@@ -65,12 +65,15 @@ func TestPostJSON_ServerReturnsOutcome(t *testing.T) {
 		if ct := r.Header.Get("Content-Type"); ct != "application/json" {
 			t.Errorf("unexpected Content-Type: %s", ct)
 		}
+		if key := r.Header.Get("Idempotency-Key"); key != "test-key-000" {
+			t.Errorf("expected Idempotency-Key header, got %q", key)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(outcomeResponse{Outcome: "APPLIED"})
 	}))
 	defer srv.Close()
 
-	got, err := postJSON(srv.Client(), srv.URL+"/sync", struct{ X int }{X: 1})
+	got, err := postJSON(srv.Client(), srv.URL+"/sync", struct{ X int }{X: 1}, "test-key-000")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -88,7 +91,7 @@ func TestPostJSON_Non200StillDecodes(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	got, err := postJSON(srv.Client(), srv.URL+"/sync", struct{}{})
+	got, err := postJSON(srv.Client(), srv.URL+"/sync", struct{}{}, "test-key-000")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -103,7 +106,7 @@ func TestPostJSON_MalformedResponseBody(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := postJSON(srv.Client(), srv.URL+"/sync", struct{}{})
+	_, err := postJSON(srv.Client(), srv.URL+"/sync", struct{}{}, "test-key-000")
 	if err == nil {
 		t.Fatal("expected JSON decode error, got nil")
 	}

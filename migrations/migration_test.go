@@ -364,6 +364,16 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			downFile: "0047_short_link_hmac.down.sql",
 			required: []string{"CREATE TABLE IF NOT EXISTS short_link_hmac_secrets", "hmac_secret_ref TEXT", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
 		},
+		{
+			upFile:   "0071_sync_idempotency_cache.sql",
+			downFile: "0071_sync_idempotency_cache.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS sync_idempotency_cache", "PRIMARY KEY (tenant_id, organization_id, key_hash)", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "sync_idempotency_cache_evict_expired", "expires_at > created_at"},
+		},
+		{
+			upFile:   "0072_river_poison_quarantine.sql",
+			downFile: "0072_river_poison_quarantine.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS river_poison_quarantine", "job_id         BIGINT      PRIMARY KEY", "river_poison_quarantine_kind_idx", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY"},
+		},
 	}
 
 	for _, m := range migrations {

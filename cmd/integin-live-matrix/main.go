@@ -218,23 +218,27 @@ func exercise() error {
 	payload := []byte(`{"inspection_id":"integin-live-inspection","status":"submitted"}`)
 	txPrefix := "integin-live-" + value.DeviceID
 	base := signedTransaction(txPrefix+"-applied", 1, value, ed25519.PrivateKey(privateKey), payload)
-	if err := expectSync(client, serverURL, base, "APPLIED"); err != nil {
+	if err := expectSync(client, serverURL, base, "APPLIED", "lk-"+txPrefix+"-applied"); err != nil {
 		return err
 	}
-	if err := expectSync(client, serverURL, base, "DUPLICATE"); err != nil {
+	// DUPLICATE is a business-level (not idempotency-layer) outcome: the same
+	// transaction id + payload is re-submitted with a distinct idempotency key
+	// so the middleware passes it through to the processor, which re-derives
+	// the existing-receipt DUPLICATE verdict.
+	if err := expectSync(client, serverURL, base, "DUPLICATE", "lk-"+txPrefix+"-duplicate"); err != nil {
 		return err
 	}
 	held := signedTransaction(txPrefix+"-held", 3, value, ed25519.PrivateKey(privateKey), payload)
-	if err := expectSync(client, serverURL, held, "HELD"); err != nil {
+	if err := expectSync(client, serverURL, held, "HELD", "lk-"+txPrefix+"-held"); err != nil {
 		return err
 	}
 	conflict := signedTransaction(txPrefix+"-applied", 2, value, ed25519.PrivateKey(privateKey), []byte(`{"inspection_id":"integin-live-inspection","status":"changed"}`))
-	if err := expectSync(client, serverURL, conflict, "CONFLICT"); err != nil {
+	if err := expectSync(client, serverURL, conflict, "CONFLICT", "lk-"+txPrefix+"-conflict"); err != nil {
 		return err
 	}
 	securityFailure := signedTransaction(txPrefix+"-security", 2, value, ed25519.PrivateKey(privateKey), payload)
 	securityFailure.Signature = "invalid-signature"
-	if err := expectSync(client, serverURL, securityFailure, "SECURITY_FAILURE"); err != nil {
+	if err := expectSync(client, serverURL, securityFailure, "SECURITY_FAILURE", "lk-"+txPrefix+"-security"); err != nil {
 		return err
 	}
 
@@ -255,9 +259,12 @@ func signedTransaction(id string, sequence uint64, value fixture, privateKey ed2
 	return signed
 }
 
-func expectSync(client *http.Client, serverURL string, tx domainsync.Transaction, expected string) error {
+func expectSync(client *http.Client, serverURL string, tx domainsync.Transaction, expected string, idempotencyKey string) error {
 	requestValue := syncRequest{ProtocolVersion: tx.ProtocolVersion, TransactionID: tx.TransactionID, TenantID: tx.TenantID, OrganizationID: tx.OrganizationID, Environment: tx.Environment, DeviceID: tx.DeviceID, UserID: tx.UserID, SequenceNumber: tx.SequenceNumber, Operation: tx.Operation, EntityID: tx.EntityID, Payload: tx.Payload, PayloadHash: tx.PayloadHash, CapturedAt: tx.CapturedAt, AuthorityID: tx.AuthorityID, AuthorityEpoch: tx.AuthorityEpoch, SignatureAlgorithm: tx.SignatureAlgorithm, KeyID: tx.KeyID, Signature: tx.Signature}
-	response, err := postJSON(client, serverURL+"/sync", requestValue)
+	// Each logical write uses a distinct Stripe-style idempotency key so the
+	// middleware never short-circuits a scenario; the sync processor's native
+	// APPLIED/DUPLICATE/HELD/CONFLICT/SECURITY_FAILURE verdicts are exercised.
+	response, err := postJSON(client, serverURL+"/sync", requestValue, idempotencyKey)
 	if err != nil {
 		return err
 	}
@@ -271,14 +278,18 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture, toke
 	ciphertext := []byte("INTEGIN live encrypted evidence matrix bytes")
 	plaintext := []byte("INTEGIN live plaintext evidence matrix bytes")
 	requestValue := evidenceRequest{TenantID: value.TenantID, OrganizationID: value.Organization, EvidenceID: "integin-live-evidence-" + value.DeviceID, InspectionID: "integin-live-inspection", ContentType: "application/octet-stream", PlaintextSHA256: digest(plaintext), CiphertextSHA256: digest(ciphertext), Base64Blob: base64.StdEncoding.EncodeToString(ciphertext)}
-	response, err := postJSONAuth(client, serverURL+"/evidence", requestValue, token)
+	evidenceKey := "ev-" + requestValue.EvidenceID
+	response, err := postJSONAuth(client, serverURL+"/evidence", requestValue, token, evidenceKey)
 	if err != nil {
 		return err
 	}
 	if response.Outcome != "APPLIED" {
 		return fmt.Errorf("evidence applied outcome=%s reason=%s", response.Outcome, response.Reason)
 	}
-	response, err = postJSONAuth(client, serverURL+"/evidence", requestValue, token)
+	// DUPLICATE is the evidence handler's native outcome for re-uploading the
+	// same blob under a distinct idempotency key; reusing evidenceKey would hand
+	// control to the idempotency middleware replay instead of the handler.
+	response, err = postJSONAuth(client, serverURL+"/evidence", requestValue, token, evidenceKey+"-duplicate")
 	if err != nil {
 		return err
 	}
@@ -288,7 +299,11 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture, toke
 	conflicting := requestValue
 	conflicting.Base64Blob = base64.StdEncoding.EncodeToString([]byte("different ciphertext"))
 	conflicting.CiphertextSHA256 = digest([]byte("different ciphertext"))
-	response, err = postJSONAuth(client, serverURL+"/evidence", conflicting, token)
+	// A distinct key allows the evidence handler's native CONFLICT verdict (same
+	// evidence id, different content) to be produced; reusing evidenceKey would
+	// hand the deterministic-failure response to the idempotency middleware
+	// instead of the handler.
+	response, err = postJSONAuth(client, serverURL+"/evidence", conflicting, token, evidenceKey+"-conflict")
 	if err != nil {
 		return err
 	}
@@ -297,7 +312,9 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture, toke
 	}
 	tampered := requestValue
 	tampered.CiphertextSHA256 = strings.Repeat("0", 64)
-	response, err = postJSONAuth(client, serverURL+"/evidence", tampered, token)
+	// A distinct key keeps the tamper probe out of the cached CONFLICT entry so
+	// the evidence handler's integrity gate is what produces SECURITY_FAILURE.
+	response, err = postJSONAuth(client, serverURL+"/evidence", tampered, token, evidenceKey+"-tamper")
 	if err != nil {
 		return err
 	}
@@ -308,7 +325,7 @@ func exerciseEvidence(client *http.Client, serverURL string, value fixture, toke
 }
 
 // postJSONAuth performs an authenticated POST request with a Bearer token (used for /evidence endpoints).
-func postJSONAuth(client *http.Client, endpoint string, value any, token string) (outcomeResponse, error) {
+func postJSONAuth(client *http.Client, endpoint string, value any, token string, idempotencyKey string) (outcomeResponse, error) {
 	body, err := json.Marshal(value)
 	if err != nil {
 		return outcomeResponse{}, err
@@ -324,6 +341,9 @@ func postJSONAuth(client *http.Client, endpoint string, value any, token string)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+	if idempotencyKey != "" {
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+	}
 	response, err := client.Do(req) //nolint:gosec // endpoint validated above
 	if err != nil {
 		return outcomeResponse{}, err
@@ -342,12 +362,11 @@ func postJSONAuth(client *http.Client, endpoint string, value any, token string)
 }
 
 // postJSON performs an unauthenticated POST request (used for /sync endpoints).
-func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse, error) {
+func postJSON(client *http.Client, endpoint string, value any, idempotencyKey string) (outcomeResponse, error) {
 	body, err := json.Marshal(value)
 	if err != nil {
 		return outcomeResponse{}, err
 	}
-
 
 	u, err := url.Parse(endpoint)
 	if err != nil || u.Scheme != "http" && u.Scheme != "https" || u.Host == "" {
@@ -359,6 +378,9 @@ func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse,
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	if idempotencyKey != "" {
+		req.Header.Set("Idempotency-Key", idempotencyKey)
+	}
 	// Authorization header not needed for unauthenticated postJSON
 	response, err := client.Do(req) //nolint:gosec // endpoint validated above
 	if err != nil {
@@ -376,8 +398,6 @@ func postJSON(client *http.Client, endpoint string, value any) (outcomeResponse,
 	// failure.
 	return result, nil
 }
-
-
 
 func digest(value []byte) string {
 	hash := sha256.Sum256(value)
@@ -397,4 +417,3 @@ func localConfig() (databaseURL, tenantID, secret, fixturePath string, err error
 	}
 	return databaseURL, tenantID, secret, fixturePath, nil
 }
-

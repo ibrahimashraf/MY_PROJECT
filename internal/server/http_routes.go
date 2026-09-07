@@ -6,8 +6,20 @@ import (
 	"integin/internal/evidenceapi"
 )
 
-func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Handler) {
-	mux.Handle("/sync", syncHandler)
+// idempotencyWrapper wraps an ingress handler with the idempotency middleware.
+// It is nil when no database is available, in which case the handler is
+// exposed unwrapped (existing behavior).
+type idempotencyWrapper func(http.Handler) http.Handler
+
+func wrapOrIdentity(wrapper idempotencyWrapper, handler http.Handler) http.Handler {
+	if wrapper == nil {
+		return handler
+	}
+	return wrapper(handler)
+}
+
+func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Handler, withIdempotency idempotencyWrapper) {
+	mux.Handle("/sync", wrapOrIdentity(withIdempotency, syncHandler))
 	if d.PilotManifestHandler != nil {
 		mux.Handle("/work-package-manifest", d.PilotManifestHandler)
 	}
@@ -35,7 +47,7 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 		mux.Handle("/verify/certificates/", d.CertificatePublicHandler)
 	}
 	if d.EvidenceStore != nil {
-		mux.Handle("/evidence", newEvidenceHandler(d))
+		mux.Handle("/evidence", wrapOrIdentity(withIdempotency, newEvidenceHandler(d)))
 	}
 	if d.EvidenceRegistrationHandler != nil {
 		mux.Handle("/evidence/metadata-registrations", d.EvidenceRegistrationHandler)
