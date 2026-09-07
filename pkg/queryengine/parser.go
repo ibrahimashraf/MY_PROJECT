@@ -23,7 +23,6 @@ import (
 // coexist with the query engine.
 func ParseQuery(params url.Values) (Query, error) {
 	var q Query
-	seenOps := make(map[string]bool)
 
 	for key, values := range params {
 		for _, raw := range values {
@@ -72,10 +71,6 @@ func ParseQuery(params url.Values) (Query, error) {
 					continue
 				}
 				fieldKey := key
-				if seenOps[fieldKey] {
-					return Query{}, fmt.Errorf("duplicate filter for field %q", fieldKey)
-				}
-				seenOps[fieldKey] = true
 				q.Filters = append(q.Filters, Filter{
 					Field: fieldKey,
 					Op:    op,

@@ -22,9 +22,9 @@ func TestParseQueryFilters(t *testing.T) {
 	if len(q.Filters) != 3 {
 		t.Fatalf("want 3 filters, got %d: %+v", len(q.Filters), q.Filters)
 	}
-	checkFilter(t, q.Filters[0], "name", Eq, "alice")
-	checkFilter(t, q.Filters[1], "age", Gte, "21")
-	checkFilter(t, q.Filters[2], "score", Lte, "99")
+	checkFilterSet(t, q.Filters, Filter{Field: "name", Op: Eq, Value: "alice"})
+	checkFilterSet(t, q.Filters, Filter{Field: "age", Op: Gte, Value: "21"})
+	checkFilterSet(t, q.Filters, Filter{Field: "score", Op: Lte, Value: "99"})
 }
 
 func TestParseQuerySorts(t *testing.T) {
@@ -75,7 +75,6 @@ func TestParseQueryErrors(t *testing.T) {
 		{"bad offset", url.Values{"offset": {"abc"}}},
 		{"bad order", url.Values{"order": {"name"}}},
 		{"bad order suffix", url.Values{"order": {"name.median"}}},
-		{"duplicate filter", url.Values{"name": {"eq.a", "gte.b"}}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -104,6 +103,30 @@ func TestParseQueryOrderCSV(t *testing.T) {
 	if len(q.Sorts) != 2 {
 		t.Fatalf("want 2 sorts from CSV, got %d", len(q.Sorts))
 	}
+}
+
+func TestParseQuerySameFieldRange(t *testing.T) {
+	q, err := ParseQuery(url.Values{
+		"created_at": {"gte.2024-01-01", "lte.2024-12-31"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(q.Filters) != 2 {
+		t.Fatalf("want 2 filters, got %d: %+v", len(q.Filters), q.Filters)
+	}
+	checkFilterSet(t, q.Filters, Filter{Field: "created_at", Op: Gte, Value: "2024-01-01"})
+	checkFilterSet(t, q.Filters, Filter{Field: "created_at", Op: Lte, Value: "2024-12-31"})
+}
+
+func checkFilterSet(t *testing.T, got []Filter, want Filter) {
+	t.Helper()
+	for _, f := range got {
+		if f == want {
+			return
+		}
+	}
+	t.Errorf("filters %+v missing %+v", got, want)
 }
 
 func checkFilter(t *testing.T, got Filter, field string, op Op, value string) {
