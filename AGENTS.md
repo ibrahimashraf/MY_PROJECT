@@ -1,4 +1,4 @@
-﻿# 🤖 INTEGIN Pilot Source: Autonomous Agent Operating Standard & Immunity Harness
+# 🤖 INTEGIN Pilot Source: Autonomous Agent Operating Standard & Immunity Harness
 
 **Authority:** Single Source of Truth for all autonomous implementers (OpenCode, Claude Code, Codex, Gemini CLI) operating within `integin-pilot-source/`.  
 **Master Workspace Context:** `C:\MY_PROJECT` (Parent Workspace Reference: `../WORKSPACE.md`)
@@ -39,6 +39,19 @@ Autonomous coders—especially compact and free-tier models—must strictly adhe
 - **NO Concurrency Data Races (Hazard 26)**: ALWAYS synchronize shared map or slice access across goroutines with `sync.RWMutex` or `sync.Mutex`. Tests must pass `go test -race` cleanly.
 - **NO Transitive CGO Dependencies (Hazard 40)**: Pure Go only (`CGO_ENABLED=0`). Do not import packages that require external C libraries or native host headers, ensuring builds remain portable to rugged ARM64 tablets.
 - **NO Parameterized SQL String Concat (Hazard 21)**: Always use parameterized `$1, $2, ...` placeholders. Never use `fmt.Sprintf` or string concatenation to inject user-supplied values into SQL statements.
+
+---
+
+## 2b. 🦎 Reuse Ladder (Ponytail adaptation — mandatory for big-pickle, mimo, all relay implementers)
+
+Before writing code, stop at the first rung that holds (lazy about the solution, never about reading — trace the real flow first):
+
+1. Does this need to exist? → no: skip it (YAGNI).
+2. Already in this codebase? → reuse it, don't rewrite.
+3. Stdlib does it? → use it.
+4. Smallest diff that passes the gates? → write only that.
+
+Trust-boundary validation, error handling, security, RLS guards, and tests are never on the chopping block. Delete-list over add-list: prefer removing lines to adding them.
 
 ---
 
@@ -84,3 +97,5 @@ When stopping after an implementation run, always end with a closing summary in 
 3. Verification Outcomes: Raw test pass/fail counts and go vet results.
 4. Deviations or Open Questions: Any edge cases left open or requiring human decision.
 ```
+
+
