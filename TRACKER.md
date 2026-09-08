@@ -118,6 +118,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app/lib/workpackages/`)**:
     *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.
+    *   🚀 **D3.2 progress (2026-09-08, big-pickle `85591ca`, server policy only)**: `AttestationClaim` (SECURE_ENCLAVE/STRONGBOX/SOFTWARE/NONE, opaque blob, biometric flag) + `VerifyClaim` policy (permissive default, opt-in RequireHardware/RequireBiometricBinding, unknown origins fail closed) wired into `ProcessDeviceEnrollment`; posture recorded on `DeviceTrustRecord`. Gates: vet CLEAN, full `go test` PASS, race PASS on `pkg/onboarding`. Open: real App Attest / Play Integrity verification + signed offline outbox binding (needs hardware + Dart SDK work, not CI-provable).
 *   [ ] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`internal/domain/auditlog/`, `searchpg`) — paths TBD, package does not yet exist**:
     *   Sub-microsecond (<800ns write latency) 64-byte zero-allocation immutable event stream.
     *   Double-timeline recording: Transaction Time (when recorded) vs. Valid Time (when inspection occurred).
