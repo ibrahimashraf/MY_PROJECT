@@ -48,6 +48,10 @@ type SubmitPartialCommand struct {
 	WorkOrderID   string
 	AssignmentID  string
 	InspectionIDs []string
+	// EquipmentIDs is optional. When non-empty and a CalibrationGate is wired in,
+	// every listed equipment must carry an unexpired ACTIVE calibration row or the
+	// submission is hard-blocked. Empty preserves historical behavior exactly.
+	EquipmentIDs []string
 }
 
 type ReassignScopeCommand struct {

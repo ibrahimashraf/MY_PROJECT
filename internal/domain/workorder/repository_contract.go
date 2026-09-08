@@ -1,6 +1,9 @@
 package workorder
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Conflict describes a server-authoritative rejection that must not be silently merged.
 type Conflict struct {
@@ -55,11 +58,21 @@ type Authorizer interface {
 	CanAddEvidenceReference(ctx context.Context, actor ActorContext, order WorkOrder, evidence EvidenceReference) error
 }
 
+// CalibrationGate blocks submission when the equipment used has no unexpired
+// ACTIVE calibration row. It is OPTIONAL: a nil gate disables the check so the
+// service degrades to today's behavior. It is satisfied by duck typing at the
+// composition site; the workorder package must never import the calibration
+// platform package.
+type CalibrationGate interface {
+	SubmissionBlocked(ctx context.Context, tenantID, orgID, equipmentID string, at time.Time) (bool, error)
+}
+
 // ServiceDependencies are injected into the application service, keeping transport and storage separate.
 type ServiceDependencies struct {
-	Repository   Repository
-	Transactions TransactionRunner
-	Authorizer   Authorizer
+	Repository      Repository
+	Transactions    TransactionRunner
+	Authorizer      Authorizer
+	CalibrationGate CalibrationGate
 }
 
 func (d ServiceDependencies) Validate() error {

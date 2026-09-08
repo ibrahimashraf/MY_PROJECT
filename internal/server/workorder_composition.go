@@ -8,6 +8,7 @@ import (
 	"integin/internal/domain/workorder"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/internal/platform/calibration"
 	"integin/internal/workorderauth"
 	"integin/internal/workorderhttp"
 	"integin/internal/workorderpg"
@@ -21,7 +22,11 @@ func NewWorkOrderPartialSubmissionHandler(database *sql.DB, validator *oidcauth.
 	if err != nil {
 		return nil, err
 	}
-	service, err := workorder.NewService(workorder.ServiceDependencies{Repository: repository, Transactions: repository, Authorizer: workorderauth.New()})
+	calibrationStore, err := calibration.NewStore(database)
+	if err != nil {
+		return nil, err
+	}
+	service, err := workorder.NewService(workorder.ServiceDependencies{Repository: repository, Transactions: repository, Authorizer: workorderauth.New(), CalibrationGate: calibrationStore})
 	if err != nil {
 		return nil, err
 	}

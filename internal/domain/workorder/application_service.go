@@ -1,6 +1,9 @@
 package workorder
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type applicationService struct {
 	deps ServiceDependencies
@@ -96,6 +99,18 @@ func (s applicationService) SubmitPartial(ctx context.Context, command SubmitPar
 	}
 	if err := s.deps.Authorizer.CanSubmitPartial(ctx, command.Actor, order, assignment); err != nil {
 		return MutationReceipt{}, err
+	}
+	if len(command.EquipmentIDs) > 0 && s.deps.CalibrationGate != nil {
+		at := time.Now().UTC()
+		for _, equipmentID := range command.EquipmentIDs {
+			blocked, err := s.deps.CalibrationGate.SubmissionBlocked(ctx, order.TenantID, order.OrganizationID, equipmentID, at)
+			if err != nil {
+				return MutationReceipt{}, err
+			}
+			if blocked {
+				return MutationReceipt{}, ErrCalibrationExpired
+			}
+		}
 	}
 	return s.execute(ctx, command.Actor, command.Operation, func(txCtx context.Context, repo Repository) (MutationReceipt, error) {
 		return repo.SubmitPartial(txCtx, command)

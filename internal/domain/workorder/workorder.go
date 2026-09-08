@@ -77,6 +77,7 @@ var (
 	ErrInvalidOperation    = errors.New("operation idempotency metadata is incomplete")
 	ErrProvisionalConflict = errors.New("provisional record candidate fingerprint conflict")
 	ErrInvalidEvidence     = errors.New("work-order evidence reference is invalid")
+	ErrCalibrationExpired  = errors.New("work-order equipment has no unexpired active calibration")
 )
 
 type WorkOrder struct {
