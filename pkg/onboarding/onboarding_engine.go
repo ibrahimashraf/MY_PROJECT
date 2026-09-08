@@ -79,17 +79,28 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 		return nil, errors.New("cryptographic verification failed: device signature does not match nonce")
 	}
 
+	// Attestation claim: when present (non-zero KeyOrigin), validate it and
+	// enforce the default permissive policy. Strict policies are opt-in via
+	// VerifyClaim for callers that require hardware/biometric guarantees.
+	if sub.Attestation.KeyOrigin != "" {
+		if err := VerifyClaim(sub.Attestation, AttestationPolicy{}); err != nil {
+			return nil, fmt.Errorf("attestation claim rejected: %w", err)
+		}
+	}
+
 	// Register trusted device
 	deviceID := fmt.Sprintf("dev_%s", hex.EncodeToString(devPubBytes[:6]))
 	record := DeviceTrustRecord{
-		DeviceID:        deviceID,
-		TenantID:        chal.TenantID,
-		InspectorID:     sub.InspectorID,
-		DevicePublicKey: sub.DevicePublicKey,
-		DeviceModel:     sub.DeviceModel,
-		IsActive:        true,
-		EnrolledAt:      time.Now(),
-		LastSyncedAt:    time.Now(),
+		DeviceID:                  deviceID,
+		TenantID:                  chal.TenantID,
+		InspectorID:               sub.InspectorID,
+		DevicePublicKey:           sub.DevicePublicKey,
+		DeviceModel:               sub.DeviceModel,
+		IsActive:                  true,
+		EnrolledAt:                time.Now(),
+		LastSyncedAt:              time.Now(),
+		AttestationOrigin:         string(sub.Attestation.KeyOrigin),
+		AttestationBiometricBound: sub.Attestation.BiometricBound,
 	}
 
 	s.deviceStore[deviceID] = record

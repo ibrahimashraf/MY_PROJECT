@@ -135,26 +135,51 @@ type DeviceEnrollmentChallenge struct {
 
 // DeviceEnrollmentSubmission is the cryptographic response sent by the field tablet.
 type DeviceEnrollmentSubmission struct {
-	ChallengeID       string `json:"challenge_id"`
-	InspectorID       string `json:"inspector_id"`
-	DevicePublicKey   string `json:"device_public_key"`
-	DeviceFingerprint string `json:"device_fingerprint"`
-	DeviceModel       string `json:"device_model"`
-	SignedNonce       string `json:"signed_nonce"`
+	ChallengeID       string           `json:"challenge_id"`
+	InspectorID       string           `json:"inspector_id"`
+	DevicePublicKey   string           `json:"device_public_key"`
+	DeviceFingerprint string           `json:"device_fingerprint"`
+	DeviceModel       string           `json:"device_model"`
+	SignedNonce       string           `json:"signed_nonce"`
+	Attestation       AttestationClaim `json:"attestation,omitempty"`
+}
+
+// KeyOrigin identifies where the device's signing key material is protected.
+type KeyOrigin string
+
+const (
+	KeyOriginSecureEnclave KeyOrigin = "SECURE_ENCLAVE" // Apple Secure Enclave
+	KeyOriginStrongBox     KeyOrigin = "STRONGBOX"      // Android StrongBox / TEE
+	KeyOriginSoftware      KeyOrigin = "SOFTWARE"       // portable Ed25519 keypair
+	KeyOriginNone          KeyOrigin = "NONE"           // honest "no attestation evidence"
+)
+
+// AttestationClaim is hardware-attestation evidence supplied by the field
+// tablet during enrollment. The server treats AttestationBlob as opaque and
+// never parses platform internals; validation only checks presence, origin,
+// and biometric binding. Zero value = unattested legacy device.
+type AttestationClaim struct {
+	KeyOrigin       KeyOrigin `json:"key_origin"`
+	BiometricBound  bool      `json:"biometric_bound"`
+	OSVersion       string    `json:"os_version,omitempty"`
+	AttestationBlob string    `json:"attestation_blob,omitempty"`
+	KeyAlias        string    `json:"key_alias,omitempty"`
 }
 
 // DeviceTrustRecord represents an active, authenticated field terminal.
 type DeviceTrustRecord struct {
-	DeviceID         string     `json:"device_id"`
-	TenantID         string     `json:"tenant_id"`
-	InspectorID      string     `json:"inspector_id"`
-	DevicePublicKey  string     `json:"device_public_key"`
-	DeviceModel      string     `json:"device_model"`
-	IsActive         bool       `json:"is_active"`
-	EnrolledAt       time.Time  `json:"enrolled_at"`
-	LastSyncedAt     time.Time  `json:"last_synced_at"`
-	RevokedAt        *time.Time `json:"revoked_at,omitempty"`
-	RevocationReason string     `json:"revocation_reason,omitempty"`
+	DeviceID                  string     `json:"device_id"`
+	TenantID                  string     `json:"tenant_id"`
+	InspectorID               string     `json:"inspector_id"`
+	DevicePublicKey           string     `json:"device_public_key"`
+	DeviceModel               string     `json:"device_model"`
+	IsActive                  bool       `json:"is_active"`
+	EnrolledAt                time.Time  `json:"enrolled_at"`
+	LastSyncedAt              time.Time  `json:"last_synced_at"`
+	RevokedAt                 *time.Time `json:"revoked_at,omitempty"`
+	RevocationReason          string     `json:"revocation_reason,omitempty"`
+	AttestationOrigin         string     `json:"attestation_origin,omitempty"`
+	AttestationBiometricBound bool       `json:"attestation_biometric_bound,omitempty"`
 }
 
 // WorkPackageManifest is the server-signed bundle dispatched to the offline tablet.
