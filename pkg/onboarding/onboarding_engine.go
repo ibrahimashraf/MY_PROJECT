@@ -176,3 +176,30 @@ func (s *EnrollmentSimulator) VerifyOfflineReceipt(receipt SignedInspectionRecei
 
 	return true, nil
 }
+
+// VerifyOfflineReceiptWithPolicy verifies a receipt exactly like
+// VerifyOfflineReceipt and then enforces the device attestation posture
+// recorded at enrollment against policy. The zero policy is permissive and
+// behaves identically to VerifyOfflineReceipt. On policy failure it returns
+// (false, one of the attestation sentinel errors).
+func (s *EnrollmentSimulator) VerifyOfflineReceiptWithPolicy(receipt SignedInspectionReceipt, policy AttestationPolicy) (bool, error) {
+	valid, err := s.VerifyOfflineReceipt(receipt)
+	if err != nil || !valid {
+		return false, err
+	}
+	if policy == (AttestationPolicy{}) {
+		return true, nil
+	}
+	manifest, exists := s.manifests[receipt.ManifestID]
+	if !exists {
+		return false, errors.New("unknown manifest ID")
+	}
+	dev, exists := s.deviceStore[manifest.AssignedDeviceID]
+	if !exists || !dev.IsActive {
+		return false, errors.New("device revoked or not active")
+	}
+	if err := checkPosture(dev.AttestationOrigin, dev.AttestationBiometricBound, policy); err != nil {
+		return false, err
+	}
+	return true, nil
+}

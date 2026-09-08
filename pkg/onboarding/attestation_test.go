@@ -3,14 +3,17 @@ package onboarding
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 )
 
 // enroll signs a fresh challenge with a fresh key and submits the claim.
-func enroll(t *testing.T, sim *EnrollmentSimulator, claim AttestationClaim) (*DeviceTrustRecord, error) {
+// The private key is returned so callers can sign offline receipts.
+func enroll(t *testing.T, sim *EnrollmentSimulator, claim AttestationClaim) (*DeviceTrustRecord, ed25519.PrivateKey, error) {
 	t.Helper()
 	chal, err := sim.CreateEnrollmentChallenge("ten_test", "insp_test")
 	if err != nil {
@@ -28,7 +31,11 @@ func enroll(t *testing.T, sim *EnrollmentSimulator, claim AttestationClaim) (*De
 		SignedNonce:     hex.EncodeToString(ed25519.Sign(priv, []byte(chal.Nonce))),
 		Attestation:     claim,
 	}
-	return sim.ProcessDeviceEnrollment(sub)
+	record, err := sim.ProcessDeviceEnrollment(sub)
+	if err != nil {
+		return nil, nil, err
+	}
+	return record, priv, nil
 }
 
 func TestAttestationValidate(t *testing.T) {
@@ -105,7 +112,7 @@ func TestEnrollmentAcceptsSoftwareAndNoneClaims(t *testing.T) {
 		if err != nil {
 			t.Fatalf("sim init: %v", err)
 		}
-		record, err := enroll(t, sim, AttestationClaim{KeyOrigin: origin})
+		record, _, err := enroll(t, sim, AttestationClaim{KeyOrigin: origin})
 		if err != nil {
 			t.Fatalf("enrollment with %s rejected under permissive policy: %v", origin, err)
 		}
@@ -122,7 +129,7 @@ func TestEnrollmentAcceptsHardwareClaimAndRecordsPosture(t *testing.T) {
 		t.Fatalf("sim init: %v", err)
 	}
 	claim := AttestationClaim{KeyOrigin: KeyOriginSecureEnclave, BiometricBound: true, OSVersion: "iOS 17.2", AttestationBlob: "0102abcd", KeyAlias: "k1"}
-	record, err := enroll(t, sim, claim)
+	record, _, err := enroll(t, sim, claim)
 	if err != nil {
 		t.Fatalf("hardware claim enrollment failed: %v", err)
 	}
@@ -150,7 +157,7 @@ func TestEnrollmentRejectsInvalidAttestation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("sim init: %v", err)
 		}
-		_, err = enroll(t, sim, tc.claim)
+		_, _, err = enroll(t, sim, tc.claim)
 		if err == nil {
 			t.Fatalf("%s: enrollment accepted invalid claim", tc.name)
 		}
@@ -166,11 +173,166 @@ func TestEnrollmentWithoutAttestationKeepsLegacyBehavior(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sim init: %v", err)
 	}
-	record, err := enroll(t, sim, AttestationClaim{})
+	record, _, err := enroll(t, sim, AttestationClaim{})
 	if err != nil {
 		t.Fatalf("unattested enrollment failed: %v", err)
 	}
 	if record.AttestationOrigin != "" || record.AttestationBiometricBound {
 		t.Fatalf("unattested record has non-zero posture: origin=%q bound=%v", record.AttestationOrigin, record.AttestationBiometricBound)
+	}
+}
+
+// signedOfflineReceipt issues a manifest for the enrolled device and seals a
+// receipt signed by the device's private key.
+func signedOfflineReceipt(t *testing.T, sim *EnrollmentSimulator, record *DeviceTrustRecord, priv ed25519.PrivateKey) SignedInspectionReceipt {
+	t.Helper()
+	manifest, err := sim.IssueWorkPackageManifest("ten_test", "wo_test", record.DeviceID, "insp_test", `{"ok":true}`)
+	if err != nil {
+		t.Fatalf("issue manifest: %v", err)
+	}
+	digest := sha256.Sum256([]byte("payload"))
+	payloadDigest := hex.EncodeToString(digest[:])
+	receiptID := "rcpt_test"
+	signPayload := fmt.Sprintf("%s|%s|%s|%s|%s", receiptID, manifest.ManifestID, "asset_test", "PASSED", payloadDigest)
+	return SignedInspectionReceipt{
+		ReceiptID:       receiptID,
+		ManifestID:      manifest.ManifestID,
+		AssetID:         "asset_test",
+		OverallResult:   "PASSED",
+		PayloadDigest:   payloadDigest,
+		DeviceSignature: hex.EncodeToString(ed25519.Sign(priv, []byte(signPayload))),
+	}
+}
+
+// (a)(d) Zero policy equals VerifyOfflineReceipt: accepts a receipt from an
+// unattested device and still rejects a tampered signature.
+func TestVerifyOfflineReceiptPermissivePolicy(t *testing.T) {
+	sim, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	record, priv, err := enroll(t, sim, AttestationClaim{})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt := signedOfflineReceipt(t, sim, record, priv)
+
+	valid, err := sim.VerifyOfflineReceiptWithPolicy(receipt, AttestationPolicy{})
+	if err != nil || !valid {
+		t.Fatalf("permissive policy vetoed valid unattested receipt: %v", err)
+	}
+
+	tampered := receipt
+	tampered.OverallResult = "FAILED_CRITICAL"
+	valid, err = sim.VerifyOfflineReceiptWithPolicy(tampered, AttestationPolicy{})
+	if valid || err == nil {
+		t.Fatalf("tampered receipt accepted under permissive policy (err=%v)", err)
+	}
+}
+
+// (b) RequireHardware accepts STRONGBOX-enrolled receipts and rejects
+// SOFTWARE and legacy unattested devices.
+func TestVerifyOfflineReceiptRequireHardware(t *testing.T) {
+	policy := AttestationPolicy{RequireHardware: true}
+
+	strongBox, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	strongRec, strongPriv, err := enroll(t, strongBox, AttestationClaim{KeyOrigin: KeyOriginStrongBox, OSVersion: "Android 14", AttestationBlob: "deadbeef"})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt := signedOfflineReceipt(t, strongBox, strongRec, strongPriv)
+	valid, err := strongBox.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if err != nil || !valid {
+		t.Fatalf("RequireHardware rejected StrongBox receipt: %v", err)
+	}
+
+	software, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	softRec, softPriv, err := enroll(t, software, AttestationClaim{KeyOrigin: KeyOriginSoftware})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt = signedOfflineReceipt(t, software, softRec, softPriv)
+	valid, err = software.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if valid || !errors.Is(err, ErrSoftwareOriginRejected) {
+		t.Fatalf("RequireHardware accepted SOFTWARE receipt (err=%v)", err)
+	}
+
+	unattested, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	legacyRec, legacyPriv, err := enroll(t, unattested, AttestationClaim{})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt = signedOfflineReceipt(t, unattested, legacyRec, legacyPriv)
+	valid, err = unattested.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if valid || !errors.Is(err, ErrSoftwareOriginRejected) {
+		t.Fatalf("RequireHardware accepted unattested receipt (err=%v)", err)
+	}
+
+	// Unknown origin (not one of the 4 + "") fails closed under a strict policy.
+	strongRec.AttestationOrigin = "TPM"
+	strongBox.deviceStore[strongRec.DeviceID] = *strongRec
+	receipt = signedOfflineReceipt(t, strongBox, strongRec, strongPriv)
+	valid, err = strongBox.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if valid || !errors.Is(err, ErrUnknownKeyOrigin) {
+		t.Fatalf("RequireHardware accepted unknown origin (err=%v)", err)
+	}
+}
+
+// (c) RequireBiometricBinding rejects a bound-originless hardware device and
+// accepts one with biometric binding recorded.
+func TestVerifyOfflineReceiptRequireBiometricBinding(t *testing.T) {
+	policy := AttestationPolicy{RequireBiometricBinding: true}
+
+	unbound, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	record, priv, err := enroll(t, unbound, AttestationClaim{KeyOrigin: KeyOriginSecureEnclave, OSVersion: "iOS 17", AttestationBlob: "abcd"})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt := signedOfflineReceipt(t, unbound, record, priv)
+	valid, err := unbound.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if valid || !errors.Is(err, ErrBiometricBindingMissing) {
+		t.Fatalf("RequireBiometricBinding accepted unbound receipt (err=%v)", err)
+	}
+
+	bound, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	record, priv, err = enroll(t, bound, AttestationClaim{KeyOrigin: KeyOriginSecureEnclave, BiometricBound: true, OSVersion: "iOS 17", AttestationBlob: "abcd"})
+	if err != nil {
+		t.Fatalf("enroll: %v", err)
+	}
+	receipt = signedOfflineReceipt(t, bound, record, priv)
+	valid, err = bound.VerifyOfflineReceiptWithPolicy(receipt, policy)
+	if err != nil || !valid {
+		t.Fatalf("RequireBiometricBinding rejected bound receipt: %v", err)
+	}
+}
+
+// (e) Unknown manifest still errors, regardless of policy.
+func TestVerifyOfflineReceiptUnknownManifestWithPolicy(t *testing.T) {
+	sim, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	receipt := SignedInspectionReceipt{ManifestID: "man_unknown", DeviceSignature: "00"}
+	valid, err := sim.VerifyOfflineReceiptWithPolicy(receipt, AttestationPolicy{RequireHardware: true})
+	if valid || err == nil {
+		t.Fatalf("unknown manifest accepted (err=%v)", err)
+	}
+	if !strings.Contains(err.Error(), "unknown manifest ID") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

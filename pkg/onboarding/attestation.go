@@ -62,10 +62,30 @@ func VerifyClaim(claim AttestationClaim, policy AttestationPolicy) error {
 	if err := claim.Validate(); err != nil {
 		return err
 	}
-	if policy.RequireHardware && !claim.KeyOrigin.Hardware() {
+	return checkPosture(string(claim.KeyOrigin), claim.BiometricBound, policy)
+}
+
+// checkPosture enforces a policy against a recorded device posture. The
+// origin is a free-form string because legacy unattested records carry "",
+// which is treated as NONE. Unknown origins fail closed under any
+// non-permissive policy; the zero policy always passes. The structural
+// claim checks (blob/OS presence) live in AttestationClaim.Validate and are
+// not repeated here, so this helper is also safe for enrollment-derived
+// records whose evidence was already validated.
+func checkPosture(origin string, biometricBound bool, policy AttestationPolicy) error {
+	keyOrigin := KeyOrigin(origin)
+	if origin == "" {
+		keyOrigin = KeyOriginNone
+	}
+	if policy.RequireHardware || policy.RequireBiometricBinding {
+		if !keyOrigin.Known() {
+			return ErrUnknownKeyOrigin
+		}
+	}
+	if policy.RequireHardware && !keyOrigin.Hardware() {
 		return ErrSoftwareOriginRejected
 	}
-	if policy.RequireBiometricBinding && !claim.BiometricBound {
+	if policy.RequireBiometricBinding && !biometricBound {
 		return ErrBiometricBindingMissing
 	}
 	return nil
