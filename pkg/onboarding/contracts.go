@@ -164,6 +164,11 @@ type AttestationClaim struct {
 	OSVersion       string    `json:"os_version,omitempty"`
 	AttestationBlob string    `json:"attestation_blob,omitempty"`
 	KeyAlias        string    `json:"key_alias,omitempty"`
+	// ChainPEM carries the Android key-attestation certificate chain,
+	// leaf-first PEM-encoded. It is only interpreted for STRONGBOX origins;
+	// other origins ignore it entirely. Verified against a caller-configurable
+	// root pool at enrollment; see VerifyAttestationChain.
+	ChainPEM []string `json:"chain_pem,omitempty"`
 }
 
 // DeviceTrustRecord represents an active, authenticated field terminal.
@@ -180,6 +185,11 @@ type DeviceTrustRecord struct {
 	RevocationReason          string     `json:"revocation_reason,omitempty"`
 	AttestationOrigin         string     `json:"attestation_origin,omitempty"`
 	AttestationBiometricBound bool       `json:"attestation_biometric_bound,omitempty"`
+	// AttestationVerified records that the STRONGBOX claim's certificate
+	// chain was verified offline against a configured Android attestation
+	// root at enrollment. It is audit evidence for receipt policy — the
+	// origin-based checkPosture remains the only enforcement axis.
+	AttestationVerified bool `json:"attestation_verified,omitempty"`
 }
 
 // WorkPackageManifest is the server-signed bundle dispatched to the offline tablet.

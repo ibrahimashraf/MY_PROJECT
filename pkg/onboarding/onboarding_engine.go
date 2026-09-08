@@ -82,9 +82,20 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 	// Attestation claim: when present (non-zero KeyOrigin), validate it and
 	// enforce the default permissive policy. Strict policies are opt-in via
 	// VerifyClaim for callers that require hardware/biometric guarantees.
+	// When the claim is an Android STRONGBOX origin AND the device submitted
+	// a certificate chain, the chain must verify offline against the
+	// operator-configured roots or enrollment fails closed (no record is
+	// stored). Non-Android origins ignore ChainPEM entirely.
+	var attestationVerified bool
 	if sub.Attestation.KeyOrigin != "" {
 		if err := VerifyClaim(sub.Attestation, AttestationPolicy{}); err != nil {
 			return nil, fmt.Errorf("attestation claim rejected: %w", err)
+		}
+		if sub.Attestation.KeyOrigin == KeyOriginStrongBox && len(sub.Attestation.ChainPEM) > 0 {
+			if _, err := verifyPEMChain(sub.Attestation.ChainPEM, chainVerifyRoots, []byte(chal.Nonce)); err != nil {
+				return nil, fmt.Errorf("attestation chain rejected: %w", err)
+			}
+			attestationVerified = true
 		}
 	}
 
@@ -101,6 +112,7 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 		LastSyncedAt:              time.Now(),
 		AttestationOrigin:         string(sub.Attestation.KeyOrigin),
 		AttestationBiometricBound: sub.Attestation.BiometricBound,
+		AttestationVerified:       attestationVerified,
 	}
 
 	s.deviceStore[deviceID] = record
