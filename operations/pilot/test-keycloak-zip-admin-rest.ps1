@@ -5,7 +5,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$runtimeEnvironmentPath = 'C:\MY PROJECT\private\integin-secrets\keycloak-pilot-zip-runtime.env'
+$runtimeEnvironmentPath = 'C:\MY_PROJECT\private\integin-secrets\keycloak-pilot-zip-runtime.env'
 $baseUrl = 'http://127.0.0.1:18180'
 
 function Read-EnvironmentFile {

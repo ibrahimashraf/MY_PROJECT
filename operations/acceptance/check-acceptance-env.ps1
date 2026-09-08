@@ -1,4 +1,4 @@
-$environmentPath = 'C:\MY PROJECT\private\integin-secrets\integin-server.env'
+$environmentPath = 'C:\MY_PROJECT\private\integin-secrets\integin-server.env'
 if (-not (Test-Path -LiteralPath $environmentPath)) { throw "Acceptance private environment is missing: $environmentPath" }
 
 $present = @{}

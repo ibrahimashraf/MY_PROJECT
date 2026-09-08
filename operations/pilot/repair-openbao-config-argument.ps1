@@ -1,4 +1,4 @@
-$setupPath = 'C:\MY PROJECT\operations\pilot\setup-openbao-pilot.ps1'
+$setupPath = 'C:\MY_PROJECT\operations\pilot\setup-openbao-pilot.ps1'
 $content = [System.IO.File]::ReadAllText($setupPath)
 $oldRunSuffix = '$image server | Out-Null'
 $newRunSuffix = '$image server -config=/bao/config | Out-Null'

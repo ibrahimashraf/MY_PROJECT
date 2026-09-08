@@ -2,9 +2,9 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 
 $containerName = 'integin-pilot-openbao'
-$recoveryPath = 'C:\MY PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
+$recoveryPath = 'C:\MY_PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
 $policyName = 'integin-pilot-read-rehearsal'
-$policyPath = 'C:\MY PROJECT\operations\pilot\openbao\integin-pilot-read-rehearsal.hcl'
+$policyPath = 'C:\MY_PROJECT\operations\pilot\openbao\integin-pilot-read-rehearsal.hcl'
 $secretMount = 'secret'
 $secretPath = 'integin-pilot/rehearsal'
 $disposableValue = 'pilot-disposable'

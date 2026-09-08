@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $containerName = 'integin-pilot-openbao'
-$recoveryPath = 'C:\MY PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
+$recoveryPath = 'C:\MY_PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
 $baoAddress = 'http://127.0.0.1:8200'
 
 if (-not (Test-Path -LiteralPath $recoveryPath)) { throw 'Private recovery material is unavailable.' }

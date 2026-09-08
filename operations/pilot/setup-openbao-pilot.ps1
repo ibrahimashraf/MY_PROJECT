@@ -4,10 +4,10 @@ $dataVolume = 'integin-pilot-openbao-data'
 $logsVolume = 'integin-pilot-openbao-logs'
 $hostPort = 18200
 $image = 'openbao/openbao:2.6.0'
-$pilotRoot = 'C:\MY PROJECT\operations\pilot\openbao'
+$pilotRoot = 'C:\MY_PROJECT\operations\pilot\openbao'
 $configDirectory = Join-Path $pilotRoot 'config'
 $configPath = Join-Path $configDirectory 'openbao.hcl'
-$recoveryPath = 'C:\MY PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
+$recoveryPath = 'C:\MY_PROJECT\private\integin-secrets\openbao-pilot-recovery.json'
 
 if (Get-Process -Name 'integin-server-provision','integin-server-pilot' -ErrorAction SilentlyContinue) {
   # A presence check only: existing INTEGIN processes are expected and are never stopped or reconfigured here.

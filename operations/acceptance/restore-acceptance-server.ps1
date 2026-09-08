@@ -1,5 +1,5 @@
-$runtimeRoot = 'C:\MY PROJECT\operations\acceptance'
-$environmentPath = 'C:\MY PROJECT\private\integin-secrets\integin-server.env'
+$runtimeRoot = 'C:\MY_PROJECT\operations\acceptance'
+$environmentPath = 'C:\MY_PROJECT\private\integin-secrets\integin-server.env'
 $binaryPath = Join-Path $runtimeRoot 'integin-server-provision.exe'
 $stdoutPath = Join-Path $runtimeRoot 'integin-server-provision.stdout.log'
 $stderrPath = Join-Path $runtimeRoot 'integin-server-provision.stderr.log'

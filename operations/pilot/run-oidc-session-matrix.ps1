@@ -12,11 +12,11 @@ param()
 
 $ErrorActionPreference = 'Stop'
 
-$sourceRoot = 'C:\MY PROJECT\integin-pilot-source'
-$operationsRoot = 'C:\MY PROJECT\operations\pilot'
-$secretsRoot = 'C:\MY PROJECT\private\integin-secrets'
+$sourceRoot = 'C:\MY_PROJECT\integin-pilot-source'
+$operationsRoot = 'C:\MY_PROJECT\operations\pilot'
+$secretsRoot = 'C:\MY_PROJECT\private\integin-secrets'
 $pilotEnvironmentPath = Join-Path $secretsRoot 'integin-pilot.env'
-$keycloakEnvironmentPath = Join-Path $secretsRoot 'keycloak-pilot-zip-runtime.env'
+$keycloakEnvironmentPath = Join-Path $secretsRoot 'keycloak-pilot-runtime.env'
 $runtimeRoot = Join-Path $operationsRoot 'runtime'
 $binaryPath = Join-Path $runtimeRoot 'integin-server-pilot-oidc-matrix.exe'
 $stdoutPath = Join-Path $runtimeRoot 'oidc-matrix.stdout.log'
@@ -123,7 +123,10 @@ function Stop-EnabledPilotProcess {
 }
 
 function Start-EnabledPilot {
-    param([Parameter(Mandatory = $true)][hashtable]$PilotValues)
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$PilotValues,
+        [bool]$SkipBuild = $false
+    )
 
     $listener = Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort $pilotPort -State Listen -ErrorAction SilentlyContinue
     if ($listener) {
@@ -135,14 +138,16 @@ function Start-EnabledPilot {
         Start-Sleep -Seconds 2
     }
 
-    Push-Location $sourceRoot
-    try {
-        & go build -o $binaryPath .\cmd\integin-server
-        if ($LASTEXITCODE -ne 0) {
-            throw 'OIDC matrix pilot build failed'
+    if (-not $SkipBuild) {
+        Push-Location $sourceRoot
+        try {
+            & go build -o $binaryPath .\cmd\integin-server
+            if ($LASTEXITCODE -ne 0) {
+                throw 'OIDC matrix pilot build failed'
+            }
+        } finally {
+            Pop-Location
         }
-    } finally {
-        Pop-Location
     }
 
     $processEnvironment = @{
@@ -287,7 +292,7 @@ function ConvertTo-SqlLiteral {
 
 function Invoke-PilotSql {
     param([Parameter(Mandatory = $true)][string]$Sql)
-    & docker exec integin-pilot-postgres psql -U integin_pilot_owner -d integin_pilot -v ON_ERROR_STOP=1 -c $Sql | Out-Null
+    & docker exec integin-dev-postgres psql -U postgres -d integin_dev -v ON_ERROR_STOP=1 -c $Sql | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw 'Pilot identity SQL operation failed'
     }
@@ -314,7 +319,8 @@ function Add-ProbeIdentityMembership {
     $subjectLiteral = ConvertTo-SqlLiteral $Subject
     $tenantLiteral = ConvertTo-SqlLiteral $probeTenant
     $organizationLiteral = ConvertTo-SqlLiteral $probeOrganization
-    $sql = "INSERT INTO public.identity_subject (issuer, subject, status) VALUES ($issuerLiteral, $subjectLiteral, 'ACTIVE'); INSERT INTO public.identity_membership (subject_id, tenant_id, organization_id, status) SELECT subject_id, $tenantLiteral, $organizationLiteral, 'ACTIVE' FROM public.identity_subject WHERE issuer=$issuerLiteral AND subject=$subjectLiteral;"
+    $actorLiteral = ConvertTo-SqlLiteral 'actor-oidc-session-matrix'
+    $sql = "INSERT INTO public.identity_subject (issuer, subject, status) VALUES ($issuerLiteral, $subjectLiteral, 'ACTIVE'); INSERT INTO public.identity_membership (subject_id, tenant_id, organization_id, actor_id, work_order_role, status) SELECT subject_id, $tenantLiteral, $organizationLiteral, $actorLiteral, 'inspector', 'ACTIVE' FROM public.identity_subject WHERE issuer=$issuerLiteral AND subject=$subjectLiteral;"
     Invoke-PilotSql -Sql $sql
     if ($WithCapability) {
         $sql = "INSERT INTO public.identity_membership_capability (membership_id, capability, status) SELECT m.membership_id, 'identity.session.read', 'ACTIVE' FROM public.identity_membership m JOIN public.identity_subject s ON s.subject_id=m.subject_id WHERE s.issuer=$issuerLiteral AND s.subject=$subjectLiteral;"
@@ -365,20 +371,24 @@ try {
     Assert-Status -Name 'oidc-missing-local-capability' -Actual (Get-HttpStatus -Uri "$pilotBaseUrl/identity/session" -Headers $bearerHeaders) -Expected 403
 
     Add-ProbeIdentityMembership -Subject $subject -WithCapability $true
+    Stop-EnabledPilotProcess
+    Start-EnabledPilot -PilotValues $pilotValues -SkipBuild $true
     Assert-Status -Name 'oidc-authorized-local-session' -Actual (Get-HttpStatus -Uri "$pilotBaseUrl/identity/session" -Headers $bearerHeaders) -Expected 200
 
-    & docker stop integin-pilot-postgres | Out-Null
+    Stop-EnabledPilotProcess
+    Start-EnabledPilot -PilotValues $pilotValues -SkipBuild $true
+    & docker stop integin-dev-postgres | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Pilot PostgreSQL stop failed during resolver-outage check' }
     $script:databaseStopped = $true
     Start-Sleep -Seconds 2
     Assert-Status -Name 'oidc-resolver-outage' -Actual (Get-HttpStatus -Uri "$pilotBaseUrl/identity/session" -Headers $bearerHeaders) -Expected 503
 
-    & docker start integin-pilot-postgres | Out-Null
+    & docker start integin-dev-postgres | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Pilot PostgreSQL restart failed after resolver-outage check' }
     $script:databaseStopped = $false
     $ready = $false
     for ($attempt = 0; $attempt -lt 12; $attempt++) {
-        & docker exec integin-pilot-postgres pg_isready -U integin_pilot_owner -d integin_pilot | Out-Null
+        & docker exec integin-dev-postgres pg_isready -U postgres -d integin_dev | Out-Null
         if ($LASTEXITCODE -eq 0) { $ready = $true; break }
         Start-Sleep -Seconds 2
     }
@@ -389,7 +399,12 @@ try {
     $finalFailure = $_
 } finally {
     if ($databaseStopped) {
-        & docker start integin-pilot-postgres | Out-Null
+        & docker start integin-dev-postgres | Out-Null
+        for ($attempt = 0; $attempt -lt 12; $attempt++) {
+            & docker exec integin-dev-postgres pg_isready -U postgres -d integin_dev | Out-Null
+            if ($LASTEXITCODE -eq 0) { break }
+            Start-Sleep -Seconds 2
+        }
     }
     if ($probeClientInternalId -and $adminHeaders) {
         try {

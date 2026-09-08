@@ -5,8 +5,8 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$runtimeEnvironmentPath = 'C:\MY PROJECT\private\integin-secrets\keycloak-pilot-zip-runtime.env'
-$runtimeDirectory = 'C:\MY PROJECT\operations\pilot\runtime\keycloak-zip'
+$runtimeEnvironmentPath = 'C:\MY_PROJECT\private\integin-secrets\keycloak-pilot-zip-runtime.env'
+$runtimeDirectory = 'C:\MY_PROJECT\operations\pilot\runtime\keycloak-zip'
 $releaseRecordPath = Join-Path $runtimeDirectory 'integin-pilot-realm-release.json'
 $baseUrl = 'http://127.0.0.1:18180'
 $managementBaseUrl = 'http://127.0.0.1:19090'

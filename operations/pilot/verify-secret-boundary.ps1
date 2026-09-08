@@ -1,5 +1,5 @@
 param(
-  [string]$WorkspaceRoot = 'C:\MY PROJECT'
+  [string]$WorkspaceRoot = 'C:\MY_PROJECT'
 )
 
 $ErrorActionPreference = 'Stop'

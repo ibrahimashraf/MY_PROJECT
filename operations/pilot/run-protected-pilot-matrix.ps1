@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # never prints protected values or fixture contents, does not modify acceptance, and
 # removes its temporary fixture in all exit paths.
 
-$root = 'C:\MY PROJECT'
+$root = 'C:\MY_PROJECT'
 $sourceRoot = Join-Path $root 'integin-pilot-source'
 $secretsPath = Join-Path $root 'private\integin-secrets\integin-pilot.env'
 $fixtureDirectory = Join-Path $root 'private\integin-secrets\pilot-live-fixtures'

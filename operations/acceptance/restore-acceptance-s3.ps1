@@ -1,5 +1,5 @@
-$serverEnvironmentPath = 'C:\MY PROJECT\private\integin-secrets\integin-server.env'
-$rustfsEnvironmentPath = 'C:\MY PROJECT\private\integin-secrets\rustfs.env'
+$serverEnvironmentPath = 'C:\MY_PROJECT\private\integin-secrets\integin-server.env'
+$rustfsEnvironmentPath = 'C:\MY_PROJECT\private\integin-secrets\rustfs.env'
 
 foreach ($path in @($serverEnvironmentPath, $rustfsEnvironmentPath)) {
   if (-not (Test-Path -LiteralPath $path)) { throw "Required private environment file is missing: $path" }

@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 # writes generic stage markers only, and deletes its fixture and transient logs
 # on success, failure, or a bounded subprocess timeout.
 
-$root = 'C:\MY PROJECT'
+$root = 'C:\MY_PROJECT'
 $sourceRoot = Join-Path $root 'integin-pilot-source'
 $secretsPath = Join-Path $root 'private\integin-secrets\integin-pilot.env'
 $fixtureDirectory = Join-Path $root 'private\integin-secrets\pilot-live-fixtures'
@@ -18,12 +18,22 @@ function Write-Stage([string]$stage, [string]$state) {
   [System.IO.File]::AppendAllText($statusPath, ("{0:o} {1} {2}`r`n" -f [DateTime]::UtcNow, $stage, $state), (New-Object System.Text.UTF8Encoding($false)))
 }
 
-function Invoke-BoundedProcess([string]$stage, [string]$filePath, [string]$arguments, [string]$workingDirectory, [int]$timeoutSeconds) {
+function Invoke-BoundedProcess([string]$stage, [string]$message, [string]$workingDirectory, [int]$timeoutSeconds) {
   $stdout = Join-Path $runtimeRoot ("protected-pilot-matrix-v2-{0}.stdout.log" -f $stage)
   $stderr = Join-Path $runtimeRoot ("protected-pilot-matrix-v2-{0}.stderr.log" -f $stage)
   Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
   Write-Stage $stage 'STARTED'
-  $process = Start-Process -FilePath $filePath -ArgumentList $arguments -WorkingDirectory $workingDirectory -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+  $innerCommand = "& {{ try {{ {0} 1>'{1}' 2>'{2}'; exit `$LASTEXITCODE }} catch {{ exit 1 }} }}" -f $message, $stdout, $stderr
+  $arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "' + $innerCommand + '"'
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = 'powershell.exe'
+  $psi.Arguments = $arguments
+  $psi.WorkingDirectory = $workingDirectory
+  $psi.UseShellExecute = $false
+  $psi.CreateNoWindow = $true
+  $process = New-Object System.Diagnostics.Process
+  $process.StartInfo = $psi
+  [void]$process.Start()
   $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
   while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
     Start-Sleep -Milliseconds 500
@@ -34,7 +44,7 @@ function Invoke-BoundedProcess([string]$stage, [string]$filePath, [string]$argum
     Write-Stage $stage 'TIMEOUT'
     throw "Controlled pilot stage timed out: $stage"
   }
-  $process.WaitForExit()
+  [void]$process.WaitForExit()
   if ($process.ExitCode -ne 0) {
     Write-Stage $stage 'FAILED'
     throw "Controlled pilot stage failed: $stage"
@@ -91,7 +101,7 @@ try {
   }
   Write-Stage 'PRECHECK' 'PASSED'
 
-  Invoke-BoundedProcess 'SEED' 'powershell.exe' '-NoProfile -NonInteractive -Command "& go run .\cmd\integin-live-matrix seed; exit $LASTEXITCODE"' $sourceRoot 90
+  Invoke-BoundedProcess 'SEED' '& go run .\cmd\integin-live-matrix seed' $sourceRoot 90
 
   $activePilot = Get-NetTCPConnection -LocalPort 18080 -State Listen -ErrorAction Stop | Select-Object -First 1
   if ($activePilot.OwningProcess -eq $acceptanceListener.OwningProcess) {
@@ -106,9 +116,9 @@ try {
   }
   Write-Stage 'PILOT_STOP' 'PASSED'
 
-  $launcherArgs = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + $pilotLauncher + '"'
-  Invoke-BoundedProcess 'PILOT_START' 'powershell.exe' $launcherArgs $root 90
-  Invoke-BoundedProcess 'EXERCISE' 'powershell.exe' '-NoProfile -NonInteractive -Command "& go run .\cmd\integin-live-matrix exercise; exit $LASTEXITCODE"' $sourceRoot 90
+  $launcherMessage = "& '$pilotLauncher'"
+  Invoke-BoundedProcess 'PILOT_START' $launcherMessage $root 120
+  Invoke-BoundedProcess 'EXERCISE' '& go run .\cmd\integin-live-matrix exercise' $sourceRoot 90
 
   Write-Stage 'MATRIX' 'PASSED'
   Write-Output 'PROTECTED_PILOT_MATRIX_V2_PASSED'

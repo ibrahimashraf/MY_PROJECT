@@ -5,7 +5,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$metadataPath = 'C:\MY PROJECT\operations\pilot\runtime\keycloak-zip\keycloak-zip-pilot-metadata.json'
+$metadataPath = 'C:\MY_PROJECT\operations\pilot\runtime\keycloak-zip\keycloak-zip-pilot-metadata.json'
 if (-not (Test-Path -LiteralPath $metadataPath)) { Write-Output 'KEYCLOAK_ZIP_PILOT_PROCESS_ALREADY_ABSENT'; exit 0 }
 $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
 if ($null -eq $metadata.process_id -or [int]$metadata.process_id -le 0) { throw 'Keycloak ZIP pilot metadata has no valid process identifier.' }

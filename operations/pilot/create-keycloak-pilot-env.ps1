@@ -4,10 +4,10 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$secretDirectory = 'C:\MY PROJECT\private\integin-secrets'
+$secretDirectory = 'C:\MY_PROJECT\private\integin-secrets'
 $postgresEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-postgres.env'
 $runtimeEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-runtime.env'
-$markerPath = 'C:\MY PROJECT\operations\pilot\runtime\keycloak-pilot-private-env.created.txt'
+$markerPath = 'C:\MY_PROJECT\operations\pilot\runtime\keycloak-pilot-private-env.created.txt'
 
 foreach ($path in @($postgresEnvironmentPath, $runtimeEnvironmentPath)) {
   if (Test-Path -LiteralPath $path) {

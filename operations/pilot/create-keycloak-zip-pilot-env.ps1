@@ -5,7 +5,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$secretDirectory = 'C:\MY PROJECT\private\integin-secrets'
+$secretDirectory = 'C:\MY_PROJECT\private\integin-secrets'
 $postgresEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-postgres.env'
 $zipRuntimeEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-zip-runtime.env'
 
