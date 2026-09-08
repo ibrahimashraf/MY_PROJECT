@@ -148,16 +148,16 @@ INTEGIN is an **Integrated Inspection & Assurance Platform** designed for worldw
 |---|---|---|---|
 | **L0** | **Root PKI & Licensing** | Asymmetric Ed25519 license keys, offline covenants, feature flags | `pkg/licensing`, `licensehttp`, `licensepg` ✅ |
 | **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` ✅ |
-| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `identity`, `tenant` ✅ |
+| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `internal/identity`, `internal/tenant` ✅ |
 | **L3** | **Discipline Package Scoping**| Inspector competency gating, training validation, courses | `traininghttp`, `trainingpg`, `equipment` ✅ |
 | **L4** | **Operational Hierarchy** | Work orders, assignments, hierarchical branch/area/zone registers | `workorderhttp`, `workorderpg`, `domain/workorder` ✅ |
 | **L5** | **Certificate Governance** | Deterministic PDF rendering, 4-eyes review, authority lifecycle | `certificatehttp`, `certificatepg`, `certificaterender` ✅ |
-| **L6** | **Competency Matrix** | Dynamic scheduling calendar, qualification tracking | `scheduling`, `identity` ✅ |
-| **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `evidenceapi`, `evidenceexport`, `evidencepg` ✅ |
-| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `packagemanifest`, `workpackageenforcement`, `pkg/onboarding` ✅ |
-| **L9** | **Decentralized Asset Passport**| W3C DIDs (`did:integin:...`), equipment quarantine lifecycles | `pkg/domain` ✅ |
-| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `auditloghttp`, `eventstore`, `searchpg` 🚀 *(Planned)* |
-| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification` 🚀 *(Planned)* |
+| **L6** | **Competency Matrix** | Dynamic scheduling calendar, qualification tracking | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` ✅ |
+| **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `internal/shared/calibration`, `internal/platform/calibration`, `internal/evidenceapi`, `migrations/0073_*` ✅ |
+| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `pkg/onboarding`, `field_app/lib/workpackages/` ✅ |
+| **L9** | **Decentralized Asset Passport**| W3C DIDs (`did:integin:...`), equipment quarantine lifecycles | `pkg/domain` (models.go, did.go) ✅ |
+| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `internal/domain/auditlog`, `internal/searchhttp`, `internal/searchpg` 🚀 *(Planned)* |
+| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification` *(does not exist — to create)* 🚀 *(Planned)* |
 
 ---
 
@@ -203,7 +203,7 @@ go run ./cmd/integin-live-matrix exercise
 
 When delegating implementation work via `opencode-delegate` / `relay.mjs` (Lever 8), orchestrator agents across all platforms (Claude, Antigravity, Codex, Qwen, DeepSeek, Kimi, Grok) must structure briefs with block-fenced XML and enforce the 5 mandatory boundaries:
 
-1. **Target Blast Radius**: Pinpoint 1–3 explicit files to touch (`internal/...`, `migrations/...`); strictly forbid touching `integin-source/`, `private/`, or the root directory.
+1. **Target Blast Radius & Active Symbol Recon**: Pinpoint 1–3 explicit files to touch (`internal/...`, `migrations/...`). NEVER copy stale file names or shorthand from backlog prose; the orchestrator MUST perform active symbol recon (`find_by_name`, `grep_search`, `go doc`) to verify concrete, existing file paths before authoring the `<touch>` tags. Strictly forbid touching `integin-source/`, `private/`, or the root directory.
 2. **Multi-Tenant RLS & SQL**: Every domain query must set tenant GUCs with `is_local = true` and use strictly `$1, $2` placeholders (no string concatenation).
 3. **Portability & Determinism**: Pure Go (`CGO_ENABLED=0`), zero runtime LLM math (Google CEL ASTs only).
 4. **Git Sandbox Boundary**: Worker strictly never runs `git commit`, `add`, or `push`. Modifications remain uncommitted in the working tree for orchestrator review.

@@ -47,12 +47,12 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | **L3** | **Dynamic Discipline & Inspection Package Scoping Engine** | **COMPLETE ✅** | `traininghttp`, `trainingpg`, `equipment` | `0018_timesheets_courses`, `0032_full_dpp_regulatory_monitor` |
 | **L4** | **Global Enterprise Hierarchy & Operational Work Orders** | **COMPLETE ✅** | `workorderhttp`, `workorderpg`, `workorderauth`, `domain/workorder`, `riverqueue` | `0005_work_order_foundation`, `0009_work_order_persistence`, `0010_work_order_rls`, `0012_work_order_handover`, `0019_hierarchical_register`, `0029_parts_charges_timesheet_auto`, `0050`–`0060` (River queue scale), `0063_fix_unindexed_foreign_keys`, `0064_river_hot_updates`, `0065_river_canonical_v047`, `0069_state_machine_and_sequence_bounds` |
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
-| **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **UPCOMING 📅** | `scheduling`, `identity`, `pkg/onboarding/contracts.go` | `0021_scheduling_calendar` |
-| **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **UPCOMING 📅** | `evidenceapi`, `evidenceexport`, `evidencehttp`, `evidencepg`, `evidenceregistration`, `pkg/onboarding` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence` |
-| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **UPCOMING 📅** | `manifestreceiptbridge`, `manifestreceipts`, `packagemanifest`, `packagemanifestapi`, `workpackageenforcement`, `workpackagepg` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
-| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **UPCOMING 📅** | `pkg/domain`, `domain/equipment`, `domain/asset` | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
-| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **UPCOMING 📅** | `pkg/ledger`, `auditcheckpoint`, `auditloghttp`, `auditlogpg`, `eventbus`, `eventstore`, `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
-| **L11** | **Edge Zero-Knowledge QR Trust Gateway & Dynamic Multi-Regulator Sync** | **PLANNED 🌐** | `pkg/verification`, `tools/public-verifier`, `certificatepublichttp`, `shortlinkhttp`, `shortlinkpg`, `shortlinksvc`, `analyticshttp`, `analyticspg`, `reportshandler`, `reportspg` | `0014_certificate_public_bindings`, `0027_client_portal_domains_acls`, `0028_integrations_xero_m365_api`, `0030_hse_notification_csv_export`, `0039_short_links` ... `0047_short_link_hmac`, `0049_analytics_dashboard`, `0070_add_certificate_performance_indexes` |
+| **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **UPCOMING 📅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
+| **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **ACTIVE 🚀** | `internal/evidenceapi`, `internal/evidenceexport`, `internal/evidencehttp`, `internal/evidencepg`, `internal/evidenceregistration`, `internal/platform/calibration`, `internal/domain/evidence`, `internal/domain/evidencepack`, `migrations/0073_*` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence`, `0073_tool_calibration_registry` |
+| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **UPCOMING 📅** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
+| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **UPCOMING 📅** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
+| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **UPCOMING 📅** | `internal/domain/auditlog` (hashchain, repository, types), `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
+| **L11** | **Edge Zero-Knowledge QR Trust Gateway & Dynamic Multi-Regulator Sync** | **PLANNED 🌐** | `internal/certificatepublichttp`, `internal/shortlinkhttp`, `internal/shortlinkpg`, `internal/shortlinksvc`, `internal/analyticshttp`, `internal/analyticspg`, `internal/reportshandler`, `internal/reportspg` | `0014_certificate_public_bindings`, `0027_client_portal_domains_acls`, `0028_integrations_xero_m365_api`, `0030_hse_notification_csv_export`, `0039_short_links` ... `0047_short_link_hmac`, `0049_analytics_dashboard`, `0070_add_certificate_performance_indexes` |
 
 ---
 
@@ -107,57 +107,57 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 ## 4. 📅 Upcoming Sprints Backlog (Sprint 3 & Sprint 4)
 
 ### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger
-*   [ ] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)**:
+*   [ ] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`internal/shared/calibration/`, `internal/platform/calibration/`, `migrations/0073_*`)**:
     *   Automatic calibration expiry gating: hard-block work order submission if inspection tool calibration has expired.
     *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances.
-    *   🚀 **D3.1 progress (2026-09-08, COMMITTED `92cef08` in `integin-pilot-source`)**: persistent registry landed — `migrations/0073_tool_calibration_registry.sql` (+ `.down.sql`, contract-test registration) creates `tool_calibration_registry` (PK `tenant/org/id`, `next_due_date > calibration_date`, equipment/status indexes, FORCE RLS NULLIF policy, GRANT to `integin_runtime`); `internal/platform/calibration/postgres.go` adds `Store.Upsert` + `SubmissionBlocked` (expired-or-missing blocks, `pgtx.BeginScope`, `$n` only, hermetic fake-driver tests, no new deps). Gates: `gofmt` CLEAN, `go vet` CLEAN, full `go test -count=1 ./...` PASS (0 failures). Open: serial/lab/tolerance columns default `''` (Record has no such fields — fenced off); `SubmissionBlocked` vs `Service.SubmissionAllowed` stale-expired-row edge noted in relay report; live-DB migration apply + `integin-live-matrix` re-verify next on live stack.
-*   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)**:
+    *   🚀 **D3.1 progress (2026-09-08, COMMITTED `92cef08` + serial/identity wiring)**: persistent registry landed — `migrations/0073_tool_calibration_registry.sql` (+ `.down.sql`, contract-test registration) creates `tool_calibration_registry` (PK `tenant/org/id`, `next_due_date > calibration_date`, equipment/status indexes, FORCE RLS NULLIF policy, GRANT to `integin_runtime`); `internal/platform/calibration/postgres.go` adds `Store.Upsert` + `SubmissionBlocked` (expired-or-missing blocks, `pgtx.BeginScope`, `$n` only, hermetic fake-driver tests, no new deps). **Tool identity wiring**: `serial_number`, `lab_certificate_ref`, `uncertainty_tolerance` now flow end-to-end via `sharedcalibration.Record` → `Upsert` (12-param SQL) — tamper-proof storage claim verified. Gates: `gofmt` CLEAN, `go vet` CLEAN, full `go test -count=1 ./...` PASS (0 failures). Open: `SubmissionBlocked` vs `Service.SubmissionAllowed` stale-expired-row edge noted in relay report; live-DB migration apply + `integin-live-matrix` re-verify next on live stack.
+*   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app/lib/workpackages/`)**:
     *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.
-*   [ ] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`pkg/ledger/append_only_log.go`, `ledger_test.go`, `auditlogpg`)**:
+*   [ ] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`internal/domain/auditlog/`, `searchpg`) — paths TBD, package does not yet exist**:
     *   Sub-microsecond (<800ns write latency) 64-byte zero-allocation immutable event stream.
     *   Double-timeline recording: Transaction Time (when recorded) vs. Valid Time (when inspection occurred).
-*   [ ] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `did:integin`)**:
+*   [ ] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `pkg/domain/did.go`, `did:integin`)**:
     *   Decentralized Identifier resolution (`did:integin:asset:<uuid>`).
     *   Autonomous safety quarantine: failed proof-load instantly locks asset state across all operational branches.
-*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)**:
+*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`) — does not exist, create new under `tools/`**:
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
-*   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/tus_handler.go`)**:
+*   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`) — `tus_handler.go` does not exist, create new**:
     *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
-*   [ ] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/versioning.go`)**:
+*   [ ] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/`) — `versioning.go` does not exist, create new**:
     *   `schema_epoch` handshake protocol allowing tablets offline for 30+ days to safely reconcile without data loss.
-*   [ ] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority (`pkg/ledger/timestamp.go`)**:
+*   [ ] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority — package does not exist, location TBD**:
     *   Embed RFC 3161 Timestamp Tokens (TST) in PDF/A-3b certificates to eliminate tablet backdating challenges.
-*   [ ] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`)**:
+*   [ ] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`) — does not exist, create new**:
     *   HarfBuzz / ICU Unicode BiDi text shaping for certified bilingual Saudi (SASO/ZATCA) and UAE (ADNOC) certificates.
-*   [ ] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/`)**:
+*   [ ] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/`) — does not exist, create new**:
     *   Intrinsically safe tablet qualification with fallback enclave PIN and NFC smartcard tokens for greasy-glove field environments.
-*   [ ] **3.11: Silent Duress PIN & Coercion Quarantine Protocol (`field_app/lib/auth/duress.dart`)**:
+*   [ ] **3.11: Silent Duress PIN & Coercion Quarantine Protocol (`field_app/lib/auth/duress.dart`) — does not exist, create new**:
     *   Covert `STATE_COERCION_QUARANTINE` flagging protecting inspectors from physical coercion on isolated rigs.
-*   [ ] **3.12: Forensic AI Inference Sealing (`internal/advisory/sealer.go`)**:
+*   [ ] **3.12: Forensic AI Inference Sealing (`internal/advisory/`) — `sealer.go` does not exist, create new**:
     *   Cryptographically hash model weights, prompts, and inference tensors into the Merkle ledger for judicial reproducibility.
-*   [ ] **3.13: 2D Parametric Dynamic Blocks Lifting Simulator (`tools/lifting-simulator/2d/`, `field_app/`)**:
+*   [ ] **3.13: 2D Parametric Dynamic Blocks Lifting Simulator (`tools/lifting-simulator/2d/`) — does not exist, create new**:
     *   Interactive HTML5 Canvas & Flutter vector engine rendering plan/elevation views with reactive kinematic handles for major crane models (Liebherr, Tadano, Kato, Manitowoc).
 
 ### Sprint 4: Cloud-Native K8s Mesh & Universal QR Trust
-*   [ ] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`)**:
+*   [ ] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`) — neither exists, create new**:
     *   Zero-backend-cost client-side public certificate verification via `#sig=...` URL fragment.
     *   Client-side Ed25519 signature validation and W3C DID document verification directly in browser WebCrypto API (`verify.integin.com`).
-*   [ ] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`config/k8s/helm/integin-platform/`, `terraform/`)**:
+*   [ ] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`config/k8s/helm/integin-platform/`, `terraform/`) — do not exist, create new**:
     *   High-availability pod auto-scaling (10,000 req/sec) with zero-downtime rolling upgrades.
-*   [ ] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`)**:
+*   [ ] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`) — does not exist, create new**:
     *   Single-node offline container stack (`docker-compose.appliance.yml`) modeled after Coolify's Traefik dynamic labels.
-*   [ ] **4.4: Dual-NVMe Air-Gapped Disaster Recovery (`deploy/edge-appliance/backup/`)**:
+*   [ ] **4.4: Dual-NVMe Air-Gapped Disaster Recovery (`deploy/edge-appliance/backup/`) — does not exist, create new**:
     *   Automated local `pgBackRest` WAL streaming to hot-swappable external rugged SSDs with $<60\text{s}$ rebuild script.
-*   [ ] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`)**:
+*   [ ] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`) — package does not exist, create new**:
     *   Public append-only Merkle transparency log preserving historical certificate validity across root CA rotations.
-*   [ ] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`)**:
+*   [ ] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`) — does not exist, create new**:
     *   Physical data plane pinning to sovereign regional cells (`cell-sa-central-01`, `cell-eu-west-01`) satisfying SDAIA and GDPR.
-*   [ ] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0073_partitioning_and_cqrs.sql`)**:
+*   [ ] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0074_partitioning_and_cqrs.sql`) — 0073 already used by tool_calibration_registry**:
     *   Automated `pg_partman` weekly partitioning on append-heavy tables + PgCat read-replica routing eliminating XID wraparound.
-*   [ ] **4.8: Dynamic Telemetric Sensor Jitter Verification (`pkg/rulesengine/jitter.go`)**:
+*   [ ] **4.8: Dynamic Telemetric Sensor Jitter Verification (`pkg/rulesengine/jitter.go`) — does not exist, create new**:
     *   Harmonic micro-ripple frequency analysis and tool-to-enclave BLE pairing preventing counterfeit load cell spoofing.
-*   [ ] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)**:
+*   [ ] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`) — does not exist, create new**:
     *   Volumetric Three.js obstacle clearance, soil stress heatmaps, and time-stepped ($t_0 \rightarrow t_{\text{final}}$) dual-crane load-share simulation with 1-click execution binding.
 
 ---
