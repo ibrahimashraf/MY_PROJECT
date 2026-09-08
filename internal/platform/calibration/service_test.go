@@ -28,6 +28,22 @@ func TestCalibrationExpiryBlocksSubmissionAndTriggersHook(t *testing.T) {
 	}
 }
 
+func TestCalibrationStaleExpiredRowDoesNotBlockWhenUnexpiredExists(t *testing.T) {
+	service := New(nil)
+	now := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	expired := sharedcalibration.Record{ID: "cal-expired", TenantID: "tenant-1", EquipmentID: "meter-1", StandardReference: "ISO-1", CalibrationDate: now.Add(-2 * time.Hour), NextDueDate: now.Add(-time.Hour), TechnicianID: "tech-1", Result: "PASS", Status: types.CalibrationActive}
+	unexpired := sharedcalibration.Record{ID: "cal-current", TenantID: "tenant-1", EquipmentID: "meter-1", StandardReference: "ISO-1", CalibrationDate: now.Add(-time.Hour), NextDueDate: now.Add(time.Hour), TechnicianID: "tech-1", Result: "PASS", Status: types.CalibrationActive}
+	if err := service.Create(expired); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.Create(unexpired); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.SubmissionAllowed("tenant-1", "meter-1", now); err != nil {
+		t.Fatalf("unexpired calibration should allow submission even when stale expired row exists: %v", err)
+	}
+}
+
 func TestCalibrationSupersession(t *testing.T) {
 	service := New(nil)
 	record := sharedcalibration.Record{ID: "cal-1", TenantID: "tenant-1", EquipmentID: "meter-1", StandardReference: "ISO-1", CalibrationDate: time.Now(), NextDueDate: time.Now().Add(time.Hour), TechnicianID: "tech-1", Result: "PASS", Status: types.CalibrationActive}

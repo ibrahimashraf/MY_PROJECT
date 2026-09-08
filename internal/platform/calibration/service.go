@@ -81,12 +81,7 @@ func (s *Service) SubmissionAllowed(tenantID, equipmentID string, at time.Time) 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, record := range s.records {
-		if record.TenantID == tenantID && record.EquipmentID == equipmentID && record.Status == types.CalibrationActive && !at.UTC().Before(record.NextDueDate) {
-			return errors.New("calibration is expired")
-		}
-	}
-	for _, record := range s.records {
-		if record.TenantID == tenantID && record.EquipmentID == equipmentID && record.Status == types.CalibrationActive {
+		if record.TenantID == tenantID && record.EquipmentID == equipmentID && record.Status == types.CalibrationActive && at.UTC().Before(record.NextDueDate) {
 			return nil
 		}
 	}
