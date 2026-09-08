@@ -42,7 +42,7 @@ globs: ["*"]
 ---
 
 ### Domain IV: Context Hygiene, RAG & Token Economics
-16. **Naive Vector RAG Traps**: Never use token-chunked vector search for code. Use deterministic symbol navigation (`grep_search`, `go doc`).
+16. **Naive Vector RAG & Stale Backlog Inheritance**: Never use token-chunked vector search for code. Use deterministic symbol navigation (`grep_search`, `go doc`). Never copy file paths or package names blindly from backlog tickets or tracker prose into dispatch briefs or prompts without active filesystem/symbol verification.
 17. **The Two-File Root Invariant**: Maintain strictly 2 files in root (`WORKSPACE.md` and `TRACKER.md`). Zero file sprawl.
 18. **Context Saturation & Amnesia**: Work in micro-sprints: one deliverable per turn, committed immediately to Git to prevent lost-in-the-middle token decay.
 19. **Upstream Model Drift**: Never rely on hosted LLMs for core logic. All verification and math must run locally in compiled Go.
