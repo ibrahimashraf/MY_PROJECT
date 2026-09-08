@@ -169,6 +169,12 @@ type AttestationClaim struct {
 	// other origins ignore it entirely. Verified against a caller-configurable
 	// root pool at enrollment; see VerifyAttestationChain.
 	ChainPEM []string `json:"chain_pem,omitempty"`
+	// AppleAttestCBOR carries the raw Apple App Attest attestation object
+	// (CBOR) when the client supplies one. It is only interpreted for
+	// SECURE_ENCLAVE origins; other origins ignore it entirely. Verified
+	// offline against caller-injected App Attest roots at enrollment; see
+	// VerifyAppleAttestation.
+	AppleAttestCBOR []byte `json:"apple_attest_cbor,omitempty"`
 }
 
 // DeviceTrustRecord represents an active, authenticated field terminal.
@@ -185,10 +191,10 @@ type DeviceTrustRecord struct {
 	RevocationReason          string     `json:"revocation_reason,omitempty"`
 	AttestationOrigin         string     `json:"attestation_origin,omitempty"`
 	AttestationBiometricBound bool       `json:"attestation_biometric_bound,omitempty"`
-	// AttestationVerified records that the STRONGBOX claim's certificate
-	// chain was verified offline against a configured Android attestation
-	// root at enrollment. It is audit evidence for receipt policy — the
-	// origin-based checkPosture remains the only enforcement axis.
+	// AttestationVerified records that the STRONGBOX or SECURE_ENCLAVE
+	// claim's attestation was verified offline against a configured root at
+	// enrollment. It is audit evidence for receipt policy — the origin-based
+	// checkPosture remains the only enforcement axis.
 	AttestationVerified bool `json:"attestation_verified,omitempty"`
 }
 

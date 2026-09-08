@@ -85,7 +85,11 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 	// When the claim is an Android STRONGBOX origin AND the device submitted
 	// a certificate chain, the chain must verify offline against the
 	// operator-configured roots or enrollment fails closed (no record is
-	// stored). Non-Android origins ignore ChainPEM entirely.
+	// stored). The same applies to the Apple App Attest path: a SECURE_ENCLAVE
+	// origin that supplies an attestation object is verified offline against
+	// the configured App Attest roots and expected appID, or enrollment fails
+	// closed. Non-Android/non-Apple origins ignore ChainPEM/AppleAttestCBOR
+	// entirely.
 	var attestationVerified bool
 	if sub.Attestation.KeyOrigin != "" {
 		if err := VerifyClaim(sub.Attestation, AttestationPolicy{}); err != nil {
@@ -94,6 +98,12 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 		if sub.Attestation.KeyOrigin == KeyOriginStrongBox && len(sub.Attestation.ChainPEM) > 0 {
 			if _, err := verifyPEMChain(sub.Attestation.ChainPEM, chainVerifyRoots, []byte(chal.Nonce)); err != nil {
 				return nil, fmt.Errorf("attestation chain rejected: %w", err)
+			}
+			attestationVerified = true
+		}
+		if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && len(sub.Attestation.AppleAttestCBOR) > 0 && enrollmentExpectedAppID != "" {
+			if _, err := VerifyAppleAttestation(sub.Attestation.AppleAttestCBOR, appleAttestRoots, []byte(chal.Nonce), enrollmentExpectedAppID); err != nil {
+				return nil, fmt.Errorf("apple attestation rejected: %w", err)
 			}
 			attestationVerified = true
 		}
