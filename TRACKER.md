@@ -327,3 +327,10 @@ With Sprint 2 (D2.1–D2.5) 100% complete and D3.1 committed (`92cef08`), active
 * Debugging is self-serve: logcat (`adb logcat -d -s flutter:E`), curl-from-phone, phone screenshots via `screencap`+pull, server request log at `operations/pilot/runtime/server.stderr.log`.
 * Gotcha: stale demo-session outbox entries fail forever (403 unregistered authority) and latch `blocked`; fix is `pm clear` for a clean provisioned slate.
 
+### IAM review follow-up — Zitadel read-only spike (2026-09-09, v4.17.3, PASS)
+
+* Free to self-host confirmed in practice: Apache 2.0 image `ghcr.io/zitadel/zitadel:latest` (**234MB** vs Keycloak's 766MB), runs against any Postgres, no license/account.
+* Spike (fully removed after): throwaway pg16 + `init`/`setup` (needs 32-byte `ZITADEL_MASTERKEY`, `--tlsMode disabled` for localhost) → `/.well-known/openid-configuration` live: standard authorize/token/userinfo/jwks, `client_credentials` + `device_code` grants, `private_key_jwt`, EdDSA/ES256/RS256. Covers everything the live-matrix + app flows need.
+* Idle footprint: **~90MB RAM** (Keycloak typically 5–10× that).
+* Verdict: viable Keycloak replacement when F3 triggers (appliance freeze or resource incident). No migration authorized; image kept locally for re-eval, all spike containers/network/DB removed.
+
