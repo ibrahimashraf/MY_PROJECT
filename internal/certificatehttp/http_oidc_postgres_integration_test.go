@@ -484,9 +484,24 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		t.Fatalf("issue result missing data: %+v", issueResult)
 	}
 
-	// Verify the certificate was actually persisted
+	// Verify the certificate was actually persisted. RLS-scoped read: PgCat
+	// transaction pooling drops session GUCs between statements, so bind one
+	// connection inside an explicit transaction.
+	persistConn, persistConnErr := db.Conn(ctx)
+	if persistConnErr != nil {
+		t.Fatal(persistConnErr)
+	}
+	defer persistConn.Close()
+	persistTx, persistTxErr := persistConn.BeginTx(ctx, nil)
+	if persistTxErr != nil {
+		t.Fatal(persistTxErr)
+	}
+	defer persistTx.Rollback()
+	if _, persistTxErr = persistTx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", tenant, organization); persistTxErr != nil {
+		t.Fatal(persistTxErr)
+	}
 	var certStatus, certNumber, publicToken string
-	err = db.QueryRowContext(ctx, `SELECT status, certificate_number, public_token_digest FROM certificate_record WHERE id=$1 AND tenant_id=$2 AND organization_id=$3`, certificateID, tenant, organization).Scan(&certStatus, &certNumber, &publicToken)
+	err = persistTx.QueryRowContext(ctx, `SELECT status, certificate_number, public_token_digest FROM certificate_record WHERE id=$1 AND tenant_id=$2 AND organization_id=$3`, certificateID, tenant, organization).Scan(&certStatus, &certNumber, &publicToken)
 	if err != nil {
 		t.Fatal(err)
 	}

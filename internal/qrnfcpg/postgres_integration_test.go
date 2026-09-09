@@ -61,28 +61,41 @@ func TestQRNFC4PillarsIntegration(t *testing.T) {
 
 	// Seed required relational parents for foreign key constraints:
 	// work_order -> work_order_scope_item -> asset_entitlement
+	// RLS-scoped seeds: PgCat transaction pooling drops session GUCs between
+	// statements, so all seeds share one explicit transaction.
+	seedTx, seedTxErr := db.BeginTx(ctx, nil)
+	if seedTxErr != nil {
+		t.Fatalf("begin seed transaction: %v", seedTxErr)
+	}
+	defer seedTx.Rollback()
+	if _, seedTxErr = seedTx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", tenantA, orgID); seedTxErr != nil {
+		t.Fatalf("scope seed transaction: %v", seedTxErr)
+	}
 	jobNumber := fmt.Sprintf("JOB-%d", stamp)
 	clientID := "client-1"
 	locationID := "loc-platform-bravo"
-	if _, err = db.ExecContext(ctx, `
+	if _, err = seedTx.ExecContext(ctx, `
 		INSERT INTO work_order (id, tenant_id, organization_id, client_id, job_number, request_state, execution_state, commercial_state, certificate_state, revision, created_by, created_at, updated_by, updated_at)
 		VALUES ($1, $2, $3, $4, $5, 'draft', 'ready', 'not_ready_for_invoice', 'not_started', 1, $6, now(), $6, now())`,
 		workOrderID, tenantA, orgID, clientID, jobNumber, actorID); err != nil {
 		t.Fatalf("seed work_order: %v", err)
 	}
 
-	if _, err = db.ExecContext(ctx, `
+	if _, err = seedTx.ExecContext(ctx, `
 		INSERT INTO work_order_scope_item (id, tenant_id, organization_id, work_order_id, client_id, location_id, asset_id, asset_type, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, 'VALVE_CRITICAL', now())`,
 		scopeItemID, tenantA, orgID, workOrderID, clientID, locationID, assetID); err != nil {
 		t.Fatalf("seed work_order_scope_item: %v", err)
 	}
 
-	if _, err = db.ExecContext(ctx, `
+	if _, err = seedTx.ExecContext(ctx, `
 		INSERT INTO asset_entitlement (id, tenant_id, organization_id, work_order_id, scope_item_id, asset_id, asset_type, entitlement_type, status, entitled_at, created_by, created_at, updated_by, updated_at, revision)
 		VALUES ($1, $2, $3, $4, $5, $6, 'VALVE_CRITICAL', 'INSPECTION', 'ACTIVE', now(), $7, now(), $7, now(), 1)`,
 		entitlementID, tenantA, orgID, workOrderID, scopeItemID, assetID, actorID); err != nil {
 		t.Fatalf("seed asset_entitlement: %v", err)
+	}
+	if err = seedTx.Commit(); err != nil {
+		t.Fatalf("commit seed transaction: %v", err)
 	}
 
 	t.Cleanup(func() {

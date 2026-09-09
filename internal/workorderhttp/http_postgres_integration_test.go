@@ -522,8 +522,23 @@ func postEvidenceReference(t *testing.T, baseURL, token, workOrderID string, bod
 
 func assertEvidenceReferencePersistence(t *testing.T, ctx context.Context, database *sql.DB, workOrderID, evidenceID, contentHash, referenceURL, createdBy string) {
 	t.Helper()
+	// RLS-scoped read: PgCat transaction pooling drops session GUCs between
+	// statements, so bind one connection inside an explicit transaction.
+	evidenceConn, evidenceConnErr := database.Conn(ctx)
+	if evidenceConnErr != nil {
+		t.Fatal(evidenceConnErr)
+	}
+	defer evidenceConn.Close()
+	evidenceTx, evidenceTxErr := evidenceConn.BeginTx(ctx, nil)
+	if evidenceTxErr != nil {
+		t.Fatal(evidenceTxErr)
+	}
+	defer evidenceTx.Rollback()
+	if _, evidenceTxErr = evidenceTx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", "pilot-tenant-http", "pilot-organization-http"); evidenceTxErr != nil {
+		t.Fatal(evidenceTxErr)
+	}
 	var storedEvidenceID, storedContentHash, storedReferenceURL, storedCreatedBy string
-	if err := database.QueryRowContext(ctx, "SELECT id, content_hash, reference_url, created_by FROM work_order_evidence WHERE tenant_id=$1 AND organization_id=$2 AND work_order_id=$3 AND id=$4", "pilot-tenant-http", "pilot-organization-http", workOrderID, evidenceID).Scan(&storedEvidenceID, &storedContentHash, &storedReferenceURL, &storedCreatedBy); err != nil {
+	if err := evidenceTx.QueryRowContext(ctx, "SELECT id, content_hash, reference_url, created_by FROM work_order_evidence WHERE tenant_id=$1 AND organization_id=$2 AND work_order_id=$3 AND id=$4", "pilot-tenant-http", "pilot-organization-http", workOrderID, evidenceID).Scan(&storedEvidenceID, &storedContentHash, &storedReferenceURL, &storedCreatedBy); err != nil {
 		t.Fatal(err)
 	}
 	if storedEvidenceID != evidenceID || storedContentHash != contentHash || storedReferenceURL != referenceURL || storedCreatedBy != createdBy {
