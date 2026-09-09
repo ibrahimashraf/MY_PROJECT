@@ -34,10 +34,19 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
     applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 "@
-$initLedgerSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U postgres -d $Database | Out-Null
+$dockerPreviousPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'Continue'
+    $initLedgerSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U postgres -d $Database 2>&1 | Out-Null
+} finally { $ErrorActionPreference = $dockerPreviousPreference }
 
 # 3. Retrieve already applied migration names
-$appliedRaw = docker exec -i integin-dev-postgres psql -U postgres -d $Database -t -A -c "SELECT name FROM schema_migrations ORDER BY name;"
+$appliedRaw = $null
+$dockerPreviousPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'Continue'
+    $appliedRaw = docker exec -i integin-dev-postgres psql -U postgres -d $Database -t -A -c "SELECT name FROM schema_migrations ORDER BY name;"
+} finally { $ErrorActionPreference = $dockerPreviousPreference }
 $appliedMigrations = @{}
 if ($appliedRaw) {
     foreach ($v in ($appliedRaw -split "`r?`n")) {
@@ -90,7 +99,11 @@ foreach ($p in $pending) {
     $recordSql = "`nINSERT INTO schema_migrations (name, checksum) VALUES ('$name', '$sha256');"
     $combinedSql = $content + $recordSql
 
-    $combinedSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -v client_min_messages=warning -U postgres -d $Database
+    $dockerPreviousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $combinedSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U postgres -d $Database 2>&1 | Out-Null
+    } finally { $ErrorActionPreference = $dockerPreviousPreference }
     if ($LASTEXITCODE -ne 0) {
         Write-Host " [FAILED]" -ForegroundColor Red
         Write-Error "Migration failed at $name"
