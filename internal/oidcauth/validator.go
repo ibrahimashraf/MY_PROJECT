@@ -162,13 +162,15 @@ func (v *Validator) validateWithCurrentKeys(rawToken string) (Principal, error) 
 
 	parsedClaims := &claims{}
 	token, err := jwt.ParseWithClaims(rawToken, parsedClaims, func(token *jwt.Token) (any, error) {
+		// # ponytail: RS256 ceiling
+		// INTEGIN deliberately restricts OIDC token signature verification to RS256 only.
+		// Alternate algorithms (ES256, EdDSA, HS256) are rejected to preserve uniform FIPS/audit posture.
 		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 			return nil, errors.New("OIDC token algorithm is not permitted")
 		}
 		typ, _ := token.Header["typ"].(string)
-		// Keycloak access tokens use the established "JWT" type while RFC 9068
-		// deployments use "at+jwt". Signature, issuer, audience, and authorized
-		// party validation below remain mandatory in either case.
+		// Access tokens commonly use "JWT", "at+jwt" (RFC 9068), or "Bearer".
+		// Signature, issuer, audience, and authorized party validation below remain mandatory.
 		if typ != "Bearer" && typ != "at+jwt" && typ != "JWT" {
 			return nil, errors.New("OIDC token type is not permitted")
 		}

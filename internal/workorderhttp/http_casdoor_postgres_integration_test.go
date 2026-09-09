@@ -25,14 +25,15 @@ import (
 	"integin/internal/workorderpg"
 )
 
-func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
+func TestCasdoorPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	dsn := strings.TrimSpace(os.Getenv("INTEGIN_TEST_DATABASE_URL"))
-	issuer := strings.TrimSpace(os.Getenv("INTEGIN_KEYCLOAK_TEST_ISSUER"))
-	clientID := strings.TrimSpace(os.Getenv("INTEGIN_KEYCLOAK_TEST_CLIENT_ID"))
-	username := strings.TrimSpace(os.Getenv("INTEGIN_KEYCLOAK_TEST_USERNAME"))
-	password := os.Getenv("INTEGIN_KEYCLOAK_TEST_PASSWORD")
-	if dsn == "" || issuer == "" || clientID == "" || username == "" || password == "" {
-		t.Skip("set INTEGIN_TEST_DATABASE_URL and all INTEGIN_KEYCLOAK_TEST_* values to run the disposable Keycloak integration test")
+	issuer := strings.TrimSpace(os.Getenv("INTEGIN_CASDOOR_TEST_ISSUER"))
+	clientID := strings.TrimSpace(os.Getenv("INTEGIN_CASDOOR_TEST_CLIENT_ID"))
+	clientSecret := strings.TrimSpace(os.Getenv("INTEGIN_CASDOOR_TEST_CLIENT_SECRET"))
+	username := strings.TrimSpace(os.Getenv("INTEGIN_CASDOOR_TEST_USERNAME"))
+	password := os.Getenv("INTEGIN_CASDOOR_TEST_PASSWORD")
+	if dsn == "" || issuer == "" || clientID == "" || clientSecret == "" || username == "" || password == "" {
+		t.Skip("set INTEGIN_TEST_DATABASE_URL and all INTEGIN_CASDOOR_TEST_* values to run the disposable Casdoor integration test")
 	}
 	ctx := context.Background()
 	database, err := sql.Open("pgx", dsn)
@@ -46,9 +47,10 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	}
 	fixtureDatabase := openHTTPFixtureDatabase(t, ctx)
 
-	token := keycloakPasswordGrant(t, ctx, issuer, clientID, username, password)
+	token := casdoorPasswordGrant(t, ctx, issuer, clientID, clientSecret, username, password)
 	validator, err := oidcauth.NewValidator(ctx, oidcauth.Config{
-		Enabled: true, Issuer: issuer, Audience: clientID, AuthorizedParty: clientID, ClockSkew: 5 * time.Second,
+		Enabled: true, Issuer: issuer, Audience: clientID, AuthorizedParty: "",
+		ClockSkew:   5 * time.Second,
 		MaxTokenAge: time.Hour, JWKSRefresh: time.Minute, AllowInsecureLoopbackIssuer: true,
 	}, nil)
 	if err != nil {
@@ -59,11 +61,11 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	if principal.Issuer != issuer || principal.Subject == "" {
-		t.Fatalf("unexpected Keycloak principal: %+v", principal)
+		t.Fatalf("unexpected Casdoor principal: %+v", principal)
 	}
 
-	id := fmt.Sprintf("it-keycloak-%d", time.Now().UnixNano())
-	tenantID, organizationID, actorID := "pilot-tenant-keycloak", "pilot-organization-keycloak", "inspector-"+id
+	id := fmt.Sprintf("it-casdoor-%d", time.Now().UnixNano())
+	tenantID, organizationID, actorID := "pilot-tenant-casdoor", "pilot-organization-casdoor", "inspector-"+id
 	workOrderID, scopeID, assignmentID := id+"-order", id+"-scope", id+"-assignment"
 	inspectionIDs := []string{id + "-inspection-1", id + "-inspection-2"}
 	insertRuntimeMembership(t, ctx, fixtureDatabase, issuer, principal.Subject, tenantID, organizationID, actorID)
@@ -96,11 +98,11 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		tampered = token[:len(token)-1] + "y"
 	}
 	if rejected := postPartialSubmission(t, runtime.URL, tampered, body); rejected.Code != http.StatusUnauthorized {
-		t.Fatalf("tampered Keycloak token status = %d body=%s, want %d", rejected.Code, rejected.Body.String(), http.StatusUnauthorized)
+		t.Fatalf("tampered Casdoor token status = %d body=%s, want %d", rejected.Code, rejected.Body.String(), http.StatusUnauthorized)
 	}
 	accepted := postPartialSubmission(t, runtime.URL, token, body)
 	if accepted.Code != http.StatusOK {
-		t.Fatalf("Keycloak submission status = %d body=%s", accepted.Code, accepted.Body.String())
+		t.Fatalf("Casdoor submission status = %d body=%s", accepted.Code, accepted.Body.String())
 	}
 	assertHTTPSubmissionPersistence(t, ctx, database, tenantID, organizationID, workOrderID, inspectionIDs)
 
@@ -109,12 +111,13 @@ func TestKeycloakPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, tenantID, organizationID, workOrderID, issuer, principal.Subject, actorID, issuer+"-unused", principal.Subject+"-unused", "unused-actor")
 }
 
-func keycloakPasswordGrant(t *testing.T, ctx context.Context, issuer, clientID, username, password string) string {
+func casdoorPasswordGrant(t *testing.T, ctx context.Context, issuer, clientID, clientSecret, username, password string) string {
 	t.Helper()
 	values := url.Values{
-		"grant_type": {"password"}, "client_id": {clientID}, "username": {username}, "password": {password},
+		"grant_type": {"password"}, "client_id": {clientID}, "client_secret": {clientSecret},
+		"username": {username}, "password": {password},
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(issuer, "/")+"/protocol/openid-connect/token", strings.NewReader(values.Encode()))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(issuer, "/")+"/api/login/oauth/access_token", strings.NewReader(values.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +133,7 @@ func keycloakPasswordGrant(t *testing.T, ctx context.Context, issuer, clientID, 
 			ErrorDescription string `json:"error_description"`
 		}
 		_ = json.NewDecoder(io.LimitReader(response.Body, 4096)).Decode(&rejected)
-		t.Fatalf("Keycloak token status = %d error=%q description=%q", response.StatusCode, rejected.Error, rejected.ErrorDescription)
+		t.Fatalf("Casdoor token status = %d error=%q description=%q", response.StatusCode, rejected.Error, rejected.ErrorDescription)
 	}
 	var payload struct {
 		AccessToken string `json:"access_token"`
@@ -139,7 +142,7 @@ func keycloakPasswordGrant(t *testing.T, ctx context.Context, issuer, clientID, 
 		t.Fatal(err)
 	}
 	if payload.AccessToken == "" {
-		t.Fatal("Keycloak token response omitted access_token")
+		t.Fatal("Casdoor token response omitted access_token")
 	}
 	return payload.AccessToken
 }

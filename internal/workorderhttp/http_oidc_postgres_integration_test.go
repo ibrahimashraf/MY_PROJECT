@@ -135,11 +135,11 @@ func TestSignedOIDCPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	if receipt.WorkOrderID != workOrderID || receipt.TenantID != tenantID || receipt.Revision != 2 {
 		t.Fatalf("unexpected signed OIDC receipt: %+v", receipt)
 	}
-	assertHTTPSubmissionPersistence(t, ctx, fixtureDatabase, workOrderID, inspectionIDs)
+	assertHTTPSubmissionPersistence(t, ctx, fixtureDatabase, tenantID, organizationID, workOrderID, inspectionIDs)
 
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuerServer.URL, subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuerServer.URL, subject, actorID, issuerServer.URL+"-unused", subject+"-unused", "unused-actor")
+	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, tenantID, organizationID, workOrderID, issuerServer.URL, subject, actorID, issuerServer.URL+"-unused", subject+"-unused", "unused-actor")
 }
 
 func controlledOIDCToken(t *testing.T, privateKey *rsa.PrivateKey, keyID, issuer, subject string) string {

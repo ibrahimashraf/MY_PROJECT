@@ -127,7 +127,7 @@ func TestAuthenticatedPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 		t.Fatalf("idempotent replay receipt changed: first=%+v replay=%+v", firstReceipt, replayReceipt)
 	}
 
-	assertHTTPSubmissionPersistence(t, ctx, fixtureDatabase, workOrderID, inspectionIDs)
+	assertHTTPSubmissionPersistence(t, ctx, fixtureDatabase, tenantID, organizationID, workOrderID, inspectionIDs)
 
 	crossOrganization := postPartialSubmission(t, runtime.URL, "other-token", body)
 	if crossOrganization.Code != http.StatusForbidden {
@@ -140,7 +140,7 @@ func TestAuthenticatedPartialSubmissionHTTPPostgresIntegration(t *testing.T) {
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, otherActorID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
+	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, tenantID, organizationID, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
 }
 
 func openHTTPFixtureDatabase(t *testing.T, ctx context.Context) *sql.DB {
@@ -310,20 +310,35 @@ func postPartialSubmission(t *testing.T, baseURL, token string, body map[string]
 	return recorder
 }
 
-func assertHTTPSubmissionPersistence(t *testing.T, ctx context.Context, database *sql.DB, workOrderID string, inspectionIDs []string) {
+func assertHTTPSubmissionPersistence(t *testing.T, ctx context.Context, database *sql.DB, tenantID, organizationID, workOrderID string, inspectionIDs []string) {
 	t.Helper()
-	var submittedInspections, submissionItems int
-	if err := database.QueryRowContext(ctx, "SELECT count(*) FROM inspection_record WHERE work_order_id=$1 AND finalization_state='SUBMITTED'", workOrderID).Scan(&submittedInspections); err != nil {
+	conn, err := database.Conn(ctx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := database.QueryRowContext(ctx, "SELECT count(*) FROM work_order_submission_item WHERE submission_segment_id IN (SELECT id FROM work_order_submission_segment WHERE work_order_id=$1)", workOrderID).Scan(&submissionItems); err != nil {
+	defer conn.Close()
+	// PgCat transaction pooling drops session GUCs between statements, so scope
+	// every read inside one explicit transaction on the bound connection.
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", tenantID, organizationID); err != nil {
+		t.Fatal(err)
+	}
+	var submittedInspections, submissionItems int
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM inspection_record WHERE work_order_id=$1 AND finalization_state='SUBMITTED'", workOrderID).Scan(&submittedInspections); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM work_order_submission_item WHERE submission_segment_id IN (SELECT id FROM work_order_submission_segment WHERE work_order_id=$1)", workOrderID).Scan(&submissionItems); err != nil {
 		t.Fatal(err)
 	}
 	if submittedInspections != len(inspectionIDs) || submissionItems != len(inspectionIDs) {
 		t.Fatalf("canonical submission persistence = inspections:%d items:%d, want %d each", submittedInspections, submissionItems, len(inspectionIDs))
 	}
 	var executionState string
-	if err := database.QueryRowContext(ctx, "SELECT execution_state FROM work_order WHERE id=$1", workOrderID).Scan(&executionState); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT execution_state FROM work_order WHERE id=$1", workOrderID).Scan(&executionState); err != nil {
 		t.Fatal(err)
 	}
 	if executionState != string(workorder.ExecutionPartiallySubmitted) {
@@ -331,13 +346,26 @@ func assertHTTPSubmissionPersistence(t *testing.T, ctx context.Context, database
 	}
 }
 
-func assertHTTPRuntimeFixtureCleanup(t *testing.T, ctx context.Context, database, fixtureDatabase *sql.DB, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID string) {
+func assertHTTPRuntimeFixtureCleanup(t *testing.T, ctx context.Context, database, fixtureDatabase *sql.DB, tenantID, organizationID, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID string) {
 	t.Helper()
-	var remainingWorkOrders, remainingInspections, remainingSubjects, remainingActors int
-	if err := database.QueryRowContext(ctx, "SELECT count(*) FROM work_order WHERE id=$1", workOrderID).Scan(&remainingWorkOrders); err != nil {
+	conn, err := database.Conn(ctx)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := database.QueryRowContext(ctx, "SELECT count(*) FROM inspection_record WHERE work_order_id=$1", workOrderID).Scan(&remainingInspections); err != nil {
+	defer conn.Close()
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)", tenantID, organizationID); err != nil {
+		t.Fatal(err)
+	}
+	var remainingWorkOrders, remainingInspections, remainingSubjects, remainingActors int
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM work_order WHERE id=$1", workOrderID).Scan(&remainingWorkOrders); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM inspection_record WHERE work_order_id=$1", workOrderID).Scan(&remainingInspections); err != nil {
 		t.Fatal(err)
 	}
 	if err := fixtureDatabase.QueryRowContext(ctx, "SELECT count(*) FROM identity_subject WHERE (issuer=$1 AND subject=$2) OR (issuer=$3 AND subject=$4)", issuer, subject, otherIssuer, otherSubject).Scan(&remainingSubjects); err != nil {
@@ -411,15 +439,15 @@ func TestAuthenticatedEvidenceReferenceHTTPPostgresIntegration(t *testing.T) {
 	contentHash := "a" + strings.Repeat("f", 63)
 	referenceURL := "https://evidence.example.com/" + evidenceID
 	body := map[string]any{
-		"operation_id":       id + "-operation",
-		"idempotency_key":    id + "-idempotency",
-		"expected_revision":  1,
-		"evidence_id":        evidenceID,
-		"content_hash":       contentHash,
-		"reference_url":      referenceURL,
-		"tenant_id":          "attacker-controlled-and-ignored",
-		"organization_id":    "attacker-controlled-and-ignored",
-		"actor_id":           "attacker-controlled-and-ignored",
+		"operation_id":      id + "-operation",
+		"idempotency_key":   id + "-idempotency",
+		"expected_revision": 1,
+		"evidence_id":       evidenceID,
+		"content_hash":      contentHash,
+		"reference_url":     referenceURL,
+		"tenant_id":         "attacker-controlled-and-ignored",
+		"organization_id":   "attacker-controlled-and-ignored",
+		"actor_id":          "attacker-controlled-and-ignored",
 	}
 	rejectedAuthority := postEvidenceReference(t, runtime.URL, "valid-token", workOrderID, body)
 	if rejectedAuthority.Code != http.StatusBadRequest {
@@ -465,7 +493,7 @@ func TestAuthenticatedEvidenceReferenceHTTPPostgresIntegration(t *testing.T) {
 	cleanupHTTPWorkOrderFixture(t, ctx, database, tenantID, organizationID, workOrderID, assignmentID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, otherIssuer, otherSubject, otherActorID)
 	cleanupRuntimeMembership(t, ctx, fixtureDatabase, issuer, subject, actorID)
-	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
+	assertHTTPRuntimeFixtureCleanup(t, ctx, database, fixtureDatabase, tenantID, organizationID, workOrderID, issuer, subject, actorID, otherIssuer, otherSubject, otherActorID)
 }
 
 func postEvidenceReference(t *testing.T, baseURL, token, workOrderID string, body map[string]any) *httptest.ResponseRecorder {

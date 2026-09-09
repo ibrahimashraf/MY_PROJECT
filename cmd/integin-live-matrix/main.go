@@ -199,8 +199,13 @@ func exercise() error {
 	}
 	client := &http.Client{Timeout: 15 * time.Second}
 
-	// Acquire OIDC token for authenticated evidence calls
-	tokenEndpoint := strings.TrimSuffix(os.Getenv("INTEGIN_OIDC_ISSUER"), "/") + "/protocol/openid-connect/token"
+	// Acquire OIDC token for authenticated evidence calls.
+	// INTEGIN_OIDC_TOKEN_ENDPOINT overrides the legacy Keycloak-derived path so any
+	// RS256 OIDC provider (Keycloak, Casdoor) can serve the pilot harness.
+	tokenEndpoint := strings.TrimSpace(os.Getenv("INTEGIN_OIDC_TOKEN_ENDPOINT"))
+	if tokenEndpoint == "" {
+		tokenEndpoint = strings.TrimSuffix(os.Getenv("INTEGIN_OIDC_ISSUER"), "/") + "/protocol/openid-connect/token"
+	}
 	tokenProvider, err := oidcauth.NewClientCredentialsTokenProvider(oidcauth.ClientCredentialsConfig{
 		TokenEndpoint: tokenEndpoint,
 		ClientID:      os.Getenv("INTEGIN_OIDC_CLIENT_ID"),
