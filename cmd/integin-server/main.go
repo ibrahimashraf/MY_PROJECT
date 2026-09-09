@@ -51,6 +51,7 @@ import (
 	"integin/internal/shortlinksvc"
 	"integin/internal/storage"
 	"integin/internal/syncstate"
+	"integin/pkg/onboarding"
 )
 
 func main() {
@@ -65,6 +66,9 @@ func main() {
 		}
 	} else {
 		secrets["default"] = secretStr
+	}
+	if err := onboarding.ProvisionAttestationFromEnv(); err != nil {
+		log.Fatal(err)
 	}
 	var database *sql.DB
 	var stateRepo syncstate.SyncStateRepository
@@ -168,6 +172,20 @@ func main() {
 			log.Fatal(handlerErr)
 		}
 		localProvisioning = handler
+	}
+	// Pilot-only in-memory device enrollment (pkg/onboarding EnrollServer): lets
+	// the field_app simulator submission reach ProcessDeviceEnrollment over
+	// loopback. Off by default; never expose on a non-loopback bind.
+	var enrollHandler http.Handler
+	if envBool("INTEGIN_PILOT_ENROLL_ENABLED") {
+		if !isLoopbackAddress(address) {
+			log.Fatal("pilot device enrollment requires INTEGIN_HTTP_ADDR to bind to localhost only")
+		}
+		sim, simErr := onboarding.NewEnrollmentSimulator()
+		if simErr != nil {
+			log.Fatal(simErr)
+		}
+		enrollHandler = onboarding.NewEnrollServer(sim).Handler()
 	}
 	var oidcSessionHandler http.Handler
 	var workOrderHandler http.Handler
@@ -369,15 +387,22 @@ func main() {
 		// Start automated retention pruner (sweeps every 10m, retain for 1h) to prevent XID wraparound table bloat
 		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
 	}
+	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
+		PilotManifestHandler: pilotManifestHandler,
+		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
+		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
+		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
+		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler})
+	if enrollHandler != nil {
+		root := http.NewServeMux()
+		root.Handle("/enroll/", enrollHandler)
+		root.Handle("/", handler)
+		handler = root
+	}
 	httpServer := &http.Server{
-		Addr: address,
-		Handler: server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
-			PilotManifestHandler: pilotManifestHandler,
-			AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
-			LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
-			SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-			AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-			EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler}),
+		Addr:              address,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

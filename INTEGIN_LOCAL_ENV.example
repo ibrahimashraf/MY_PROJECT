@@ -25,3 +25,16 @@ INTEGIN_S3_REGION=us-east-1
 # INTEGIN_OIDC_TOKEN_ENDPOINT=http://127.0.0.1:18180/api/login/oauth/access_token
 # INTEGIN_OIDC_CLIENT_ID=integin-live-matrix
 # INTEGIN_OIDC_CLIENT_SECRET=replace-me
+
+# FIPS 140-3 tablet attestation roots (pkg/onboarding, boot-time provisioning).
+# Each variable is optional and independent; when set, the file must exist and
+# contain parseable PEM certificates or the server aborts at boot (fail closed).
+# Apple roots and the app ID are all-or-nothing: pinning only one aborts boot.
+# INTEGIN_ATTEST_GOOGLE_ROOTS_FILE=C:\integin\secrets\google-attestation-roots.pem
+# INTEGIN_ATTEST_APPLE_ROOTS_FILE=C:\integin\secrets\apple-app-attest-root.pem
+# INTEGIN_APPLE_APP_ID=TEAM1234.com.integin.fieldapp
+
+# Pilot-only loopback device enrollment (pkg/onboarding EnrollServer): drives
+# the field_app simulator submission through ProcessDeviceEnrollment over HTTP.
+# Requires INTEGIN_HTTP_ADDR to bind to localhost. Off by default.
+# INTEGIN_PILOT_ENROLL_ENABLED=true

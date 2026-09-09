@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:http/http.dart' as http;
 
 /// The only key origin this file may emit. Simulated claims are permanently
 /// labeled SOFTWARE so they enroll as CLAIMED-unverified, never VERIFIED: the
@@ -123,4 +124,71 @@ String _toHex(List<int> bytes) {
     buffer.write(byte.toRadixString(16).padLeft(2, '0'));
   }
   return buffer.toString();
+}
+
+/// Pilot enrollment glue over the loopback enroll endpoint
+/// (pkg/onboarding EnrollServer): drives the full challenge -> attest ->
+/// submit sequence so the simulator submission reaches Go's
+/// ProcessDeviceEnrollment over HTTP. This is the concrete "enrollment UI
+/// path" a pilot screen can invoke — no interface, no extra abstractions.
+///
+/// Always uses [SimulatedAttestationProvider], so the submitted origin is the
+/// const [simulatedKeyOrigin] (SOFTWARE): this function accepts no origin
+/// override and can never emit SECURE_ENCLAVE or STRONGBOX.
+///
+/// [endpoint] is the server origin (or any absolute URI; path segments are
+/// replaced). Returns the server-side trust record map (DeviceTrustRecord
+/// JSON). Throws [StateError] on any transport or contract failure.
+Future<Map<String, Object?>> enrollSimulatedDevice({
+  required Uri endpoint,
+  required String tenantId,
+  required String inspectorId,
+  required String deviceModel,
+  http.Client? client,
+}) async {
+  final httpClient = client ?? http.Client();
+
+  final challengeResponse = await httpClient.post(
+    endpoint.resolve('/enroll/challenge'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode({'tenant_id': tenantId, 'inspector_id': inspectorId}),
+  );
+  if (challengeResponse.statusCode != 201) {
+    throw StateError(
+        'enrollment challenge failed: HTTP ${challengeResponse.statusCode}');
+  }
+  final challengeBody = jsonDecode(challengeResponse.body);
+  final challengeId = challengeBody is Map ? challengeBody['challenge_id'] : null;
+  final nonce = challengeBody is Map ? challengeBody['nonce'] : null;
+  if (challengeId is! String || nonce is! String) {
+    throw StateError('enrollment challenge is missing challenge_id/nonce');
+  }
+
+  final provider = SimulatedAttestationProvider();
+  final bundle = await provider.attestEnrollment(
+    challengeId: challengeId,
+    inspectorId: inspectorId,
+    nonceHex: nonce,
+    deviceModel: deviceModel,
+  );
+  final submission = buildEnrollmentSubmission(
+    challengeId: challengeId,
+    inspectorId: inspectorId,
+    bundle: bundle,
+  );
+
+  final submitResponse = await httpClient.post(
+    endpoint.resolve('/enroll/submit'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode(submission),
+  );
+  if (submitResponse.statusCode != 200) {
+    throw StateError(
+        'enrollment submission failed: HTTP ${submitResponse.statusCode}');
+  }
+  final record = jsonDecode(submitResponse.body);
+  if (record is! Map) {
+    throw StateError('enrollment submission returned invalid JSON');
+  }
+  return Map<String, Object?>.from(record);
 }

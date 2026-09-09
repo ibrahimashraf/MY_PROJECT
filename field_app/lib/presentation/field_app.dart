@@ -7,6 +7,7 @@ import '../workpackages/package_compatibility.dart';
 import 'adaptive_scaffold.dart';
 import 'custody_handover_view.dart';
 import 'dynamic_form_view.dart';
+import 'enrollment_screen.dart';
 
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
@@ -74,6 +75,17 @@ class _FieldHomePageState extends State<FieldHomePage> {
     return AdaptiveScaffold(
       title: 'INTEGIN Field',
       actions: [
+        IconButton(
+          tooltip: 'Enroll device',
+          icon: const Icon(Icons.vpn_key_outlined),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EnrollmentScreen(
+                tenantId: controller.context.tenantId,
+              ),
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Center(
