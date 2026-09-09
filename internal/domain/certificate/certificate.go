@@ -30,30 +30,30 @@ type SeparationException struct {
 // Certificate is a controlled record. Once issued, business corrections must
 // use a new revision or replacement rather than mutating certificate data.
 type Certificate struct {
-	id                 string
-	tenantID           string
-	organizationID     string
-	environment        string
-	number             string
-	revision           int
-	inspectionID       string
-	inspectionRevision int
-	assetID            string
-	inspectorID        string
-	createdBy          string
-	status             Status
-	approvedBy         string
-	signedBy           string
-	issuedBy           string
-	issuedAt           time.Time
-	expiryDate         time.Time
-	supersedesID       string
-	supersededByID     string
-	revocationReason   string
-	exception          *SeparationException
-	emitted            []events.Envelope
-	renewalAuthorityToken []byte  // 32-byte authority token set by migration 0016 renewal tracking
-	renewalCount       int     // incremented by SetRenewalAuthority
+	id                    string
+	tenantID              string
+	organizationID        string
+	environment           string
+	number                string
+	revision              int
+	inspectionID          string
+	inspectionRevision    int
+	assetID               string
+	inspectorID           string
+	createdBy             string
+	status                Status
+	approvedBy            string
+	signedBy              string
+	issuedBy              string
+	issuedAt              time.Time
+	expiryDate            time.Time
+	supersedesID          string
+	supersededByID        string
+	revocationReason      string
+	exception             *SeparationException
+	emitted               []events.Envelope
+	renewalAuthorityToken []byte // 32-byte authority token set by migration 0016 renewal tracking
+	renewalCount          int    // incremented by SetRenewalAuthority
 }
 
 func New(id, tenantID, organizationID, environment, number, inspectionID string, inspectionRevision int, assetID, inspectorID, createdBy string, expiryDate time.Time) (Certificate, error) {

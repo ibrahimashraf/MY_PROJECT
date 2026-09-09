@@ -191,7 +191,7 @@ func (s *EnrollmentSimulator) VerifyOfflineReceipt(receipt SignedInspectionRecei
 
 	// Receipt signature payload: ReceiptID|ManifestID|AssetID|OverallResult|PayloadDigest
 	receiptSignPayload := fmt.Sprintf("%s|%s|%s|%s|%s", receipt.ReceiptID, receipt.ManifestID, receipt.AssetID, receipt.OverallResult, receipt.PayloadDigest)
-	
+
 	if !ed25519.Verify(devPubBytes, []byte(receiptSignPayload), sigBytes) {
 		return false, errors.New("tamper alert: receipt signature invalid")
 	}

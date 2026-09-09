@@ -18,15 +18,15 @@ type rateWindow struct {
 	count   int
 }
 type Handler struct {
-	Verifier         Verifier
-	Authenticated    *AuthenticatedTransport
-	Limit            int
-	Window           time.Duration
-	Now              func() time.Time
-	VerifierBaseURL  string
-	TrustedProxies   []string
-	mu               sync.Mutex
-	rates            map[string]rateWindow
+	Verifier        Verifier
+	Authenticated   *AuthenticatedTransport
+	Limit           int
+	Window          time.Duration
+	Now             func() time.Time
+	VerifierBaseURL string
+	TrustedProxies  []string
+	mu              sync.Mutex
+	rates           map[string]rateWindow
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -97,8 +97,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	reply(w, http.StatusOK, response)
 }
-
-
 
 func (h *Handler) handleAuthenticated(w http.ResponseWriter, r *http.Request, token string) {
 	view, found, err := h.Authenticated.Verifier.VerifyPublic(r.Context(), token)

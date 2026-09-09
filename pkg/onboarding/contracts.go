@@ -10,7 +10,7 @@ type PlatformGenesisState struct {
 	InitializedAt        time.Time `json:"initialized_at"`
 	RootCAKeyFingerprint string    `json:"root_ca_key_fingerprint"`
 	DatabaseSchemaVer    int       `json:"database_schema_version"`
-	RLSPolicyActive       bool      `json:"rls_policy_active"`
+	RLSPolicyActive      bool      `json:"rls_policy_active"`
 	OperatorAdminID      string    `json:"operator_admin_id"`
 }
 
@@ -18,9 +18,9 @@ type PlatformGenesisState struct {
 type TenantTier string
 
 const (
-	TierStarter    TenantTier = "STARTER"     // SMB lifting shops (up to 5 inspectors)
-	TierGrowth     TenantTier = "GROWTH"      // Commercial inspection firms (up to 25 inspectors)
-	TierEnterprise TenantTier = "ENTERPRISE"  // Enterprise TIC with private sovereign options
+	TierStarter    TenantTier = "STARTER"    // SMB lifting shops (up to 5 inspectors)
+	TierGrowth     TenantTier = "GROWTH"     // Commercial inspection firms (up to 25 inspectors)
+	TierEnterprise TenantTier = "ENTERPRISE" // Enterprise TIC with private sovereign options
 )
 
 // OnboardingStatus represents the discrete lifecycle state machine for tenant onboarding.

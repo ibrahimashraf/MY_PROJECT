@@ -31,8 +31,8 @@ func NewAuthenticatedTransport(verifier Verifier, allowedResponse map[string]boo
 		allowedResponse = map[string]bool{}
 	}
 	return &AuthenticatedTransport{
-		Verifier:         verifier,
-		AllowedResponse:  allowedResponse,
+		Verifier:        verifier,
+		AllowedResponse: allowedResponse,
 	}
 }
 

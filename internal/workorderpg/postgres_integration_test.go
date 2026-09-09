@@ -427,7 +427,7 @@ func TestAddEvidenceReference(t *testing.T) {
 	if _, err := repo.AddEvidenceReference(ctx, workorder.AddEvidenceReferenceCommand{
 		Actor:     other,
 		Operation: workorder.OperationMeta{OperationID: id + "-other-op", IdempotencyKey: id + "-other-idem", ExpectedRevision: 1},
-		Evidence: workorder.EvidenceReference{ID: evidenceID + "-other", TenantID: other.TenantID, OrganizationID: other.OrganizationID, WorkOrderID: id, ContentHash: contentHash, ReferenceURL: referenceURL},
+		Evidence:  workorder.EvidenceReference{ID: evidenceID + "-other", TenantID: other.TenantID, OrganizationID: other.OrganizationID, WorkOrderID: id, ContentHash: contentHash, ReferenceURL: referenceURL},
 	}); err == nil {
 		t.Fatal("expected cross-organization AddEvidenceReference denial")
 	}

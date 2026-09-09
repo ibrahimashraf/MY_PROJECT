@@ -31,7 +31,7 @@ func (r testResolver) Resolve(context.Context, identity.PrincipalKey) (identity.
 }
 
 type testService struct {
-	partialCommand workorder.SubmitPartialCommand
+	partialCommand  workorder.SubmitPartialCommand
 	evidenceCommand workorder.AddEvidenceReferenceCommand
 }
 

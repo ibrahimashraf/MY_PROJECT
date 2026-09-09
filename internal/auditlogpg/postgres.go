@@ -152,7 +152,7 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 
 	var total int
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM audit_log WHERE %s", where)
-	
+
 	tx, err := r.beginTenant(ctx, req.TenantID, req.OrganizationID, true)
 	if err != nil {
 		return auditlog.QueryResponse{}, err

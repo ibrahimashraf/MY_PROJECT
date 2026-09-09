@@ -7,7 +7,7 @@ import (
 
 func TestFormVersionValidate(t *testing.T) {
 	now := time.Now()
-_APPROVED_AT := now
+	_APPROVED_AT := now
 	tests := []struct {
 		name    string
 		form    FormVersion
@@ -267,10 +267,10 @@ func TestFormFieldValidate(t *testing.T) {
 func TestCanTransitionTo(t *testing.T) {
 	now := time.Now()
 	tests := []struct {
-		name       string
-		current    FormVersion
-		target     FormStatus
-		wantErr    bool
+		name    string
+		current FormVersion
+		target  FormStatus
+		wantErr bool
 	}{
 		{
 			name: "DRAFT to APPROVED",

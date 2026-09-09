@@ -184,7 +184,7 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 	default:
 		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction signature algorithm is not supported")
 	}
-	// For ValidateAuthorityPackage, we can use any active secret if we assume it validates HMACs. 
+	// For ValidateAuthorityPackage, we can use any active secret if we assume it validates HMACs.
 	// Actually, ValidateAuthorityPackage might not need the HMAC secret for its core logic unless it decrypts something.
 	// But it requires a string secret. Let's pass the default or first one.
 	p.mu.RLock()

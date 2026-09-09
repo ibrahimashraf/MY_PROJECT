@@ -7,11 +7,11 @@ import (
 
 func TestParseDID(t *testing.T) {
 	tests := []struct {
-		name       string
-		raw        string
-		wantType   string
-		wantID     string
-		wantErr    bool
+		name     string
+		raw      string
+		wantType string
+		wantID   string
+		wantErr  bool
 	}{
 		{
 			name:     "valid asset did",

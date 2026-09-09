@@ -322,6 +322,7 @@ func envList(primary, fallback string) []string {
 
 // safeReadFile validates and canonicalizes path before reading.
 // For test tools, we accept absolute paths from config/env.
+//
 //nolint:gosec // path canonicalized via Clean+Abs; from config/env
 func safeReadFile(path string) ([]byte, error) {
 	if path == "" {

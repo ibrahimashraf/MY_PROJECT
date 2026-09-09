@@ -1,4 +1,4 @@
-﻿package shortlinkhttp
+package shortlinkhttp
 
 import (
 	"context"
@@ -630,11 +630,11 @@ func extractBearer(header string) (string, bool) {
 
 func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
 	var req struct {
-		TenantID    string                 `json:"tenant_id"`
-		Name        string                 `json:"name" binding:"required"`
-		Description string                 `json:"description"`
-		Type        string                 `json:"type" binding:"required"`
-		Config      shortlink.AlertConfig  `json:"config" binding:"required"`
+		TenantID    string                `json:"tenant_id"`
+		Name        string                `json:"name" binding:"required"`
+		Description string                `json:"description"`
+		Type        string                `json:"type" binding:"required"`
+		Config      shortlink.AlertConfig `json:"config" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -880,9 +880,9 @@ func (h *Handler) UpdateAnomalyAlertHandler(c *gin.Context) {
 	}
 
 	var req struct {
-		Status       *shortlink.AlertStatus `json:"status"`
-		AcknowledgedBy *string              `json:"acknowledged_by"`
-		ResolvedBy     *string              `json:"resolved_by"`
+		Status         *shortlink.AlertStatus `json:"status"`
+		AcknowledgedBy *string                `json:"acknowledged_by"`
+		ResolvedBy     *string                `json:"resolved_by"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -890,9 +890,9 @@ func (h *Handler) UpdateAnomalyAlertHandler(c *gin.Context) {
 	}
 
 	alert, err := h.svc.UpdateAnomalyAlert(c.Request.Context(), id, shortlink.UpdateAnomalyAlertRequest{
-		Status:        req.Status,
+		Status:         req.Status,
 		AcknowledgedBy: req.AcknowledgedBy,
-		ResolvedBy:      req.ResolvedBy,
+		ResolvedBy:     req.ResolvedBy,
 	})
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
@@ -924,7 +924,7 @@ func (h *Handler) AcknowledgeAnomalyAlertHandler(c *gin.Context) {
 
 	status := shortlink.AlertStatusAcknowledged
 	alert, err := h.svc.UpdateAnomalyAlert(c.Request.Context(), id, shortlink.UpdateAnomalyAlertRequest{
-		Status:        &status,
+		Status:         &status,
 		AcknowledgedBy: &req.AcknowledgedBy,
 	})
 	if err != nil {
@@ -1233,4 +1233,3 @@ func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsReque
 		Limit:       limit,
 	}
 }
-

@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	ErrNilDB         = errors.New("asset entitlement postgres repository requires a database")
-	ErrNotFound      = errors.New("asset entitlement not found")
+	ErrNilDB           = errors.New("asset entitlement postgres repository requires a database")
+	ErrNotFound        = errors.New("asset entitlement not found")
 	ErrPackageNotFound = errors.New("offline package not found")
-	ErrNotActive     = errors.New("asset entitlement is not active")
-	ErrStaleRevision = errors.New("stale revision")
+	ErrNotActive       = errors.New("asset entitlement is not active")
+	ErrStaleRevision   = errors.New("stale revision")
 )
 
 type Repository struct {

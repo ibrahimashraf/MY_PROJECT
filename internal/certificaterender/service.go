@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"integin/internal/certificatepg"
-	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/certificateauthority"
+	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/storage"
 )
 

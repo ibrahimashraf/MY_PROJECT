@@ -66,7 +66,7 @@ func (c *Checkpoint) Seal(privateKey ed25519.PrivateKey, keyID string) error {
 	}
 	sum := sha256.Sum256(payload)
 	c.RootSHA256 = hex.EncodeToString(sum[:])
-	
+
 	sig := ed25519.Sign(privateKey, payload)
 	c.Signature = base64.StdEncoding.EncodeToString(sig)
 	c.KeyID = keyID
@@ -92,7 +92,7 @@ func (c Checkpoint) Verify(publicKey ed25519.PublicKey) error {
 	if c.RootSHA256 != hex.EncodeToString(sum[:]) {
 		return errors.New("root_sha256 does not match canonical payload")
 	}
-	
+
 	sigBytes, err := base64.StdEncoding.DecodeString(c.Signature)
 	if err != nil {
 		return errors.New("invalid signature encoding")
@@ -100,7 +100,7 @@ func (c Checkpoint) Verify(publicKey ed25519.PublicKey) error {
 	if !ed25519.Verify(publicKey, payload, sigBytes) {
 		return errors.New("signature verification failed")
 	}
-	
+
 	return nil
 }
 

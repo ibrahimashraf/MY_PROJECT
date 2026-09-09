@@ -24,14 +24,14 @@ func TestMasterLicenseIssuanceAndOfflineValidation(t *testing.T) {
 
 	now := time.Now().UTC()
 	payload := LicensePayload{
-		LicenseID:   "LIC-INTEGIN-2026-001",
-		Issuer:      "did:integin:authority:master-pki",
-		IssuedToOrg: "Global Energy & Inspection Ltd",
-		Tier:        TierSovereign,
-		Mode:        ModeAirGapped,
-		IssuedAt:    now,
-		NotBefore:   now.Add(-1 * time.Hour),
-		ExpiresAt:   now.Add(365 * 24 * time.Hour),
+		LicenseID:      "LIC-INTEGIN-2026-001",
+		Issuer:         "did:integin:authority:master-pki",
+		IssuedToOrg:    "Global Energy & Inspection Ltd",
+		Tier:           TierSovereign,
+		Mode:           ModeAirGapped,
+		IssuedAt:       now,
+		NotBefore:      now.Add(-1 * time.Hour),
+		ExpiresAt:      now.Add(365 * 24 * time.Hour),
 		HardwareLockID: "HW-CHASSIS-SERVER-9912",
 		Covenants: PlatformCovenants{
 			MaxTenants:             50,

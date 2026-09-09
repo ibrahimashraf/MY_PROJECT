@@ -342,4 +342,3 @@ func (r *Repository) UpdateHandoverState(ctx context.Context, actor custodyhando
 	}
 	return current, nil
 }
-

@@ -14,16 +14,16 @@ import (
 )
 
 var (
-	ErrInvalidActor      = errors.New("evidence pack actor context is invalid")
-	ErrInvalidPack       = errors.New("evidence pack is invalid")
-	ErrInvalidRelease    = errors.New("release pack is invalid")
-	ErrInvalidTransition = errors.New("invalid evidence pack status transition")
+	ErrInvalidActor        = errors.New("evidence pack actor context is invalid")
+	ErrInvalidPack         = errors.New("evidence pack is invalid")
+	ErrInvalidRelease      = errors.New("release pack is invalid")
+	ErrInvalidTransition   = errors.New("invalid evidence pack status transition")
 	ErrInvalidReleaseState = errors.New("invalid release status transition")
-	ErrStaleRevision     = errors.New("stale revision")
-	ErrNotFound          = errors.New("evidence pack or release not found")
-	ErrSealConflict      = errors.New("cannot modify a sealed pack")
-	ErrMixedPrivacy      = errors.New("evidence set has mixed privacy attributes")
-	ErrPolicyViolation   = errors.New("evidence violates an evidence policy")
+	ErrStaleRevision       = errors.New("stale revision")
+	ErrNotFound            = errors.New("evidence pack or release not found")
+	ErrSealConflict        = errors.New("cannot modify a sealed pack")
+	ErrMixedPrivacy        = errors.New("evidence set has mixed privacy attributes")
+	ErrPolicyViolation     = errors.New("evidence violates an evidence policy")
 )
 
 // PackStatus represents the lifecycle of an evidence pack.

@@ -27,17 +27,17 @@ type limiterShard struct {
 
 // RateLimiter manages partitioned rate limiting with automated idle eviction.
 type RateLimiter struct {
-	shards          [numShards]*limiterShard
-	rate            rate.Limit
-	burst           int
-	maxMapSize      int
-	perTenantBurst  map[string]int
-	tenantCreation  map[string]bool // track tenants being created
+	shards           [numShards]*limiterShard
+	rate             rate.Limit
+	burst            int
+	maxMapSize       int
+	perTenantBurst   map[string]int
+	tenantCreation   map[string]bool // track tenants being created
 	tenantCreationMu sync.Mutex
-	stop            chan struct{}
-	skipPaths       map[string]bool // endpoints to skip rate limiting
-	allowed         atomic.Int64
-	denied          atomic.Int64
+	stop             chan struct{}
+	skipPaths        map[string]bool // endpoints to skip rate limiting
+	allowed          atomic.Int64
+	denied           atomic.Int64
 }
 
 // NewRateLimiter creates a new sharded rate limiter with automated eviction.
@@ -155,8 +155,8 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 
 	limiter := rate.NewLimiter(rl.rate, burst)
 	shard.limiters[key] = &limiterItem{
-		limiter:   limiter,
-		lastSeen:  now,
+		limiter:      limiter,
+		lastSeen:     now,
 		creationTime: time.Now(),
 	}
 	return limiter
@@ -258,8 +258,8 @@ func (rl *RateLimiter) EvictIdle(maxIdle time.Duration) {
 
 // RateLimitStats holds rate limiting statistics
 type RateLimitStats struct {
-	AllowedRequests int64
-	DeniedRequests  int64
+	AllowedRequests  int64
+	DeniedRequests   int64
 	CreationRequests int64 // requests specifically for creation
 }
 

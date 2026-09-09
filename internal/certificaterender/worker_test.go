@@ -8,8 +8,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/certificateauthority"
+	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/queue"
 	"integin/internal/storage"
 )

@@ -22,19 +22,19 @@ const (
 
 // RenewalAttempt records a certificate renewal attempt with authority derivation.
 type RenewalAttempt struct {
-	ID                string
-	TenantID          string
-	OrganizationID    string
-	CertificateID     string
-	AttemptedAt       time.Time
-	AuthorityTenantID string
+	ID                      string
+	TenantID                string
+	OrganizationID          string
+	CertificateID           string
+	AttemptedAt             time.Time
+	AuthorityTenantID       string
 	AuthorityOrganizationID string
-	PreviousStatus    Status
-	NewStatus         Status
-	RenewalReason     string
-	AuthoritySnapshot json.RawMessage
-	ResultState       string // SUCCESS, FAILED_AUTHORITY, FAILED_INSPECTION, FAILED_POLICY, DUPLICATE
-	ErrorDetail       string
+	PreviousStatus          Status
+	NewStatus               Status
+	RenewalReason           string
+	AuthoritySnapshot       json.RawMessage
+	ResultState             string // SUCCESS, FAILED_AUTHORITY, FAILED_INSPECTION, FAILED_POLICY, DUPLICATE
+	ErrorDetail             string
 }
 
 type Profile string

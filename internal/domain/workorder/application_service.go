@@ -23,11 +23,11 @@ func (s applicationService) execute(ctx context.Context, actor ActorContext, ope
 	if err := validateActorOperation(actor, operation); err != nil {
 		return zero, err
 	}
-    if receipt, found, err := s.deps.Repository.FindOperationReceipt(ctx, actor, operation.IdempotencyKey); err != nil {
-        return zero, err
-    } else if found {
-        return receipt, nil
-    }
+	if receipt, found, err := s.deps.Repository.FindOperationReceipt(ctx, actor, operation.IdempotencyKey); err != nil {
+		return zero, err
+	} else if found {
+		return receipt, nil
+	}
 
 	var receipt MutationReceipt
 	err := s.deps.Transactions.WithinTransaction(ctx, actor, func(txCtx context.Context, repo Repository) error {

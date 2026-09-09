@@ -436,7 +436,7 @@ func validateCertificateInspections(ctx context.Context, tx *sql.Tx, actor worko
 
 	// Build a map of inspection results
 	inspectionMap := make(map[string]struct {
-		lifecycleState  string
+		lifecycleState    string
 		finalizationState string
 	})
 	for rows.Next() {
@@ -445,7 +445,7 @@ func validateCertificateInspections(ctx context.Context, tx *sql.Tx, actor worko
 			return err
 		}
 		inspectionMap[id] = struct {
-			lifecycleState  string
+			lifecycleState    string
 			finalizationState string
 		}{lifecycleState: lifecycleState, finalizationState: finalizationState}
 	}

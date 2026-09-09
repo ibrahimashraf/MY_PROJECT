@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	ErrInvalidActor     = errors.New("assurance actor context is invalid")
+	ErrInvalidActor      = errors.New("assurance actor context is invalid")
 	ErrInvalidProjection = errors.New("assurance projection is invalid")
-	ErrInvalidWork      = errors.New("corrective work is invalid")
+	ErrInvalidWork       = errors.New("corrective work is invalid")
 	ErrInvalidTransition = errors.New("invalid status transition")
-	ErrStaleRevision    = errors.New("stale revision")
-	ErrNotFound         = errors.New("corrective work not found")
+	ErrStaleRevision     = errors.New("stale revision")
+	ErrNotFound          = errors.New("corrective work not found")
 )
 
 // ActorContext is the server-derived actor for assurance operations.
@@ -122,25 +122,25 @@ func ComputeProjectionHash(p Projection) string {
 
 // CorrectiveWork represents an actionable work item linked to an inspection finding.
 type CorrectiveWork struct {
-	ID           string
-	TenantID     string
+	ID             string
+	TenantID       string
 	OrganizationID string
-	InspectionID string
-	FindingID    string
-	AssetID      string
-	Severity     Severity
-	Description  string
-	RequiredBy   *time.Time
-	AssignedTo   string
-	Status       WorkStatus
-	CompletedAt  *time.Time
-	VerifiedAt   *time.Time
-	VerifiedBy   string
-	CreatedBy    string
-	CreatedAt    time.Time
-	UpdatedBy    string
-	UpdatedAt    time.Time
-	Revision     int64
+	InspectionID   string
+	FindingID      string
+	AssetID        string
+	Severity       Severity
+	Description    string
+	RequiredBy     *time.Time
+	AssignedTo     string
+	Status         WorkStatus
+	CompletedAt    *time.Time
+	VerifiedAt     *time.Time
+	VerifiedBy     string
+	CreatedBy      string
+	CreatedAt      time.Time
+	UpdatedBy      string
+	UpdatedAt      time.Time
+	Revision       int64
 }
 
 // Validate ensures the corrective work is consistent.

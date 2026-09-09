@@ -248,7 +248,7 @@ func (r *Repository) queryInspectionSummary(ctx context.Context, config domain.R
 		args = append(args, req.DateFrom)
 		argIdx++
 	}
-if req.DateTo != "" {
+	if req.DateTo != "" {
 		query += fmt.Sprintf(" AND created_at <= $%d", argIdx) //nolint:G202 // placeholder index only; values parameterized
 		args = append(args, req.DateTo)
 		argIdx++
@@ -378,7 +378,7 @@ func (r *Repository) queryInspectorPerformance(ctx context.Context, config domai
 		args = append(args, req.DateFrom)
 		argIdx++
 	}
-if req.DateTo != "" {
+	if req.DateTo != "" {
 		query += fmt.Sprintf(" AND created_at <= $%d", argIdx) //nolint:G202 // placeholder index only; values parameterized
 		args = append(args, req.DateTo)
 		argIdx++

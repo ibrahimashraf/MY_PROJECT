@@ -15,8 +15,8 @@ import (
 	"github.com/riverqueue/river"
 
 	"integin/internal/certificatepg"
-	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/certificateauthority"
+	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/queue"
 	"integin/internal/storage"
 )
@@ -197,11 +197,11 @@ func TestCertificateRenderRustFSIntegration(t *testing.T) {
 
 	// Create draft, submit, review, sign, and issue certificate
 	_, err = repo.CreateDraft(ctx, inspector, certificateauthority.CreateDraftRequest{
-		CertificateID: certID,
-		InspectionID:  inspectionID,
-		TemplateCode:  tmplCode,
+		CertificateID:   certID,
+		InspectionID:    inspectionID,
+		TemplateCode:    tmplCode,
 		TemplateVersion: int64(tmplVersion),
-		Profile:       certificateauthority.IndependentReview,
+		Profile:         certificateauthority.IndependentReview,
 	}, now)
 	if err != nil {
 		t.Fatalf("failed to create draft: %v", err)

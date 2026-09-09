@@ -124,7 +124,7 @@ func NewAWSSigV4Signer(accessKey, secretKey, region, service string) Signer {
 
 		headerList := []string{"host", "x-amz-content-sha256", "x-amz-date"}
 		headerList = append(headerList, metaKeys...)
-		
+
 		var canon []string
 		for _, k := range headerList {
 			if k == "host" {

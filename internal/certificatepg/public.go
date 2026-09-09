@@ -25,22 +25,22 @@ type PublicProjection struct {
 }
 
 type RenderData struct {
-	CertificateID       string
-	CertificateNumber   string
-	Status              string
-	IssuedAt            time.Time
-	ExpiresAt           time.Time
-	TemplateSnapshot    []byte
-	CellSnapshot        []byte
+	CertificateID         string
+	CertificateNumber     string
+	Status                string
+	IssuedAt              time.Time
+	ExpiresAt             time.Time
+	TemplateSnapshot      []byte
+	CellSnapshot          []byte
 	PublicBindingSnapshot []byte
-	SnapshotSHA256      []byte
-	TemplateCells       []certificatetemplate.Cell
-	TemplateDef         certificatetemplate.Definition
-	PageCount           int
-	PageWidth           float64
-	PageHeight          float64
-	QRPage              int
-	QRRectangle         certificatetemplate.Rectangle
+	SnapshotSHA256        []byte
+	TemplateCells         []certificatetemplate.Cell
+	TemplateDef           certificatetemplate.Definition
+	PageCount             int
+	PageWidth             float64
+	PageHeight            float64
+	QRPage                int
+	QRRectangle           certificatetemplate.Rectangle
 }
 
 func (r *Repository) VerifyPublic(ctx context.Context, rawToken string) (PublicProjection, bool, error) {

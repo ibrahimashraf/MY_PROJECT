@@ -209,8 +209,6 @@ func TestPublicProjectionServesHTMLWhenRequested(t *testing.T) {
 	}
 }
 
-
-
 func BenchmarkPublicVerifierHandler(b *testing.B) {
 	handler := &Handler{Verifier: richVerifierStub{}, Limit: b.N + 1}
 	path := "/verify/certificates/" + strings.Repeat("p", 43)

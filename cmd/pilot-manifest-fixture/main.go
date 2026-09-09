@@ -31,6 +31,7 @@ func q(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
 // safeReadFile validates path is within expected directory before reading.
 // For test tools, we accept any absolute path but canonicalize it.
+//
 //nolint:gosec // path canonicalized via Clean+Abs; from CLI arg
 func safeReadFile(path string) ([]byte, error) {
 	clean := filepath.Clean(path)

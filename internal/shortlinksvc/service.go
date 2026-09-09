@@ -598,7 +598,6 @@ func (s *Service) DeliverWebhookByID(ctx context.Context, deliveryID int64) erro
 	return s.attemptWebhookDelivery(ctx, delivery, *sl.WebhookURL)
 }
 
-
 func generateCode(length int) string {
 	b := make([]byte, (length*3+3)/4) // base64url encoding overhead
 	rand.Read(b)

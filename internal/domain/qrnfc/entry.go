@@ -64,21 +64,21 @@ const (
 
 // Entry represents an opaque, unguessable QR/NFC token stored only as SHA-256 digest.
 type Entry struct {
-	ID            string
-	TenantID      string
+	ID             string
+	TenantID       string
 	OrganizationID string
-	EntitlementID string
-	AssetID       string
-	EntryType     EntryType
-	TokenDigest   string
-	TokenVersion  int
-	Status        EntryStatus
-	IssuedAt      time.Time
-	ExpiresAt     *time.Time
-	RevokedAt     *time.Time
-	RevokedBy     string
-	CreatedBy     string
-	CreatedAt     time.Time
+	EntitlementID  string
+	AssetID        string
+	EntryType      EntryType
+	TokenDigest    string
+	TokenVersion   int
+	Status         EntryStatus
+	IssuedAt       time.Time
+	ExpiresAt      *time.Time
+	RevokedAt      *time.Time
+	RevokedBy      string
+	CreatedBy      string
+	CreatedAt      time.Time
 }
 
 // Validate ensures the entry is consistent.
@@ -145,15 +145,15 @@ func (e Entry) CanTransitionTo(target EntryStatus) error {
 
 // EntryLog represents a privacy-preserving access log entry.
 type EntryLog struct {
-	ID           string
-	TenantID     string
+	ID             string
+	TenantID       string
 	OrganizationID string
-	EntryID      string
-	EntryType    EntryType
-	AccessedAt   time.Time
-	AccessorID   string
-	AccessorIP   string
-	Outcome      AccessOutcome
+	EntryID        string
+	EntryType      EntryType
+	AccessedAt     time.Time
+	AccessorID     string
+	AccessorIP     string
+	Outcome        AccessOutcome
 }
 
 // Validate ensures the log entry is consistent.

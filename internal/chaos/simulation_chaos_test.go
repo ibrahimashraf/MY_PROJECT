@@ -55,9 +55,9 @@ func TestDeterministicSimulationChaosHarness(t *testing.T) {
 	}
 
 	const (
-		numTenants = 3
+		numTenants          = 3
 		numDevicesPerTenant = 4
-		mutationsPerDevice = 10
+		mutationsPerDevice  = 10
 	)
 
 	tenantIDs := make([]string, numTenants)

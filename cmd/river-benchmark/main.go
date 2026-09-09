@@ -28,11 +28,11 @@ func (b *benchWorker) Work(ctx context.Context, job *river.Job[queue.WebhookDeli
 
 func main() {
 	var (
-		dbURL        string
-		totalJobs    int
-		batchSize    int
-		concurrency  int
-		asyncCommit  bool
+		dbURL       string
+		totalJobs   int
+		batchSize   int
+		concurrency int
+		asyncCommit bool
 	)
 
 	flag.StringVar(&dbURL, "db", "postgres://postgres:postgres_local_test_password@localhost:15432/integin_migration_test?sslmode=disable", "PostgreSQL connection string")

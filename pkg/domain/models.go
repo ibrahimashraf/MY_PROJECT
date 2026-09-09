@@ -8,16 +8,16 @@ import (
 type AssetStatus string
 
 const (
-	AssetStatusOperational AssetStatus = "OPERATIONAL"
-	AssetStatusInspected   AssetStatus = "INSPECTED"
-	AssetStatusQuarantined AssetStatus = "QUARANTINED"
+	AssetStatusOperational    AssetStatus = "OPERATIONAL"
+	AssetStatusInspected      AssetStatus = "INSPECTED"
+	AssetStatusQuarantined    AssetStatus = "QUARANTINED"
 	AssetStatusDecommissioned AssetStatus = "DECOMMISSIONED"
 )
 
 var (
-	ErrEmptyAssetDID       = errors.New("asset DID cannot be empty")
-	ErrEmptyManufacturer   = errors.New("manufacturer cannot be empty")
-	ErrEmptySerialNumber   = errors.New("chassis serial number cannot be empty")
+	ErrEmptyAssetDID          = errors.New("asset DID cannot be empty")
+	ErrEmptyManufacturer      = errors.New("manufacturer cannot be empty")
+	ErrEmptySerialNumber      = errors.New("chassis serial number cannot be empty")
 	ErrInvalidCustodyTransfer = errors.New("custody transfer missing required recipient or tenant")
 )
 

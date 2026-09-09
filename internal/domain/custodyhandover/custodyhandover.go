@@ -35,11 +35,11 @@ const (
 type CustodyAction string
 
 const (
-	CustodyActionCheckIn   CustodyAction = "CHECK_IN"
-	CustodyActionCheckOut  CustodyAction = "CHECK_OUT"
-	CustodyActionTransfer  CustodyAction = "TRANSFER"
-	CustodyActionRelocate  CustodyAction = "RELOCATE"
-	CustodyActionDispose   CustodyAction = "DISPOSE"
+	CustodyActionCheckIn  CustodyAction = "CHECK_IN"
+	CustodyActionCheckOut CustodyAction = "CHECK_OUT"
+	CustodyActionTransfer CustodyAction = "TRANSFER"
+	CustodyActionRelocate CustodyAction = "RELOCATE"
+	CustodyActionDispose  CustodyAction = "DISPOSE"
 )
 
 // ActorContext is the server-derived actor executing the handover/custody action.
@@ -58,19 +58,19 @@ func (a ActorContext) Validate() error {
 
 // CustodyRecord represents an immutable audit entry in the chain of custody.
 type CustodyRecord struct {
-	ID             string        `json:"id"`
-	TenantID       string        `json:"tenant_id"`
-	OrganizationID string        `json:"organization_id"`
-	AssetID        string        `json:"asset_id"`
-	WorkOrderID    string        `json:"work_order_id,omitempty"`
-	LocationID     string        `json:"location_id"`
-	SiteName       string        `json:"site_name"`
-	CustodianID    string        `json:"custodian_id"`
-	Action         CustodyAction `json:"action"`
-	VerificationHash string      `json:"verification_hash"`
-	Notes          string        `json:"notes,omitempty"`
-	RecordedBy     string        `json:"recorded_by"`
-	RecordedAt     time.Time     `json:"recorded_at"`
+	ID               string        `json:"id"`
+	TenantID         string        `json:"tenant_id"`
+	OrganizationID   string        `json:"organization_id"`
+	AssetID          string        `json:"asset_id"`
+	WorkOrderID      string        `json:"work_order_id,omitempty"`
+	LocationID       string        `json:"location_id"`
+	SiteName         string        `json:"site_name"`
+	CustodianID      string        `json:"custodian_id"`
+	Action           CustodyAction `json:"action"`
+	VerificationHash string        `json:"verification_hash"`
+	Notes            string        `json:"notes,omitempty"`
+	RecordedBy       string        `json:"recorded_by"`
+	RecordedAt       time.Time     `json:"recorded_at"`
 }
 
 func (c CustodyRecord) Validate() error {

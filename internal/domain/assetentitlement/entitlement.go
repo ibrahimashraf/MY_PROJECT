@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	ErrInvalidActor      = errors.New("asset entitlement actor context is invalid")
+	ErrInvalidActor       = errors.New("asset entitlement actor context is invalid")
 	ErrInvalidEntitlement = errors.New("asset entitlement is invalid")
-	ErrInvalidTag        = errors.New("asset tag is invalid")
-	ErrInvalidPackage    = errors.New("offline package is invalid")
-	ErrImmutable         = errors.New("asset entitlement conflicts with an immutable record")
-	ErrInvalidTransition = errors.New("invalid status transition")
-	ErrStaleRevision     = errors.New("stale revision")
+	ErrInvalidTag         = errors.New("asset tag is invalid")
+	ErrInvalidPackage     = errors.New("offline package is invalid")
+	ErrImmutable          = errors.New("asset entitlement conflicts with an immutable record")
+	ErrInvalidTransition  = errors.New("invalid status transition")
+	ErrStaleRevision      = errors.New("stale revision")
 )
 
 // ActorContext is the server-derived actor for asset operations.
@@ -38,7 +38,7 @@ func (a ActorContext) Validate() error {
 type EntitlementType string
 
 const (
-	EntitlementTypeInspection EntitlementType = "INSPECTION"
+	EntitlementTypeInspection  EntitlementType = "INSPECTION"
 	EntitlementTypeMaintenance EntitlementType = "MAINTENANCE"
 	EntitlementTypeAudit       EntitlementType = "AUDIT"
 	EntitlementTypeReview      EntitlementType = "REVIEW"
@@ -69,7 +69,7 @@ const (
 type PackageStatus string
 
 const (
-	PackageStatusPending  PackageStatus = "PENDING"
+	PackageStatusPending   PackageStatus = "PENDING"
 	PackageStatusGenerated PackageStatus = "GENERATED"
 	PackageStatusDelivered PackageStatus = "DELIVERED"
 	PackageStatusExpired   PackageStatus = "EXPIRED"
@@ -119,25 +119,25 @@ func ComputeTagDigest(tagType TagType, tagValue string) string {
 
 // OfflinePackage represents a server-reconciled, bounded, never client-authoritative offline data package.
 type OfflinePackage struct {
-	ID                    string
-	TenantID              string
-	OrganizationID        string
-	EntitlementID         string
-	PackageVersion        int
-	FormSnapshot          json.RawMessage
+	ID                     string
+	TenantID               string
+	OrganizationID         string
+	EntitlementID          string
+	PackageVersion         int
+	FormSnapshot           json.RawMessage
 	EvidencePolicySnapshot json.RawMessage
-	AssetContext          json.RawMessage
-	PackageHash           string
-	Status                PackageStatus
-	GeneratedAt           *time.Time
-	DeliveredAt           *time.Time
-	DeliveredToDeviceID   string
+	AssetContext           json.RawMessage
+	PackageHash            string
+	Status                 PackageStatus
+	GeneratedAt            *time.Time
+	DeliveredAt            *time.Time
+	DeliveredToDeviceID    string
 	DeliveredToInspectorID string
-	ExpiresAt             *time.Time
-	RevokedAt             *time.Time
-	RevokedBy             string
-	CreatedBy             string
-	CreatedAt             time.Time
+	ExpiresAt              *time.Time
+	RevokedAt              *time.Time
+	RevokedBy              string
+	CreatedBy              string
+	CreatedAt              time.Time
 }
 
 // Validate ensures the offline package is consistent.
@@ -213,27 +213,27 @@ func (p OfflinePackage) CanTransitionTo(target PackageStatus) error {
 
 // AssetEntitlement represents a server-authoritative entitlement for an asset within a work order scope.
 type AssetEntitlement struct {
-	ID                 string
-	TenantID           string
-	OrganizationID     string
-	WorkOrderID        string
-	ScopeItemID        string
-	AssetID            string
-	AssetType          string
-	EntitlementType    EntitlementType
-	Status             EntitlementStatus
-	FormVersionID      string
+	ID                  string
+	TenantID            string
+	OrganizationID      string
+	WorkOrderID         string
+	ScopeItemID         string
+	AssetID             string
+	AssetType           string
+	EntitlementType     EntitlementType
+	Status              EntitlementStatus
+	FormVersionID       string
 	AssignedInspectorID string
-	EntitledAt         time.Time
-	ExpiresAt          *time.Time
-	CompletedAt        *time.Time
-	CreatedBy          string
-	CreatedAt          time.Time
-	UpdatedBy          string
-	UpdatedAt          time.Time
-	Revision           int64
-	Tags               []AssetTag
-	Packages           []OfflinePackage
+	EntitledAt          time.Time
+	ExpiresAt           *time.Time
+	CompletedAt         *time.Time
+	CreatedBy           string
+	CreatedAt           time.Time
+	UpdatedBy           string
+	UpdatedAt           time.Time
+	Revision            int64
+	Tags                []AssetTag
+	Packages            []OfflinePackage
 }
 
 // Validate ensures the asset entitlement is consistent.

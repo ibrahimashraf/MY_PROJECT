@@ -1,4 +1,4 @@
-﻿package middleware
+package middleware
 
 import (
 	"net/http"
@@ -182,4 +182,3 @@ func TestRateLimiter_HighConcurrency(t *testing.T) {
 	}
 	wg.Wait()
 }
-

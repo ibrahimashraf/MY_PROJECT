@@ -24,10 +24,10 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 	}
 
 	const (
-		victimTenant = "victim-corp"
-		victimOrg    = "victim-org"
-		hackerTenant = "hacker-corp"
-		hackerOrg    = "hacker-org"
+		victimTenant    = "victim-corp"
+		victimOrg       = "victim-org"
+		hackerTenant    = "hacker-corp"
+		hackerOrg       = "hacker-org"
 		testWorkOrderID = "wo-victim-secret-1"
 	)
 

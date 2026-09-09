@@ -9,6 +9,7 @@ import (
 
 // safeWriteFile validates and canonicalizes path before writing.
 // For this tool, we accept paths from hardcoded list.
+//
 //nolint:gosec // path canonicalized via Clean+Abs; from hardcoded list
 func safeWriteFile(path string, content []byte, perm os.FileMode) error {
 	clean := filepath.Clean(path)

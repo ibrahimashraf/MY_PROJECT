@@ -17,12 +17,12 @@ import (
 // isolation against PgCat (port 6432) operating in transaction pooling mode.
 //
 // It verifies:
-// 1. Transaction-local GUCs (set_config('integin.tenant_id', ..., true)) are completely discarded
-//    upon COMMIT/ROLLBACK and never leak to another tenant reusing the same backend connection.
-// 2. Client connections configured with default_query_exec_mode=exec or simple_protocol
-//    operate without prepared statement collisions (SQLSTATE 26000) under high connection multiplexing.
-// 3. Row-level security (RLS) under integin_runtime prevents cross-tenant reads even when
-//    dozens of goroutines alternate rapid transactions across the shared PgCat pool.
+//  1. Transaction-local GUCs (set_config('integin.tenant_id', ..., true)) are completely discarded
+//     upon COMMIT/ROLLBACK and never leak to another tenant reusing the same backend connection.
+//  2. Client connections configured with default_query_exec_mode=exec or simple_protocol
+//     operate without prepared statement collisions (SQLSTATE 26000) under high connection multiplexing.
+//  3. Row-level security (RLS) under integin_runtime prevents cross-tenant reads even when
+//     dozens of goroutines alternate rapid transactions across the shared PgCat pool.
 func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 	pgcatURL := os.Getenv("INTEGIN_PGCAT_URL")
 	if pgcatURL == "" {

@@ -74,22 +74,22 @@ const (
 type Classification string
 
 const (
-	ClassificationPublic      Classification = "PUBLIC"
-	ClassificationInternal    Classification = "INTERNAL"
+	ClassificationPublic       Classification = "PUBLIC"
+	ClassificationInternal     Classification = "INTERNAL"
 	ClassificationConfidential Classification = "CONFIDENTIAL"
-	ClassificationRestricted  Classification = "RESTRICTED"
+	ClassificationRestricted   Classification = "RESTRICTED"
 )
 
 // ValidationRules defines optional JSON schema validation for a field.
 type ValidationRules struct {
-	MinLength  *int     `json:"min_length,omitempty"`
-	MaxLength  *int     `json:"max_length,omitempty"`
-	MinValue   *float64 `json:"min_value,omitempty"`
-	MaxValue   *float64 `json:"max_value,omitempty"`
-	Pattern    string   `json:"pattern,omitempty"`
-	Unit       string   `json:"unit,omitempty"`
-	MinItems   *int     `json:"min_items,omitempty"`
-	MaxItems   *int     `json:"max_items,omitempty"`
+	MinLength *int     `json:"min_length,omitempty"`
+	MaxLength *int     `json:"max_length,omitempty"`
+	MinValue  *float64 `json:"min_value,omitempty"`
+	MaxValue  *float64 `json:"max_value,omitempty"`
+	Pattern   string   `json:"pattern,omitempty"`
+	Unit      string   `json:"unit,omitempty"`
+	MinItems  *int     `json:"min_items,omitempty"`
+	MaxItems  *int     `json:"max_items,omitempty"`
 }
 
 // FieldOption represents a selectable option for SINGLE_SELECT or MULTI_SELECT fields.

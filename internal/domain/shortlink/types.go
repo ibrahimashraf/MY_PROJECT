@@ -33,9 +33,9 @@ const (
 type AlertStatus string
 
 const (
-	AlertStatusFiring      AlertStatus = "firing"
+	AlertStatusFiring       AlertStatus = "firing"
 	AlertStatusAcknowledged AlertStatus = "acknowledged"
-	AlertStatusResolved    AlertStatus = "resolved"
+	AlertStatusResolved     AlertStatus = "resolved"
 )
 
 type AnomalyRule struct {
@@ -51,33 +51,33 @@ type AnomalyRule struct {
 }
 
 type AlertConfig struct {
-	Threshold     int64
-	Window        time.Duration
-	Countries     []string
-	Cooldown      time.Duration
-	Channels      []AlertChannel
-	WebhookURL    *string
-	EmailTo       *string
-	SlackWebhook  *string
-	PagerDutyKey  *string
+	Threshold    int64
+	Window       time.Duration
+	Countries    []string
+	Cooldown     time.Duration
+	Channels     []AlertChannel
+	WebhookURL   *string
+	EmailTo      *string
+	SlackWebhook *string
+	PagerDutyKey *string
 }
 
 type AnomalyAlert struct {
-	ID            int64
-	RuleID        int64
-	TenantID      string
-	ShortLinkCode string
-	Type          AnomalyType
-	Status        AlertStatus
-	Message       string
-	Details       map[string]interface{}
-	FiredAt       time.Time
+	ID             int64
+	RuleID         int64
+	TenantID       string
+	ShortLinkCode  string
+	Type           AnomalyType
+	Status         AlertStatus
+	Message        string
+	Details        map[string]interface{}
+	FiredAt        time.Time
 	AcknowledgedAt *time.Time
 	AcknowledgedBy *string
-	ResolvedAt    *time.Time
-	ResolvedBy    *string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ResolvedAt     *time.Time
+	ResolvedBy     *string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type CreateAnomalyRuleRequest struct {
@@ -112,9 +112,9 @@ type CreateAnomalyAlertRequest struct {
 }
 
 type UpdateAnomalyAlertRequest struct {
-	Status      *AlertStatus
+	Status         *AlertStatus
 	AcknowledgedBy *string
-	ResolvedBy    *string
+	ResolvedBy     *string
 }
 
 type ListAnomalyAlertsRequest struct {
@@ -129,10 +129,10 @@ type ListAnomalyAlertsRequest struct {
 }
 
 type WebhookDeliveryRequest struct {
-	URL      string
-	Payload  []byte
-	Headers  map[string]string
-	Timeout  time.Duration
+	URL        string
+	Payload    []byte
+	Headers    map[string]string
+	Timeout    time.Duration
 	MaxRetries int
 }
 
@@ -336,10 +336,10 @@ type ScanStats struct {
 type TimeRange string
 
 const (
-	TimeRange1H  TimeRange = "1h"
-	TimeRange24H TimeRange = "24h"
-	TimeRange7D  TimeRange = "7d"
-	TimeRange30D TimeRange = "30d"
+	TimeRange1H     TimeRange = "1h"
+	TimeRange24H    TimeRange = "24h"
+	TimeRange7D     TimeRange = "7d"
+	TimeRange30D    TimeRange = "30d"
 	TimeRangeCustom TimeRange = "custom"
 )
 
@@ -349,10 +349,10 @@ type TimeSeriesPoint struct {
 }
 
 type GeoHeatmapPoint struct {
-	Country  string `json:"country"`
-	Region   string `json:"region,omitempty"`
-	City     string `json:"city,omitempty"`
-	Count    int64  `json:"count"`
+	Country string `json:"country"`
+	Region  string `json:"region,omitempty"`
+	City    string `json:"city,omitempty"`
+	Count   int64  `json:"count"`
 }
 
 type DeviceBreakdown struct {
@@ -371,83 +371,83 @@ type BrowserBreakdown struct {
 }
 
 type FunnelData struct {
-	Scans       int64   `json:"scans"`
-	Redirects   int64   `json:"redirects"`
-	Conversions int64   `json:"conversions"`
-	ScanToRedirectRate   float64 `json:"scan_to_redirect_rate"`
+	Scans                    int64   `json:"scans"`
+	Redirects                int64   `json:"redirects"`
+	Conversions              int64   `json:"conversions"`
+	ScanToRedirectRate       float64 `json:"scan_to_redirect_rate"`
 	RedirectToConversionRate float64 `json:"redirect_to_conversion_rate"`
 }
 
 type TopAsset struct {
-	Code       string `json:"code"`
-	TargetURL  string `json:"target_url"`
-	ScanCount  int64  `json:"scan_count"`
-	UniqueIPs  int64  `json:"unique_ips"`
+	Code      string `json:"code"`
+	TargetURL string `json:"target_url"`
+	ScanCount int64  `json:"scan_count"`
+	UniqueIPs int64  `json:"unique_ips"`
 }
 
 type DashboardOverview struct {
-	TotalScans int64   `json:"total_scans"`
-	UniqueIPs  int64   `json:"unique_ips"`
+	TotalScans int64      `json:"total_scans"`
+	UniqueIPs  int64      `json:"unique_ips"`
 	TopAssets  []TopAsset `json:"top_assets"`
 }
 
 type DashboardAnalytics struct {
-	TotalScans     int64              `json:"total_scans"`
-	UniqueIPs      int64              `json:"unique_ips"`
-	TopAssets      []TopAsset         `json:"top_assets"`
-	TimeSeries     []TimeSeriesPoint  `json:"time_series"`
-	GeoHeatmap     []GeoHeatmapPoint  `json:"geo_heatmap"`
-	Devices        []DeviceBreakdown  `json:"devices"`
-	OS             []OSBreakdown      `json:"os"`
-	Browsers       []BrowserBreakdown `json:"browsers"`
-	Funnel         FunnelData         `json:"funnel"`
-	TimeRange      TimeRange          `json:"time_range"`
-	CustomStart    *time.Time         `json:"custom_start,omitempty"`
-	CustomEnd      *time.Time         `json:"custom_end,omitempty"`
+	TotalScans  int64              `json:"total_scans"`
+	UniqueIPs   int64              `json:"unique_ips"`
+	TopAssets   []TopAsset         `json:"top_assets"`
+	TimeSeries  []TimeSeriesPoint  `json:"time_series"`
+	GeoHeatmap  []GeoHeatmapPoint  `json:"geo_heatmap"`
+	Devices     []DeviceBreakdown  `json:"devices"`
+	OS          []OSBreakdown      `json:"os"`
+	Browsers    []BrowserBreakdown `json:"browsers"`
+	Funnel      FunnelData         `json:"funnel"`
+	TimeRange   TimeRange          `json:"time_range"`
+	CustomStart *time.Time         `json:"custom_start,omitempty"`
+	CustomEnd   *time.Time         `json:"custom_end,omitempty"`
 }
 
 type AnalyticsRequest struct {
-	TenantID   string     `json:"tenant_id"`
-	TimeRange  TimeRange  `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
-	Limit      int        `json:"limit,omitempty"`
+	Limit       int        `json:"limit,omitempty"`
 }
 
 type TopAssetsRequest struct {
-	TenantID  string    `json:"tenant_id"`
-	TimeRange TimeRange `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
-	Limit     int       `json:"limit,omitempty"`
+	Limit       int        `json:"limit,omitempty"`
 }
 
 type TimeSeriesRequest struct {
-	TenantID    string    `json:"tenant_id"`
-	TimeRange   TimeRange `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
-	Interval    string    `json:"interval,omitempty"` // e.g., "1h", "1d"
+	Interval    string     `json:"interval,omitempty"` // e.g., "1h", "1d"
 }
 
 type GeoHeatmapRequest struct {
-	TenantID    string    `json:"tenant_id"`
-	TimeRange   TimeRange `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
-	Country     string    `json:"country,omitempty"` // Optional filter
+	Country     string     `json:"country,omitempty"` // Optional filter
 }
 
 type DeviceAnalyticsRequest struct {
-	TenantID    string    `json:"tenant_id"`
-	TimeRange   TimeRange `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
 }
 
 type FunnelRequest struct {
-	TenantID    string    `json:"tenant_id"`
-	TimeRange   TimeRange `json:"time_range"`
+	TenantID    string     `json:"tenant_id"`
+	TimeRange   TimeRange  `json:"time_range"`
 	CustomStart *time.Time `json:"custom_start,omitempty"`
 	CustomEnd   *time.Time `json:"custom_end,omitempty"`
 }
