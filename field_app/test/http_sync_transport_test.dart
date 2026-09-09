@@ -43,16 +43,30 @@ void main() {
     expect(response.outcome, SyncOutcome.queued);
     expect(response.reason, contains('transport unavailable'));
   });
+
+  test('sends the transaction id as Idempotency-Key for safe retry', () async {
+    String? sentKey;
+    final client = MockClient((request) async {
+      sentKey = request.headers['Idempotency-Key'];
+      return http.Response('{"outcome":"APPLIED"}', 200);
+    });
+    await HttpSyncTransport(
+      endpoint: Uri.parse('https://integin.test/sync'),
+      client: client,
+    ).submit(_mutation(transactionId: 'tx-1756363200000000-1234'));
+
+    expect(sentKey, 'tx-1756363200000000-1234');
+  });
 }
 
-OfflineMutation _mutation() {
+OfflineMutation _mutation({String transactionId = 'tx-1'}) {
   const context = TenantContext(
     tenantId: 'tenant-1',
     organizationId: 'org-1',
     environment: 'LIVE',
   );
   return OfflineMutation(
-    transactionId: 'tx-1',
+    transactionId: transactionId,
     context: context,
     deviceId: 'device-1',
     userId: 'user-1',

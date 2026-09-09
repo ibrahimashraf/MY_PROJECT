@@ -17,7 +17,13 @@ class HttpSyncTransport implements SyncTransport {
     try {
       final response = await client.post(
         endpoint,
-        headers: const {'content-type': 'application/json'},
+        headers: {
+          'content-type': 'application/json',
+          // Stripe-style dedupe: the transaction id is stable across retries,
+          // so a retried flush replays instead of double-applying. The server
+          // hard-requires this header (400 idempotency_key_required without it).
+          'Idempotency-Key': mutation.transactionId,
+        },
         body: jsonEncode(mutation.toJson()),
       ).timeout(const Duration(seconds: 15));
       if (response.statusCode < 200 || response.statusCode >= 300) {
