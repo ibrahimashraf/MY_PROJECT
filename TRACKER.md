@@ -316,3 +316,14 @@ With Sprint 2 (D2.1–D2.5) 100% complete and D3.1 committed (`92cef08`), active
    # Target: pkg/onboarding/onboarding_engine.go, field_app, packagemanifest
    ```
 
+---
+
+## 12. 📱 Live-Device Session Notes (2026-09-09, Xiaomi Mi 9, `59af14c0`)
+
+* SDK installed to `C:\Android` (cmdline-tools + platform-tools + API 35/36 + JDK 21 Temurin at `C:\Android\jdk21-home` — JDK 26 cannot build AGP projects; NDK/cmake removed after use). Licenses accepted via ConPTY (sdkmanager ignores piped stdin on Windows; memorized hashes are stale).
+* Docker Desktop died (disk pressure) taking postgres/keycloak/rustfs down; restarted daemon + `docker start` in dependency order. Pilot server restarted reusing `integin-server-pilot.exe` with `INTEGIN_LOCAL_PROVISIONING_ENABLED=true`, org `org-phone-01`, user `inspector-phone` (canonical launcher untouched).
+* field_app fixes landed: `Idempotency-Key` header on sync POSTs (`11ac22e` — server 400s keyless posts); APK built with `INTEGIN_SYNC_ENDPOINT` + `INTEGIN_LOCAL_PROVISIONING_ENDPOINT` defines + `adb reverse tcp:18080`.
+* Phone provisioned for real: `field-1643bfc6…` / inspector-phone with server-issued authorities (verified in `device_registry` + `authority_package` with tenant GUCs set session-wide — note: `set_config(...,true)` is transaction-local, one `psql -c` per statement loses it).
+* Debugging is self-serve: logcat (`adb logcat -d -s flutter:E`), curl-from-phone, phone screenshots via `screencap`+pull, server request log at `operations/pilot/runtime/server.stderr.log`.
+* Gotcha: stale demo-session outbox entries fail forever (403 unregistered authority) and latch `blocked`; fix is `pm clear` for a clean provisioned slate.
+
