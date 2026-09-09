@@ -1,10 +1,13 @@
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integin_field_app/security/attestation.dart';
+import 'package:integin_field_app/security/hardware_attestation_provider.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   const nonceHex = 'deadbeefcafe';
   const challengeId = 'chal_$nonceHex';
   const inspectorId = 'insp_dev-sim-01';
@@ -57,7 +60,8 @@ void main() {
       },
     );
     final attestation = submission['attestation'] as Map<String, dynamic>;
-    expect(attestation.keys.toSet(), {'key_origin', 'biometric_bound', 'key_alias'});
+    expect(attestation.keys.toSet(),
+        {'key_origin', 'biometric_bound', 'key_alias'});
   });
 
   test('keyOrigin is always SOFTWARE across 3 enrollments', () async {
@@ -83,16 +87,60 @@ void main() {
     expect(first.signedNonceHex, isNot(second.signedNonceHex));
   });
 
-  test('HardwareAttestationProvider throws UnimplementedError', () async {
-    final provider = HardwareAttestationProvider();
+  test(
+      'HardwareAttestationProvider mints via the native channel and maps '
+      'TEE to the STRONGBOX chain path', () async {
+    const channel = MethodChannel('integin.attestation/v1');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      expect(call.method, 'mintChain');
+      expect(call.arguments, nonceHex);
+      return const {
+        'chain_pem': ['LEAFCERT', 'INTERCERT'],
+        'security_level': 'TEE',
+        'key_alias': 'integin_probe_abcd1234',
+        'public_key_spki_hex': '3059301306072a8648ce3d020106082a8648ce3d030107',
+        'nonce_signature_hex': '3044022001ff6e0609329a4e',
+        'os_version': '16',
+      };
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    final bundle = await HardwareAttestationProvider().attestEnrollment(
+      challengeId: challengeId,
+      inspectorId: inspectorId,
+      nonceHex: nonceHex,
+      deviceModel: 'MI 9',
+    );
+
+    expect(bundle.keyOrigin, 'STRONGBOX');
+    expect(bundle.biometricBound, isFalse);
+    expect(bundle.keyAlias, 'integin_probe_abcd1234');
+    expect(bundle.osVersion, '16');
+    expect(bundle.deviceModel, 'MI 9');
+    expect(bundle.attestationBlob, contains('chain_pem'));
+  });
+
+  test('HardwareAttestationProvider surfaces native mint errors', () async {
+    const channel = MethodChannel('integin.attestation/v1');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      return const {'error': 'StrongBox and TEE both unavailable'};
+    });
+    addTearDown(() => TestDefaultBinaryMessengerBinding
+        .instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
     await expectLater(
-      provider.attestEnrollment(
+      HardwareAttestationProvider().attestEnrollment(
         challengeId: challengeId,
         inspectorId: inspectorId,
         nonceHex: nonceHex,
         deviceModel: 'hardware-seam',
       ),
-      throwsUnimplementedError,
+      throwsStateError,
     );
   });
 

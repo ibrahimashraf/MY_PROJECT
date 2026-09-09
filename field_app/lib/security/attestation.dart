@@ -88,28 +88,6 @@ class SimulatedAttestationProvider implements AttestationProvider {
   }
 }
 
-/// Native hardware attestation seam for real devices.
-///
-/// Not yet implemented — throws until Android KeyStore StrongBox and iOS
-/// Secure Enclave support land. No native code exists in this task.
-class HardwareAttestationProvider implements AttestationProvider {
-  @override
-  Future<AttestationBundle> attestEnrollment({
-    required String challengeId,
-    required String inspectorId,
-    required String nonceHex,
-    required String deviceModel,
-  }) async {
-    throw UnimplementedError(
-      'HardwareAttestationProvider is the native seam for Android KeyStore '
-      'StrongBox (Keymaster attestation chain via MethodChannel) and iOS '
-      'Secure Enclave (flutter_secure_storage iOptions + App Attest '
-      'DCAppAttestService). No native code exists yet — enroll with '
-      'SimulatedAttestationProvider.',
-    );
-  }
-}
-
 /// Builds the snake_case enrollment submission matching the Go server
 /// contract (pkg/onboarding/contracts.go DeviceEnrollmentSubmission).
 ///
