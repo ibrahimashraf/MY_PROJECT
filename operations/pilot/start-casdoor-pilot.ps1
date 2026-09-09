@@ -1,7 +1,7 @@
 #[INTEGIN Casdoor Pilot] Start the disposable Casdoor IdP against its isolated PostgreSQL container; drop-in 127.0.0.1:18180 replacement for Keycloak.
 # Pinned images (NOT :latest):
 #   postgres:16-alpine  digest sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
-#   casbin/casdoor:v1.600.0  digest sha256:e7bd9acea462e790a98ce782a597f9b282c314c41389ec064f3fa08a0c4fb59c
+#   casbin/casdoor:latest@sha256:1b479655bf51b1c630f2a3ea93ec1ef58388e1d5861173377269266ea321537e  (= v4.3.0, 2026-09-09; versioned v4.x tags do not resolve from all daemons, digest pin keeps it immutable)
 [CmdletBinding()]
 param()
 
@@ -18,7 +18,7 @@ $postgresContainer = 'integin-pilot-casdoor-postgres'
 $networkName = 'integin-casdoor-pilot-net'
 $postgresVolume = 'integin-pilot-casdoor-postgres-data'
 $postgresImage = 'postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685'
-$casdoorImage = 'casbin/casdoor:v1.600.0@sha256:e7bd9acea462e790a98ce782a597f9b282c314c41389ec064f3fa08a0c4fb59c'
+$casdoorImage = 'casbin/casdoor:latest@sha256:1b479655bf51b1c630f2a3ea93ec1ef58388e1d5861173377269266ea321537e'
 
 function Read-EnvironmentFile {
   param([Parameter(Mandatory = $true)][string]$Path)

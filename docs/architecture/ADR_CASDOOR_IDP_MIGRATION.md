@@ -35,7 +35,7 @@ The user required an identity solution that is:
 | **Authelia** | Evaluated positively (MIT, 25MB RAM), but lacks a built-in multi-tenant organization web console for visual pilot admin. |
 
 ## Decision
-Adopt **Casdoor** (`casbin/casdoor:v1.600.0` pinned, NOT the `casdoor/casdoor` name which does not exist on Docker Hub) as the Go-native IdP:
+Adopt **Casdoor** (`casbin/casdoor:latest` digest-pinned, currently v4.3.0 = `sha256:1b479655…`; never the `casdoor/casdoor` name, which does not exist on Docker Hub) as the Go-native IdP:
 1. **License**: 100% Apache 2.0 with zero paywalled features.
 2. **Footprint**: Single Go binary + built-in React web UI. Consumes **~110 MB RAM** (75% savings over Keycloak) and boots in **~2 seconds**.
 3. **Protocol**: Compliant OpenID Connect provider supporting RS256 token signing.
@@ -46,9 +46,16 @@ Adopt **Casdoor** (`casbin/casdoor:v1.600.0` pinned, NOT the `casdoor/casdoor` n
 - Developer laptop memory overhead reduced by >400 MB.
 - Zero changes to Go domain code: `internal/identity/contracts.go` continues to process `PrincipalKey{Issuer, Subject}` identically.
 
-## Live Verification (2026-09-09, this repo)
-- `operations/pilot/start-casdoor-pilot.ps1` boots isolated PG + Casdoor on `127.0.0.1:18180`; discovery verified.
+## Live Verification (2026-09-09, this repo)- `operations/pilot/start-casdoor-pilot.ps1` boots isolated PG + Casdoor on `127.0.0.1:18180`; discovery verified.
 - `initialize-casdoor-pilot-realm.ps1` (idempotent) seeds org `integin-pilot`, RS256 app `integin-live-matrix` (`cert-built-in`), inspector user; grants `authorization_code,password,client_credentials`.
 - `TestCasdoorPartialSubmissionHTTPPostgresIntegration` PASSES live: password-grant → RS256 validate → RLS membership → 200 + persistence + cleanup. Casdoor password-grant tokens carry no `azp`; test config leaves `AuthorizedParty` empty (validator skips the check for single-`aud` tokens — no core change).
 - `cmd/integin-live-matrix` accepts `INTEGIN_OIDC_TOKEN_ENDPOINT` override (Casdoor: `http://127.0.0.1:18180/api/login/oauth/access_token`); `client_credentials` grant verified live.
 - Keycloak containers removed; pilot default issuer is now Casdoor. Rollback: restore Keycloak on `:18180` and point `INTEGIN_OIDC_*` back at `…/realms/integin-pilot`.
+
+## Promotion Gates (do not promote past pilot without these)
+- **SAML permanently out of scope.** CERT VU#780781 cluster (CVE-2026-9090/93/95/96/98, CVE-2026-15630) is SAML-only; we stay OIDC-only. Never enable a SAML provider or `/api/acs` flow.
+- **MFA gated on CVE-2026-9091 fix** (GO-2026-5896, MFA bypass, no known fix as of 2026-09-09). Password-only until the advisory lists a patched version; verify by re-querying the GHSA entry.
+- **Short token lifetimes as revocation substitute.** CVE-2026-9094/9097 (no reliable revocation): keep `MaxTokenAge` ≤ 15 min and never issue long-lived tokens.
+- **No upstream federation without claim review.** CVE-2026-9092 (unverified email takeover): any Google/Azure/GitHub provider wiring must require verified email claims.
+- **Release tracking.** Pinned image must stay within ~30 days of upstream; check `casdoor/casdoor` releases monthly. v4.1.0 (2026-09-02) is the first release past the CVE-2026-84423 (`upload-resource` missing auth) window and adds missing permission checks — minimum promotion floor.
+- **PKCE** mandatory for any future browser `authorization_code` client.
