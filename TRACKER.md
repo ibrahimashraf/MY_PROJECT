@@ -124,9 +124,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Sub-microsecond (<800ns write latency) 64-byte zero-allocation immutable event stream.
     *   Double-timeline recording: Transaction Time (when recorded) vs. Valid Time (when inspection occurred).
     *   🚀 **D3.3 progress (2026-09-10, big-pickle, $0)**: `Entry.ValidTime` + `ValidAt()` (zero→CreatedAt); `record.go` 64-byte canonical record, `BenchmarkAppendRecord` 443ns/op 0 allocs; migration `0081_audit_log_valid_time` (nullable valid_time + index, contract-registered); `auditlogpg` persists zero→NULL, `COALESCE(valid_time,created_at)` ValidFrom/To filters, NULL→zero mapping. Gates re-verified by orchestrator: vet clean, auditlog/auditlogpg/migrations tests PASS, race PASS. Committed `f1938b0` (hooks enabled).
-*   [ ] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `pkg/domain/did.go`, `did:integin`)**:
+*   [x] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `pkg/domain/did.go`, `did:integin`)** — COMPLETE ✅ (2026-09-10, big-pickle, $0):
     *   Decentralized Identifier resolution (`did:integin:asset:<uuid>`).
     *   Autonomous safety quarantine: failed proof-load instantly locks asset state across all operational branches.
+    *   🚀 **D3.4 progress**: `ResolveAssetDID` (parse→asset-type→lookup, typed errors) + proof-load verdict→`Quarantine()` (nil-safe) + tests. Gates re-verified by orchestrator: vet clean, domain tests PASS, race PASS, gofmt clean.
 *   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`) — does not exist, create new under `tools/`**:
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
 *   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`) — `tus_handler.go` does not exist, create new**:
