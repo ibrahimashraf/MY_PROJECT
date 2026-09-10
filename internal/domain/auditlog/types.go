@@ -48,6 +48,16 @@ type Entry struct {
 	PreviousHash   string                 `json:"previous_hash"`
 	EntryHash      string                 `json:"entry_hash"`
 	CreatedAt      time.Time              `json:"created_at"`
+	ValidTime      time.Time              `json:"valid_time,omitempty"`
+}
+
+// ValidAt returns the time the audited event occurred (valid time),
+// defaulting to the record time when ValidTime is unset.
+func (e Entry) ValidAt() time.Time {
+	if e.ValidTime.IsZero() {
+		return e.CreatedAt
+	}
+	return e.ValidTime
 }
 
 type CreateEntryRequest struct {
@@ -88,6 +98,8 @@ type QueryRequest struct {
 	EventType      string     `json:"event_type"`
 	From           *time.Time `json:"from"`
 	To             *time.Time `json:"to"`
+	ValidFrom      *time.Time `json:"valid_from"`
+	ValidTo        *time.Time `json:"valid_to"`
 	Limit          int        `json:"limit"`
 	Offset         int        `json:"offset"`
 }

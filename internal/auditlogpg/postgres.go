@@ -84,14 +84,19 @@ func (r *Repository) Append(ctx context.Context, entry auditlog.Entry) (auditlog
 		return auditlog.Entry{}, fmt.Errorf("marshal audit metadata: %w", err)
 	}
 
+	var validTime interface{}
+	if !entry.ValidTime.IsZero() {
+		validTime = entry.ValidTime
+	}
+
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO audit_log (id, tenant_id, organization_id, event_type, entity_type, entity_id,
 		        actor_id, actor_name, action, old_value, new_value, metadata, ip_address, user_agent,
-		        previous_hash, entry_hash, created_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+		        previous_hash, entry_hash, created_at, valid_time)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
 		entry.ID, entry.TenantID, entry.OrganizationID, entry.EventType, entry.EntityType, entry.EntityID,
 		entry.ActorID, entry.ActorName, string(entry.Action), oldValueJSON, newValueJSON, metadataJSON,
-		entry.IPAddress, entry.UserAgent, entry.PreviousHash, entry.EntryHash, entry.CreatedAt,
+		entry.IPAddress, entry.UserAgent, entry.PreviousHash, entry.EntryHash, entry.CreatedAt, validTime,
 	)
 	if err != nil {
 		return auditlog.Entry{}, err
@@ -149,6 +154,16 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 		args = append(args, *req.To)
 		argIdx++
 	}
+	if req.ValidFrom != nil {
+		where += fmt.Sprintf(" AND COALESCE(valid_time, created_at) >= $%d", argIdx)
+		args = append(args, *req.ValidFrom)
+		argIdx++
+	}
+	if req.ValidTo != nil {
+		where += fmt.Sprintf(" AND COALESCE(valid_time, created_at) <= $%d", argIdx)
+		args = append(args, *req.ValidTo)
+		argIdx++
+	}
 
 	var total int
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM audit_log WHERE %s", where)
@@ -166,7 +181,7 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 	query := fmt.Sprintf(
 		`SELECT id, tenant_id, organization_id, event_type, entity_type, entity_id,
 		        actor_id, actor_name, action, old_value, new_value, metadata,
-		        ip_address, user_agent, previous_hash, entry_hash, created_at
+		        ip_address, user_agent, previous_hash, entry_hash, created_at, valid_time
 		 FROM audit_log WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d`,
 		where, argIdx, argIdx+1,
 	)
@@ -183,14 +198,18 @@ func (r *Repository) Query(ctx context.Context, req auditlog.QueryRequest) (audi
 		var entry auditlog.Entry
 		var oldValueJSON, newValueJSON, metadataJSON []byte
 		var action string
+		var validTime sql.NullTime
 		if err := rows.Scan(
 			&entry.ID, &entry.TenantID, &entry.OrganizationID, &entry.EventType,
 			&entry.EntityType, &entry.EntityID, &entry.ActorID, &entry.ActorName,
 			&action, &oldValueJSON, &newValueJSON, &metadataJSON,
 			&entry.IPAddress, &entry.UserAgent, &entry.PreviousHash, &entry.EntryHash,
-			&entry.CreatedAt,
+			&entry.CreatedAt, &validTime,
 		); err != nil {
 			return auditlog.QueryResponse{}, err
+		}
+		if validTime.Valid {
+			entry.ValidTime = validTime.Time
 		}
 		entry.Action = auditlog.Action(action)
 		if oldValueJSON != nil {
