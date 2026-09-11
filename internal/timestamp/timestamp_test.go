@@ -2,8 +2,11 @@ package timestamp
 
 import (
 	"context"
+	"crypto"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -71,6 +74,35 @@ func testTSARoot(t *testing.T) (*x509.Certificate, *rsa.PrivateKey) {
 		t.Fatal(err)
 	}
 	return cert, key
+}
+
+// testTSARootEd25519 is a self-signed TSA CA with an Ed25519 key, used to
+// prove Ed25519 SignerInfo signatures verify.
+func testTSARootEd25519(t *testing.T) (*x509.Certificate, ed25519.PrivateKey) {
+	t.Helper()
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "INTEGIN Pilot TSA Test Root Ed25519"},
+		NotBefore:             time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		NotAfter:              time.Date(2035, 1, 1, 0, 0, 0, 0, time.UTC),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+		SubjectKeyId:          []byte{0x0f, 0x0e, 0x0d, 0x0c, 0x0b},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, pub, priv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cert, priv
 }
 
 func fixedNow(t *testing.T) time.Time {
@@ -486,4 +518,77 @@ func marshalGrantedResponse(t *testing.T, tokenDER []byte) []byte {
 		t.Fatal(err)
 	}
 	return resp
+}
+
+// TestVerifyPSSSignatureAccepts proves RSASSA-PSS SignerInfo signatures
+// verify across SHA-256/384/512.
+func TestVerifyPSSSignatureAccepts(t *testing.T) {
+	cert, key := testTSARoot(t)
+	for _, hash := range []crypto.Hash{crypto.SHA256, crypto.SHA384, crypto.SHA512} {
+		resp, err := BuildTestResponsePSS(cert, key, hash, goldenMS, testGenTime)
+		if err != nil {
+			t.Fatalf("BuildTestResponsePSS(%v): %v", hash, err)
+		}
+		if _, err := Verify(poolFor(t, cert), resp, goldenMS, fixedNow(t)); err != nil {
+			t.Fatalf("PSS %v verify failed: %v", hash, err)
+		}
+	}
+}
+
+// TestVerifyEd25519SignatureAccepts proves Ed25519 SignerInfo signatures
+// verify end to end (certificate chain + CMS signature).
+func TestVerifyEd25519SignatureAccepts(t *testing.T) {
+	cert, key := testTSARootEd25519(t)
+	resp, err := BuildTestResponseEd25519(cert, key, goldenMS, testGenTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Verify(poolFor(t, cert), resp, goldenMS, fixedNow(t)); err != nil {
+		t.Fatalf("Ed25519 verify failed: %v", err)
+	}
+}
+
+// TestVerifySHA1SignatureRejects proves SHA-1 signed tokens are hard-rejected
+// even though the messageDigest attribute and certificate chain are valid.
+func TestVerifySHA1SignatureRejects(t *testing.T) {
+	cert, key := testTSARoot(t)
+	info, err := buildTSTInfoDER(goldenMS, testGenTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	infoDigest := sha256.Sum256(info)
+	attrs, err := buildSignedAttrsDER(infoDigest[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	sha1Digest := sha1.Sum(attrs)
+	signature, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA1, sha1Digest[:])
+	if err != nil {
+		t.Fatal(err)
+	}
+	sha1Signer, err := newSignerInfoWithDigest(oidSHA1WithRSA, signature, attrs, cert, oidSHA1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := buildTokenDER(info, cert, sha1Signer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := marshalGrantedResponse(t, token)
+	if _, err := Verify(poolFor(t, cert), resp, goldenMS, fixedNow(t)); err == nil {
+		t.Fatal("verify accepted a SHA-1 signed token, want failure")
+	}
+}
+
+// TestVerifyPSSSHA1Rejects proves RSASSA-PSS defaulting to SHA-1 parameters
+// fails closed (the SignerInfo digest is SHA-1).
+func TestVerifyPSSSHA1Rejects(t *testing.T) {
+	cert, key := testTSARoot(t)
+	resp, err := BuildTestResponsePSS(cert, key, crypto.SHA1, goldenMS, testGenTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Verify(poolFor(t, cert), resp, goldenMS, fixedNow(t)); err == nil {
+		t.Fatal("verify accepted an RSASSA-PSS token with SHA-1 digest, want failure")
+	}
 }

@@ -129,6 +129,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	schemaVersioner, schemaErr := domainsync.CurrentSchemaVersioner()
+	if schemaErr != nil {
+		log.Printf("schema registry error: %v; tablet schema handshake remains unenforced (fail open)", schemaErr)
+	} else if schemaVersioner != nil {
+		processor.SetSchemaVersioner(schemaVersioner)
+	}
 	evidenceStore, err := configureEvidenceStore()
 	if err != nil {
 		log.Fatal(err)
@@ -401,6 +407,7 @@ func main() {
 		}
 		tusHandler = storage.TUSRouteHandler{Manager: tusManager}
 	}
+	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil)
 	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,

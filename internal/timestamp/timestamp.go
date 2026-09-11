@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/sha256"
 	_ "crypto/sha512"
@@ -33,6 +34,7 @@ import (
 
 // RFC 3161 / RFC 5652 object identifiers used by the protocol.
 var (
+	oidSHA1          = asn1.ObjectIdentifier{1, 3, 14, 3, 2, 26} // SHA-1 digest (hard-rejected)
 	oidSHA256        = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 1}
 	oidSHA384        = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 2}
 	oidSHA512        = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 3}
@@ -41,9 +43,12 @@ var (
 	oidContentType   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 3}
 	oidMessageDigest = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 4}
 
+	oidSHA1WithRSA     = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 5} // SHA-1 PKCS#1 v1.5 (hard-rejected)
 	oidSHA256WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 11}
 	oidSHA384WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 12}
 	oidSHA512WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 13}
+	oidRSASSAPSS       = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 10} // id-RSASSA-PSS
+	oidEd25519         = asn1.ObjectIdentifier{1, 3, 101, 112}              // id-Ed25519
 	oidEcdsaWithSHA256 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 2}
 	oidEcdsaWithSHA384 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 3}
 	oidEcdsaWithSHA512 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 4}
@@ -483,7 +488,9 @@ var digestAlgorithms = map[string]crypto.Hash{
 
 // verifySignature enforces the CMS signing over the signer's signedAttrs
 // (RFC 5652 §5.4). Any structural inconsistency or a failing signature check
-// fails closed.
+// fails closed. RSA PKCS#1 v1.5, RSASSA-PSS and ECDSA are keyed on the
+// SignatureAlgorithm OID (PSS hash comes from the SignerInfo DigestAlgorithm).
+// SHA-1 is rejected in all forms.
 func verifySignature(si signerInfo, leaf *x509.Certificate, tstInfoDER []byte) error {
 	signedAttrs, err := normalizeSignedAttrs(si.SignedAttrs)
 	if err != nil {
@@ -497,15 +504,55 @@ func verifySignature(si signerInfo, leaf *x509.Certificate, tstInfoDER []byte) e
 	if !bytes.Equal(digest, infoDigest[:]) {
 		return errors.New("signer messageDigest attribute does not match the TSTInfo content")
 	}
-	params, ok := signatureAlgorithms[si.SignatureAlgorithm.Algorithm.String()]
-	if !ok {
-		return fmt.Errorf("unsupported timestamp signature algorithm %s (fail closed)", si.SignatureAlgorithm.Algorithm)
+	if si.DigestAlgorithm.Algorithm.Equal(oidSHA1) || si.SignatureAlgorithm.Algorithm.Equal(oidSHA1WithRSA) {
+		return errors.New("SHA-1 digest or signature algorithm is rejected for timestamps (fail closed)")
 	}
+	return verifySignedAttrsSignature(si, leaf, signedAttrs)
+}
+
+// verifySignedAttrsSignature verifies the SignerInfo signature over the
+// DER-encoded signedAttrs against the signer certificate key, dispatching on
+// the SignatureAlgorithm OID. Unknown OIDs and SHA-1 fail closed.
+func verifySignedAttrsSignature(si signerInfo, leaf *x509.Certificate, signedAttrs []byte) error {
+	sigAlg := si.SignatureAlgorithm.Algorithm
 	digestAlg, ok := digestAlgorithms[si.DigestAlgorithm.Algorithm.String()]
 	if !ok {
 		return fmt.Errorf("unsupported timestamp digest algorithm %s (fail closed)", si.DigestAlgorithm.Algorithm)
 	}
-	if !digestAlg.Available() || !params.hash.Available() {
+	if !digestAlg.Available() {
+		return errors.New("timestamp signing hash is not linked (fail closed)")
+	}
+
+	switch {
+	case sigAlg.Equal(oidRSASSAPSS):
+		pub, ok := leaf.PublicKey.(*rsa.PublicKey)
+		if !ok {
+			return errors.New("signer certificate key is not rsa for RSASSA-PSS signature")
+		}
+		h := digestAlg.New()
+		h.Write(signedAttrs)
+		signedDigest := h.Sum(nil)
+		if err := rsa.VerifyPSS(pub, digestAlg, signedDigest, si.Signature, nil); err != nil {
+			return fmt.Errorf("timestamp RSASSA-PSS signature verification failed: %w", err)
+		}
+		return nil
+
+	case sigAlg.Equal(oidEd25519):
+		pub, ok := leaf.PublicKey.(ed25519.PublicKey)
+		if !ok {
+			return errors.New("signer certificate key is not Ed25519 although the signature claims it")
+		}
+		if !ed25519.Verify(pub, signedAttrs, si.Signature) {
+			return errors.New("Ed25519 timestamp signature verification failed")
+		}
+		return nil
+	}
+
+	params, ok := signatureAlgorithms[sigAlg.String()]
+	if !ok {
+		return fmt.Errorf("unsupported timestamp signature algorithm %s (fail closed)", sigAlg)
+	}
+	if !params.hash.Available() {
 		return errors.New("timestamp signing hash is not linked (fail closed)")
 	}
 	h := digestAlg.New()
@@ -726,6 +773,10 @@ func buildSignedAttrsDER(messageDigest []byte) ([]byte, error) {
 }
 
 func newSignerInfo(signatureAlgorithm asn1.ObjectIdentifier, signature, signedAttrsDER []byte, cert *x509.Certificate) (signerInfo, error) {
+	return newSignerInfoWithDigest(signatureAlgorithm, signature, signedAttrsDER, cert, oidSHA256)
+}
+
+func newSignerInfoWithDigest(signatureAlgorithm asn1.ObjectIdentifier, signature, signedAttrsDER []byte, cert *x509.Certificate, digestAlgID asn1.ObjectIdentifier) (signerInfo, error) {
 	if len(signedAttrsDER) == 0 {
 		return signerInfo{}, errors.New("signed attributes are required")
 	}
@@ -744,7 +795,7 @@ func newSignerInfo(signatureAlgorithm asn1.ObjectIdentifier, signature, signedAt
 	return signerInfo{
 		Version:            1,
 		SID:                asn1.RawValue{Class: asn1.ClassContextSpecific, Tag: 0, IsCompound: true, Bytes: iasDER},
-		DigestAlgorithm:    algorithmIdentifier{Algorithm: oidSHA256},
+		DigestAlgorithm:    algorithmIdentifier{Algorithm: digestAlgID},
 		SignedAttrs:        asn1.RawValue{Class: asn1.ClassContextSpecific, Tag: 0, IsCompound: true, Bytes: setContent},
 		SignatureAlgorithm: algorithmIdentifier{Algorithm: signatureAlgorithm},
 		Signature:          signature,

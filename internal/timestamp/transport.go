@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -230,6 +231,111 @@ func signSignedAttrs(signerKey any, signedAttrsDER []byte) ([]byte, asn1.ObjectI
 	default:
 		return nil, nil, errors.New("unsupported timestamp signer key (rsa or ecdsa required)")
 	}
+}
+
+// signSignedAttrsPSS produces an RSASSA-PSS SignerInfo signature over the
+// DER-signed signedAttrs using the given hash. Test and simulation use only.
+func signSignedAttrsPSS(key *rsa.PrivateKey, hash crypto.Hash, signedAttrsDER []byte) ([]byte, asn1.ObjectIdentifier, error) {
+	if !hash.Available() {
+		return nil, nil, fmt.Errorf("hash %v is not linked (fail closed)", hash)
+	}
+	h := hash.New()
+	h.Write(signedAttrsDER)
+	signature, err := rsa.SignPSS(rand.Reader, key, hash, h.Sum(nil), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return signature, oidRSASSAPSS, nil
+}
+
+// signSignedAttrsEd25519 produces an Ed25519 SignerInfo signature over the
+// DER-signed signedAttrs. Test and simulation use only.
+func signSignedAttrsEd25519(key ed25519.PrivateKey, signedAttrsDER []byte) ([]byte, asn1.ObjectIdentifier, error) {
+	signature := ed25519.Sign(key, signedAttrsDER)
+	return signature, oidEd25519, nil
+}
+
+// BuildTestResponsePSS constructs a TimeStampResp whose SignerInfo uses an
+// RSASSA-PSS signature over the signed attrs with the given hash. The digest
+// field maps hash to its signing OID (SHA-1 rejected).
+func BuildTestResponsePSS(signer *x509.Certificate, signerKey *rsa.PrivateKey, hash crypto.Hash, imprint []byte, genTime time.Time) ([]byte, error) {
+	if signer == nil {
+		return nil, errors.New("signer certificate is required")
+	}
+	if signerKey == nil {
+		return nil, errors.New("signer private key is required")
+	}
+	infoDER, err := buildTSTInfoDER(imprint, genTime)
+	if err != nil {
+		return nil, err
+	}
+	infoDigest := sha256.Sum256(infoDER)
+	attrs, err := buildSignedAttrsDER(infoDigest[:])
+	if err != nil {
+		return nil, err
+	}
+	digestOID, ok := digestAlgorithmOIDs[hash]
+	if !ok {
+		return nil, fmt.Errorf("unsupported PSS hash %v (fail closed)", hash)
+	}
+	signature, sigAlg, err := signSignedAttrsPSS(signerKey, hash, attrs)
+	if err != nil {
+		return nil, err
+	}
+	si, err := newSignerInfoWithDigest(sigAlg, signature, attrs, signer, digestOID)
+	if err != nil {
+		return nil, err
+	}
+	tokenDER, err := buildTokenDER(infoDER, signer, si)
+	if err != nil {
+		return nil, err
+	}
+	resp := timeStampResp{Status: pkiStatusInfo{Status: pkiStatusGranted}, TimeStamp: asn1.RawValue{FullBytes: tokenDER}}
+	return asn1.Marshal(resp)
+}
+
+// BuildTestResponseEd25519 constructs a TimeStampResp whose SignerInfo uses an
+// Ed25519 signature over the signed attrs. Test and simulation use only.
+func BuildTestResponseEd25519(signer *x509.Certificate, signerKey ed25519.PrivateKey, imprint []byte, genTime time.Time) ([]byte, error) {
+	if signer == nil {
+		return nil, errors.New("signer certificate is required")
+	}
+	if signerKey == nil {
+		return nil, errors.New("signer private key is required")
+	}
+	infoDER, err := buildTSTInfoDER(imprint, genTime)
+	if err != nil {
+		return nil, err
+	}
+	infoDigest := sha256.Sum256(infoDER)
+	attrs, err := buildSignedAttrsDER(infoDigest[:])
+	if err != nil {
+		return nil, err
+	}
+	signature, sigAlg, err := signSignedAttrsEd25519(signerKey, attrs)
+	if err != nil {
+		return nil, err
+	}
+	si, err := newSignerInfoWithDigest(sigAlg, signature, attrs, signer, oidSHA512)
+	if err != nil {
+		return nil, err
+	}
+	tokenDER, err := buildTokenDER(infoDER, signer, si)
+	if err != nil {
+		return nil, err
+	}
+	resp := timeStampResp{Status: pkiStatusInfo{Status: pkiStatusGranted}, TimeStamp: asn1.RawValue{FullBytes: tokenDER}}
+	return asn1.Marshal(resp)
+}
+
+// digestAlgorithmOIDs maps crypto.Hash to its digest AlgorithmIdentifier OID
+// (test fixture helpers only). SHA-1 maps to the rejected OID so tests can
+// prove it fails closed.
+var digestAlgorithmOIDs = map[crypto.Hash]asn1.ObjectIdentifier{
+	crypto.SHA1:   oidSHA1,
+	crypto.SHA256: oidSHA256,
+	crypto.SHA384: oidSHA384,
+	crypto.SHA512: oidSHA512,
 }
 
 // marshalTLV builds a single definite-length DER TLV (generator-side helper;
