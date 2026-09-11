@@ -1,6 +1,9 @@
 package eventbus
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 // Topic is a string channel identifier for cross-domain events.
 type Topic string
@@ -42,17 +45,18 @@ type StressAlertEvent struct {
 
 // Bus is the cross-domain publish/subscribe event dispatcher.
 type Bus struct {
-	mu       sync.RWMutex
-	handlers map[Topic][]Handler
-	eventCh  chan Event
-	done     chan struct{}
+	mu           sync.RWMutex
+	handlers     map[Topic][]Handler
+	eventCh      chan Event
+	done         chan struct{}
+	DroppedCount uint64 // Atomic counter of back-pressure drops
 }
 
 // NewBus constructs an initialized event bus with a buffered async channel.
 func NewBus() *Bus {
 	b := &Bus{
 		handlers: make(map[Topic][]Handler),
-		eventCh:  make(chan Event, 256), // Buffered: publishers never block
+		eventCh:  make(chan Event, 1024),
 		done:     make(chan struct{}),
 	}
 	go b.run()
@@ -72,12 +76,26 @@ func (b *Bus) run() {
 				h(e)
 			}
 		case <-b.done:
-			return
+			// Drain remaining events before exit
+			for {
+				select {
+				case e := <-b.eventCh:
+					b.mu.RLock()
+					handlers := make([]Handler, len(b.handlers[e.Topic]))
+					copy(handlers, b.handlers[e.Topic])
+					b.mu.RUnlock()
+					for _, h := range handlers {
+						h(e)
+					}
+				default:
+					return
+				}
+			}
 		}
 	}
 }
 
-// Close shuts down the async dispatch goroutine.
+// Close gracefully shuts down the async dispatch goroutine, draining pending events.
 func (b *Bus) Close() {
 	close(b.done)
 }
@@ -101,11 +119,13 @@ func (b *Bus) Publish(e Event) {
 }
 
 // PublishAsync sends event to the channel pipeline — non-blocking, idiomatic Go.
-// Handlers execute in the bus goroutine via channel select, not WaitGroup/goroutine fan-out.
-func (b *Bus) PublishAsync(e Event) {
+// Returns error and increments DroppedCount if channel is full (back-pressure signal).
+func (b *Bus) PublishAsync(e Event) error {
 	select {
 	case b.eventCh <- e:
+		return nil
 	default:
-		// Channel full (back-pressure): drop or handle in production via metrics
+		b.DroppedCount++
+		return fmt.Errorf("eventbus: back-pressure on topic %q — event dropped (total dropped: %d)", e.Topic, b.DroppedCount)
 	}
 }

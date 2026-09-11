@@ -7,6 +7,7 @@ import (
 
 func TestEventBusPubSub(t *testing.T) {
 	bus := NewBus()
+	defer bus.Close()
 	var count int64
 
 	bus.Subscribe(TopicWindUpdate, func(e Event) {
@@ -21,8 +22,10 @@ func TestEventBusPubSub(t *testing.T) {
 		t.Fatalf("Expected 2 handler calls, got %d", count)
 	}
 
-	// Async dispatch
-	bus.PublishAsync(Event{Topic: TopicWildfireIgnition, Payload: nil})
+	// Async dispatch: should succeed on empty channel
+	if err := bus.PublishAsync(Event{Topic: TopicWildfireIgnition, Payload: nil}); err != nil {
+		t.Fatalf("PublishAsync failed unexpectedly: %v", err)
+	}
 }
 
 func TestEventBusPayloadTyping(t *testing.T) {
