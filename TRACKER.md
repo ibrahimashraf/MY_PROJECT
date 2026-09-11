@@ -47,7 +47,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | **L3** | **Dynamic Discipline & Inspection Package Scoping Engine** | **COMPLETE ✅** | `traininghttp`, `trainingpg`, `equipment` | `0018_timesheets_courses`, `0032_full_dpp_regulatory_monitor` |
 | **L4** | **Global Enterprise Hierarchy & Operational Work Orders** | **COMPLETE ✅** | `workorderhttp`, `workorderpg`, `workorderauth`, `domain/workorder`, `riverqueue` | `0005_work_order_foundation`, `0009_work_order_persistence`, `0010_work_order_rls`, `0012_work_order_handover`, `0019_hierarchical_register`, `0029_parts_charges_timesheet_auto`, `0050`–`0060` (River queue scale), `0063_fix_unindexed_foreign_keys`, `0064_river_hot_updates`, `0065_river_canonical_v047`, `0069_state_machine_and_sequence_bounds` |
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
-| **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **UPCOMING 📅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
+| **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **COMPLETE ✅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
 | **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **COMPLETE ✅** | `internal/evidenceapi`, `internal/evidenceexport`, `internal/evidencehttp`, `internal/evidencepg`, `internal/evidenceregistration`, `internal/platform/calibration`, `internal/domain/evidence`, `internal/domain/evidencepack`, `migrations/0073_*` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence`, `0073_tool_calibration_registry` |
 | **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **COMPLETE ✅** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
 | **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **COMPLETE ✅** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
@@ -148,9 +148,11 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Interactive HTML5 Canvas & Flutter vector engine rendering plan/elevation views with reactive kinematic handles for major crane models (Liebherr, Tadano, Kato, Manitowoc).
 
 ### Sprint 4: Cloud-Native K8s Mesh & Universal QR Trust
-*   [ ] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`) — neither exists, create new**:
+*   [x] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`)** — COMPLETE ✅ (2026-09-11, landed `f22717d`):
     *   Zero-backend-cost client-side public certificate verification via `#sig=...` URL fragment.
     *   Client-side Ed25519 signature validation and W3C DID document verification directly in browser WebCrypto API (`verify.integin.com`).
+    *   Go verification package `pkg/verification/verify.go` (stdlib Ed25519, `did:key:z...` multicodec parse) + 100% PASS tests.
+    *   Prometheus telemetry exported on `/metrics`: `integin_sync_offline_hmac_fallback_total`.
 *   [ ] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`config/k8s/helm/integin-platform/`, `terraform/`) — do not exist, create new**:
     *   High-availability pod auto-scaling (10,000 req/sec) with zero-downtime rolling upgrades.
 *   [ ] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`) — does not exist, create new**:
