@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Hash policy seam for PIN hashing.
 ///
@@ -102,6 +105,82 @@ class InMemoryPinStore implements PinStore {
 
   @override
   Future<void> clearDuressHash() async => _duressHash = null;
+}
+
+/// Production [PinStore] backed by [FlutterSecureStorage] (Android KeyStore / iOS Keychain).
+class SecurePinStore implements PinStore {
+  SecurePinStore(
+      {FlutterSecureStorage? storage, this.prefix = 'integin.auth.pin'})
+      : _storage = storage ?? const FlutterSecureStorage();
+
+  final FlutterSecureStorage _storage;
+  final String prefix;
+
+  String get _pinKey => '$prefix.hash';
+  String get _duressKey => '$prefix.duress_hash';
+  String get _failCountKey => '$prefix.fail_count';
+  String get _lockoutKey => '$prefix.lockout_until';
+
+  @override
+  Future<Uint8List?> readPinHash() async {
+    final raw = await _storage.read(key: _pinKey);
+    return raw != null ? base64Decode(raw) : null;
+  }
+
+  @override
+  Future<void> writePinHash(Uint8List hash) async {
+    await _storage.write(key: _pinKey, value: base64Encode(hash));
+  }
+
+  @override
+  Future<int> readFailCount() async {
+    final raw = await _storage.read(key: _failCountKey);
+    return raw != null ? int.tryParse(raw) ?? 0 : 0;
+  }
+
+  @override
+  Future<void> writeFailCount(int count) async {
+    await _storage.write(key: _failCountKey, value: count.toString());
+  }
+
+  @override
+  Future<DateTime?> readLockoutUntil() async {
+    final raw = await _storage.read(key: _lockoutKey);
+    return raw != null ? DateTime.tryParse(raw) : null;
+  }
+
+  @override
+  Future<void> writeLockoutUntil(DateTime? dt) async {
+    if (dt == null) {
+      await _storage.delete(key: _lockoutKey);
+    } else {
+      await _storage.write(key: _lockoutKey, value: dt.toIso8601String());
+    }
+  }
+
+  @override
+  Future<Uint8List?> readDuressHash() async {
+    final raw = await _storage.read(key: _duressKey);
+    return raw != null ? base64Decode(raw) : null;
+  }
+
+  @override
+  Future<void> writeDuressHash(Uint8List hash) async {
+    await _storage.write(key: _duressKey, value: base64Encode(hash));
+  }
+
+  @override
+  Future<void> clearDuressHash() async {
+    await _storage.delete(key: _duressKey);
+  }
+
+  @override
+  Future<void> clearAll() async {
+    await _storage.delete(key: _pinKey);
+    await _storage.delete(key: _duressKey);
+    await _storage.delete(key: _failCountKey);
+    await _storage.delete(key: _lockoutKey);
+  }
 }
 
 /// PIN authentication gate for ATEX Zone 1 (glove-friendly).

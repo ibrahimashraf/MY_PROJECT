@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integin_field_app/auth/pin.dart';
 
@@ -9,7 +10,10 @@ void main() {
 
   setUp(() {
     store = InMemoryPinStore();
-    gate = EnclavePinGate(store: store, maxAttempts: 3, baseBackoff: const Duration(milliseconds: 10));
+    gate = EnclavePinGate(
+        store: store,
+        maxAttempts: 3,
+        baseBackoff: const Duration(milliseconds: 10));
   });
 
   test('notEnrolled when no PIN stored', () async {
@@ -77,5 +81,41 @@ void main() {
     final pin = Uint8List.fromList([1, 1, 1]);
     await gate.enroll(pin);
     expect(pin, [0, 0, 0]);
+  });
+
+  group('SecurePinStore contract', () {
+    test('roundtrips pin hash, fail count, lockout, and duress hash', () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      final secureStore = SecurePinStore();
+
+      expect(await secureStore.readPinHash(), isNull);
+      expect(await secureStore.readFailCount(), 0);
+      expect(await secureStore.readLockoutUntil(), isNull);
+      expect(await secureStore.readDuressHash(), isNull);
+
+      final dummyHash = Uint8List.fromList([10, 20, 30]);
+      await secureStore.writePinHash(dummyHash);
+      expect(await secureStore.readPinHash(), dummyHash);
+
+      await secureStore.writeFailCount(3);
+      expect(await secureStore.readFailCount(), 3);
+
+      final lockout = DateTime.utc(2026, 9, 11, 22, 0, 0);
+      await secureStore.writeLockoutUntil(lockout);
+      expect(await secureStore.readLockoutUntil(), lockout);
+
+      final duressHash = Uint8List.fromList([99, 88, 77]);
+      await secureStore.writeDuressHash(duressHash);
+      expect(await secureStore.readDuressHash(), duressHash);
+
+      await secureStore.clearDuressHash();
+      expect(await secureStore.readDuressHash(), isNull);
+      expect(await secureStore.readPinHash(), dummyHash);
+
+      await secureStore.clearAll();
+      expect(await secureStore.readPinHash(), isNull);
+      expect(await secureStore.readFailCount(), 0);
+      expect(await secureStore.readLockoutUntil(), isNull);
+    });
   });
 }
