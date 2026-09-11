@@ -315,12 +315,11 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 11. 🎯 Immediate Execution Command: Sprint 4 Active Frontier
 
-With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.13 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`, D3.8 timestamping submodule `816ef11`, hardening (`71beae9` TUS auth/resume + `dab89ce` crash windows + boot warnings/PSS-Ed25519/versioner wiring), D3.9–D3.13 landed). **Sprint 3 COMPLETE ✅.** The active frontier is:
+With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.13 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer `79437d0` + client/downsampler `f22717d` + NativeDownsamplePolicy WebP codec `f33597e`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`, D3.8 timestamping submodule `816ef11`, hardening (`71beae9` TUS auth/resume + `dab89ce` crash windows + boot warnings/PSS-Ed25519/versioner wiring), D3.9–D3.13 landed). **Sprint 3 COMPLETE ✅.**
 
-1. **Deliverable 4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`)**:
-   ```powershell
-   # Target: Ed25519 + DID verification in browser WebCrypto, $0 backend
-   ```
+Sprint 4 frontier:
+1. **Deliverable 4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification/`)**: **COMPLETE ✅** (`f22717d`, verified in Go + browser WebCrypto).
+2. **Deliverable 4.2+: Cloud-Native K8s Mesh & Air-Gapped Sovereign Edge Appliance Stack**: **NEXT 🌐**.
 
 ---
 
