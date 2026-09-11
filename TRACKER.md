@@ -30,7 +30,7 @@
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **In Progress.** Commencing Deliverable 3.1: ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.4 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport. **Frontier: D3.5 onboarding wizard.** |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -49,9 +49,9 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
 | **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **UPCOMING 📅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
 | **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **ACTIVE 🚀** | `internal/evidenceapi`, `internal/evidenceexport`, `internal/evidencehttp`, `internal/evidencepg`, `internal/evidenceregistration`, `internal/platform/calibration`, `internal/domain/evidence`, `internal/domain/evidencepack`, `migrations/0073_*` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence`, `0073_tool_calibration_registry` |
-| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **UPCOMING 📅** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
-| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **UPCOMING 📅** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
-| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **UPCOMING 📅** | `internal/domain/auditlog` (hashchain, repository, types), `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
+| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **ACTIVE 🚀** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
+| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **ACTIVE 🚀** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
+| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **ACTIVE 🚀** | `internal/domain/auditlog` (hashchain, repository, types), `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
 | **L11** | **Edge Zero-Knowledge QR Trust Gateway & Dynamic Multi-Regulator Sync** | **PLANNED 🌐** | `internal/certificatepublichttp`, `internal/shortlinkhttp`, `internal/shortlinkpg`, `internal/shortlinksvc`, `internal/analyticshttp`, `internal/analyticspg`, `internal/reportshandler`, `internal/reportspg` | `0014_certificate_public_bindings`, `0027_client_portal_domains_acls`, `0028_integrations_xero_m365_api`, `0030_hse_notification_csv_export`, `0039_short_links` ... `0047_short_link_hmac`, `0049_analytics_dashboard`, `0070_add_certificate_performance_indexes` |
 
 ---
@@ -120,15 +120,15 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.
     *   🚀 **D3.2 progress (2026-09-08, big-pickle `85591ca` + `a318946` + `39fac3d` + `0c601e1` + `3f3626d`, $0 no-account path)**: `AttestationClaim` (SECURE_ENCLAVE/STRONGBOX/SOFTWARE/NONE, opaque blob, biometric flag) + `VerifyClaim` policy (permissive default, opt-in RequireHardware/RequireBiometricBinding, unknown origins fail closed) wired into `ProcessDeviceEnrollment`; posture recorded on `DeviceTrustRecord`. Receipt side: `VerifyOfflineReceiptWithPolicy` delegates to existing crypto verification then enforces recorded posture (zero policy = legacy behavior). Offline Android chain verifier (`attestation_chain.go`, stdlib only): x509 chain to operator-provisioned Google roots (`LoadAttestationRoots` + `SetAttestationRoots`, nothing embedded from memory), KeyDescription checks (challenge==enrollment nonce, TEE/StrongBox level, GREEN boot, SIGN purpose), fail-closed enrollment with `AttestationVerified` audit flag. Offline Apple App Attest verifier (`apple_attest.go`, stdlib only, hand-rolled definite-length CBOR): x5c chain to operator-injected Apple root (`SetAppleAttestRoots`/`LoadAppleAttestRoots`), nonce `SHA256(authData||SHA256(challenge))` vs leaf 8.2 extension, rpIdHash vs SHA256(`SetEnrollmentExpectedAppID`); orchestrator-added hardening: definite lengths capped to unread buffer (crafted u64 length errors instead of panicking) + regression test. Dart dev simulator (`field_app/lib/security/attestation.dart`, no new deps): `SimulatedAttestationProvider` (fresh software Ed25519 per enrollment, const-only SOFTWARE origin — no code path can emit hardware origins), `buildEnrollmentSubmission` with byte-exact Go contract keys, `HardwareAttestationProvider` throwing native seam. Live round-trip proof (`field_app/tool/attestation_roundtrip.dart` + `pkg/onboarding/roundtrip_test.go`, `d20d1b2`): Go issues challenge → Dart signs → Go enrolls → asserts SOFTWARE/CLAIMED/unverified posture + tampered-nonce rejection; skips cleanly without Flutter. Gates: Go vet CLEAN, full `go test` PASS, race PASS; `flutter analyze` clean, `flutter test` 6/6 + regression files green. Open: operator provisions Google + Apple roots PEMs and ExpectedAppID at boot; device-side generation (Apple App ID $99/yr deferred); enrollment UI wiring of the simulator.
     *   ✅ **D3.2 closure (2026-09-09, big-pickle, $0, committed `0aa62c3`)**: boot provisioning `pkg/onboarding/provision.go` (env `INTEGIN_ATTEST_GOOGLE/APPLE_ROOTS_FILE`, `INTEGIN_APPLE_APP_ID`, fail-closed, all-or-nothing Apple pinning); loopback-gated `POST /enroll/challenge|submit` (`enroll_http.go`, `INTEGIN_PILOT_ENROLL_ENABLED`); Flutter `EnrollmentScreen` (idle/enrolling/success/error, SOFTWARE CLAIMED-unverified posture card, AppBar entry, default `:18080`) + 2 widget tests. Gates re-verified by orchestrator: vet clean, onboarding/server tests PASS, race PASS, analyze clean.
-*   [ ] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`internal/domain/auditlog/`, `internal/auditlogpg/`)**:
+*   [x] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`internal/domain/auditlog/`, `internal/auditlogpg/`)** — COMPLETE ✅ (2026-09-10, landed `dd091d8`):
     *   Sub-microsecond (<800ns write latency) 64-byte zero-allocation immutable event stream.
     *   Double-timeline recording: Transaction Time (when recorded) vs. Valid Time (when inspection occurred).
     *   🚀 **D3.3 progress (2026-09-10, big-pickle, $0)**: `Entry.ValidTime` + `ValidAt()` (zero→CreatedAt); `record.go` 64-byte canonical record, `BenchmarkAppendRecord` 443ns/op 0 allocs; migration `0081_audit_log_valid_time` (nullable valid_time + index, contract-registered); `auditlogpg` persists zero→NULL, `COALESCE(valid_time,created_at)` ValidFrom/To filters, NULL→zero mapping. Gates re-verified by orchestrator: vet clean, auditlog/auditlogpg/migrations tests PASS, race PASS. Committed `f1938b0` (hooks enabled).
-*   [x] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `pkg/domain/did.go`, `did:integin`)** — COMPLETE ✅ (2026-09-10, big-pickle, $0):
+*   [x] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `pkg/domain/did.go`, `did:integin`)** — COMPLETE ✅ (2026-09-10, big-pickle, $0, landed `c9f6441`):
     *   Decentralized Identifier resolution (`did:integin:asset:<uuid>`).
     *   Autonomous safety quarantine: failed proof-load instantly locks asset state across all operational branches.
     *   🚀 **D3.4 progress**: `ResolveAssetDID` (parse→asset-type→lookup, typed errors) + proof-load verdict→`Quarantine()` (nil-safe) + tests. Gates re-verified by orchestrator: vet clean, domain tests PASS, race PASS, gofmt clean.
-*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`) — does not exist, create new under `tools/`**:
+*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)** — IN PROGRESS: `index.html`/`style.css`/`app.js` exist (48/119/52 lines), tracked since `5de18a3`, working tree modified-uncommitted. NOT pending — completes + commits next:
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
 *   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`) — `tus_handler.go` does not exist, create new**:
     *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
@@ -305,18 +305,19 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 11. 🎯 Immediate Execution Command: Sprint 3 Active Frontier
 
-With Sprint 2 (D2.1–D2.5) 100% complete and D3.1 committed (`92cef08`), active frontier is:
+With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.4 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`), the active frontier is:
 
-1. **Verify D3.1 on Live Database Container**:
-   Apply `migrations/0073_tool_calibration_registry.sql` to local PostgreSQL container (port 15432) and run package verification:
+1. **Deliverable 3.5: Universal Executive Onboarding Wizard (`tools/onboarding-wizard/`)**:
+   `index.html`/`style.css`/`app.js` exist with uncommitted working-tree changes. Verify the browser UI (regex token parsing + live certificate preview) and commit:
    ```powershell
-   cd c:\MY_PROJECT\integin-pilot-source
-   go test -v -count=1 ./internal/platform/calibration/...
+   cd c:\MY_PROJECT
+   git add tools/onboarding-wizard/
+   git diff --cached --stat
    ```
 
-2. **Proceed to Deliverable 3.2: FIPS 140-3 Hardware Tablet Attestation**:
+2. **Proceed to Deliverable 3.6: TUS Chunked Resumable Media Streamer (`internal/storage/tus_handler.go`)**:
    ```powershell
-   # Target: pkg/onboarding/onboarding_engine.go, field_app, packagemanifest
+   # Target: new internal/storage/ package, chunked 2MB upload over VSAT
    ```
 
 ---
