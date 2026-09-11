@@ -23,13 +23,20 @@ import (
 	"integin/internal/syncapi"
 )
 
+// TokenValidator authenticates OIDC bearer tokens at the HTTP boundary;
+// *oidcauth.Validator is the production implementation. It is a minimal
+// interface so route gates stay testable without a live issuing authority.
+type TokenValidator interface {
+	Validate(context.Context, string) (oidcauth.Principal, error)
+}
+
 type Dependencies struct {
 	DB                             *sql.DB
 	SyncProcessor                  *domainsync.Processor
 	Devices                        []device_trust.Device
 	Authorities                    []device_trust.AuthorityPackage
 	EvidenceStore                  storage.Store
-	Validator                      *oidcauth.Validator
+	Validator                      TokenValidator
 	Resolver                       identity.Resolver
 	EvidenceRegistrationHandler    http.Handler
 	LocalProvisioning              http.Handler

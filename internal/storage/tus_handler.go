@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -45,6 +46,16 @@ type tusSession struct {
 	file string
 }
 
+// tusSidecar is the on-disk JSON record that lets a restarted process reattach
+// an in-flight session without any in-memory state.
+type tusSidecar struct {
+	ID          string `json:"id"`
+	Size        int64  `json:"size"`
+	Checksum    string `json:"checksum"`
+	Offset      int64  `json:"offset"`
+	ContentType string `json:"content_type"`
+}
+
 // TUSManager coordinates resumable chunked media uploads. Chunk bytes live in
 // a per-session file under dir; session metadata lives in memory. All state
 // is mutex-guarded, so concurrent appends to one session are rejected rather
@@ -73,7 +84,7 @@ func NewTUSManager(dir string, chunkSize int64, staleTTL time.Duration) (*TUSMan
 		return nil, err
 	}
 	m := &TUSManager{dir: dir, chunkSize: chunkSize, staleTTL: staleTTL, sessions: make(map[string]*tusSession)}
-	if _, err := m.RecoverOrphans(); err != nil {
+	if _, _, err := m.RecoverOrphans(); err != nil {
 		return nil, fmt.Errorf("recover orphans: %w", err)
 	}
 	return m, nil
@@ -115,6 +126,15 @@ func (m *TUSManager) Create(ctx context.Context, size int64, checksum, contentTy
 	m.mu.Lock()
 	m.sessions[id] = session
 	m.mu.Unlock()
+	if err := m.writeSidecar(session); err != nil {
+		m.mu.Lock()
+		delete(m.sessions, id)
+		m.mu.Unlock()
+		if removeErr := os.Remove(session.file); removeErr != nil {
+			return "", errors.Join(err, removeErr)
+		}
+		return "", err
+	}
 	return id, nil
 }
 
@@ -163,6 +183,14 @@ func (m *TUSManager) Append(ctx context.Context, id string, offset int64, chunk 
 	}
 	session.Offset += int64(len(chunk))
 	session.UpdatedAt = time.Now().UTC()
+	if err := m.writeSidecar(session); err != nil {
+		prior := session.Offset - int64(len(chunk))
+		if truncateErr := os.Truncate(session.file, prior); truncateErr != nil {
+			return session.Offset, errors.Join(err, truncateErr)
+		}
+		session.Offset = prior
+		return prior, err
+	}
 	return session.Offset, nil
 }
 
@@ -207,7 +235,11 @@ func (m *TUSManager) Complete(ctx context.Context, id string) (Object, error) {
 	if err := os.Remove(session.file); err != nil {
 		return Object{}, err
 	}
+	removeErr := removeIfExists(sidecarPath(m.dir, session.ID))
 	delete(m.sessions, id)
+	if removeErr != nil {
+		return Object{}, removeErr
+	}
 	return Object{Key: id, ContentType: session.ContentType, Data: data}, nil
 }
 
@@ -226,16 +258,20 @@ func (m *TUSManager) Abort(ctx context.Context, id string) error {
 	if err := os.Remove(session.file); err != nil {
 		return err
 	}
+	removeErr := removeIfExists(sidecarPath(m.dir, session.ID))
 	delete(m.sessions, id)
-	return nil
+	return removeErr
 }
 
-// RecoverOrphans scans the session directory for chunk files left behind by a
-// terminated process and deletes them. Returns the number of orphans removed.
-func (m *TUSManager) RecoverOrphans() (int, error) {
+// RecoverOrphans repairs the session directory after a restart. A session with
+// a parseable sidecar whose declared offset matches its chunk file's actual
+// size is re-attached so the client can resume. Anything else is unrecoverable
+// and deleted. Resumed and deleted sessions are counted separately so operators
+// can distinguish restarted uploads from discarded garbage.
+func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 	entries, err := os.ReadDir(m.dir)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	m.mu.RLock()
 	tracked := make(map[string]struct{}, len(m.sessions))
@@ -243,26 +279,76 @@ func (m *TUSManager) RecoverOrphans() (int, error) {
 		tracked[id] = struct{}{}
 	}
 	m.mu.RUnlock()
-	var count int
 	var removalErrors []error
+	handled := make(map[string]struct{})
+	// Pass 1: authoritative sidecars decide session fate. A parseable sidecar whose
+	// chunk file is exactly the declared offset restores the session; anything
+	// else removes the sidecar and its chunk together.
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 		name := entry.Name()
-		if _, ok := tracked[name]; ok {
+		path := filepath.Join(m.dir, name)
+		id, hasSidecar := strings.CutSuffix(name, ".json")
+		if !hasSidecar {
 			continue
 		}
-		if err := os.Remove(filepath.Join(m.dir, name)); err != nil {
+		if _, live := tracked[id]; live {
+			continue
+		}
+		session, ok := loadSidecar(path, id)
+		if ok {
+			info, infoErr := os.Stat(filepath.Join(m.dir, id))
+			if infoErr == nil && !info.IsDir() && info.Size() == session.Offset {
+				session.file = filepath.Join(m.dir, id)
+				m.mu.Lock()
+				m.sessions[id] = session
+				m.mu.Unlock()
+				resumed++
+				continue
+			}
+		}
+		if err := removeIfExists(filepath.Join(m.dir, id)); err != nil {
 			removalErrors = append(removalErrors, err)
+		}
+		if err := removeIfExists(path); err != nil {
+			removalErrors = append(removalErrors, err)
+		}
+		handled[id] = struct{}{}
+		deleted++
+	}
+	// Pass 2: any remaining untracked file is a chunk without a sidecar and is
+	// unrecoverable. Files restored in pass 1 are re-marked live; corrupt
+	// pairings were already removed with their sidecars.
+	m.mu.RLock()
+	for id := range m.sessions {
+		tracked[id] = struct{}{}
+	}
+	m.mu.RUnlock()
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
 		}
-		count++
+		name := entry.Name()
+		if _, hasSidecar := strings.CutSuffix(name, ".json"); hasSidecar {
+			continue
+		}
+		if _, live := tracked[name]; live {
+			continue
+		}
+		if _, done := handled[name]; done {
+			continue
+		}
+		if err := removeIfExists(filepath.Join(m.dir, name)); err != nil {
+			removalErrors = append(removalErrors, err)
+		}
+		deleted++
 	}
 	if len(removalErrors) > 0 {
-		return count, errors.Join(removalErrors...)
+		return resumed, deleted, errors.Join(removalErrors...)
 	}
-	return count, nil
+	return resumed, deleted, nil
 }
 
 // PurgeStale reclaims sessions untouched for the manager's stale TTL. Returns
@@ -285,6 +371,9 @@ func (m *TUSManager) PurgeStale(ctx context.Context) (int, error) {
 			removalErrors = append(removalErrors, err)
 			continue
 		}
+		if err := removeIfExists(sidecarPath(m.dir, session.ID)); err != nil {
+			removalErrors = append(removalErrors, err)
+		}
 		delete(m.sessions, id)
 		count++
 	}
@@ -292,6 +381,61 @@ func (m *TUSManager) PurgeStale(ctx context.Context) (int, error) {
 		return count, errors.Join(removalErrors...)
 	}
 	return count, nil
+}
+
+// writeSidecar persists the session's resumable contract to <id>.json. Written
+// on Create and after every Append so a crash can never reattach bytes that a
+// responding client was never told were durable.
+func (m *TUSManager) writeSidecar(session *tusSession) error {
+	data, err := json.Marshal(tusSidecar{
+		ID:          session.ID,
+		Size:        session.Size,
+		Checksum:    session.Checksum,
+		Offset:      session.Offset,
+		ContentType: session.ContentType,
+	})
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(sidecarPath(m.dir, session.ID), data, 0o600)
+}
+
+// loadSidecar parses and validates a session sidecar. The sidecar id must match
+// its filename and the declared fields must be sane, otherwise it is treated as
+// corrupt garbage by the caller.
+func loadSidecar(path, id string) (*tusSession, bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false
+	}
+	var sidecar tusSidecar
+	if err := json.Unmarshal(data, &sidecar); err != nil {
+		return nil, false
+	}
+	if sidecar.ID != id || sidecar.Size <= 0 || sidecar.Offset < 0 || sidecar.Offset > sidecar.Size || !validSHA256Hex(sidecar.Checksum) || strings.TrimSpace(sidecar.ContentType) == "" {
+		return nil, false
+	}
+	now := time.Now().UTC()
+	return &tusSession{UploadSession: UploadSession{
+		ID:          sidecar.ID,
+		ContentType: sidecar.ContentType,
+		Size:        sidecar.Size,
+		Checksum:    strings.ToLower(sidecar.Checksum),
+		Offset:      sidecar.Offset,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}}, true
+}
+
+func sidecarPath(dir, id string) string {
+	return filepath.Join(dir, id+".json")
+}
+
+func removeIfExists(path string) error {
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
 }
 
 func validSHA256Hex(value string) bool {

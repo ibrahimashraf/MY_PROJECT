@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"strings"
 
 	"integin/internal/evidenceapi"
 )
@@ -119,9 +120,41 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/dpp/", d.DPPHandler)
 	}
 	if d.TUSHandler != nil {
-		mux.Handle("/uploads", d.TUSHandler)
-		mux.Handle("/uploads/", d.TUSHandler)
+		gated := requireTUSAuth(d.Validator, d.TUSHandler)
+		mux.Handle("/uploads", gated)
+		mux.Handle("/uploads/", gated)
 	}
+}
+
+// requireTUSAuth gates the TUS upload endpoints behind the same OIDC bearer
+// authentication the certificate and evidence handlers enforce. Missing
+// credentials and invalid tokens return 401; a missing validator fails closed
+// with 503 so uploads are never exposed unauthenticated.
+func requireTUSAuth(validator TokenValidator, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if validator == nil {
+			writeOperationalJSON(writer, http.StatusServiceUnavailable, `{"error":"service_unavailable"}`)
+			return
+		}
+		raw, ok := bearerToken(request.Header.Get("Authorization"))
+		if !ok {
+			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+			return
+		}
+		if _, err := validator.Validate(request.Context(), raw); err != nil {
+			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+			return
+		}
+		next.ServeHTTP(writer, request)
+	})
+}
+
+func bearerToken(value string) (string, bool) {
+	parts := strings.Fields(value)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {

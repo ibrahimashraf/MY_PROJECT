@@ -205,40 +205,124 @@ func TestTUSRejectsInvalidCreateAndChunks(t *testing.T) {
 	}
 }
 
-func TestTUSRecoverOrphansDeletesStaleChunkFiles(t *testing.T) {
+func TestTUSResumeAfterRestart(t *testing.T) {
+	dir := t.TempDir()
+	manager, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	_, payload, checksum := testPayload(DefaultTUSChunkSize * 3)
+	id, err := manager.Create(ctx, int64(len(payload)), checksum, "video/mp4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.Append(ctx, id, 0, payload[:DefaultTUSChunkSize]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.Append(ctx, id, DefaultTUSChunkSize, payload[DefaultTUSChunkSize:DefaultTUSChunkSize*2]); err != nil {
+		t.Fatal(err)
+	}
+	// Kill-simulated restart: a brand-new manager over the same directory must
+	// re-attach the session from its sidecar instead of deleting the chunk file.
+	recovered, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := recovered.Offset(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if session.Offset != DefaultTUSChunkSize*2 || session.Size != int64(len(payload)) || session.Checksum != checksum {
+		t.Fatalf("restart did not resume the declared session state: %#v", session)
+	}
+	if _, err := recovered.Append(ctx, id, session.Offset, payload[DefaultTUSChunkSize*2:]); err != nil {
+		t.Fatal(err)
+	}
+	object, err := recovered.Complete(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(object.Data) != string(payload) {
+		t.Fatal("resumed upload did not reassemble the declared payload")
+	}
+	if _, err := os.Stat(filepath.Join(dir, id+".json")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("sidecar should be removed after completion, stat err=%v", err)
+	}
+}
+
+func TestTUSRecoverOrphansDeletesUnrecoverableFiles(t *testing.T) {
 	dir := t.TempDir()
 	for _, name := range []string{"deadbeefdeadbeefdeadbeefdeadbeef", "cafebabecafebabecafebabecafebabe.part"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("partial chunk bytes"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	manager, err := NewTUSManager(dir, 0, 0)
-	if err != nil {
+	if _, err := NewTUSManager(dir, 0, 0); err != nil {
 		t.Fatal(err)
-	}
-	ctx := context.Background()
-	_, payload, checksum := testPayload(64)
-	id, err := manager.Create(ctx, int64(len(payload)), checksum, "image/jpeg")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := manager.Append(ctx, id, 0, payload); err != nil {
-		t.Fatal(err)
-	}
-	// Simulate a second start: pull the manager back to construction state.
-	recovered, err := NewTUSManager(dir, 0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := recovered.Offset(ctx, id); !errors.Is(err, ErrUploadNotFound) {
-		t.Fatalf("orphaned session should not be re-attached without a sidecar, got %v", err)
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(entries) != 0 {
-		t.Fatalf("all orphaned chunk files should be deleted on restart, found %d", len(entries))
+		t.Fatalf("all unrecoverable orphan files should be deleted on restart, found %d", len(entries))
+	}
+}
+
+func TestTUSRecoverOrphansDeletesCorruptSidecar(t *testing.T) {
+	dir := t.TempDir()
+	manager, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "deadbeefdeadbeefdeadbeefdeadbeef"
+	if err := os.WriteFile(filepath.Join(dir, id), []byte("partial bytes"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, id+".json"), []byte("{not-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resumed, deleted, err := manager.RecoverOrphans()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resumed != 0 || deleted != 1 {
+		t.Fatalf("corrupt sidecar must be deleted and never resumed: resumed=%d deleted=%d", resumed, deleted)
+	}
+	for _, name := range []string{id, id + ".json"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("corrupt session file %s should be deleted, stat err=%v", name, err)
+		}
+	}
+}
+
+func TestTUSRecoverOrphansDeletesOffsetMismatch(t *testing.T) {
+	dir := t.TempDir()
+	manager, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "cafebabecafebabecafebabecafebabe"
+	if err := os.WriteFile(filepath.Join(dir, id), []byte("0123456789"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sidecar, err := json.Marshal(tusSidecar{ID: id, Size: 64, Checksum: strings.Repeat("0", 64), Offset: 32, ContentType: "image/png"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, id+".json"), sidecar, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resumed, deleted, err := manager.RecoverOrphans()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resumed != 0 || deleted != 1 {
+		t.Fatalf("offset mismatch must be deleted, not resumed: resumed=%d deleted=%d", resumed, deleted)
+	}
+	if _, err := os.Stat(filepath.Join(dir, id)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("mismatched chunk file should be deleted, stat err=%v", err)
 	}
 }
 
@@ -260,12 +344,12 @@ func TestTUSRecoverOrphansKeepsLiveSessions(t *testing.T) {
 	if _, err := manager.Append(ctx, id, 0, payload); err != nil {
 		t.Fatal(err)
 	}
-	count, err := manager.RecoverOrphans()
+	resumed, deleted, err := manager.RecoverOrphans()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if count != 0 {
-		t.Fatalf("live sessions and created files should be retained, reclaimed %d", count)
+	if resumed != 0 || deleted != 0 {
+		t.Fatalf("live sessions and their sidecars must be retained: resumed=%d deleted=%d", resumed, deleted)
 	}
 }
 

@@ -244,9 +244,11 @@ func TestNewMuxMountsTUSRoutesOnlyWhenHandlerProvided(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-	mux := NewMux(Dependencies{TUSHandler: handler})
+	mux := NewMux(Dependencies{TUSHandler: handler, Validator: tusValidatorStub{}})
 	response := httptest.NewRecorder()
-	mux.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/uploads", nil))
+	request := httptest.NewRequest(http.MethodPost, "/uploads", nil)
+	request.Header.Set("Authorization", "Bearer valid")
+	mux.ServeHTTP(response, request)
 	if response.Code != http.StatusNoContent || calls != 1 {
 		t.Fatalf("mounted TUS status=%d calls=%d", response.Code, calls)
 	}
