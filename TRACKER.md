@@ -30,7 +30,7 @@
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.5 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer, offline schema-epoch handshake. **Frontier: D3.8 RFC 3161 timestamping.** |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.5 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer, offline schema-epoch handshake, RFC 3161 timestamping. **Frontier: D3.9 bidi PDF engine.** |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -134,7 +134,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
 *   [x] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0, submodule `8c7a503`): `versioning.go` (SchemaEpoch, linear lineage + release-batch rung jumps, pure Handshake: fast path / CatchUpPlan / ahead+unknown fail-closed) + Processor seam (`SetSchemaVersioner`/`SchemaHandshake`, nil = unenforced) + TUS opens closed (`RecoverOrphans` delete+count, `/uploads` route via server.Dependencies, `INTEGIN_TUS_SCRATCH_DIR`-gated). Gates re-verified by orchestrator: fmt/vet clean, `go test` storage+sync+server+cmd PASS, race PASS. Scope note: route wiring required `internal/server/` edits (main.go mounts no routes directly) — approved as convention-following.
     *   `schema_epoch` handshake protocol allowing tablets offline for 30+ days to safely reconcile without data loss.
-*   [ ] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority — package does not exist, location TBD**:
+*   [x] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority (`internal/timestamp/`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0, submodule `816ef11`): TimeStampReq/Resp encode+parse (stdlib asn1), Verify = status + imprint + messageDigest coupling + SignerInfo CMS signature (RSA/ECDSA, unknown alg fail-closed) + chain to provisioned TSA roots; issuance seam in certificatepg (audit JSONB, no migration); 17/17 tests incl. 3 forgery rejections. Gates re-verified by orchestrator: fmt/vet clean, timestamp+certificatepg+cmd PASS, race PASS. Load-bearing gap found+closed mid-flight (unsigned-verify → delta brief same session).
     *   Embed RFC 3161 Timestamp Tokens (TST) in PDF/A-3b certificates to eliminate tablet backdating challenges.
 *   [ ] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`) — does not exist, create new**:
     *   HarfBuzz / ICU Unicode BiDi text shaping for certified bilingual Saudi (SASO/ZATCA) and UAE (ADNOC) certificates.
@@ -305,11 +305,11 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 11. 🎯 Immediate Execution Command: Sprint 3 Active Frontier
 
-With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.6 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`), the active frontier is:
+With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.6 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`, D3.8 timestamping submodule `816ef11`), the active frontier is:
 
-1. **Deliverable 3.8: RFC 3161 Trusted Timestamping Authority**:
+1. **Deliverable 3.9: Mixed LTR/RTL Bidi PDF Engine (`pkg/pdfrender/bidi.go`)**:
    ```powershell
-   # Target: TST tokens in PDF/A-3b certificates (package location TBD)
+   # Target: HarfBuzz/ICU BiDi shaping for bilingual SASO/ZATCA/ADNOC certs
    ```
 
 ---
