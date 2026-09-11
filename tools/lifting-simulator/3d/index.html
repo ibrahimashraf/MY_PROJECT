@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Spatial Collision & 4D Tandem Lift Simulator</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Standalone Three.js from unpkg/CDN with offline fallback shim -->
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Local self-contained Three.js for air-gapped sovereign environments (Hazard 12 compliance) -->
+    <script src="vendor/three.min.js"></script>
+    <script src="vendor/OrbitControls.js"></script>
 </head>
 <body>
     <div id="app-container">
+        <div id="safety-disclaimer-banner">
+            ⚠️ <strong>ENGINEERING RIGGING NOTICE:</strong> Simulation & clearance estimation only. Not an authorized critical lift certification without licensed Professional Engineer (PE) review and approved rigging study.
+        </div>
         <header id="top-bar">
             <div class="brand">
                 <span class="logo">🏗️</span>
