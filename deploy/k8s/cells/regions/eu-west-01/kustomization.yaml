@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cell-eu-west-01
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: cell-config
+    literals:
+      - cell.id=cell-eu-west-01
+      - jurisdiction.code=EU
+      - jurisdiction.name="European Union"
+      - residency.policy=GDPR_CHAPTER_V_COMPLIANT
+      - default.currency=EUR
+      - default.locale=en-IE
+      - tax.authority=EU_VIES
+      - safety.regulator=EU_OSHA
+
+patches:
+  - target:
+      kind: Deployment
+      name: integin-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          topology.kubernetes.io/region: eu-west-1
+          integin.com/sovereign-cell: cell-eu-west-01
+          integin.com/jurisdiction: EU

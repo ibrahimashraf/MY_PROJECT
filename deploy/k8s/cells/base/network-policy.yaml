@@ -1,0 +1,62 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sovereign-cell-isolation
+  namespace: cell-system
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow intra-namespace traffic strictly within this sovereign cell
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080 # integin-server
+        - protocol: TCP
+          port: 6432 # pgcat connection pooler
+        - protocol: TCP
+          port: 5432 # postgres core
+        - protocol: TCP
+          port: 9000 # rustfs s3 api
+        - protocol: TCP
+          port: 8000 # casdoor idp
+    # Allow verified ingress traffic from cell ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # 1. Allow DNS resolution only within cluster
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # 2. Allow intra-cell pod-to-pod communication
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 6432
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 8000
+    # 3. Deny foreign/cross-border internet egress to guarantee sovereignty
