@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Spatial Collision & 4D Tandem Lift Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Standalone Three.js from unpkg/CDN with offline fallback shim -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <header id="top-bar">
+            <div class="brand">
+                <span class="logo">🏗️</span>
+                <h1>INTEGIN 3D/4D Tandem Lift Simulator</h1>
+            </div>
+            <div class="telemetry-bar">
+                <div class="metric">
+                    <span class="label">Time Step:</span>
+                    <span id="time-display" class="val">t = 0.0s</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Spatial Clearance:</span>
+                    <span id="clearance-display" class="val safe">CLEAR (3.42m)</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Ground Bearing FoS:</span>
+                    <span id="gbp-display" class="val safe">PASS (FoS 2.15)</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Load Share:</span>
+                    <span id="share-display" class="val">54% / 46%</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="main-view">
+            <div id="canvas-container"></div>
+
+            <aside id="controls-panel">
+                <h2>4D Lift Sequence Control</h2>
+                
+                <div class="control-group">
+                    <label for="time-slider">Timeline ($t_0 \rightarrow t_{\text{final}}$):</label>
+                    <input type="range" id="time-slider" min="0" max="60" value="0" step="0.5">
+                    <div class="playback-actions">
+                        <button id="btn-play">▶ Play</button>
+                        <button id="btn-reset">⏮ Reset</button>
+                    </div>
+                </div>
+
+                <h2>Dual Crane Kinematics</h2>
+                <div class="control-group">
+                    <h3>Crane Alpha (Liebherr LTM 1500)</h3>
+                    <label>Boom Angle: <span id="crane1-angle-val">65°</span></label>
+                    <input type="range" id="crane1-angle" min="30" max="80" value="65">
+                    
+                    <label>Slew Angle: <span id="crane1-slew-val">15°</span></label>
+                    <input type="range" id="crane1-slew" min="-90" max="90" value="15">
+                </div>
+
+                <div class="control-group">
+                    <h3>Crane Beta (Tadano ATF 400G)</h3>
+                    <label>Boom Angle: <span id="crane2-angle-val">60°</span></label>
+                    <input type="range" id="crane2-angle" min="30" max="80" value="60">
+
+                    <label>Slew Angle: <span id="crane2-slew-val">-20°</span></label>
+                    <input type="range" id="crane2-slew" min="-90" max="90" value="-20">
+                </div>
+
+                <h2>Manifest Binding</h2>
+                <div class="binding-card">
+                    <p>Status: <strong class="badge-bound">1-Click Execution Ready</strong></p>
+                    <p class="crypto-hash">Digest: <code id="manifest-digest">sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code></p>
+                    <button id="btn-bind-manifest">Bind to Work Order</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
