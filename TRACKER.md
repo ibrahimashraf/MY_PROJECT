@@ -323,7 +323,11 @@ With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.13 complete**
 
 Sprint 4 frontier:
 1. **Deliverable 4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification/`)**: **COMPLETE ✅** (`f22717d`, verified in Go + browser WebCrypto).
-2. **Deliverable 4.2+: Cloud-Native K8s Mesh & Air-Gapped Sovereign Edge Appliance Stack**: **NEXT 🌐**.
+2. **Deliverable 4.2: Dynamic L6 Inspector Competency Verification Ingress Gate**: **COMPLETE ✅** (`internal/workorderhttp/assignment_http.go`, HTTP routes mounted).
+3. **Deliverable 4.3: Air-Gapped Sovereign Edge Appliance Stack**: **COMPLETE ✅** (`deployments/docker-compose.appliance.yml`, `deployments/Dockerfile.server`).
+4. **Deliverable 4.4: Dual-NVMe Air-Gapped Disaster Recovery & <60s Rebuild Drill**: **COMPLETE ✅** (`deploy/edge-appliance/backup/pgbackrest.conf`, `restore-appliance.sh`, runbook).
+5. **Deliverable 4.5: RFC 6962 Certificate Transparency Merkle Log & Cryptographic Inclusion Proofs**: **COMPLETE ✅** (`pkg/verification/transparency.go`, tests passing).
+6. **Deliverable 4.6+: Multi-Region Cell Sharding & Partitioning**: **NEXT 🌐**.
 
 ---
 
