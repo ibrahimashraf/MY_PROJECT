@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D Parametric Dynamic Blocks Lifting Simulator — Planning Aid</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>2D Parametric Dynamic Blocks Lifting Simulator</h1>
+    <p id="disclaimer"></p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <label for="crane-model">Crane model (demo data — NOT rated):</label>
+      <select id="crane-model">
+        <option value="liebherr_ltm1160">Liebherr LTM 1160-5.2 (demo)</option>
+        <option value="tadano_gr1000">Tadano GR-1000XL (demo)</option>
+        <option value="kato_nk750">Kato NK-750V (demo)</option>
+        <option value="manitowoc_mlc165">Manitowoc MLC165-1 (demo)</option>
+        <option value="bogus_model">Invalid (fail-closed test)</option>
+      </select>
+      <output id="readout" role="status"></output>
+    </section>
+
+    <section class="views">
+      <figure>
+        <figcaption>Plan view — drag <em>S</em> handle to slew</figcaption>
+        <canvas id="canvas-plan" width="640" height="480"></canvas>
+      </figure>
+      <figure>
+        <figcaption>Elevation view — drag <em>B</em> (boom) / <em>J</em> (jib) handles</figcaption>
+        <canvas id="canvas-elevation" width="640" height="520"></canvas>
+      </figure>
+    </section>
+
+    <p id="status" class="status" role="alert"></p>
+  </main>
+
+  <script src="cranes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
