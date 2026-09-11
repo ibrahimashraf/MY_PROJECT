@@ -272,6 +272,11 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   **OpenCode verdict on `block-no-verify-hook`** (read-only relay `ses_f8220dd07ffe3PgN9Ipf5TaNv2`, big-pickle, $0): (1) No bundled hook — skill instructs installing a Claude-Code `PreToolUse` hook (matcher `Bash`) scanning `$TOOL_INPUT` for `--no-verify`. (2) Runtime is a POSIX `sh`+`grep -qE` one-liner; engine is Claude Code's hook runner. (3) Fully inert under headless `opencode run` (never reads `.claude/settings.json`) and bypassed by real CI/GUI git — fail-nothing, zero protection; regex risks false-positive blocks. Recommendation: gate `--no-verify` via real git hooks, not this skill. NOTE: read-only run left cosmetic traces on `integin-pilot-source/AGENTS.md` (BOM strip + trailing newlines; content intact) — `--read-only` is advisory, not a sandbox; verify diff after every relay.
 *   **Clean Working Tree**: `master` branch is up to date with `origin/master`, `0` uncommitted changes.
 
+#### Weak-Crypto Audit (2026-09-11, big-pickle, $0)
+*   Full-tree sweep (Go + Dart + configs) for SHA-1/MD5/DES/RC4/DSA/weak-TLS/small-RSA/skipped-verify. Only live weak acceptance: PgBouncer MD5 client auth → switched to `scram-sha-256` (`deployments/pgbouncer.ini`, `docker-compose.pgbouncer.yml`, `userlist.txt` with deploy-time verifier instructions — rotate at next credential cycle).
+*   All Go verify paths already strong or fail-closed (timestamp SHA-1 rejection confirmed, JWT RS256 double-enforced, stdlib x509 chains, Ed25519 + size checks). Three class-(b) annotations added (shortlinksvc, sync, renderer_test) to stop future re-flags. Offline HMAC-SHA256 legacy path flagged as trust-model policy question (strong primitive, shared secret) — deprecate separately.
+*   Gates re-verified by orchestrator: fmt/vet clean, shortlinksvc+sync+certificaterender PASS.
+
 ---
 
 ## 10. 💡 Architectural Findings & Discoveries
