@@ -297,6 +297,96 @@ func TestTUSRecoverOrphansDeletesCorruptSidecar(t *testing.T) {
 	}
 }
 
+func TestTUSRecoverOrphansDeletesTruncatedSidecarAndTmp(t *testing.T) {
+	dir := t.TempDir()
+	manager, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "deadbeefdeadbeefdeadbeefdeadbeef"
+	if err := os.WriteFile(filepath.Join(dir, id), []byte("partial chunk bytes"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, id+".json"), []byte(`{"id":"deadbeef`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "cafebabecafebabecafebabecafebabe.tmp"), []byte(`{"id":"cafe`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resumed, deleted, err := manager.RecoverOrphans()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resumed != 0 || deleted != 2 {
+		t.Fatalf("truncated sidecar and stray tmp must both be deleted: resumed=%d deleted=%d", resumed, deleted)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("no temporary sidecar files may remain after recovery, found %d", len(entries))
+	}
+}
+
+func TestTUSResumeAfterCrashBeforeSidecarWrite(t *testing.T) {
+	dir := t.TempDir()
+	manager, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	_, payload, checksum := testPayload(DefaultTUSChunkSize * 4)
+	id, err := manager.Create(ctx, int64(len(payload)), checksum, "video/mp4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.Append(ctx, id, 0, payload[:DefaultTUSChunkSize]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.Append(ctx, id, DefaultTUSChunkSize, payload[DefaultTUSChunkSize:DefaultTUSChunkSize*2]); err != nil {
+		t.Fatal(err)
+	}
+	// Crash landing between the chunk write and its sidecar write: the next
+	// chunk's bytes are on disk while the sidecar still describes the previous
+	// committed offset.
+	file, err := os.OpenFile(filepath.Join(dir, id), os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.Write(payload[DefaultTUSChunkSize*2 : DefaultTUSChunkSize*3]); err != nil {
+		if closeErr := file.Close(); closeErr != nil {
+			t.Fatalf("direct chunk write: %v (close: %v)", err, closeErr)
+		}
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	// Kill-simulated restart over the same directory.
+	recovered, err := NewTUSManager(dir, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := recovered.Offset(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if session.Offset != DefaultTUSChunkSize*3 {
+		t.Fatalf("recovered offset must be the actual chunk-file size, got %d", session.Offset)
+	}
+	if _, err := recovered.Append(ctx, id, session.Offset, payload[DefaultTUSChunkSize*3:]); err != nil {
+		t.Fatal(err)
+	}
+	object, err := recovered.Complete(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(object.Data) != string(payload) {
+		t.Fatal("resumed upload did not reassemble the declared payload")
+	}
+}
+
 func TestTUSRecoverOrphansDeletesOffsetMismatch(t *testing.T) {
 	dir := t.TempDir()
 	manager, err := NewTUSManager(dir, 0, 0)

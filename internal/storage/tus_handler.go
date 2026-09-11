@@ -171,12 +171,20 @@ func (m *TUSManager) Append(ctx context.Context, id string, offset int64, chunk 
 		return session.Offset, err
 	}
 	written, err := file.Write(chunk)
-	closeErr := file.Close()
 	if err != nil {
+		if closeErr := file.Close(); closeErr != nil {
+			err = errors.Join(err, closeErr)
+		}
 		return session.Offset, err
 	}
-	if closeErr != nil {
-		return session.Offset, closeErr
+	if err := file.Sync(); err != nil {
+		if closeErr := file.Close(); closeErr != nil {
+			err = errors.Join(err, closeErr)
+		}
+		return session.Offset, err
+	}
+	if err := file.Close(); err != nil {
+		return session.Offset, err
 	}
 	if int64(written) != int64(len(chunk)) {
 		return session.Offset, errors.New("short write")
@@ -263,11 +271,13 @@ func (m *TUSManager) Abort(ctx context.Context, id string) error {
 	return removeErr
 }
 
-// RecoverOrphans repairs the session directory after a restart. A session with
-// a parseable sidecar whose declared offset matches its chunk file's actual
-// size is re-attached so the client can resume. Anything else is unrecoverable
-// and deleted. Resumed and deleted sessions are counted separately so operators
-// can distinguish restarted uploads from discarded garbage.
+// RecoverOrphans repairs the session directory after a restart. The chunk FILE
+// is authoritative: a parseable sidecar is used only to plausibility-check the
+// bytes on disk, and the re-attached offset is the actual chunk-file size. A
+// crash between a chunk write and its sidecar write therefore resumes with the
+// received (unacknowledged) bytes instead of discarding them — the client
+// replays from the queried offset anyway. Anything that cannot be explained by
+// the sidecar is deleted. Resumed and deleted sessions are counted separately.
 func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 	entries, err := os.ReadDir(m.dir)
 	if err != nil {
@@ -281,9 +291,10 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 	m.mu.RUnlock()
 	var removalErrors []error
 	handled := make(map[string]struct{})
-	// Pass 1: authoritative sidecars decide session fate. A parseable sidecar whose
-	// chunk file is exactly the declared offset restores the session; anything
-	// else removes the sidecar and its chunk together.
+	// Pass 1: authoritative sidecars decide session fate. A parseable sidecar
+	// whose chunk file holds between the committed offset and committed offset +
+	// one chunk (never more than the declared size) restores the session at the
+	// file's real size; anything else removes the sidecar and its chunk together.
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -300,7 +311,9 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 		session, ok := loadSidecar(path, id)
 		if ok {
 			info, infoErr := os.Stat(filepath.Join(m.dir, id))
-			if infoErr == nil && !info.IsDir() && info.Size() == session.Offset {
+			if infoErr == nil && !info.IsDir() && info.Size() >= session.Offset && info.Size() <= session.Size && info.Size()-session.Offset <= m.chunkSize {
+				session.Offset = info.Size()
+				session.UpdatedAt = time.Now().UTC()
 				session.file = filepath.Join(m.dir, id)
 				m.mu.Lock()
 				m.sessions[id] = session
@@ -318,9 +331,11 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 		handled[id] = struct{}{}
 		deleted++
 	}
-	// Pass 2: any remaining untracked file is a chunk without a sidecar and is
-	// unrecoverable. Files restored in pass 1 are re-marked live; corrupt
-	// pairings were already removed with their sidecars.
+	// Pass 2: any remaining untracked file is a chunk or sidecar staging file
+	// with no recoverable session and is unreferenced garbage. Files restored in
+	// pass 1 are re-marked live; corrupt pairings were already removed with
+	// their sidecars. A .tmp whose session is live is kept: it is the write in
+	// progress of a running manager.
 	m.mu.RLock()
 	for id := range m.sessions {
 		tracked[id] = struct{}{}
@@ -336,6 +351,11 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 		}
 		if _, live := tracked[name]; live {
 			continue
+		}
+		if base, ok := strings.CutSuffix(name, ".tmp"); ok {
+			if _, live := tracked[base]; live {
+				continue
+			}
 		}
 		if _, done := handled[name]; done {
 			continue
@@ -385,7 +405,10 @@ func (m *TUSManager) PurgeStale(ctx context.Context) (int, error) {
 
 // writeSidecar persists the session's resumable contract to <id>.json. Written
 // on Create and after every Append so a crash can never reattach bytes that a
-// responding client was never told were durable.
+// responding client was never told were durable. The JSON is staged in the
+// same directory and renamed into place so a crash mid-write leaves either the
+// previous sidecar or the new one, never a truncated file. Stray <id>.tmp
+// staging files are reclaimed by RecoverOrphans.
 func (m *TUSManager) writeSidecar(session *tusSession) error {
 	data, err := json.Marshal(tusSidecar{
 		ID:          session.ID,
@@ -397,7 +420,11 @@ func (m *TUSManager) writeSidecar(session *tusSession) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(sidecarPath(m.dir, session.ID), data, 0o600)
+	tmp := filepath.Join(m.dir, session.ID+".tmp")
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, sidecarPath(m.dir, session.ID))
 }
 
 // loadSidecar parses and validates a session sidecar. The sidecar id must match
