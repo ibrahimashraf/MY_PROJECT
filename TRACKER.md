@@ -30,7 +30,7 @@
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.5 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer, offline schema-epoch handshake, RFC 3161 timestamping, bidi engine, enclave PIN + duress, inference sealing, 2D simulator. **Sprint 3 COMPLETE ✅ → Sprint 4 frontier: 4.1 public verifier.** |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **COMPLETE ✅** | **D3.1–D3.13 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer, offline schema-epoch handshake, RFC 3161 timestamping, bidi engine, enclave PIN + duress, inference sealing, 2D simulator. **Sprint 3 COMPLETE ✅ → Sprint 4 frontier: 4.1 public verifier.** |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -48,10 +48,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | **L4** | **Global Enterprise Hierarchy & Operational Work Orders** | **COMPLETE ✅** | `workorderhttp`, `workorderpg`, `workorderauth`, `domain/workorder`, `riverqueue` | `0005_work_order_foundation`, `0009_work_order_persistence`, `0010_work_order_rls`, `0012_work_order_handover`, `0019_hierarchical_register`, `0029_parts_charges_timesheet_auto`, `0050`–`0060` (River queue scale), `0063_fix_unindexed_foreign_keys`, `0064_river_hot_updates`, `0065_river_canonical_v047`, `0069_state_machine_and_sequence_bounds` |
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
 | **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **UPCOMING 📅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
-| **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **ACTIVE 🚀** | `internal/evidenceapi`, `internal/evidenceexport`, `internal/evidencehttp`, `internal/evidencepg`, `internal/evidenceregistration`, `internal/platform/calibration`, `internal/domain/evidence`, `internal/domain/evidencepack`, `migrations/0073_*` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence`, `0073_tool_calibration_registry` |
-| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **ACTIVE 🚀** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
-| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **ACTIVE 🚀** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
-| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **ACTIVE 🚀** | `internal/domain/auditlog` (hashchain, repository, types), `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
+| **L7** | **Dynamic Tool Calibration & Traceability Registry (ISO 17020 § 6.2)** | **COMPLETE ✅** | `internal/evidenceapi`, `internal/evidenceexport`, `internal/evidencehttp`, `internal/evidencepg`, `internal/evidenceregistration`, `internal/platform/calibration`, `internal/domain/evidence`, `internal/domain/evidencepack`, `migrations/0073_*` | `0010_evidence_metadata`, `0011_evidence_metadata_encryption_export`, `0016_evidence_question_link`, `0031_nfc_rfid_qr_tagging_photo_markup`, `0044_work_order_evidence`, `0073_tool_calibration_registry` |
+| **L8** | **Universal FIPS 140-3 Hardware Tablet Attestation (Enclave/StrongBox)** | **COMPLETE ✅** | `pkg/onboarding` (WorkPackageManifest, DeviceTrustRecord, SignedInspectionReceipt), `field_app/` | `0002_device_trust_sync`, `0006_work_package_assignment_context`, `0007_manifest_proof_replay`, `0022_multi_inspect`, `0043_work_order_signed_submission`, `0068_mobile_cryptographic_hash_chain` |
+| **L9** | **W3C Decentralized Asset Passport & Technical Quarantine Lifecycle** | **COMPLETE ✅** | `pkg/domain` (models.go, did.go) | `0017_product_passport_geo`, `0020_bulk_import_export`, `0025_job_linkage_failed_queue` |
+| **L10** | **Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (Forensic Blackbox)** | **COMPLETE ✅** | `internal/domain/auditlog` (hashchain, repository, types), `searchhttp`, `searchpg` | `0001_event_log`, `0036_full_text_search`, `0037_search_backfill`, `0038_immutable_audit_log`, `0061_kill_gin_and_dark_hardening`, `0068_mobile_cryptographic_hash_chain` |
 | **L11** | **Edge Zero-Knowledge QR Trust Gateway & Dynamic Multi-Regulator Sync** | **PLANNED 🌐** | `internal/certificatepublichttp`, `internal/shortlinkhttp`, `internal/shortlinkpg`, `internal/shortlinksvc`, `internal/analyticshttp`, `internal/analyticspg`, `internal/reportshandler`, `internal/reportspg` | `0014_certificate_public_bindings`, `0027_client_portal_domains_acls`, `0028_integrations_xero_m365_api`, `0030_hse_notification_csv_export`, `0039_short_links` ... `0047_short_link_hmac`, `0049_analytics_dashboard`, `0070_add_certificate_performance_indexes` |
 
 ---
@@ -104,7 +104,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 4. 📅 Upcoming Sprints Backlog (Sprint 3 & Sprint 4)
+##   4. 📅 Sprint 3 COMPLETE ✅ & Sprint 4 Backlog (Cloud-Native K8s Mesh & Universal QR Trust)
 
 ### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger
 *   [x] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`internal/shared/calibration/`, `internal/platform/calibration/`, `migrations/0073_*`)** — COMPLETE ✅ (2026-09-08, wiring landed `cc742ef`):
@@ -138,7 +138,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Embed RFC 3161 Timestamp Tokens (TST) in PDF/A-3b certificates to eliminate tablet backdating challenges.
 *   [x] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0): UAX#9 subset (RTL blocks, LRE/RLE/PDF/LRO/RLO + isolates, NSM W1, N1/N2, I1/I2, L1/L2, bracket mirroring), fail-closed (bad UTF-8, unmatched PDF/PDI, depth>125). 18 tests PASS; vet/fmt/race clean (orchestrator re-verified):
     *   HarfBuzz / ICU Unicode BiDi text shaping for certified bilingual Saudi (SASO/ZATCA) and UAE (ADNOC) certificates.
-*   [x] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0, with 3.11 same run): constant-time PIN, backoff + lockout@5, zeroed buffers, NFC ATR/challenge seam. `flutter analyze` clean, 22/22 auth tests PASS incl. race-free (orchestrator re-verified; on ≤8GB boxes run with `--concurrency=1` and `TEMP`/`TMP` on `D:\temp` — parallel runner OOM-times-out, environmental):
+*   [x] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0, with 3.11 same run): constant-time PIN, backoff + lockout@5, zeroed buffers, NFC ATR/challenge seam. `flutter analyze` clean, 26/26 auth tests PASS incl. race-free (orchestrator re-verified after carried-opens closure; on ≤8GB boxes run with `--concurrency=1` and `TEMP`/`TMP` on `D:\temp` — parallel runner OOM-times-out, environmental):
     *   Intrinsically safe tablet qualification with fallback enclave PIN and NFC smartcard tokens for greasy-glove field environments.
 *   [x] **3.11: Silent Duress PIN & Coercion Quarantine Protocol (`field_app/lib/auth/duress.dart`)** — COMPLETE ✅ (same run): indistinguishable UX, covert `STATE_COERCION_QUARANTINE` outbox flag + silent alarm via normal sync path. Carried opens CLOSED submodule `5206ba7` (duress hash persisted via PinStore seam + wipe; HashPolicy seam with identical default). 26/26 auth tests PASS on orchestrator rerun (D:\temp, --concurrency=1):
     *   Covert `STATE_COERCION_QUARANTINE` flagging protecting inspectors from physical coercion on isolated rigs.
@@ -206,8 +206,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | Component | Container Name | Host Port | Target / Role / Credentials | Health Check |
 |---|---|:---:|---|---|
 | **PostgreSQL 16** | `integin-dev-postgres` | `15432` | DB: `integin_dev`, User: `integin_runtime`, Pass: `integin_live_run_2026` | `pg_isready -p 15432 -U integin_runtime` |
-| **Keycloak IAM** | `integin-pilot-keycloak` | `18180` | App/Admin HTTP: `http://127.0.0.1:18180/admin/`, Token endpoint | `curl http://127.0.0.1:18180/realms/integin-pilot` |
-| **Keycloak Metrics**| `integin-pilot-keycloak` | `19090` | Internal metrics & health only (`/health`, `/metrics`) | `curl http://127.0.0.1:19090/health` |
+| **Casdoor IAM** | `integin-pilot-casdoor` | `18180` | Sole IdP (Keycloak dropped permanent): org `integin-pilot`, app `integin-live-matrix` — `http://127.0.0.1:18180` | `curl http://127.0.0.1:18180` |
 | **RustFS Object Store** | `integin-pilot-rustfs` | `19000` | S3 API endpoint, Bucket: `integin-pilot-evidence` | `curl http://127.0.0.1:19000/minio/health/live` |
 | **RustFS Web Console** | `integin-pilot-rustfs` | `19001` | S3 Admin Web Console: `http://127.0.0.1:19001` | Browser navigation |
 | **PgCat Pooler** | `integin-pgcat` | `6432` | Transaction connection pooler for high-throughput scaling | TCP connect |
@@ -277,7 +276,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 10. 💡 Architectural Findings & Discoveries
 
-### 1. Keycloak Management vs. Application Ports
+### 1. Keycloak Management vs. Application Ports (SUPERSEDED — Keycloak dropped permanent, Casdoor sole IdP; kept for history)
 *   **Port 19090**: Dedicated solely to Keycloak internal management & metrics (`/health`, `/metrics`). Navigating here in a browser shows an empty or basic health page by design.
 *   **Port 18180**: The actual HTTP application and admin console port:
     *   Admin UI: `http://127.0.0.1:18180/admin/`
@@ -303,9 +302,9 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 11. 🎯 Immediate Execution Command: Sprint 3 Active Frontier
+## 11. 🎯 Immediate Execution Command: Sprint 4 Active Frontier
 
-With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.6 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`, D3.8 timestamping submodule `816ef11`, hardening (`71beae9` TUS auth/resume + `dab89ce` crash windows + boot warnings/PSS-Ed25519/versioner wiring), D3.9–D3.13 landed). **Sprint 3 COMPLETE ✅.** The active frontier is:
+With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.13 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`, D3.7 epoch handshake + TUS opens closed submodule `8c7a503`, D3.8 timestamping submodule `816ef11`, hardening (`71beae9` TUS auth/resume + `dab89ce` crash windows + boot warnings/PSS-Ed25519/versioner wiring), D3.9–D3.13 landed). **Sprint 3 COMPLETE ✅.** The active frontier is:
 
 1. **Deliverable 4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`)**:
    ```powershell
