@@ -134,6 +134,11 @@ func NewMux(dependencies Dependencies) http.Handler {
 		fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
 		fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
 		fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
+		if dependencies.SyncProcessor != nil {
+			fmt.Fprintf(writer, "# HELP integin_sync_offline_hmac_fallback_total Total offline sync transactions accepted via deprecated HMAC fallback.\n")
+			fmt.Fprintf(writer, "# TYPE integin_sync_offline_hmac_fallback_total counter\n")
+			fmt.Fprintf(writer, "integin_sync_offline_hmac_fallback_total %d\n", dependencies.SyncProcessor.HMACFallbackCount.Load())
+		}
 		if dependencies.DB != nil {
 			stats := dependencies.DB.Stats()
 			fmt.Fprintf(writer, "# HELP integin_db_max_open_connections Maximum open database connections.\n")

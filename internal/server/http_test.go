@@ -209,7 +209,8 @@ func TestNewMuxMountsCertificateRoutesOnlyWhenHandlersProvided(t *testing.T) {
 }
 
 func TestMetricsEndpointReturnsPrometheusFormat(t *testing.T) {
-	mux := NewMux(Dependencies{})
+	processor, _ := domainsync.NewProcessor(map[string]string{"test-tenant": "test-secret-32-bytes-minimum---!"})
+	mux := NewMux(Dependencies{SyncProcessor: processor})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
 	if rec.Code != http.StatusOK {
@@ -220,7 +221,7 @@ func TestMetricsEndpointReturnsPrometheusFormat(t *testing.T) {
 		t.Fatalf("/metrics Content-Type = %q, want text/plain", ct)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"integin_ratelimit_allowed_total", "integin_ratelimit_denied_total", "integin_go_goroutines"} {
+	for _, want := range []string{"integin_ratelimit_allowed_total", "integin_ratelimit_denied_total", "integin_go_goroutines", "integin_sync_offline_hmac_fallback_total"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("/metrics body missing %s", want)
 		}
