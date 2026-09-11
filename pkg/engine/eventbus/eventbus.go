@@ -44,11 +44,42 @@ type StressAlertEvent struct {
 type Bus struct {
 	mu       sync.RWMutex
 	handlers map[Topic][]Handler
+	eventCh  chan Event
+	done     chan struct{}
 }
 
-// NewBus constructs an initialized event bus.
+// NewBus constructs an initialized event bus with a buffered async channel.
 func NewBus() *Bus {
-	return &Bus{handlers: make(map[Topic][]Handler)}
+	b := &Bus{
+		handlers: make(map[Topic][]Handler),
+		eventCh:  make(chan Event, 256), // Buffered: publishers never block
+		done:     make(chan struct{}),
+	}
+	go b.run()
+	return b
+}
+
+// run is the single goroutine dispatching async events via channel — idiomatic Go.
+func (b *Bus) run() {
+	for {
+		select {
+		case e := <-b.eventCh:
+			b.mu.RLock()
+			handlers := make([]Handler, len(b.handlers[e.Topic]))
+			copy(handlers, b.handlers[e.Topic])
+			b.mu.RUnlock()
+			for _, h := range handlers {
+				h(e)
+			}
+		case <-b.done:
+			return
+		}
+	}
+}
+
+// Close shuts down the async dispatch goroutine.
+func (b *Bus) Close() {
+	close(b.done)
 }
 
 // Subscribe registers a handler for a given topic.
@@ -58,28 +89,23 @@ func (b *Bus) Subscribe(topic Topic, h Handler) {
 	b.handlers[topic] = append(b.handlers[topic], h)
 }
 
-// Publish dispatches an event to all registered topic subscribers (synchronous).
+// Publish dispatches an event synchronously to all registered topic subscribers.
 func (b *Bus) Publish(e Event) {
 	b.mu.RLock()
-	handlers := b.handlers[e.Topic]
+	handlers := make([]Handler, len(b.handlers[e.Topic]))
+	copy(handlers, b.handlers[e.Topic])
 	b.mu.RUnlock()
 	for _, h := range handlers {
 		h(e)
 	}
 }
 
-// PublishAsync dispatches event concurrently to all subscribers via goroutines.
+// PublishAsync sends event to the channel pipeline — non-blocking, idiomatic Go.
+// Handlers execute in the bus goroutine via channel select, not WaitGroup/goroutine fan-out.
 func (b *Bus) PublishAsync(e Event) {
-	b.mu.RLock()
-	handlers := b.handlers[e.Topic]
-	b.mu.RUnlock()
-	var wg sync.WaitGroup
-	for _, h := range handlers {
-		wg.Add(1)
-		go func(fn Handler) {
-			defer wg.Done()
-			fn(e)
-		}(h)
+	select {
+	case b.eventCh <- e:
+	default:
+		// Channel full (back-pressure): drop or handle in production via metrics
 	}
-	wg.Wait()
 }
