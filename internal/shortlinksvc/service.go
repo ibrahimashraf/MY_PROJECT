@@ -109,6 +109,8 @@ func (s *Service) CreateShortLink(ctx context.Context, req shortlink.CreateReque
 }
 
 func (s *Service) signCode(code, secret, algorithm string) string {
+	// non-security use: HMAC-SHA256 short-code integrity (redirect tamper guard), not authentication.
+	// Non-HS256 input is coerced to HS256 below, never honored, so arbitrary algorithm submissions fail closed.
 	if algorithm != "HS256" {
 		algorithm = "HS256"
 	}

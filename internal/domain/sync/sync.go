@@ -24,14 +24,16 @@ import (
 type Outcome string
 
 const (
-	Applied          Outcome = "APPLIED"
-	Duplicate        Outcome = "DUPLICATE"
-	Queued           Outcome = "QUEUED"
-	Held             Outcome = "HELD"
-	Rejected         Outcome = "REJECTED"
-	Conflict         Outcome = "CONFLICT"
-	SecurityFailure  Outcome = "SECURITY_FAILURE"
-	legacyHMACSHA256         = "HMAC-SHA256"
+	Applied         Outcome = "APPLIED"
+	Duplicate       Outcome = "DUPLICATE"
+	Queued          Outcome = "QUEUED"
+	Held            Outcome = "HELD"
+	Rejected        Outcome = "REJECTED"
+	Conflict        Outcome = "CONFLICT"
+	SecurityFailure Outcome = "SECURITY_FAILURE"
+	// non-security use: HMAC-SHA256 legacy transaction tag (strong primitive, shared-secret trust model;
+	// not a weak crypto acceptance — Ed25519 device-bound signing is the primary path).
+	legacyHMACSHA256 = "HMAC-SHA256"
 )
 
 type Transaction struct {

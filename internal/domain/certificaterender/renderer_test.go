@@ -87,6 +87,7 @@ func TestDeterministicPDFRenderer(t *testing.T) {
 		t.Fatalf("unexpected second render error: %v", err)
 	}
 	if string(output1.ArtifactSHA256) != string(output2.ArtifactSHA256) {
+		// non-security use: "sha" prefix is only a log label; the digests compared are ArtifactSHA256.
 		t.Fatalf("renders are not byte deterministic: sha1=%x sha2=%x", output1.ArtifactSHA256, output2.ArtifactSHA256)
 	}
 }

@@ -1,1 +1,4 @@
-"integin_runtime" "md5${MD5_PASSWORD_HASH}"
+# PgBouncer client auth is scram-sha-256 (fail closed — MD5 is rejected). This file must contain a
+# SCRAM-SHA-256 verifier, e.g. "integin_runtime" "SCRAM-SHA-256$4096:<salt>$<storedkey>:<serverkey>".
+# Generate at deploy time with: pgbouncer --auth_scram (or a hashed scansion of the runtime password).
+"integin_runtime" "SCRAM-SHA-256$REPLACE_WITH_DEPLOY_TIME_VERIFIER"
