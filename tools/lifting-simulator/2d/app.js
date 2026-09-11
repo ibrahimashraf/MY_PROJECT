@@ -381,7 +381,6 @@ if (typeof document !== "undefined") {
                 }
             }
             if (dragging) {
-                view === "plan" ? canvasPlan : canvasElv;
                 var tgt = view === "plan" ? canvasPlan : canvasElv;
                 tgt.setPointerCapture(ev.pointerId);
             }
