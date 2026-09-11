@@ -153,8 +153,8 @@ INTEGIN is an **Integrated Inspection & Assurance Platform** designed for worldw
 | **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `internal/shared/calibration`, `internal/platform/calibration`, `internal/evidenceapi`, `migrations/0073_*` ✅ |
 | **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `pkg/onboarding`, `field_app/lib/workpackages/` ✅ |
 | **L9** | **Decentralized Asset Passport**| W3C DIDs (`did:integin:...`), equipment quarantine lifecycles | `pkg/domain` (models.go, did.go) ✅ |
-| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `internal/domain/auditlog`, `internal/searchhttp`, `internal/searchpg` 🚀 *(Planned)* |
-| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification` *(does not exist — to create)* 🚀 *(Planned)* |
+| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `internal/domain/auditlog`, `internal/searchhttp`, `internal/searchpg` ✅ |
+| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification`, `tools/public-verifier/`, `internal/server/` ✅ |
 
 ---
 
