@@ -277,6 +277,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   All Go verify paths already strong or fail-closed (timestamp SHA-1 rejection confirmed, JWT RS256 double-enforced, stdlib x509 chains, Ed25519 + size checks). Three class-(b) annotations added (shortlinksvc, sync, renderer_test) to stop future re-flags. Offline HMAC-SHA256 legacy path flagged as trust-model policy question (strong primitive, shared secret) — deprecate separately.
 *   Gates re-verified by orchestrator: fmt/vet clean, shortlinksvc+sync+certificaterender PASS.
 
+#### Device-Key Migration (2026-09-11, big-pickle, $0)
+* Offline transaction verification migrated from fleet-shared HMAC-SHA256 to per-device keys (submodule commit 5b81b0f): device-bound path authoritative + fail-closed with DeviceID+UserID attribution; HMAC kept as deprecated fallback with per-verification warning log + fallback counter; removal once counter stays zero a full release.
+* Gates re-verified: gofmt/vet clean, sync packages PASS incl. race.
+
 ---
 
 ## 10. 💡 Architectural Findings & Discoveries
