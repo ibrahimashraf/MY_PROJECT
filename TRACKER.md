@@ -327,7 +327,8 @@ Sprint 4 frontier:
 3. **Deliverable 4.3: Air-Gapped Sovereign Edge Appliance Stack**: **COMPLETE ✅** (`deployments/docker-compose.appliance.yml`, `deployments/Dockerfile.server`).
 4. **Deliverable 4.4: Dual-NVMe Air-Gapped Disaster Recovery & <60s Rebuild Drill**: **COMPLETE ✅** (`deploy/edge-appliance/backup/pgbackrest.conf`, `restore-appliance.sh`, runbook).
 5. **Deliverable 4.5: RFC 6962 Certificate Transparency Merkle Log & Cryptographic Inclusion Proofs**: **COMPLETE ✅** (`pkg/verification/transparency.go`, tests passing).
-6. **Deliverable 4.6+: Multi-Region Cell Sharding & Partitioning**: **NEXT 🌐**.
+6. **Deliverable 4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`)**: **COMPLETE ✅** (Restricted PodSecurity, default-deny NetworkPolicy, SDAIA SA / GDPR EU overlays).
+7. **Deliverable 4.7+: Time-Bucket Table Partitioning & CQRS Replication**: **NEXT 🌐**.
 
 ---
 
