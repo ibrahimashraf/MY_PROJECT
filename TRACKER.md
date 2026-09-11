@@ -30,7 +30,7 @@
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.5 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard. **Frontier: D3.6 TUS media streamer.** |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | **D3.1–D3.5 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer. **Frontier: D3.7 offline schema drift.** |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -130,7 +130,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   🚀 **D3.4 progress**: `ResolveAssetDID` (parse→asset-type→lookup, typed errors) + proof-load verdict→`Quarantine()` (nil-safe) + tests. Gates re-verified by orchestrator: vet clean, domain tests PASS, race PASS, gofmt clean.
 *   [x] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)** — COMPLETE ✅ (2026-09-11, committed `4edb1c4` minimal 3-file static wizard; real-browser CDP smoke on Chrome Beta headless: valid `APEX-CRN-2026-00001` → preview shown + error hidden, `foo` → preview hidden + error shown, title correct, zero downloads):
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
-*   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`) — `tus_handler.go` does not exist, create new**:
+*   [x] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`)** — COMPLETE ✅ (2026-09-11, big-pickle, $0, submodule `79437d0`): `TUSManager` (Create + 2MiB offset-verified Append + Offset resume query + checksum-verified Complete + Abort + TTL PurgeStale, stdlib only, no migration). Gates re-verified by orchestrator: vet clean, `go test` + `-race` PASS (6 tests). Real-browser field-app downsampling deferred (server contract ready). Open: route wiring in `cmd/integin-server`, restart recovery scan.
     *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
 *   [ ] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/`) — `versioning.go` does not exist, create new**:
     *   `schema_epoch` handshake protocol allowing tablets offline for 30+ days to safely reconcile without data loss.
@@ -305,11 +305,11 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 11. 🎯 Immediate Execution Command: Sprint 3 Active Frontier
 
-With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.5 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`), the active frontier is:
+With Sprint 2 (D2.1–D2.5) 100% complete and Sprint 3 **D3.1–D3.6 complete** (D3.1 closure `cc742ef`, D3.2 closure + D3.3 ledger landed `dd091d8`, D3.4 passport landed `c9f6441`, D3.5 minimal wizard + real-browser CDP smoke landed `4edb1c4`/`dd9ddb5`, D3.6 TUS streamer landed submodule `79437d0`), the active frontier is:
 
-1. **Deliverable 3.6: TUS Chunked Resumable Media Streamer (`internal/storage/tus_handler.go`)**:
+1. **Deliverable 3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/versioning.go`)**:
    ```powershell
-   # Target: new internal/storage/ package, chunked 2MB upload over VSAT
+   # Target: schema_epoch handshake for 30+ day offline tablets
    ```
 
 ---
