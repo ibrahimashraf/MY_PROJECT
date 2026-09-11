@@ -152,10 +152,10 @@ func (t *Text) BoundingBox() (min Point3D, max Point3D) {
 
 // Block represents a reusable definition of grouped entities.
 type Block struct {
-	Name       string   `json:"name"`
-	BasePoint  Point3D  `json:"base_point"`
-	Entities   []Entity `json:"entities"`
-	LayerName  string   `json:"layer"`
+	Name      string   `json:"name"`
+	BasePoint Point3D  `json:"base_point"`
+	Entities  []Entity `json:"entities"`
+	LayerName string   `json:"layer"`
 }
 
 // Insert represents an instance insertion of a Block definition.

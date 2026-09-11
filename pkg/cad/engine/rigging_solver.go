@@ -79,14 +79,25 @@ func (c *CraneKinematics) ComputeOutriggerPressures(hookLoadTonne float64) Outri
 	mx := (hookLoadTonne * loadDz) + (c.CounterweightTonne * cwDz) // Pitch moment
 	mz := (hookLoadTonne * loadDx) + (c.CounterweightTonne * cwDx) // Roll moment
 
+	// Guard against floating point division by zero (ADV-04 / Hazard 31)
+	if c.OutriggerSpreadXM <= 0.1 || c.OutriggerSpreadZM <= 0.1 {
+		return OutriggerPressures{
+			FrontLeft:  baseP,
+			FrontRight: baseP,
+			RearLeft:   baseP,
+			RearRight:  baseP,
+			MaxLoad:    baseP,
+		}
+	}
+
 	// Delta loads from moments
 	deltaZ := mx / (2.0 * c.OutriggerSpreadZM)
 	deltaX := mz / (2.0 * c.OutriggerSpreadXM)
 
-	fl := math.Max(0, baseP + deltaZ - deltaX)
-	fr := math.Max(0, baseP + deltaZ + deltaX)
-	rl := math.Max(0, baseP - deltaZ - deltaX)
-	rr := math.Max(0, baseP - deltaZ + deltaX)
+	fl := math.Max(0, baseP+deltaZ-deltaX)
+	fr := math.Max(0, baseP+deltaZ+deltaX)
+	rl := math.Max(0, baseP-deltaZ-deltaX)
+	rr := math.Max(0, baseP-deltaZ+deltaX)
 
 	maxL := math.Max(math.Max(fl, fr), math.Max(rl, rr))
 
@@ -101,16 +112,16 @@ func (c *CraneKinematics) ComputeOutriggerPressures(hookLoadTonne float64) Outri
 
 // TandemLiftResult contains load distribution and spatial clearances.
 type TandemLiftResult struct {
-	Hook1State         HookState          `json:"crane1_hook"`
-	Hook2State         HookState          `json:"crane2_hook"`
-	LoadShareCrane1    float64            `json:"load_share_crane1_pct"`
-	LoadShareCrane2    float64            `json:"load_share_crane2_pct"`
-	Crane1LoadTonnes   float64            `json:"crane1_load_tonnes"`
-	Crane2LoadTonnes   float64            `json:"crane2_load_tonnes"`
-	Crane1Outriggers   OutriggerPressures `json:"crane1_outriggers"`
-	Crane2Outriggers   OutriggerPressures `json:"crane2_outriggers"`
-	HookSpanMeters     float64            `json:"hook_span_meters"`
-	MinBoomClearanceM  float64            `json:"min_boom_clearance_meters"`
+	Hook1State        HookState          `json:"crane1_hook"`
+	Hook2State        HookState          `json:"crane2_hook"`
+	LoadShareCrane1   float64            `json:"load_share_crane1_pct"`
+	LoadShareCrane2   float64            `json:"load_share_crane2_pct"`
+	Crane1LoadTonnes  float64            `json:"crane1_load_tonnes"`
+	Crane2LoadTonnes  float64            `json:"crane2_load_tonnes"`
+	Crane1Outriggers  OutriggerPressures `json:"crane1_outriggers"`
+	Crane2Outriggers  OutriggerPressures `json:"crane2_outriggers"`
+	HookSpanMeters    float64            `json:"hook_span_meters"`
+	MinBoomClearanceM float64            `json:"min_boom_clearance_meters"`
 }
 
 // SolveTandemLift computes the static equilibrium of a tandem lift.

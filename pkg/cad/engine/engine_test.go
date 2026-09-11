@@ -141,3 +141,28 @@ func TestTandemLiftKinematicsAndEquilibrium(t *testing.T) {
 		t.Errorf("Expected Crane 2 to carry 25%%, got %.2f%%", resOffset.LoadShareCrane2)
 	}
 }
+
+func TestSoAPhysicsBufferClearance(t *testing.T) {
+	buf := NewSoAPhysicsBuffer(16)
+
+	// Add 3 nodes: Node 0 & Node 1 close (collision), Node 2 distant
+	buf.AddNode(0, 0, 0, 1.0)     // Sphere at origin, r=1.0
+	buf.AddNode(2.5, 0, 0, 1.0)   // Sphere at (2.5, 0, 0), r=1.0 (margin 1.0 -> 1+1+1=3.0 > 2.5 -> collision)
+	buf.AddNode(100.0, 0, 0, 1.0) // Distant sphere
+
+	var collisions []CollisionPair
+	hasCollision := buf.SweepClearance(1.0, &collisions)
+
+	if !hasCollision || len(collisions) != 1 {
+		t.Fatalf("Expected 1 collision between node 0 and 1, got %d (hasCollision=%v)", len(collisions), hasCollision)
+	}
+
+	if collisions[0].IndexA != 0 || collisions[0].IndexB != 1 {
+		t.Errorf("Expected collision between indices 0 and 1, got %d and %d", collisions[0].IndexA, collisions[0].IndexB)
+	}
+
+	expectedPenetration := float32(3.0 - 2.5) // (1.0 + 1.0 + 1.0) - 2.5 = 0.5
+	if math.Abs(float64(collisions[0].Penetration-expectedPenetration)) > 1e-4 {
+		t.Errorf("Expected penetration %f, got %f", expectedPenetration, collisions[0].Penetration)
+	}
+}

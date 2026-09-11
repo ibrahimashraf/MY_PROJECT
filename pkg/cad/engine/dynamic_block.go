@@ -44,18 +44,18 @@ type Action struct {
 
 // DynamicBlockDef defines a reusable parametric dynamic block template.
 type DynamicBlockDef struct {
-	Name         string        `json:"name"`
-	BaseEntities []dxf.Entity  `json:"base_entities"`
-	Parameters   []Parameter   `json:"parameters"`
-	Actions      []Action      `json:"actions"`
+	Name         string       `json:"name"`
+	BaseEntities []dxf.Entity `json:"base_entities"`
+	Parameters   []Parameter  `json:"parameters"`
+	Actions      []Action     `json:"actions"`
 }
 
 // DynamicBlockInstance is an instantiated block with evaluated parameter values.
 type DynamicBlockInstance struct {
-	DefName       string             `json:"def_name"`
-	ParamValues   map[string]float64 `json:"param_values"`
-	Insertion     dxf.Point3D        `json:"insertion"`
-	Def           *DynamicBlockDef   `json:"-"`
+	DefName     string             `json:"def_name"`
+	ParamValues map[string]float64 `json:"param_values"`
+	Insertion   dxf.Point3D        `json:"insertion"`
+	Def         *DynamicBlockDef   `json:"-"`
 }
 
 // NewDynamicBlockInstance creates an instance with default parameters.

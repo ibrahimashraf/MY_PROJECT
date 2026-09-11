@@ -9,8 +9,9 @@ import (
 
 // Matrix represents a 2D affine transformation matrix [a, b, c, d, e, f].
 // [x', y', 1] = [x, y, 1] * [ a  b  0 ]
-//                           [ c  d  0 ]
-//                           [ e  f  1 ]
+//
+//	[ c  d  0 ]
+//	[ e  f  1 ]
 type Matrix struct {
 	A, B, C, D, E, F float64
 }

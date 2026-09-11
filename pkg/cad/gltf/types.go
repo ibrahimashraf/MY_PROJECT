@@ -42,8 +42,9 @@ type Document struct {
 
 // Asset contains metadata about the glTF asset.
 type Asset struct {
-	Version   string `json:"version"`
-	Generator string `json:"generator,omitempty"`
+	Version   string         `json:"version"`
+	Generator string         `json:"generator,omitempty"`
+	Extras    map[string]any `json:"extras,omitempty"`
 }
 
 // Scene contains indices of root nodes.
@@ -54,12 +55,12 @@ type Scene struct {
 
 // Node represents an object in the scene hierarchy.
 type Node struct {
-	Name        string      `json:"name,omitempty"`
-	Translation [3]float64  `json:"translation,omitempty"`
-	Rotation    [4]float64  `json:"rotation,omitempty"` // Quaternion (x, y, z, w)
-	Scale       [3]float64  `json:"scale,omitempty"`
-	Mesh        *int        `json:"mesh,omitempty"`
-	Children    []int       `json:"children,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	Translation [3]float64 `json:"translation,omitempty"`
+	Rotation    [4]float64 `json:"rotation,omitempty"` // Quaternion (x, y, z, w)
+	Scale       [3]float64 `json:"scale,omitempty"`
+	Mesh        *int       `json:"mesh,omitempty"`
+	Children    []int      `json:"children,omitempty"`
 }
 
 // Mesh represents a set of geometric primitives to be rendered.

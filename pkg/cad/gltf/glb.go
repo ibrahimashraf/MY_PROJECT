@@ -33,6 +33,13 @@ func PackGLB(meshes []MeshData) ([]byte, error) {
 		Asset: Asset{
 			Version:   "2.0",
 			Generator: "INTEGIN Sovereign CAD Engine",
+			Extras: map[string]any{
+				"integin_audit": map[string]string{
+					"status":     "NON_CERTIFIED_SIMULATION",
+					"disclaimer": "ENGINEERING STUDY ONLY - NOT VALID FOR FABRICATION OR CRITICAL LIFT WITHOUT LICENSED PE STAMP",
+					"standard":   "ASME B30.5 / OSHA 1926",
+				},
+			},
 		},
 		Scene:       ptrInt(0),
 		Scenes:      []Scene{{Name: "Scene", Nodes: make([]int, 0, len(meshes))}},

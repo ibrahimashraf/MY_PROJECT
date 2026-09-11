@@ -73,6 +73,10 @@ func (w *Writer) writeHeader() error {
 	if err := w.writeCode(1, "AC1015"); err != nil {
 		return err
 	}
+	// ADV-05: Statutory immutable audit comment & non-certified disclaimer
+	if err := w.writeCode(999, "INTEGIN_AUDIT_STAMP: NOT CERTIFIED FOR RIGGING/LIFTING WITHOUT LICENSED PE STAMP (ASME B30.5 / OSHA 1926)"); err != nil {
+		return err
+	}
 	return w.writeCode(0, "ENDSEC")
 }
 
