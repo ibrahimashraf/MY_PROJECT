@@ -128,7 +128,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Decentralized Identifier resolution (`did:integin:asset:<uuid>`).
     *   Autonomous safety quarantine: failed proof-load instantly locks asset state across all operational branches.
     *   🚀 **D3.4 progress**: `ResolveAssetDID` (parse→asset-type→lookup, typed errors) + proof-load verdict→`Quarantine()` (nil-safe) + tests. Gates re-verified by orchestrator: vet clean, domain tests PASS, race PASS, gofmt clean.
-*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)** — IN PROGRESS: `index.html`/`style.css`/`app.js` exist (48/119/52 lines), tracked since `5de18a3`, working tree modified-uncommitted. NOT pending — completes + commits next:
+*   [x] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)** — COMPLETE ✅ (2026-09-11, committed `4edb1c4` minimal 3-file static wizard; real-browser CDP smoke on Chrome Beta headless: valid `APEX-CRN-2026-00001` → preview shown + error hidden, `foo` → preview hidden + error shown, title correct, zero downloads):
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
 *   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/`) — `tus_handler.go` does not exist, create new**:
     *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
