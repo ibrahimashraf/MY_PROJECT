@@ -1,4 +1,7 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
+
+import 'package:image/image.dart' as img;
 
 /// Preferred/fallback image encoding contract for downsampled uploads.
 ///
@@ -17,9 +20,9 @@ class DownsampleConfig {
     this.maxDimension = 4096,
     this.qualityTarget = 0.85,
     this.encoding = DownsampleEncoding.avifPreferred,
-  }) : assert(maxDimension > 0, 'maxDimension must be positive'),
-       assert(qualityTarget > 0 && qualityTarget <= 1.0,
-           'qualityTarget must be in (0, 1]');
+  })  : assert(maxDimension > 0, 'maxDimension must be positive'),
+        assert(qualityTarget > 0 && qualityTarget <= 1.0,
+            'qualityTarget must be in (0, 1]');
 
   /// Longest side (width or height) an image may have after downsampling.
   final int maxDimension;
@@ -46,7 +49,7 @@ class DownsampleResult {
   /// True when [bytes] were actually re-encoded; false for passthrough.
   final bool downsampled;
 
-  /// Content type of [bytes] (may differ from the source, e.g. `image/avif`).
+  /// Content type of [bytes] (may differ from the source, e.g. `image/webp`).
   final String contentType;
 }
 
@@ -63,11 +66,75 @@ abstract interface class DownsamplePolicy {
   });
 }
 
-/// Production note: real encoding needs a native codec. The default policy is
-/// deliberately dependency-free — it validates the config, returns the input
-/// unchanged, and flags `downsampled = false`, so the upload pipeline stays
-/// safe and honest until a native encoder (e.g. `package:image` or a platform
-/// plugin via FFI) is wired in behind this seam.
+/// Native image decoding and downsampling policy using `package:image`.
+///
+/// Decodes the source image, scales it down if any dimension exceeds [DownsampleConfig.maxDimension],
+/// and re-encodes to WebP (quality mapped from 0..100).
+class NativeDownsamplePolicy implements DownsamplePolicy {
+  const NativeDownsamplePolicy();
+
+  @override
+  Future<DownsampleResult> downsample(
+    Uint8List source, {
+    required String contentType,
+    DownsampleConfig config = const DownsampleConfig(),
+  }) async {
+    if (config.maxDimension <= 0) {
+      throw ArgumentError.value(
+          config.maxDimension, 'maxDimension', 'must be positive');
+    }
+    if (config.qualityTarget <= 0 || config.qualityTarget > 1.0) {
+      throw ArgumentError.value(
+          config.qualityTarget, 'qualityTarget', 'must be in (0, 1]');
+    }
+    if (source.isEmpty) {
+      throw ArgumentError.value(source, 'source', 'must not be empty');
+    }
+
+    img.Image? decoded;
+    try {
+      if (source.length >= 12) {
+        decoded = img.decodeImage(source);
+      }
+    } catch (_) {
+      decoded = null;
+    }
+    if (decoded == null) {
+      // Non-image or unsupported payload: return untouched passthrough
+      return DownsampleResult(
+        bytes: Uint8List.fromList(source),
+        downsampled: false,
+        contentType: contentType,
+      );
+    }
+
+    final origW = decoded.width;
+    final origH = decoded.height;
+    final maxDim = math.max(origW, origH);
+
+    img.Image target = decoded;
+    if (maxDim > config.maxDimension) {
+      final scale = config.maxDimension / maxDim;
+      final targetW = (origW * scale).round();
+      final targetH = (origH * scale).round();
+      target = img.copyResize(decoded,
+          width: targetW,
+          height: targetH,
+          interpolation: img.Interpolation.linear);
+    }
+
+    // Encode to WebP (efficient modern container supported by browsers & server)
+    final encoded = img.encodeWebP(target);
+
+    return DownsampleResult(
+      bytes: Uint8List.fromList(encoded),
+      downsampled: true,
+      contentType: 'image/webp',
+    );
+  }
+}
+
+/// Zero-dependency passthrough policy for tests or raw upload passes.
 class PassthroughDownsamplePolicy implements DownsamplePolicy {
   const PassthroughDownsamplePolicy();
 
@@ -82,8 +149,8 @@ class PassthroughDownsamplePolicy implements DownsamplePolicy {
           config.maxDimension, 'maxDimension', 'must be positive');
     }
     if (config.qualityTarget <= 0 || config.qualityTarget > 1.0) {
-      throw ArgumentError.value(config.qualityTarget, 'qualityTarget',
-          'must be in (0, 1]');
+      throw ArgumentError.value(
+          config.qualityTarget, 'qualityTarget', 'must be in (0, 1]');
     }
     if (source.isEmpty) {
       throw ArgumentError.value(source, 'source', 'must not be empty');
@@ -96,12 +163,11 @@ class PassthroughDownsamplePolicy implements DownsamplePolicy {
   }
 }
 
-/// Upload-pipeline entry point. Defaults to passthrough; inject a real
-/// [DownsamplePolicy] once a native codec is available.
+/// Upload-pipeline entry point. Defaults to [NativeDownsamplePolicy].
 Future<DownsampleResult> downsampleForUpload(
   Uint8List source, {
   required String contentType,
-  DownsamplePolicy policy = const PassthroughDownsamplePolicy(),
+  DownsamplePolicy policy = const NativeDownsamplePolicy(),
   DownsampleConfig config = const DownsampleConfig(),
 }) async {
   return policy.downsample(source, contentType: contentType, config: config);

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 
 import 'package:integin_field_app/sync/downsample.dart';
 
@@ -26,8 +27,7 @@ class _CapturingPolicy implements DownsamplePolicy {
 
 void main() {
   group('DownsampleConfig contract', () {
-    test('defaults to 4096 max dimension, 0.85 quality, AVIF-preferred',
-        () {
+    test('defaults to 4096 max dimension, 0.85 quality, AVIF-preferred', () {
       const config = DownsampleConfig();
       expect(config.maxDimension, 4096);
       expect(config.qualityTarget, 0.85);
@@ -100,10 +100,11 @@ void main() {
   });
 
   group('downsampleForUpload', () {
-    test('defaults to the passthrough policy', () async {
+    test('defaults to the native policy and passes through non-image bytes',
+        () async {
       final source = Uint8List.fromList([1, 2, 3]);
-      final result =
-          await downsampleForUpload(source, contentType: 'image/jpeg');
+      final result = await downsampleForUpload(source,
+          contentType: 'application/octet-stream');
       expect(result.downsampled, isFalse);
       expect(result.bytes, source);
     });
@@ -127,6 +128,31 @@ void main() {
       expect(fake.lastConfig!.maxDimension, 800);
       expect(fake.lastConfig!.qualityTarget, 0.6);
       expect(fake.lastConfig!.encoding, DownsampleEncoding.webpFallback);
+    });
+  });
+
+  group('NativeDownsamplePolicy', () {
+    test('downsamples and encodes a valid image to WebP', () async {
+      const policy = NativeDownsamplePolicy();
+      // Generate a small 100x100 PNG test image in memory
+      final imgObj = img.Image(width: 100, height: 100);
+      img.fill(imgObj, color: img.ColorRgb8(255, 0, 0));
+      final pngBytes = Uint8List.fromList(img.encodePng(imgObj));
+
+      final result = await policy.downsample(
+        pngBytes,
+        contentType: 'image/png',
+        config: const DownsampleConfig(maxDimension: 50, qualityTarget: 0.8),
+      );
+
+      expect(result.downsampled, isTrue);
+      expect(result.contentType, 'image/webp');
+      expect(result.bytes.isNotEmpty, isTrue);
+
+      final decoded = img.decodeImage(result.bytes);
+      expect(decoded, isNotNull);
+      expect(decoded!.width, lessThanOrEqualTo(50));
+      expect(decoded.height, lessThanOrEqualTo(50));
     });
   });
 }
