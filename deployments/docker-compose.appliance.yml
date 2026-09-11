@@ -1,0 +1,191 @@
+# Air-Gapped Sovereign Edge Appliance Stack
+# Complete Pure FOSS Architecture (Zero Freemium, Zero Open-Core, Zero Cloud Callbacks)
+# Components: HAProxy 3.1 + Casdoor IdP + PgCat Pooler + PostgreSQL 18 + RustFS S3 + INTEGIN Server Monolith
+
+version: '3.8'
+
+services:
+  # 1. Edge Ingress Proxy & WAF (GPL-2.0 / LGPL-2.1)
+  # Defense-in-depth: dual stick-table rate limiting, token enumeration ban, TLS termination
+  haproxy:
+    image: haproxy:3.1-alpine
+    container_name: appliance-haproxy
+    restart: unless-stopped
+    ports:
+      - "${APPLIANCE_HTTP_PORT:-80}:80"
+      - "${APPLIANCE_HTTPS_PORT:-443}:443"
+    volumes:
+      - ../deploy/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    networks:
+      - appliance-network
+    depends_on:
+      - integin-server
+
+  # 2. Sovereign Identity Provider (Apache 2.0)
+  # RS256 token issuance, local credential store, 0 external cloud dependencies
+  casdoor-postgres:
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    container_name: appliance-casdoor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CASDOOR_DB:-casdoor_appliance}
+      POSTGRES_USER: ${CASDOOR_USER:-casdoor_owner}
+      POSTGRES_PASSWORD: ${CASDOOR_PASSWORD:-casdoor_sovereign_secret}
+    volumes:
+      - casdoor-postgres-data:/var/lib/postgresql/data
+    networks:
+      - appliance-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  casdoor:
+    image: casbin/casdoor:latest@sha256:1b479655bf51b1c630f2a3ea93ec1ef58388e1d5861173377269266ea321537e
+    container_name: appliance-casdoor
+    restart: unless-stopped
+    environment:
+      driverName: postgres
+      dataSourceName: "host=appliance-casdoor-postgres port=5432 user=${CASDOOR_USER:-casdoor_owner} password=${CASDOOR_PASSWORD:-casdoor_sovereign_secret} dbname=${CASDOOR_DB:-casdoor_appliance} sslmode=disable"
+      origin: "http://appliance-casdoor:8000"
+    ports:
+      - "18180:8000"
+    networks:
+      - appliance-network
+    depends_on:
+      - casdoor-postgres
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # 3. Relational Core Database (PostgreSQL License / BSD-style)
+  postgres:
+    image: postgres:18
+    container_name: appliance-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APPLIANCE_POSTGRES_DB:-integin_appliance}
+      POSTGRES_USER: ${APPLIANCE_POSTGRES_USER:-integin_owner}
+      POSTGRES_PASSWORD: ${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}
+    volumes:
+      - appliance-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - appliance-network
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
+  # 4. Multi-Threaded Connection Pooler (MIT)
+  # Rust-native multiplexer for transaction-mode pooling & read/write splitting
+  pgcat:
+    image: ghcr.io/postgresml/pgcat:latest
+    container_name: appliance-pgcat
+    restart: unless-stopped
+    volumes:
+      - ./pgcat.toml:/etc/pgcat/pgcat.toml:ro
+    ports:
+      - "6432:6432"
+    command: ["pgcat", "/etc/pgcat/pgcat.toml"]
+    networks:
+      - appliance-network
+    depends_on:
+      - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+
+  # 5. High-Performance S3 Object Store (Apache 2.0 / MIT)
+  # Pure Rust-native S3-compatible blob storage replacing AGPL MinIO
+  rustfs:
+    image: rustfs/rustfs:1.0.0-rc.1
+    container_name: appliance-rustfs
+    restart: unless-stopped
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-sovereign_rustfs_admin}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-sovereign_rustfs_secret_key_643}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOG_DIRECTORY: /var/log/rustfs
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - appliance-rustfs-data:/data
+      - appliance-rustfs-logs:/var/log/rustfs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:9000/health >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - appliance-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # 6. INTEGIN Sovereign Monolith Server (Apache 2.0)
+  # Compiled Go monolith executing business logic, verification, and RLS enforcement
+  integin-server:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.server
+    image: integin/integin-server:latest
+    container_name: appliance-integin-server
+    restart: unless-stopped
+    environment:
+      INTEGIN_HTTP_ADDR: "0.0.0.0:8080"
+      INTEGIN_DB_URL: "postgres://${APPLIANCE_POSTGRES_USER:-integin_owner}:${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}@appliance-pgcat:6432/${APPLIANCE_POSTGRES_DB:-integin_appliance}?sslmode=disable"
+      INTEGIN_RUSTFS_ENDPOINT: "http://appliance-rustfs:9000"
+      INTEGIN_RUSTFS_REGION: "sovereign-edge"
+      INTEGIN_RUSTFS_BUCKET: "evidence"
+      INTEGIN_RUSTFS_ACCESS_KEY: "${RUSTFS_ACCESS_KEY:-sovereign_rustfs_admin}"
+      INTEGIN_RUSTFS_SECRET_KEY: "${RUSTFS_SECRET_KEY:-sovereign_rustfs_secret_key_643}"
+      INTEGIN_SYNC_SECRET: "${APPLIANCE_SYNC_SECRET:-sovereign_sync_master_key}"
+      INTEGIN_OIDC_ENABLED: "true"
+      INTEGIN_OIDC_ISSUER: "http://appliance-casdoor:8000"
+    ports:
+      - "8080:8080"
+    networks:
+      - appliance-network
+    depends_on:
+      - pgcat
+      - rustfs
+      - casdoor
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+
+networks:
+  appliance-network:
+    name: integin-appliance-sovereign-net
+    driver: bridge
+
+volumes:
+  appliance-postgres-data:
+    name: integin-appliance-postgres-data
+  casdoor-postgres-data:
+    name: integin-appliance-casdoor-postgres-data
+  appliance-rustfs-data:
+    name: integin-appliance-rustfs-data
+  appliance-rustfs-logs:
+    name: integin-appliance-rustfs-logs

@@ -109,3 +109,38 @@ func TestNewWorkOrderHandoverHandlerBuildsWithoutConnecting(t *testing.T) {
 		t.Fatal("expected composed handler")
 	}
 }
+
+func TestNewWorkOrderAssignmentHandlerFailsClosedOnMissingDependency(t *testing.T) {
+	resolver := compositionTestResolver{}
+	validator := &oidcauth.Validator{}
+	service := compositionTestWorkOrderService{}
+
+	tests := []struct {
+		name      string
+		service   workorder.Service
+		validator *oidcauth.Validator
+		resolver  identity.Resolver
+	}{
+		{name: "missing service", service: nil, validator: validator, resolver: resolver},
+		{name: "missing validator", service: service, validator: nil, resolver: resolver},
+		{name: "missing resolver", service: service, validator: validator, resolver: nil},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if handler, err := NewWorkOrderAssignmentHandlerFromService(test.service, test.validator, test.resolver); handler != nil || err == nil {
+				t.Fatalf("expected dependency failure, handler=%T err=%v", handler, err)
+			}
+		})
+	}
+}
+
+func TestNewWorkOrderAssignmentHandlerBuildsWithoutConnecting(t *testing.T) {
+	handler, err := NewWorkOrderAssignmentHandlerFromService(compositionTestWorkOrderService{}, &oidcauth.Validator{}, compositionTestResolver{})
+	if err != nil {
+		t.Fatalf("expected local composition to succeed without connecting, got %v", err)
+	}
+	if handler == nil {
+		t.Fatal("expected composed handler")
+	}
+}
+

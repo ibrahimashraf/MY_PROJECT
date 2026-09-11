@@ -44,6 +44,7 @@ type Dependencies struct {
 	WorkOrderHandler               http.Handler
 	WorkOrderEvidenceHandler       http.Handler
 	WorkOrderHandoverHandler       http.Handler
+	WorkOrderAssignmentHandler     http.Handler
 	WorkOrderReconciliationHandler http.Handler
 	CertificateHandler             http.Handler
 	CertificatePublicHandler       http.Handler

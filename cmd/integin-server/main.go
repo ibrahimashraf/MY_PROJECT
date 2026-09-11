@@ -201,6 +201,7 @@ func main() {
 	var oidcSessionHandler http.Handler
 	var workOrderHandler http.Handler
 	var workOrderEvidenceHandler http.Handler
+	var workOrderAssignmentHandler http.Handler
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
@@ -260,6 +261,10 @@ func main() {
 			log.Fatal(handlerErr)
 		}
 		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, activeResolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
+		workOrderAssignmentHandler, handlerErr = server.NewWorkOrderAssignmentHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
@@ -408,7 +413,7 @@ func main() {
 		tusHandler = storage.TUSRouteHandler{Manager: tusManager}
 	}
 	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil)
-	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
+	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler,
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,

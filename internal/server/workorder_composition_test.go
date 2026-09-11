@@ -40,4 +40,19 @@ func TestNewMuxMountsWorkOrderRouteOnlyWhenHandlerProvided(t *testing.T) {
 	if mountedHandoverResponse.Code != http.StatusNoContent {
 		t.Fatalf("mounted handover handler status = %d, want %d", mountedHandoverResponse.Code, http.StatusNoContent)
 	}
+
+	missingAssignResponse := httptest.NewRecorder()
+	missing.ServeHTTP(missingAssignResponse, httptest.NewRequest(http.MethodPost, "/api/v1/work-orders/wo-1/assign", nil))
+	if missingAssignResponse.Code != http.StatusNotFound {
+		t.Fatalf("missing assignment handler status = %d, want %d", missingAssignResponse.Code, http.StatusNotFound)
+	}
+
+	mountedAssign := NewMux(Dependencies{WorkOrderAssignmentHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})})
+	mountedAssignResponse := httptest.NewRecorder()
+	mountedAssign.ServeHTTP(mountedAssignResponse, httptest.NewRequest(http.MethodPost, "/api/v1/work-orders/wo-1/assign", nil))
+	if mountedAssignResponse.Code != http.StatusNoContent {
+		t.Fatalf("mounted assignment handler status = %d, want %d", mountedAssignResponse.Code, http.StatusNoContent)
+	}
 }

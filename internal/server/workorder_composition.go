@@ -83,3 +83,26 @@ func NewWorkOrderHandoverHandlerFromService(service workorder.Service, validator
 	}
 	return workorderhttp.HandoverHandler{Validator: validator, Resolver: resolver, Service: service}, nil
 }
+
+func NewWorkOrderAssignmentHandler(database *sql.DB, validator *oidcauth.Validator, resolver identity.Resolver) (http.Handler, error) {
+	if database == nil {
+		return nil, errors.New("work-order assignment handler requires database")
+	}
+	repository, err := workorderpg.NewRepository(database, workorderpg.NewPostgresInspectionMembershipValidator())
+	if err != nil {
+		return nil, err
+	}
+	service, err := workorder.NewService(workorder.ServiceDependencies{Repository: repository, Transactions: repository, Authorizer: workorderauth.New()})
+	if err != nil {
+		return nil, err
+	}
+	return NewWorkOrderAssignmentHandlerFromService(service, validator, resolver)
+}
+
+func NewWorkOrderAssignmentHandlerFromService(service workorder.Service, validator *oidcauth.Validator, resolver identity.Resolver) (http.Handler, error) {
+	if service == nil || validator == nil || resolver == nil {
+		return nil, errors.New("work-order assignment handler requires service, OIDC validator, and identity resolver")
+	}
+	return workorderhttp.AssignmentHandler{Validator: validator, Resolver: resolver, Service: service}, nil
+}
+
