@@ -158,7 +158,7 @@ func TestSandboxRejectsUnsetVariable(t *testing.T) {
 
 func TestSandboxBudgetExceeded(t *testing.T) {
 	e, _ := NewEvaluator(ProgramOptions{MaxAlloc: 64}) // budget: 1 element
-	big := make([]any, 8, 8)
+	big := make([]any, 8)
 	for i := range big {
 		big[i] = float64(i)
 	}

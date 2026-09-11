@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrInsufficientSamples   = errors.New("jitter: minimum 8 telemetric samples required for harmonic frequency analysis")
+	ErrInsufficientSamples     = errors.New("jitter: minimum 8 telemetric samples required for harmonic frequency analysis")
 	ErrSyntheticJitterDetected = errors.New("jitter: synthetic uniform or zero jitter detected (counterfeit spoofing)")
 	ErrInvalidSensorSignature  = errors.New("jitter: sensor hardware BLE enclave signature verification failed")
 	ErrZeroDivision            = errors.New("jitter: sample variance is zero")

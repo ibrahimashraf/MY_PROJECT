@@ -37,7 +37,7 @@ func BenchmarkB30_5HotPath(b *testing.B) {
 	v.Put("required_test_load_t", B30_5ProofLoad(20))
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if _, err := p.Evaluate(context.Background(), v); err != nil {
 			b.Fatal(err)
 		}
@@ -55,7 +55,7 @@ func BenchmarkISO4309HotPath(b *testing.B) {
 	v.Put("diameter_loss_pct", 0.075)
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if _, err := p.Evaluate(context.Background(), v); err != nil {
 			b.Fatal(err)
 		}
@@ -65,7 +65,7 @@ func BenchmarkISO4309HotPath(b *testing.B) {
 // BenchmarkRiggingHotPath exercises the pure-Go vector engine.
 func BenchmarkRiggingHotPath(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		if _, _, _, err := SlingTension2Leg(10, 45); err != nil {
 			b.Fatal(err)
 		}
