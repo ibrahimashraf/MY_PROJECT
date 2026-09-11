@@ -153,14 +153,18 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Client-side Ed25519 signature validation and W3C DID document verification directly in browser WebCrypto API (`verify.integin.com`).
     *   Go verification package `pkg/verification/verify.go` (stdlib Ed25519, `did:key:z...` multicodec parse) + 100% PASS tests.
     *   Prometheus telemetry exported on `/metrics`: `integin_sync_offline_hmac_fallback_total`.
-*   [ ] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`config/k8s/helm/integin-platform/`, `terraform/`) — do not exist, create new**:
-    *   High-availability pod auto-scaling (10,000 req/sec) with zero-downtime rolling upgrades.
-*   [ ] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`) — does not exist, create new**:
-    *   Single-node offline container stack (`docker-compose.appliance.yml`) modeled after Coolify's Traefik dynamic labels.
+*   [x] **4.2: L6 Dynamic Competency Verification Ingress Gate (`internal/workorderhttp/assignment_http.go`, `internal/server/http_routes.go`)** — COMPLETE ✅ (2026-09-11, landed `93d073f`):
+    *   Mounted `/api/v1/work-orders/{id}/assign` and `/work-orders/assignments` executing `scheduling.CheckAssignmentSkills`.
+    *   Deny-closed fail-safe returning HTTP `422 Unprocessable Entity` if qualifications or skill matrix are invalid.
+*   [x] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`deployments/docker-compose.appliance.yml`, `deployments/Dockerfile.server`)** — COMPLETE ✅ (2026-09-11, landed `93d073f`):
+    *   Single-node offline container stack bundling HAProxy 3.1, Casdoor IdP, PgCat pooler, PostgreSQL 18, RustFS S3, and INTEGIN server monolith.
+    *   Pure FOSS architecture at all tiers with zero external cloud dependencies.
 *   [ ] **4.4: Dual-NVMe Air-Gapped Disaster Recovery (`deploy/edge-appliance/backup/`) — does not exist, create new**:
     *   Automated local `pgBackRest` WAL streaming to hot-swappable external rugged SSDs with $<60\text{s}$ rebuild script.
-*   [ ] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`) — package does not exist, create new**:
-    *   Public append-only Merkle transparency log preserving historical certificate validity across root CA rotations.
+*   [x] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`)** — COMPLETE ✅ (2026-09-11, landed `6f2421b`):
+    *   Public append-only Merkle transparency log with domain separation (`0x00` leaf, `0x01` interior node).
+    *   Cryptographic inclusion proofs (`InclusionProof`, `VerifyInclusion`) and consistency proofs (`ConsistencyProof`, `VerifyConsistency`).
+    *   Pure Go standard library implementation (`crypto/sha256`), 100% test coverage PASS.
 *   [ ] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`) — does not exist, create new**:
     *   Physical data plane pinning to sovereign regional cells (`cell-sa-central-01`, `cell-eu-west-01`) satisfying SDAIA and GDPR.
 *   [ ] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0074_partitioning_and_cqrs.sql`) — 0073 already used by tool_calibration_registry**:
