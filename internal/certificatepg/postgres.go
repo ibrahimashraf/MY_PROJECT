@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"integin/internal/domain/certificateauthority"
+	"integin/internal/timestamp"
 )
 
 type Repository struct {
-	db *sql.DB
+	db  *sql.DB
+	tsa *timestamp.TSA
 }
 
 func NewRepository(db *sql.DB) (*Repository, error) {
@@ -21,6 +23,14 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 		return nil, fmt.Errorf("certificate lifecycle database is required")
 	}
 	return &Repository{db: db}, nil
+}
+
+// SetTSAClient attaches a provisioned RFC 3161 authority. When set, every
+// certificate issuance is notarized with a trusted time stamp and the
+// issuance transaction fails closed if the authority cannot attest. A nil
+// TSA keeps legacy issuance behavior.
+func (r *Repository) SetTSAClient(tsa *timestamp.TSA) {
+	r.tsa = tsa
 }
 
 func (r *Repository) CreateDraft(ctx context.Context, actor certificateauthority.ActorContext, request certificateauthority.CreateDraftRequest, now time.Time) (*certificateauthority.Certificate, error) {

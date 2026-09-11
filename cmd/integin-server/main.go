@@ -51,6 +51,7 @@ import (
 	"integin/internal/shortlinksvc"
 	"integin/internal/storage"
 	"integin/internal/syncstate"
+	"integin/internal/timestamp"
 	"integin/pkg/onboarding"
 )
 
@@ -68,6 +69,10 @@ func main() {
 		secrets["default"] = secretStr
 	}
 	if err := onboarding.ProvisionAttestationFromEnv(); err != nil {
+		log.Fatal(err)
+	}
+	tsaClient, err := timestamp.ProvisionFromEnv()
+	if err != nil {
 		log.Fatal(err)
 	}
 	var database *sql.DB
@@ -201,6 +206,7 @@ func main() {
 			log.Fatal(certificateErr)
 		}
 		certificateRepository = repository
+		certificateRepository.SetTSAClient(tsaClient)
 		trustedProxies := envList("INTEGIN_TRUSTED_PROXIES", "INTEGIN_TRUSTED_PROXY")
 		certificatePublicHandler = &certificatepublichttp.Handler{
 			Verifier:       certificateRepository,

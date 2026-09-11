@@ -1,15 +1,24 @@
 package certificatepg
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"integin/internal/domain/certificateauthority"
+	"integin/internal/timestamp"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -154,10 +163,13 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	issuer := actor
 	issuer.ActorID = "issuer-a"
 	issuer.Capabilities = map[string]bool{"certificate.issue": true}
+	fakeTSA := newEchoTSA(t, now)
+	repository.SetTSAClient(fakeTSA.tsa)
 	issued, err := repository.Issue(ctx, issuer, certificateID, now)
 	if err != nil {
 		t.Fatal(err)
 	}
+	repository.SetTSAClient(nil)
 	if issued.CertificateNumber == "" || issued.PublicToken == "" || issued.ExpiresAt.IsZero() {
 		t.Fatalf("incomplete issuance result: %#v", issued)
 	}
@@ -295,6 +307,7 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 			t.Fatalf("public binding snapshot lacks %q: %s", expected, publicBindingSnapshot)
 		}
 	}
+	assertTimestampTokenEvidence(t, db, ctx, tenantID, certificateID, fakeTSA.genTime)
 	denied := actor
 	denied.OrganizationID = "org-b"
 	if _, err := repository.CreateDraft(ctx, denied, certificateauthority.CreateDraftRequest{CertificateID: certificateID + "-denied", InspectionID: inspectionID, TemplateCode: "lifting", TemplateVersion: 3, Profile: certificateauthority.IndependentReview}, now); err == nil {
@@ -307,4 +320,99 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if deniedRecords != 0 {
 		t.Fatalf("cross-organization attempt persisted %d records", deniedRecords)
 	}
+}
+
+// assertTimestampTokenEvidence checks the trust-anchor coupling: the ISSUED
+// audit event carries a verified RFC 3161 token whose message imprint equals
+// the persisted certificate_snapshot.snapshot_sha256.
+func assertTimestampTokenEvidence(t *testing.T, db *sql.DB, ctx context.Context, tenantID, certificateID string, expectedGenTime time.Time) {
+	t.Helper()
+	var issuedEvidence string
+	if err := db.QueryRowContext(ctx, `SELECT policy_evidence::text FROM certificate_audit_event WHERE tenant_id=$1 AND certificate_id=$2 AND action='ISSUED'`, tenantID, certificateID).Scan(&issuedEvidence); err != nil {
+		t.Fatal(err)
+	}
+	var evidence struct {
+		TokenDER string `json:"timestamp_token_der"`
+		GenTime  string `json:"timestamp_gen_time"`
+	}
+	if err := json.Unmarshal([]byte(issuedEvidence), &evidence); err != nil {
+		t.Fatalf("issued audit evidence is not valid json: %v", err)
+	}
+	if evidence.GenTime != expectedGenTime.Format(time.RFC3339) {
+		t.Fatalf("timestamp genTime = %q, want %q", evidence.GenTime, expectedGenTime.Format(time.RFC3339))
+	}
+	tokenDER, err := base64.StdEncoding.DecodeString(evidence.TokenDER)
+	if err != nil {
+		t.Fatalf("timestamp token is not base64: %v", err)
+	}
+	parsed, err := timestamp.ParseResponse(tokenDER)
+	if err != nil {
+		t.Fatalf("issued timestamp token does not parse: %v", err)
+	}
+	if parsed.Status != 0 {
+		t.Fatalf("issued timestamp status = %d, want granted", parsed.Status)
+	}
+	var snapshotDigest []byte
+	if err := db.QueryRowContext(ctx, `SELECT snapshot_sha256 FROM certificate_snapshot WHERE tenant_id=$1 AND certificate_id=$2`, tenantID, certificateID).Scan(&snapshotDigest); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(parsed.Imprint, snapshotDigest) {
+		t.Fatalf("timestamp token imprint %x does not match stored snapshot digest %x", parsed.Imprint, snapshotDigest)
+	}
+}
+
+type echoTSA struct {
+	tsa     *timestamp.TSA
+	genTime time.Time
+}
+
+// newEchoTSA provisions an offline fake timestamp authority whose
+// self-signing certificate is valid around now and creates the emptyTransport
+// tokens in response to requests.
+func newEchoTSA(t *testing.T, now time.Time) *echoTSA {
+	t.Helper()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validFrom := now.Add(-time.Hour).UTC()
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "integin-it-echo-tsa"},
+		NotBefore:             validFrom,
+		NotAfter:              validFrom.AddDate(1, 0, 0),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	genTime := now.Add(-5 * time.Minute).UTC()
+	roots := x509.NewCertPool()
+	roots.AddCert(cert)
+	tsa, err := timestamp.New(&echoTSATransport{cert: cert, key: key, genTime: genTime}, roots)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &echoTSA{tsa: tsa, genTime: genTime}
+}
+
+type echoTSATransport struct {
+	cert    *x509.Certificate
+	key     *rsa.PrivateKey
+	genTime time.Time
+}
+
+func (t *echoTSATransport) RoundTrip(_ context.Context, request []byte) ([]byte, error) {
+	req, err := timestamp.ParseRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	return timestamp.BuildTestResponse(t.cert, t.key, req.MessageImprint.HashedMessage, t.genTime)
 }

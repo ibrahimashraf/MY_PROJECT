@@ -58,7 +58,16 @@ func (r *Repository) Issue(ctx context.Context, actor certificateauthority.Actor
 	if err := persistSnapshot(ctx, tx, actor, certificateID, state.templateSnapshot, state.cellSnapshot, state.publicBindingSnapshot); err != nil {
 		return IssueResult{}, err
 	}
-	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "ISSUED", now, map[string]any{"certificate_number": number}); err != nil {
+	evidence := map[string]any{"certificate_number": number}
+	if r.tsa != nil {
+		stamp, err := r.tsa.Timestamp(ctx, snapshotDigest(state.templateSnapshot, state.cellSnapshot, state.publicBindingSnapshot), now)
+		if err != nil {
+			return IssueResult{}, fmt.Errorf("trusted timestamp failed: %w", err)
+		}
+		evidence["timestamp_token_der"] = base64.StdEncoding.EncodeToString(stamp.Response)
+		evidence["timestamp_gen_time"] = stamp.GenTime.UTC().Format(time.RFC3339)
+	}
+	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "ISSUED", now, evidence); err != nil {
 		return IssueResult{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -119,8 +128,17 @@ func persistIssued(ctx context.Context, tx *sql.Tx, actor certificateauthority.A
 }
 
 func persistSnapshot(ctx context.Context, tx *sql.Tx, actor certificateauthority.ActorContext, certificateID string, templateSnapshot, cellSnapshot, publicBindingSnapshot []byte) error {
-	digest := sha256.Sum256(append(append(append([]byte{}, templateSnapshot...), cellSnapshot...), publicBindingSnapshot...))
+	digest := snapshotDigest(templateSnapshot, cellSnapshot, publicBindingSnapshot)
 	query := `INSERT INTO certificate_snapshot (certificate_id,tenant_id,organization_id,template_snapshot,cell_snapshot,public_binding_snapshot,snapshot_sha256) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6::jsonb,$7)`
 	_, err := tx.ExecContext(ctx, query, certificateID, actor.TenantID, actor.OrganizationID, string(templateSnapshot), string(cellSnapshot), string(publicBindingSnapshot), digest[:])
 	return err
+}
+
+// snapshotDigest is the SHA-256 of the concatenated issue-time snapshots. It
+// is the exact byte sequence persisted as certificate_snapshot.snapshot_sha256
+// and, when a trusted timestamp authority is provisioned, the TST message
+// imprint — making the stored digest independently notarizable.
+func snapshotDigest(templateSnapshot, cellSnapshot, publicBindingSnapshot []byte) []byte {
+	sum := sha256.Sum256(append(append(append([]byte{}, templateSnapshot...), cellSnapshot...), publicBindingSnapshot...))
+	return sum[:]
 }
