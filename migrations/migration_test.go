@@ -380,6 +380,11 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			required: []string{"CREATE TABLE IF NOT EXISTS tool_calibration_registry", "PRIMARY KEY (tenant_id, organization_id, id)", "tool_calibration_registry_equipment_due_idx", "tool_calibration_registry_status_idx", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "tool_calibration_registry_tenant_isolation", "NULLIF(current_setting('integin.tenant_id', true), '')"},
 		},
 		{
+			upFile:   "0074_partitioning_and_cqrs.sql",
+			downFile: "0074_partitioning_and_cqrs.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS sensor_telemetry_stream", "PARTITION BY RANGE (reading_timestamp)", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "CREATE TABLE IF NOT EXISTS cqrs_replication_outbox", "fillfactor = 85"},
+		},
+		{
 			upFile:   "0081_audit_log_valid_time.sql",
 			downFile: "0081_audit_log_valid_time.down.sql",
 			required: []string{"ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS valid_time TIMESTAMPTZ", "audit_log_valid_time_idx"},
