@@ -102,6 +102,7 @@ type Processor struct {
 	held                map[string]Transaction
 	state               syncstate.SyncStateRepository
 	preAcceptancePolicy PreAcceptancePolicy
+	schemaVersioner     *SchemaVersioner
 	deviceLocks         [64]syncpkg.Mutex
 }
 

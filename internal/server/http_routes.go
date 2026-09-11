@@ -118,6 +118,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/dpp/", d.DPPHandler)
 		mux.Handle("/api/v1/dpp/", d.DPPHandler)
 	}
+	if d.TUSHandler != nil {
+		mux.Handle("/uploads", d.TUSHandler)
+		mux.Handle("/uploads/", d.TUSHandler)
+	}
 }
 
 func newEvidenceHandler(d Dependencies) http.Handler {

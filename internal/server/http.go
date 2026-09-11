@@ -58,6 +58,7 @@ type Dependencies struct {
 	EvidencePackHandler            http.Handler
 	AssetEntitlementHandler        http.Handler
 	DPPHandler                     http.Handler
+	TUSHandler                     http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }

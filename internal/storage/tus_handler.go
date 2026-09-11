@@ -72,7 +72,11 @@ func NewTUSManager(dir string, chunkSize int64, staleTTL time.Duration) (*TUSMan
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
-	return &TUSManager{dir: dir, chunkSize: chunkSize, staleTTL: staleTTL, sessions: make(map[string]*tusSession)}, nil
+	m := &TUSManager{dir: dir, chunkSize: chunkSize, staleTTL: staleTTL, sessions: make(map[string]*tusSession)}
+	if _, err := m.RecoverOrphans(); err != nil {
+		return nil, fmt.Errorf("recover orphans: %w", err)
+	}
+	return m, nil
 }
 
 // Create opens a new upload session for a media object of size bytes with the
@@ -224,6 +228,41 @@ func (m *TUSManager) Abort(ctx context.Context, id string) error {
 	}
 	delete(m.sessions, id)
 	return nil
+}
+
+// RecoverOrphans scans the session directory for chunk files left behind by a
+// terminated process and deletes them. Returns the number of orphans removed.
+func (m *TUSManager) RecoverOrphans() (int, error) {
+	entries, err := os.ReadDir(m.dir)
+	if err != nil {
+		return 0, err
+	}
+	m.mu.RLock()
+	tracked := make(map[string]struct{}, len(m.sessions))
+	for id := range m.sessions {
+		tracked[id] = struct{}{}
+	}
+	m.mu.RUnlock()
+	var count int
+	var removalErrors []error
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if _, ok := tracked[name]; ok {
+			continue
+		}
+		if err := os.Remove(filepath.Join(m.dir, name)); err != nil {
+			removalErrors = append(removalErrors, err)
+			continue
+		}
+		count++
+	}
+	if len(removalErrors) > 0 {
+		return count, errors.Join(removalErrors...)
+	}
+	return count, nil
 }
 
 // PurgeStale reclaims sessions untouched for the manager's stale TTL. Returns

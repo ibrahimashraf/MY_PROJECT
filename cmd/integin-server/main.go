@@ -193,6 +193,7 @@ func main() {
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
+	var tusHandler http.Handler
 	var certificateRepository *certificatepg.Repository
 	if database != nil {
 		repository, certificateErr := certificatepg.NewRepository(database)
@@ -387,13 +388,20 @@ func main() {
 		// Start automated retention pruner (sweeps every 10m, retain for 1h) to prevent XID wraparound table bloat
 		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
 	}
+	if tusDir := strings.TrimSpace(os.Getenv("INTEGIN_TUS_SCRATCH_DIR")); tusDir != "" {
+		tusManager, tusErr := storage.NewTUSManager(tusDir, 0, 0)
+		if tusErr != nil {
+			log.Fatal(tusErr)
+		}
+		tusHandler = storage.TUSRouteHandler{Manager: tusManager}
+	}
 	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler,
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler})
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler})
 	if enrollHandler != nil {
 		root := http.NewServeMux()
 		root.Handle("/enroll/", enrollHandler)

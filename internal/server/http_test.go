@@ -226,3 +226,28 @@ func TestMetricsEndpointReturnsPrometheusFormat(t *testing.T) {
 		}
 	}
 }
+
+func TestNewMuxMountsTUSRoutesOnlyWhenHandlerProvided(t *testing.T) {
+	absent := NewMux(Dependencies{})
+	for _, path := range []string{"/uploads", "/uploads/some-id/chunks"} {
+		response := httptest.NewRecorder()
+		absent.ServeHTTP(response, httptest.NewRequest(http.MethodPost, path, nil))
+		if response.Code != http.StatusNotFound {
+			t.Fatalf("absent route %s status=%d", path, response.Code)
+		}
+	}
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.URL.Path != "/uploads" {
+			t.Fatalf("TUS path=%q", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux := NewMux(Dependencies{TUSHandler: handler})
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/uploads", nil))
+	if response.Code != http.StatusNoContent || calls != 1 {
+		t.Fatalf("mounted TUS status=%d calls=%d", response.Code, calls)
+	}
+}
