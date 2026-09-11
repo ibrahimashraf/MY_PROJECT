@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/base64"
 	"testing"
 	"time"
@@ -257,6 +258,163 @@ func TestSyncAcceptsVersionedEd25519EnvelopeAndEnforcesCapability(t *testing.T) 
 	}
 	if result := processor.Submit(wrongOrganization, authority, issuedAt.Add(20*time.Minute)); result.Outcome != SecurityFailure {
 		t.Fatalf("expected organization binding failure, got %#v", result)
+	}
+}
+
+func TestSyncDeviceBoundVerifyAcceptsAndAttributes(t *testing.T) {
+	publicKey, privateKey, err := security.GenerateDeviceKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, err := device_trust.NewDevice("device-keyed", "tenant-1", "org-1", "user-1", base64.StdEncoding.EncodeToString(publicKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := device.Trust(); err != nil {
+		t.Fatal(err)
+	}
+	issuedAt := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	authority, err := device_trust.IssueAuthorityPackage(device, "authority-keyed", "secret", []string{"inspection.perform"}, issuedAt, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor.RegisterDevice(device)
+	tx := NewTransaction("tx-keyed", "tenant-1", "device-keyed", "user-1", 1, "InspectionSubmitted", []byte(`{"inspection_id":"inspection-1"}`))
+	tx.OrganizationID = "org-1"
+	tx.EntityID = "inspection-1"
+	tx.AuthorityID = authority.ID
+	tx.AuthorityEpoch = authority.Epoch
+	tx.CapturedAt = issuedAt.Add(10 * time.Minute)
+	tx, err = SignTransactionEd25519(tx, privateKey, security.DeviceKeyID(publicKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := processor.Submit(tx, authority, issuedAt.Add(20*time.Minute))
+	if result.Outcome != Applied {
+		t.Fatalf("expected device-bound transaction to apply, got %#v", result)
+	}
+	if processor.HMACFallbackCount.Load() != 0 {
+		t.Fatalf("device-bound verify must not use HMAC fallback, count=%d", processor.HMACFallbackCount.Load())
+	}
+}
+
+func TestSyncRejectsForgedDeviceKey(t *testing.T) {
+	publicKey, _, err := security.GenerateDeviceKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, attackerKey, err := security.GenerateDeviceKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, err := device_trust.NewDevice("device-forge", "tenant-1", "org-1", "user-1", base64.StdEncoding.EncodeToString(publicKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := device.Trust(); err != nil {
+		t.Fatal(err)
+	}
+	issuedAt := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	authority, err := device_trust.IssueAuthorityPackage(device, "authority-forge", "secret", []string{"inspection.perform"}, issuedAt, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor.RegisterDevice(device)
+	tx := NewTransaction("tx-forge", "tenant-1", "device-forge", "user-1", 1, "InspectionSubmitted", []byte(`{"inspection_id":"inspection-1"}`))
+	tx.OrganizationID = "org-1"
+	tx.EntityID = "inspection-1"
+	tx.AuthorityID = authority.ID
+	tx.AuthorityEpoch = authority.Epoch
+	tx.CapturedAt = issuedAt.Add(10 * time.Minute)
+	// Sign with attacker's key but claim the device's key ID.
+	tx.KeyID = security.DeviceKeyID(publicKey)
+	tx.SignatureAlgorithm = "Ed25519"
+	tx.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(attackerKey, []byte(canonicalTransaction(tx))))
+	if result := processor.Submit(tx, authority, issuedAt.Add(20*time.Minute)); result.Outcome != SecurityFailure {
+		t.Fatalf("expected forged key rejection, got %#v", result)
+	}
+}
+
+func TestSyncRejectsUnknownDevice(t *testing.T) {
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	issuedAt := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	untrustedAuthorityDevice, err := device_trust.NewDevice("authority-only", "tenant-1", "org-1", "user-1", "public-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := untrustedAuthorityDevice.Trust(); err != nil {
+		t.Fatal(err)
+	}
+	authority, err := device_trust.IssueAuthorityPackage(untrustedAuthorityDevice, "authority-unreg", "secret", []string{"inspection-1"}, issuedAt, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Transaction from a device that is not registered with the processor.
+	tx := SignTransaction(NewTransaction("tx-unreg", "tenant-1", "device-unknown", "user-1", 1, "FindingRecorded", []byte("payload")), "secret", "default")
+	result := processor.Submit(tx, authority, issuedAt.Add(time.Minute))
+	if result.Code != types.ErrUnauthorized {
+		t.Fatalf("expected ErrUnauthorized for unknown device, got code=%s outcome=%s", result.Code, result.Outcome)
+	}
+}
+
+func TestSyncLegacyHMACFallbackAcceptedWithCounter(t *testing.T) {
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, authority := trustedDevice(t)
+	processor.RegisterDevice(device)
+	at := time.Date(2026, 8, 13, 12, 30, 0, 0, time.UTC)
+	tx := signedTransaction("tx-hmac", 1, []byte(`{"finding":"hmac-legacy"}`))
+	result := processor.Submit(tx, authority, at)
+	if result.Outcome != Applied {
+		t.Fatalf("expected legacy HMAC transaction to apply, got %#v", result)
+	}
+	if processor.HMACFallbackCount.Load() != 1 {
+		t.Fatalf("expected HMAC fallback counter to be 1, got %d", processor.HMACFallbackCount.Load())
+	}
+}
+
+func TestSyncRejectsHMACWhenDeviceHasKeyMaterial(t *testing.T) {
+	publicKey, _, err := security.GenerateDeviceKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	device, err := device_trust.NewDevice("device-keyed-hmac", "tenant-1", "org-1", "user-1", base64.StdEncoding.EncodeToString(publicKey))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := device.Trust(); err != nil {
+		t.Fatal(err)
+	}
+	issuedAt := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	authority, err := device_trust.IssueAuthorityPackage(device, "authority-keyed-hmac", "secret", []string{"inspection-1"}, issuedAt, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor, err := NewProcessor(map[string]string{"default": "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	processor.RegisterDevice(device)
+	tx := SignTransaction(NewTransaction("tx-hmac-keyed", "tenant-1", "device-keyed-hmac", "user-1", 1, "FindingRecorded", []byte("payload")), "secret", "default")
+	result := processor.Submit(tx, authority, issuedAt.Add(time.Minute))
+	if result.Outcome != SecurityFailure {
+		t.Fatalf("expected HMAC rejected for keyed device, got %#v", result)
+	}
+	if processor.HMACFallbackCount.Load() != 0 {
+		t.Fatalf("HMAC fallback counter must not increment for rejected keyed device, got %d", processor.HMACFallbackCount.Load())
 	}
 }
 

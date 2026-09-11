@@ -8,7 +8,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"integin/internal/domain/device_trust"
@@ -92,6 +94,11 @@ type Processor struct {
 	lastSequence map[string]uint64
 	transactions map[string]string
 	held         map[string]Transaction
+	// HMACFallbackCount counts legacy HMAC-SHA256 verifications accepted
+	// through the deprecated shared-secret fallback path. Removal target:
+	// once every device carries a device-bound Ed25519 key (migration
+	// condition: count stays zero across a full release cycle).
+	HMACFallbackCount atomic.Int64
 }
 
 func NewProcessor(secret string) (*Processor, error) {
@@ -147,8 +154,19 @@ func (p *Processor) Submit(transaction Transaction, authority device_trust.Autho
 		if !validKey || signatureErr != nil || !security.VerifyDeviceMutation(ed25519.PublicKey(publicKey), []byte(canonicalTransaction(transaction)), signature) {
 			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction Ed25519 signature is invalid")
 		}
-	} else if !hmac.Equal([]byte(transaction.Signature), []byte(signTransaction(transaction, p.secret))) {
-		return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC signature is invalid")
+	} else {
+		// Legacy HMAC-SHA256 shared-secret fallback, DEPRECATED.
+		// Exists only for pre-key tablets. Keyed devices must use Ed25519.
+		// Removal: when HMACFallbackCount stays zero across a release cycle,
+		// delete this branch and the single-secret signing path.
+		if p.deviceHasRegisteredKey(device) {
+			return p.fail(result, types.ErrRejected, SecurityFailure, "device carries registered key material; HMAC-SHA256 shared-secret signing is deprecated")
+		}
+		p.HMACFallbackCount.Add(1)
+		log.Printf("sync: HMAC-SHA256 transaction %s accepted via DEPRECATED shared-secret fallback; migrate device %s to Ed25519 device-bound keys", transaction.TransactionID, transaction.DeviceID)
+		if !hmac.Equal([]byte(transaction.Signature), []byte(signTransaction(transaction, p.secret))) {
+			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction HMAC signature is invalid")
+		}
 	}
 	expected := p.lastSequence[transaction.DeviceID] + 1
 	result.ExpectedSequence = expected
@@ -179,6 +197,15 @@ func signTransaction(transaction Transaction, secret string) string {
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(canonical))
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// deviceHasRegisteredKey reports whether the device carries a valid Ed25519
+// public key suitable for device-bound signing. Pre-key tablets store a
+// non-key placeholder (e.g. "public-key") that fails this decode; only those
+// devices may fall through to the deprecated HMAC-SHA256 shared-secret path.
+func (p *Processor) deviceHasRegisteredKey(device device_trust.Device) bool {
+	pub, err := base64.StdEncoding.DecodeString(device.PublicKey())
+	return err == nil && len(pub) == ed25519.PublicKeySize
 }
 
 func canonicalTransaction(transaction Transaction) string {
