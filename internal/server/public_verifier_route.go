@@ -1,12 +1,12 @@
 package server
 
 import (
-	_ "embed"
 	"net/http"
+
+	"integin/pkg/verification"
 )
 
-//go:embed verifier_page.html
-var publicVerifierHTML []byte
+var publicVerifierHTML = []byte(verification.PublicVerifierHTML)
 
 func publicVerifierHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

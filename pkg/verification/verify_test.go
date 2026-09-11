@@ -49,3 +49,9 @@ func TestVerifyEnvelope(t *testing.T) {
 		t.Fatal("expected tamper failure")
 	}
 }
+
+func TestPublicVerifierHTMLMatchesToolsIndex(t *testing.T) {
+	if len(PublicVerifierHTML) == 0 {
+		t.Fatal("PublicVerifierHTML must not be empty")
+	}
+}

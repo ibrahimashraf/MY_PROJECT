@@ -1,4 +1,9 @@
-<!doctype html>
+package verification
+
+// PublicVerifierHTML is the single canonical source of truth for the offline
+// WebCrypto public verification HTML page. Served by the server ingress at
+// /verify and mirrored to tools/public-verifier/index.html.
+const PublicVerifierHTML = `<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Public Verifier (offline, WebCrypto)</title></head>
@@ -22,3 +27,4 @@ document.getElementById('verify').onclick=async()=>{const out=document.getElemen
 </script>
 </body>
 </html>
+`
