@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Public Verifier (offline, WebCrypto)</title></head>
+<body>
+<h1>Public Verifier</h1>
+<p>Paste envelope JSON or open with <code>#sig=&lt;base64url&gt;</code>. No network, no DB.</p>
+<textarea id="env" rows="10" cols="80" placeholder='{"payload":{},"signature":"...","did":"did:key:z..."}'></textarea><br>
+<button id="verify">Verify</button>
+<pre id="out"></pre>
+<script>
+'use strict';
+// base58-btc decode (stdlib-free, inline)
+const ALPH='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function b58decode(s){const b=[0];for(const ch of s){let n=ALPH.indexOf(ch);if(n<0)throw new Error('bad b58');let c=n;for(let i=b.length-1;i>=0;i--){const v=b[i]*58+c;b[i]=v&255;c=v>>8;}while(c>0){b.unshift(c&255);c>>=8;}}let lead=0;for(const ch of s){if(ch==='1')lead++;else break;}let i=0;while(i<b.length-1&&b[i]===0)i++;const body=b.slice(i);const out=new Uint8Array(lead+body.length);out.set(body,lead);return out;}
+function b64urlToBytes(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+function parseDID(did){if(!did.startsWith('did:key:z'))throw new Error('unsupported DID');const raw=b58decode(did.slice('did:key:z'.length));if(raw.length!==34||raw[0]!==0xed||raw[1]!==1)throw new Error('bad key');return raw.slice(2);}
+async function verify(env){const pub=parseDID(env.did);const payload=typeof env.payload==='string'?env.payload:JSON.stringify(env.payload);const data=new TextEncoder().encode(payload);const sig=b64urlToBytes(env.signature);const key=await crypto.subtle.importKey('raw',pub,{name:'Ed25519'},false,['verify']);return crypto.subtle.verify({name:'Ed25519'},key,sig,data);}
+document.getElementById('verify').onclick=async()=>{const out=document.getElementById('out');try{const env=JSON.parse(document.getElementById('env').value);const ok=await verify(env);out.textContent=ok?'VALID':'INVALID';}catch(e){out.textContent='ERROR: '+e.message;}};
+// #sig fragment support: #sig=<sig>&did=<did>&payload=<json-b64url>
+(function(){try{const h=location.hash.slice(1);if(!h)return;const p=new URLSearchParams(h);const sig=p.get('sig');if(!sig)return;const did=p.get('did')||'';let payload=p.get('payload')||'{}';try{payload=new TextDecoder().decode(b64urlToBytes(payload));}catch(e){}document.getElementById('env').value=JSON.stringify({payload:JSON.parse(payload),signature:sig,did});}catch(e){}})();
+</script>
+</body>
+</html>

@@ -254,3 +254,31 @@ func TestNewMuxMountsTUSRoutesOnlyWhenHandlerProvided(t *testing.T) {
 		t.Fatalf("mounted TUS status=%d calls=%d", response.Code, calls)
 	}
 }
+
+func TestPublicVerifierRouteServesEmbeddedHTML(t *testing.T) {
+	mux := NewMux(Dependencies{})
+
+	for _, path := range []string{"/verify", "/verify/"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("path %s status = %d, want 200", path, rec.Code)
+		}
+		if ct := rec.Header().Get("Content-Type"); !strings.Contains(ct, "text/html") {
+			t.Errorf("path %s Content-Type = %q, want text/html", path, ct)
+		}
+		if !strings.Contains(rec.Body.String(), "Public Verifier") {
+			t.Errorf("path %s body does not contain 'Public Verifier'", path)
+		}
+	}
+
+	// Method not allowed check
+	postReq := httptest.NewRequest(http.MethodPost, "/verify", nil)
+	postRec := httptest.NewRecorder()
+	mux.ServeHTTP(postRec, postReq)
+	if postRec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("POST /verify status = %d, want 405", postRec.Code)
+	}
+}

@@ -47,6 +47,8 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Han
 	if d.CertificatePublicHandler != nil {
 		mux.Handle("/verify/certificates/", d.CertificatePublicHandler)
 	}
+	mux.Handle("/verify", publicVerifierHandler())
+	mux.Handle("/verify/", publicVerifierHandler())
 	if d.EvidenceStore != nil {
 		mux.Handle("/evidence", wrapOrIdentity(withIdempotency, newEvidenceHandler(d)))
 	}
