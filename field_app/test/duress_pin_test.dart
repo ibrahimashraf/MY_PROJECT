@@ -81,4 +81,80 @@ void main() {
     expect(normalResult, isA<PinOk>());
     expect(duressResult, isA<DuressAccepted>());
   });
+
+  test('duress hash persists across simulated restart', () async {
+    await duress.enrollDuress(Uint8List.fromList([9, 9, 9]));
+
+    // Simulate restart: new DuressPin instance with same PinStore.
+    final restarted = DuressPin(
+      pinStore: store,
+      normalPinGate: EnclavePinGate(store: store),
+    );
+    final result = await restarted.verify(Uint8List.fromList([9, 9, 9]));
+    expect(result, isA<DuressAccepted>());
+  });
+
+  test('wipe clears duress enrollment', () async {
+    await duress.enrollDuress(Uint8List.fromList([4, 4, 4]));
+    final before = await duress.verify(Uint8List.fromList([4, 4, 4]));
+    expect(before, isA<DuressAccepted>());
+
+    await duress.wipeDuress();
+    final after = await duress.verify(Uint8List.fromList([4, 4, 4]));
+    expect(after, isA<DuressNotEnrolled>());
+  });
+
+  test('custom HashPolicy is honored on enroll and verify', () async {
+    final logged = <String>[];
+    final policy = _SpyHashPolicy(logged);
+    final g = DuressPin(
+      pinStore: store,
+      normalPinGate: normalGate,
+      hashPolicy: policy,
+    );
+
+    await g.enrollDuress(Uint8List.fromList([1, 2, 3]));
+    expect(logged, contains('hash'));
+
+    final result = await g.verify(Uint8List.fromList([1, 2, 3]));
+    expect(result, isA<DuressAccepted>());
+    expect(logged, contains('verify'));
+  });
+
+  test('custom HashPolicy verify failure rejects', () async {
+    final policy = _RejectAllHashPolicy();
+    final g = DuressPin(
+      pinStore: store,
+      normalPinGate: normalGate,
+      hashPolicy: policy,
+    );
+    await g.enrollDuress(Uint8List.fromList([1, 2, 3]));
+    final result = await g.verify(Uint8List.fromList([1, 2, 3]));
+    expect(result, isA<DuressWrong>());
+  });
+}
+
+class _SpyHashPolicy implements HashPolicy {
+  _SpyHashPolicy(this.log);
+  final List<String> log;
+
+  @override
+  Uint8List hash(Uint8List rawPin) {
+    log.add('hash');
+    return Uint8List.fromList(rawPin);
+  }
+
+  @override
+  bool verify(Uint8List storedHash, Uint8List candidate) {
+    log.add('verify');
+    return const IdentityHashPolicy().verify(storedHash, candidate);
+  }
+}
+
+class _RejectAllHashPolicy implements HashPolicy {
+  @override
+  Uint8List hash(Uint8List rawPin) => Uint8List.fromList(rawPin);
+
+  @override
+  bool verify(Uint8List storedHash, Uint8List candidate) => false;
 }

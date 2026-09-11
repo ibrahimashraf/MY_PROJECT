@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 const sealGenesisHash = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -70,6 +72,12 @@ func hashBytes(data []byte) (string, error) {
 	return fmt.Sprintf("%x", h), nil
 }
 
+// normalizePrompt applies NFC normalization then trims whitespace.
+// Canonical order: NFC → TrimSpace → digest.
+func normalizePrompt(prompt string) string {
+	return strings.TrimSpace(norm.NFC.String(prompt))
+}
+
 func Seal(weights io.Reader, prompt string, tensors []byte, modelID string, evalTime time.Time, prevSeal string) (SealRecord, error) {
 	if weights == nil {
 		return SealRecord{}, errors.New("sealer: weights reader is nil")
@@ -87,7 +95,7 @@ func Seal(weights io.Reader, prompt string, tensors []byte, modelID string, eval
 	if err != nil {
 		return SealRecord{}, err
 	}
-	normalizedPrompt := strings.TrimSpace(prompt)
+	normalizedPrompt := normalizePrompt(prompt)
 	promptHash, err := hashBytes([]byte(normalizedPrompt))
 	if err != nil {
 		return SealRecord{}, err
@@ -172,7 +180,7 @@ func VerifyArtifacts(rec SealRecord, weights io.Reader, prompt string, tensors [
 	if weightsHash != rec.WeightsHash {
 		return errors.New("sealer: weights digest mismatch")
 	}
-	normalizedPrompt := strings.TrimSpace(prompt)
+	normalizedPrompt := normalizePrompt(prompt)
 	if normalizedPrompt == "" {
 		return errors.New("sealer: prompt must not be empty")
 	}

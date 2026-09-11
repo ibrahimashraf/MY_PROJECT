@@ -12,40 +12,43 @@ const String kCoercionQuarantineFlag = 'STATE_COERCION_QUARANTINE';
 /// Duress PIN authenticator — same UX path as [EnclavePinGate] but sets a
 /// covert quarantine flag on the authentication result.
 ///
-/// The duress PIN is enrolled separately from the normal PIN. On success the
-/// caller receives [DuressAuthResult] which carries [isDuress]=true and a
-/// quarantine metadata map suitable for attachment to outbox entries.
+/// The duress PIN hash is persisted via [PinStore] under a separate key
+/// namespace so it survives app restarts. On success the caller receives
+/// [DuressAuthResult] which carries [isDuress]=true and a quarantine metadata
+/// map suitable for attachment to outbox entries.
 class DuressPin {
   DuressPin({
     required this.pinStore,
     required this.normalPinGate,
-  });
+    HashPolicy? hashPolicy,
+  }) : hashPolicy = hashPolicy ?? const IdentityHashPolicy();
 
   final PinStore pinStore;
   final EnclavePinGate normalPinGate;
+  final HashPolicy hashPolicy;
 
-  Uint8List? _duressHash;
-
-  /// Enroll a duress PIN. Caller is responsible for hashing before passing.
+  /// Enroll a duress PIN. Caller is responsible for hashing before passing
+  /// (or use a production [HashPolicy] that handles hashing internally).
+  /// The hash is persisted to [PinStore] so it survives restarts.
   Future<void> enrollDuress(Uint8List pin) async {
-    _duressHash = Uint8List.fromList(pin);
-    for (var i = 0; i < pin.length; i++) {
-      pin[i] = 0;
-    }
+    final hashed = hashPolicy.hash(pin);
+    await pinStore.writeDuressHash(hashed);
+    _zeroPin(pin);
   }
 
-  /// Verify [pin] against the duress hash.
+  /// Verify [pin] against the persisted duress hash.
   ///
   /// Returns [DuressAuthResult] — same sealed hierarchy as [PinResult] so
   /// callers can pattern-match identically to normal PIN verification.
   /// On success the result carries the quarantine metadata payload.
   Future<DuressAuthResult> verify(Uint8List pin) async {
-    if (_duressHash == null) {
+    final stored = await pinStore.readDuressHash();
+    if (stored == null) {
       _zeroPin(pin);
       return DuressAuthResult.notEnrolled();
     }
 
-    final match = _constantTimeEqual(pin, _duressHash!);
+    final match = hashPolicy.verify(stored, pin);
     _zeroPin(pin);
 
     if (match) {
@@ -54,6 +57,12 @@ class DuressPin {
       );
     }
     return DuressAuthResult.wrong();
+  }
+
+  /// Wipe the persisted duress hash. After this, [verify] returns
+  /// [DuressNotEnrolled] until a new duress PIN is enrolled.
+  Future<void> wipeDuress() async {
+    await pinStore.clearDuressHash();
   }
 
   /// Build the metadata map attached to every outbox entry when duress is active.
@@ -66,15 +75,6 @@ class DuressPin {
         'flag': kCoercionQuarantineFlag,
         'queued_at': DateTime.now().toUtc().toIso8601String(),
       };
-
-  static bool _constantTimeEqual(List<int> a, List<int> b) {
-    var diff = a.length ^ b.length;
-    final n = a.length < b.length ? b.length : a.length;
-    for (var i = 0; i < n; i++) {
-      diff |= (i < a.length ? a[i] : 0) ^ (i < b.length ? b[i] : 0);
-    }
-    return diff == 0;
-  }
 
   static void _zeroPin(Uint8List pin) {
     for (var i = 0; i < pin.length; i++) {

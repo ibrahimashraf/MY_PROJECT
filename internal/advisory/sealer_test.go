@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 func fixedTime() time.Time {
@@ -45,6 +47,52 @@ func TestSealGoldenVector(t *testing.T) {
 	const goldenSealHash = "00a70936537310723b6f557ee715885d7fe6131d209fcb68c61d79f65ae9f488"
 	if rec.SealHash != goldenSealHash {
 		t.Fatalf("golden seal hash mismatch: got %q want %q", rec.SealHash, goldenSealHash)
+	}
+}
+
+func TestSealNFCCanonicalEquivalentPrompts(t *testing.T) {
+	decomposed := "cafe\u0301" // caf + e + combining acute
+	composed := "caf\u00e9"    // caf + precomposed e-acute U+00E9
+	if decomposed == composed {
+		t.Fatal("test vectors must be byte-different")
+	}
+	if norm.NFC.String(decomposed) != norm.NFC.String(composed) {
+		t.Fatal("test vectors must be NFC-equivalent")
+	}
+	recA, err := Seal(strings.NewReader("w"), decomposed, []byte{1}, "m", fixedTime(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	recB, err := Seal(strings.NewReader("w"), composed, []byte{1}, "m", fixedTime(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if recA.PromptHash != recB.PromptHash {
+		t.Fatalf("prompt hash must match across NFC forms: %q vs %q", recA.PromptHash, recB.PromptHash)
+	}
+	if recA.SealHash != recB.SealHash {
+		t.Fatalf("seal hash must match across NFC forms: %q vs %q", recA.SealHash, recB.SealHash)
+	}
+	if err := VerifyArtifacts(recA, strings.NewReader("w"), decomposed, []byte{1}); err != nil {
+		t.Fatalf("decomposed artifacts should verify against NFC-normalized seal: %v", err)
+	}
+	if err := VerifyArtifacts(recA, strings.NewReader("w"), composed, []byte{1}); err != nil {
+		t.Fatalf("composed artifacts should verify against NFC-normalized seal: %v", err)
+	}
+}
+
+func TestSealNFCWhitespaceSurrounding(t *testing.T) {
+	padded := "  \t" + "cafe\u0301" + "\n  "
+	rec, err := Seal(strings.NewReader("w"), padded, []byte{1}, "m", fixedTime(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tampered, err := Seal(strings.NewReader("w"), "cafe\u0301"+"x", []byte{1}, "m", fixedTime(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec.SealHash == tampered.SealHash {
+		t.Fatal("trailing non-whitespace must change the seal despite NFC")
 	}
 }
 

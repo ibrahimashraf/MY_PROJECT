@@ -1,6 +1,47 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+/// Hash policy seam for PIN hashing.
+///
+/// The default [IdentityHashPolicy] passes through caller-hashed bytes unchanged,
+/// preserving the current contract where the caller provides the hash.
+///
+/// **Production contract:** Pass scrypt (N=2^15, r=8, p=1) or argon2id output
+/// as the raw bytes. NEVER pass raw PIN bytes — hash before calling enroll.
+/// The policy is responsible for both hashing raw input and verifying a
+/// candidate against a stored hash.
+abstract class HashPolicy {
+  /// Hash raw PIN bytes. The identity default returns a defensive copy.
+  Uint8List hash(Uint8List rawPin);
+
+  /// Verify [candidate] against [storedHash] in constant time.
+  bool verify(Uint8List storedHash, Uint8List candidate);
+}
+
+/// Identity hash policy — caller is responsible for hashing before enroll.
+/// Preserves current behavior: enroll stores caller-provided bytes, verify
+/// does constant-time comparison.
+class IdentityHashPolicy implements HashPolicy {
+  const IdentityHashPolicy();
+
+  @override
+  Uint8List hash(Uint8List rawPin) => Uint8List.fromList(rawPin);
+
+  @override
+  bool verify(Uint8List storedHash, Uint8List candidate) {
+    return _constantTimeEqual(storedHash, candidate);
+  }
+
+  static bool _constantTimeEqual(List<int> a, List<int> b) {
+    var diff = a.length ^ b.length;
+    final n = a.length < b.length ? b.length : a.length;
+    for (var i = 0; i < n; i++) {
+      diff |= (i < a.length ? a[i] : 0) ^ (i < b.length ? b[i] : 0);
+    }
+    return diff == 0;
+  }
+}
+
 /// Persistent storage seam for PIN hash and attempt state.
 ///
 /// Default implementation is in-memory (test-friendly). Production impl
@@ -13,6 +54,11 @@ abstract class PinStore {
   Future<DateTime?> readLockoutUntil();
   Future<void> writeLockoutUntil(DateTime? dt);
   Future<void> clearAll();
+
+  /// Duress hash persistence — separate key namespace from normal PIN.
+  Future<Uint8List?> readDuressHash();
+  Future<void> writeDuressHash(Uint8List hash);
+  Future<void> clearDuressHash();
 }
 
 /// In-memory [PinStore] for unit tests — no persistence across isolates.
@@ -20,6 +66,7 @@ class InMemoryPinStore implements PinStore {
   Uint8List? _hash;
   int _failCount = 0;
   DateTime? _lockoutUntil;
+  Uint8List? _duressHash;
 
   @override
   Future<Uint8List?> readPinHash() async => _hash;
@@ -44,7 +91,17 @@ class InMemoryPinStore implements PinStore {
     _hash = null;
     _failCount = 0;
     _lockoutUntil = null;
+    _duressHash = null;
   }
+
+  @override
+  Future<Uint8List?> readDuressHash() async => _duressHash;
+
+  @override
+  Future<void> writeDuressHash(Uint8List hash) async => _duressHash = hash;
+
+  @override
+  Future<void> clearDuressHash() async => _duressHash = null;
 }
 
 /// PIN authentication gate for ATEX Zone 1 (glove-friendly).
@@ -56,11 +113,13 @@ class EnclavePinGate {
     required this.store,
     this.maxAttempts = 5,
     this.baseBackoff = const Duration(seconds: 1),
-  });
+    HashPolicy? hashPolicy,
+  }) : hashPolicy = hashPolicy ?? const IdentityHashPolicy();
 
   final PinStore store;
   final int maxAttempts;
   final Duration baseBackoff;
+  final HashPolicy hashPolicy;
 
   /// Attempt to verify [pin] against the stored hash.
   ///
@@ -79,7 +138,7 @@ class EnclavePinGate {
       return PinResult.notEnrolled();
     }
 
-    final match = _constantTimeEqual(pin, stored);
+    final match = hashPolicy.verify(stored, pin);
     _zeroPin(pin);
 
     if (match) {
@@ -104,23 +163,11 @@ class EnclavePinGate {
 
   /// Enroll or replace the stored PIN hash.
   Future<void> enroll(Uint8List pin) async {
-    // Hash is caller-provided; this seam doesn't prescribe the hash function.
-    // Production code should hash with scrypt/argon2 before calling.
-    // Copy defensively: the caller's buffer is zeroed after storing.
-    await store.writePinHash(Uint8List.fromList(pin));
+    final hashed = hashPolicy.hash(pin);
+    await store.writePinHash(hashed);
     await store.writeFailCount(0);
     await store.writeLockoutUntil(null);
     _zeroPin(pin);
-  }
-
-  /// Constant-time byte comparison — no early exit on mismatch or length.
-  static bool _constantTimeEqual(List<int> a, List<int> b) {
-    var diff = a.length ^ b.length;
-    final n = a.length < b.length ? b.length : a.length;
-    for (var i = 0; i < n; i++) {
-      diff |= (i < a.length ? a[i] : 0) ^ (i < b.length ? b[i] : 0);
-    }
-    return diff == 0;
   }
 
   static void _zeroPin(Uint8List pin) {
