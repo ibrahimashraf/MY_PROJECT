@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"os"
 	"testing"
 )
 
@@ -53,5 +54,12 @@ func TestVerifyEnvelope(t *testing.T) {
 func TestPublicVerifierHTMLMatchesToolsIndex(t *testing.T) {
 	if len(PublicVerifierHTML) == 0 {
 		t.Fatal("PublicVerifierHTML must not be empty")
+	}
+	want, err := os.ReadFile("../../tools/public-verifier/index.html")
+	if err != nil {
+		t.Fatalf("read tools index: %v", err)
+	}
+	if string(want) != PublicVerifierHTML {
+		t.Fatal("tools/public-verifier/index.html diverges from PublicVerifierHTML")
 	}
 }

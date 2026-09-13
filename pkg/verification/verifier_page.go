@@ -2,29 +2,87 @@ package verification
 
 // PublicVerifierHTML is the single canonical source of truth for the offline
 // WebCrypto public verification HTML page. Served by the server ingress at
-// /verify and mirrored to tools/public-verifier/index.html.
+// /verify and mirrored to tools/public-verifier/index.html. The Go test
+// TestPublicVerifierHTMLMatchesToolsIndex asserts byte equality.
 const PublicVerifierHTML = `<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Public Verifier (offline, WebCrypto)</title></head>
+<title>Public Verifier (offline, WebCrypto)</title>
+<style>
+body{font-family:ui-monospace,Menlo,Consolas,monospace;margin:2rem;line-height:1.5;max-width:860px}
+textarea{width:100%;box-sizing:border-box;font-family:inherit}
+h2{margin-top:2rem}
+.valid{color:#0a7d22;font-weight:bold}
+.invalid{color:#b00020;font-weight:bold}
+pre{white-space:pre-wrap;background:#f4f4f4;padding:.75rem;border-radius:4px}
+</style>
+</head>
 <body>
 <h1>Public Verifier</h1>
-<p>Paste envelope JSON or open with <code>#sig=&lt;base64url&gt;</code>. No network, no DB.</p>
-<textarea id="env" rows="10" cols="80" placeholder='{"payload":{},"signature":"...","did":"did:key:z..."}'></textarea><br>
-<button id="verify">Verify</button>
+<p>Sovereign offline verifier. Zero backend calls, no network, no DB.</p>
+
+<h2>1. Envelope Ed25519 signature</h2>
+<p>Paste envelope JSON or open with <code>#sig=&lt;base64url&gt;&amp;did=&lt;did&gt;&amp;payload=&lt;b64url&gt;</code>.</p>
+<textarea id="env" rows="8" placeholder='{"payload":{},"signature":"...","did":"did:key:z..."}'></textarea><br>
+<button id="verify">Verify signature</button>
 <pre id="out"></pre>
+
+<h2>2. RFC 6962 Merkle leaf inclusion</h2>
+<p>Paste <code>#leaf=&lt;hash&gt;&amp;root=&lt;root&gt;&amp;index=&lt;i&gt;&amp;size=&lt;n&gt;&amp;proof=&lt;p1,p2,...&gt;</code>
+(all hashes hex). Optional <code>&amp;data=&lt;b64url&gt;</code> recomputes the leaf hash from the appended leaf bytes and must match <code>leaf</code>.</p>
+<textarea id="merkle" rows="4" placeholder="leaf=&lt;hash&gt;&amp;root=&lt;root&gt;&amp;index=&lt;i&gt;&amp;size=&lt;n&gt;&amp;proof=&lt;p1,p2,...&gt;"></textarea><br>
+<button id="mverify">Verify inclusion</button>
+<pre id="mout"></pre>
+
 <script>
 'use strict';
-// base58-btc decode (stdlib-free, inline)
+/* ---- byte helpers ---- */
 const ALPH='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 function b58decode(s){const b=[0];for(const ch of s){let n=ALPH.indexOf(ch);if(n<0)throw new Error('bad b58');let c=n;for(let i=b.length-1;i>=0;i--){const v=b[i]*58+c;b[i]=v&255;c=v>>8;}while(c>0){b.unshift(c&255);c>>=8;}}let lead=0;for(const ch of s){if(ch==='1')lead++;else break;}let i=0;while(i<b.length-1&&b[i]===0)i++;const body=b.slice(i);const out=new Uint8Array(lead+body.length);out.set(body,lead);return out;}
 function b64urlToBytes(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+function hexToBytes(s){if(s.length%2)throw new Error('bad hex length');const u=new Uint8Array(s.length/2);for(let i=0;i<u.length;i++)u[i]=parseInt(s.slice(i*2,i*2+2),16);return u;}
+function bytesEqual(a,b){if(a.length!==b.length)return false;for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+async function sha256(...parts){let n=0;for(const p of parts)n+=p.length;const buf=new Uint8Array(n);let o=0;for(const p of parts){buf.set(p,o);o+=p.length;}return new Uint8Array(await crypto.subtle.digest('SHA-256',buf));}
+const LEAF_PREFIX=new Uint8Array([0x00]);
+const NODE_PREFIX=new Uint8Array([0x01]);
+async function merkleLeafHash(data){return sha256(LEAF_PREFIX,data);}
+async function merkleNodeHash(l,r){return sha256(NODE_PREFIX,l,r);}
+/* ---- mode 1: Envelope Ed25519 ---- */
 function parseDID(did){if(!did.startsWith('did:key:z'))throw new Error('unsupported DID');const raw=b58decode(did.slice('did:key:z'.length));if(raw.length!==34||raw[0]!==0xed||raw[1]!==1)throw new Error('bad key');return raw.slice(2);}
-async function verify(env){const pub=parseDID(env.did);const payload=typeof env.payload==='string'?env.payload:JSON.stringify(env.payload);const data=new TextEncoder().encode(payload);const sig=b64urlToBytes(env.signature);const key=await crypto.subtle.importKey('raw',pub,{name:'Ed25519'},false,['verify']);return crypto.subtle.verify({name:'Ed25519'},key,sig,data);}
-document.getElementById('verify').onclick=async()=>{const out=document.getElementById('out');try{const env=JSON.parse(document.getElementById('env').value);const ok=await verify(env);out.textContent=ok?'VALID':'INVALID';}catch(e){out.textContent='ERROR: '+e.message;}};
-// #sig fragment support: #sig=<sig>&did=<did>&payload=<json-b64url>
-(function(){try{const h=location.hash.slice(1);if(!h)return;const p=new URLSearchParams(h);const sig=p.get('sig');if(!sig)return;const did=p.get('did')||'';let payload=p.get('payload')||'{}';try{payload=new TextDecoder().decode(b64urlToBytes(payload));}catch(e){}document.getElementById('env').value=JSON.stringify({payload:JSON.parse(payload),signature:sig,did});}catch(e){}})();
+async function verifyEnvelope(env){const pub=parseDID(env.did);const payload=typeof env.payload==='string'?env.payload:JSON.stringify(env.payload);const data=new TextEncoder().encode(payload);const sig=b64urlToBytes(env.signature);const key=await crypto.subtle.importKey('raw',pub,{name:'Ed25519'},false,['verify']);return crypto.subtle.verify({name:'Ed25519'},key,sig,data);}
+async function runEnvelope(){const out=document.getElementById('out');try{const env=JSON.parse(document.getElementById('env').value);const ok=await verifyEnvelope(env);out.textContent=ok?'VALID':'INVALID';out.className=ok?'valid':'invalid';}catch(e){out.textContent='ERROR: '+e.message;out.className='invalid';}}
+/* ---- mode 2: RFC 6962 inclusion proof walk ---- */
+async function verifyInclusion(leafHash,index,size,root,path){
+  if(size<1||index<0||index>=size)return false;
+  if(size===1)return path.length===0&&bytesEqual(leafHash,root);
+  let fn=index,sn=size-1,r=leafHash;
+  for(const p of path){
+    if(sn===0)return false;
+    if(fn%2===1||fn===sn){r=await merkleNodeHash(p,r);while(fn%2===0&&fn!==0){fn=Math.floor(fn/2);sn=Math.floor(sn/2);}}
+    else{r=await merkleNodeHash(r,p);}
+    fn=Math.floor(fn/2);sn=Math.floor(sn/2);
+  }
+  return sn===0&&bytesEqual(r,root);
+}
+async function runMerkle(){const out=document.getElementById('mout');try{
+  const p=new URLSearchParams(document.getElementById('merkle').value);
+  const leafH=p.get('leaf'),rootH=p.get('root');
+  const index=parseInt(p.get('index'),10),size=parseInt(p.get('size'),10);
+  const proof=(p.get('proof')||'').split(',').filter(Boolean).map(hexToBytes);
+  if(!leafH||!rootH||Number.isNaN(index)||Number.isNaN(size))throw new Error('required: leaf, root, index, size, proof');
+  let leaf=hexToBytes(leafH);
+  const data64=p.get('data');
+  if(data64){const computed=await merkleLeafHash(b64urlToBytes(data64));if(!bytesEqual(computed,leaf))throw new Error('data does not hash to leaf');leaf=computed;}
+  const ok=await verifyInclusion(leaf,index,size,hexToBytes(rootH),proof);
+  out.textContent=ok?'VALID':'INVALID';out.className=ok?'valid':'invalid';
+}catch(e){out.textContent='ERROR: '+e.message;out.className='invalid';}}
+document.getElementById('verify').onclick=runEnvelope;
+document.getElementById('mverify').onclick=runMerkle;
+/* ---- URL fragment bootstrap ---- */
+(function(){try{const h=location.hash.slice(1);if(!h)return;const p=new URLSearchParams(h);
+  if(p.has('leaf')){document.getElementById('merkle').value=h;document.getElementById('mverify').onclick();}
+  else if(p.has('sig')){const sig=p.get('sig');if(!sig)return;const did=p.get('did')||'';let payload=p.get('payload')||'{}';try{payload=new TextDecoder().decode(b64urlToBytes(payload));}catch(e){}document.getElementById('env').value=JSON.stringify({payload:JSON.parse(payload),signature:sig,did});document.getElementById('verify').onclick();}
+}catch(e){}})();
 </script>
 </body>
-</html>
-`
+</html>`
