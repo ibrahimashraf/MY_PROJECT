@@ -71,3 +71,121 @@ func BenchmarkRiggingHotPath(b *testing.B) {
 		}
 	}
 }
+
+// assertHotPathSLA fails the benchmark when the folded-gate hot path exceeds
+// the < 50us tracker SLA. Benchmarks only run under -bench, so the timing
+// check never interferes with the -race test suite.
+func assertHotPathSLA(b *testing.B, startInclusive time.Time) {
+	elapsed := time.Since(startInclusive)
+	perOp := elapsed / time.Duration(b.N)
+	if perOp > 50*time.Microsecond {
+		b.Fatalf("folded gate hot path took %v/op, exceeding the 50us SLA", perOp)
+	}
+}
+
+// BenchmarkDNVSKLHotPath measures the deployed folded DNV-ST-N001 skew load
+// factor gate: one precompiled Program, one reused VarSet, single comparison.
+func BenchmarkDNVSKLHotPath(b *testing.B) {
+	e, _ := NewEvaluator()
+	p, err := e.Compile(DNVSTN001RuleID, DNVSKLGateExpression, DNVSKLGateVars())
+	if err != nil {
+		b.Fatal(err)
+	}
+	v := NewVarSet("skl_factor")
+	v.Put("skl_factor", 1.35)
+	b.ReportAllocs()
+	start := time.Now()
+	for b.Loop() {
+		if _, err := p.Evaluate(context.Background(), v); err != nil {
+			b.Fatal(err)
+		}
+	}
+	assertHotPathSLA(b, start)
+}
+
+// BenchmarkMWSJRPSeaStateHsGateHotPath measures the deployed folded
+// wave-height half of the sea-state window (single comparison).
+func BenchmarkMWSJRPSeaStateHsGateHotPath(b *testing.B) {
+	e, _ := NewEvaluator()
+	p, err := e.Compile("bench-mws-hs", MWSJRPSeaStateHsGateExpression, MWSJRPSeaStateVars())
+	if err != nil {
+		b.Fatal(err)
+	}
+	v := NewVarSet("hs_m", "tp_s", "max_hs_m", "max_tp_s")
+	v.Put("hs_m", 1.2)
+	v.Put("tp_s", 6.5)
+	v.Put("max_hs_m", 1.5)
+	v.Put("max_tp_s", 8.0)
+	b.ReportAllocs()
+	start := time.Now()
+	for b.Loop() {
+		if _, err := p.Evaluate(context.Background(), v); err != nil {
+			b.Fatal(err)
+		}
+	}
+	assertHotPathSLA(b, start)
+}
+
+// BenchmarkMWSJRPSeaStateTpGateHotPath measures the deployed folded
+// wave-period half of the sea-state window (single comparison).
+func BenchmarkMWSJRPSeaStateTpGateHotPath(b *testing.B) {
+	e, _ := NewEvaluator()
+	p, err := e.Compile("bench-mws-tp", MWSJRPSeaStateTpGateExpression, MWSJRPSeaStateVars())
+	if err != nil {
+		b.Fatal(err)
+	}
+	v := NewVarSet("hs_m", "tp_s", "max_hs_m", "max_tp_s")
+	v.Put("hs_m", 1.2)
+	v.Put("tp_s", 6.5)
+	v.Put("max_hs_m", 1.5)
+	v.Put("max_tp_s", 8.0)
+	b.ReportAllocs()
+	start := time.Now()
+	for b.Loop() {
+		if _, err := p.Evaluate(context.Background(), v); err != nil {
+			b.Fatal(err)
+		}
+	}
+	assertHotPathSLA(b, start)
+}
+
+// BenchmarkDesignASDHotPath measures the folded ASD capacity utilization gate
+// (single comparison).
+func BenchmarkDesignASDHotPath(b *testing.B) {
+	e, _ := NewEvaluator()
+	p, err := e.Compile("bench-asd", CapacityUtilizationFoldedExpression, CapacityUtilizationVars())
+	if err != nil {
+		b.Fatal(err)
+	}
+	v := NewVarSet("utilization")
+	v.Put("utilization", 0.85)
+	b.ReportAllocs()
+	start := time.Now()
+	for b.Loop() {
+		if _, err := p.Evaluate(context.Background(), v); err != nil {
+			b.Fatal(err)
+		}
+	}
+	assertHotPathSLA(b, start)
+}
+
+// BenchmarkDesignLRFDHotPath measures the folded partial-factor device gate:
+// factored_resistance >= factored_demand (single comparison, 0 allocs).
+func BenchmarkDesignLRFDHotPath(b *testing.B) {
+	e, _ := NewEvaluator()
+	p, err := e.Compile("bench-lrfd", DesignLRFDGateFoldedExpression, DesignLRFDFoldedVars())
+	if err != nil {
+		b.Fatal(err)
+	}
+	v := NewVarSet("factored_resistance", "factored_demand")
+	v.Put("factored_resistance", 90.0)
+	v.Put("factored_demand", 76.0)
+	b.ReportAllocs()
+	start := time.Now()
+	for b.Loop() {
+		if _, err := p.Evaluate(context.Background(), v); err != nil {
+			b.Fatal(err)
+		}
+	}
+	assertHotPathSLA(b, start)
+}
