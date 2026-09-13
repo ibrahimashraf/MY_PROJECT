@@ -2,7 +2,10 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"integin/pkg/id"
 )
 
 type AssetStatus string
@@ -19,6 +22,8 @@ var (
 	ErrEmptyManufacturer      = errors.New("manufacturer cannot be empty")
 	ErrEmptySerialNumber      = errors.New("chassis serial number cannot be empty")
 	ErrInvalidCustodyTransfer = errors.New("custody transfer missing required recipient or tenant")
+	ErrEpochMismatch          = errors.New("custody transfer expected epoch does not match current passport epoch")
+	ErrInvalidEventID         = errors.New("custody transfer event id is not a valid UUIDv7")
 )
 
 // CustodyTransferEvent documents a cross-border or inter-company transfer of an asset.
@@ -30,6 +35,7 @@ type CustodyTransferEvent struct {
 	TransferDate     time.Time `json:"transfer_date"`
 	AuthorizedBy     string    `json:"authorized_by"`
 	ReceiptHash      string    `json:"receipt_hash"`
+	ExpectedEpoch    uint64    `json:"expected_epoch"`
 }
 
 // UniversalAssetPassport is the core W3C digital identity document for an industrial asset.
@@ -44,6 +50,7 @@ type UniversalAssetPassport struct {
 	CurrentStatus     AssetStatus            `json:"current_status"`     // "OPERATIONAL", "QUARANTINED"
 	JurisdictionCode  string                 `json:"jurisdiction_code"`  // Active ISO country code ("SA", "US", "DE")
 	RegisteredAt      time.Time              `json:"registered_at"`
+	Epoch             uint64                 `json:"epoch"`
 	ChainOfCustody    []CustodyTransferEvent `json:"chain_of_custody"`
 }
 
@@ -76,6 +83,33 @@ func (p *UniversalAssetPassport) TransferCustody(transfer CustodyTransferEvent) 
 	if transfer.NewTenantID == "" || transfer.CountryCodeISO2 == "" {
 		return ErrInvalidCustodyTransfer
 	}
+	p.ChainOfCustody = append(p.ChainOfCustody, transfer)
+	p.JurisdictionCode = transfer.CountryCodeISO2
+	return nil
+}
+
+// TransferCustodyFenced applies a fenced custody transfer. The transfer's
+// ExpectedEpoch must equal the passport's current Epoch, otherwise the
+// transfer is a stale replay or split-brain write and ErrEpochMismatch is
+// returned. On success the epoch advances by one.
+func (p *UniversalAssetPassport) TransferCustodyFenced(transfer CustodyTransferEvent) error {
+	if transfer.ExpectedEpoch != p.Epoch {
+		return ErrEpochMismatch
+	}
+	if transfer.EventID == "" {
+		eventID, err := id.NewV7()
+		if err != nil {
+			return fmt.Errorf("generate custody event id: %w", err)
+		}
+		transfer.EventID = eventID
+	} else if !id.IsValidV7(transfer.EventID) {
+		return ErrInvalidEventID
+	}
+	if transfer.NewTenantID == "" || transfer.CountryCodeISO2 == "" {
+		return ErrInvalidCustodyTransfer
+	}
+
+	p.Epoch++
 	p.ChainOfCustody = append(p.ChainOfCustody, transfer)
 	p.JurisdictionCode = transfer.CountryCodeISO2
 	return nil

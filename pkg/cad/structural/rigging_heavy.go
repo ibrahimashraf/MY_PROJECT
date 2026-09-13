@@ -12,12 +12,12 @@ import (
 // To find realistic individual pad reaction forces without artificial singularity:
 //
 // Reactions satisfy:
-// 1) Sum(Fz) = R1 + R2 + R3 + R4 = TotalLoad
-// 2) Sum(Mx) = R1*y1 + R2*y2 + R3*y3 + R4*y4 = TotalLoad * loadPos.y
-// 3) Sum(My) = R1*x1 + R2*x2 + R3*x3 + R4*x4 = TotalLoad * loadPos.x
-// 4) Planar displacement compatibility: pads displace elastically according to vertical spring stiffness k:
-//    delta_i = R_i / k_i.
-//    Assuming a rigid crane chassis: delta(x, y) = w0 + theta_x * y + theta_y * x
+//  1. Sum(Fz) = R1 + R2 + R3 + R4 = TotalLoad
+//  2. Sum(Mx) = R1*y1 + R2*y2 + R3*y3 + R4*y4 = TotalLoad * loadPos.y
+//  3. Sum(My) = R1*x1 + R2*x2 + R3*x3 + R4*x4 = TotalLoad * loadPos.x
+//  4. Planar displacement compatibility: pads displace elastically according to vertical spring stiffness k:
+//     delta_i = R_i / k_i.
+//     Assuming a rigid crane chassis: delta(x, y) = w0 + theta_x * y + theta_y * x
 func FourPointStaticEquilibrium(
 	totalLoadN float64,
 	loadPos [2]float64,
@@ -223,4 +223,3 @@ func VesselUpendingKinematics(
 
 	return headLoadN, tailLoadN, nil
 }
-

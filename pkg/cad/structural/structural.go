@@ -27,11 +27,11 @@ func (b BoundingBox) Volume() float64 {
 
 // StructuralBody represents a discrete load element with mass properties.
 type StructuralBody struct {
-	ID        string
-	Material  Material
-	Size      BoundingBox
-	Position  [3]float64 // Local origin
-	LocalCoG  [3]float64 // Offset relative to position
+	ID       string
+	Material Material
+	Size     BoundingBox
+	Position [3]float64 // Local origin
+	LocalCoG [3]float64 // Offset relative to position
 }
 
 // TotalMassKg computes mass = volume * density.
