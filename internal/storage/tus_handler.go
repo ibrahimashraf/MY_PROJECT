@@ -277,12 +277,16 @@ func (m *TUSManager) Abort(ctx context.Context, id string) error {
 // crash between a chunk write and its sidecar write therefore resumes with the
 // received (unacknowledged) bytes instead of discarding them — the client
 // replays from the queried offset anyway. Anything that cannot be explained by
-// the sidecar is deleted. Resumed and deleted sessions are counted separately.
+// the sidecar is deleted. Sidecar-bearing orphans whose chunk file predates the
+// manager's stale TTL are pruned instead of resumed: a crash-orphaned upload
+// that has sat untouched for longer than the TTL is stale garbage, not a live
+// satellite resumption. Resumed and deleted sessions are counted separately.
 func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 	entries, err := os.ReadDir(m.dir)
 	if err != nil {
 		return 0, 0, err
 	}
+	staleCutoff := time.Now().UTC().Add(-m.staleTTL)
 	m.mu.RLock()
 	tracked := make(map[string]struct{}, len(m.sessions))
 	for id := range m.sessions {
@@ -294,7 +298,8 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 	// Pass 1: authoritative sidecars decide session fate. A parseable sidecar
 	// whose chunk file holds between the committed offset and committed offset +
 	// one chunk (never more than the declared size) restores the session at the
-	// file's real size; anything else removes the sidecar and its chunk together.
+	// file's real size unless the file is stale; anything else removes the
+	// sidecar and its chunk together.
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -311,7 +316,7 @@ func (m *TUSManager) RecoverOrphans() (resumed, deleted int, err error) {
 		session, ok := loadSidecar(path, id)
 		if ok {
 			info, infoErr := os.Stat(filepath.Join(m.dir, id))
-			if infoErr == nil && !info.IsDir() && info.Size() >= session.Offset && info.Size() <= session.Size && info.Size()-session.Offset <= m.chunkSize {
+			if infoErr == nil && !info.IsDir() && info.Size() >= session.Offset && info.Size() <= session.Size && info.Size()-session.Offset <= m.chunkSize && !info.ModTime().Before(staleCutoff) {
 				session.Offset = info.Size()
 				session.UpdatedAt = time.Now().UTC()
 				session.file = filepath.Join(m.dir, id)

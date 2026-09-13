@@ -39,17 +39,20 @@ type EnrollmentAttestation struct {
 // EnrollmentRequest is a tenant-bound device enrollment awaiting admin
 // approval. UserID is the OIDC subject that authenticated the submission.
 type EnrollmentRequest struct {
-	RequestID      string                `json:"request_id"`
-	TenantID       string                `json:"tenant_id"`
-	OrganizationID string                `json:"organization_id"`
-	UserID         string                `json:"user_id"`
-	DeviceID       string                `json:"device_id"`
-	PublicKey      string                `json:"public_key"`
-	Nonce          string                `json:"nonce"`
-	Signature      string                `json:"signature"`
-	Attestation    EnrollmentAttestation `json:"attestation,omitempty"`
-	RequestedAt    time.Time             `json:"requested_at"`
-	Status         EnrollmentStatus      `json:"status"`
+	RequestID       string                `json:"request_id"`
+	TenantID        string                `json:"tenant_id"`
+	OrganizationID  string                `json:"organization_id"`
+	UserID          string                `json:"user_id"`
+	DeviceID        string                `json:"device_id"`
+	PublicKey       string                `json:"public_key"`
+	Nonce           string                `json:"nonce"`
+	Signature       string                `json:"signature"`
+	Attestation     EnrollmentAttestation `json:"attestation,omitempty"`
+	RequestedAt     time.Time             `json:"requested_at"`
+	Status          EnrollmentStatus      `json:"status"`
+	ApprovedBy      string                `json:"approved_by,omitempty"`
+	RejectedBy      string                `json:"rejected_by,omitempty"`
+	RejectionReason string                `json:"rejection_reason,omitempty"`
 }
 
 // DecodePublicKey decodes an Ed25519 public key provided as hex or base64.

@@ -41,7 +41,7 @@ func newManaged(t *testing.T, maxTTL time.Duration) (*SessionLifecycleManager, *
 
 func TestSessionLifecycleOpenActiveAndTTLExpiry(t *testing.T) {
 	manager, clock := newManaged(t, time.Hour)
-	if err := manager.Open("token-1", time.Now()); err != nil {
+	if err := manager.Open("token-1", "subject-1", time.Now()); err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if !manager.IsActive("token-1") {
@@ -65,7 +65,7 @@ func TestSessionLifecycleOpenActiveAndTTLExpiry(t *testing.T) {
 
 func TestSessionLifecycleInactivityWindowIsSliding(t *testing.T) {
 	manager, clock := newManaged(t, time.Hour)
-	if err := manager.Open("token-1", clock.now()); err != nil {
+	if err := manager.Open("token-1", "subject-1", clock.now()); err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	clock.advance(30 * time.Minute)
@@ -80,7 +80,7 @@ func TestSessionLifecycleInactivityWindowIsSliding(t *testing.T) {
 
 func TestSessionLifecycleRevocation(t *testing.T) {
 	manager, _ := newManaged(t, time.Hour)
-	if err := manager.Open("token-1", time.Now()); err != nil {
+	if err := manager.Open("token-1", "subject-1", time.Now()); err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := manager.RevokeSession("token-1"); err != nil {
@@ -95,7 +95,7 @@ func TestSessionLifecycleRevocation(t *testing.T) {
 	if err := manager.RevokeSession("token-1"); err != ErrSessionMissing {
 		t.Fatalf("revoking an already revoked session: got %v", err)
 	}
-	if err := manager.Open("token-1", time.Now()); err != ErrSessionRevoked {
+	if err := manager.Open("token-1", "subject-1", time.Now()); err != ErrSessionRevoked {
 		t.Fatalf("reopening a revoked token must fail closed, got %v", err)
 	}
 	if err := manager.Touch("token-1"); err != ErrSessionRevoked {
@@ -114,7 +114,7 @@ func TestSessionLifecycleConcurrentAccess(t *testing.T) {
 		go func(n int) {
 			defer wg.Done()
 			token := "token-" + string(rune('a'+n%5))
-			_ = manager.Open(token, time.Now())
+			_ = manager.Open(token, "subject-"+string(rune('a'+n%5)), time.Now())
 			_ = manager.Touch(token)
 			_ = manager.IsActive(token)
 			_ = manager.Known(token)
@@ -215,7 +215,7 @@ func TestSessionAuthenticatorRejectsMissingBearerToken(t *testing.T) {
 
 func TestSessionAuthenticatorRejectsRevokedSessionBeforeValidation(t *testing.T) {
 	sessions, _ := newManaged(t, time.Hour)
-	if err := sessions.Open("token-1", time.Now()); err != nil {
+	if err := sessions.Open("token-1", "human-001", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	if err := sessions.RevokeSession("token-1"); err != nil {
@@ -232,7 +232,7 @@ func TestSessionAuthenticatorRejectsRevokedSessionBeforeValidation(t *testing.T)
 	if body["error"] != "session_revoked" || validator.calls != 0 {
 		t.Fatalf("body=%v validator=%d", body, validator.calls)
 	}
-	if err := sessions.Open("token-1", time.Now()); err != ErrSessionRevoked {
+	if err := sessions.Open("token-1", "human-001", time.Now()); err != ErrSessionRevoked {
 		t.Fatalf("revoked token must not re-establish, got %v", err)
 	}
 }
@@ -243,7 +243,7 @@ func TestSessionAuthenticatorRejectsExpiredEstablishedSession(t *testing.T) {
 	resolver := &fakeResolver{membership: identity.Membership{ActorID: "sa-pipeline", TenantID: "tenant-a", OrganizationID: "org-a", Capabilities: []string{"data.ingest.write"}}}
 
 	client := time.Now()
-	if err := sessions.Open("token-1", client); err != nil {
+	if err := sessions.Open("token-1", "sa-pipeline", client); err != nil {
 		t.Fatal(err)
 	}
 	auth := newAuthenticator(t, validator, resolver, sessions, identity.MFAPolicy{RequireMFA: true, AllowedAMR: []string{"mfa"}})

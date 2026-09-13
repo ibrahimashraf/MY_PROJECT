@@ -385,6 +385,16 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			required: []string{"CREATE TABLE IF NOT EXISTS sensor_telemetry_stream", "PARTITION BY RANGE (reading_timestamp)", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "CREATE TABLE IF NOT EXISTS cqrs_replication_outbox", "fillfactor = 85"},
 		},
 		{
+			upFile:   "0075_device_enrollment_requests.sql",
+			downFile: "0075_device_enrollment_requests.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS device_enrollment_requests", "PRIMARY KEY (tenant_id, organization_id, request_id)", "device_enrollment_requests_device_idx", "device_enrollment_requests_status_idx", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "device_enrollment_requests_tenant_isolation", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT, UPDATE ON device_enrollment_requests TO integin_runtime"},
+		},
+		{
+			upFile:   "0076_oidc_session_store.sql",
+			downFile: "0076_oidc_session_store.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS oidc_session_store", "PRIMARY KEY (session_id)", "subject        TEXT        NOT NULL", "revoked_at     TIMESTAMPTZ", "oidc_session_store_expiry_idx", "expires_at > issued_at", "GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_session_store TO integin_runtime"},
+		},
+		{
 			upFile:   "0081_audit_log_valid_time.sql",
 			downFile: "0081_audit_log_valid_time.down.sql",
 			required: []string{"ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS valid_time TIMESTAMPTZ", "audit_log_valid_time_idx"},

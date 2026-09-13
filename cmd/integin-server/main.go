@@ -418,6 +418,9 @@ func main() {
 			log.Fatal(tusErr)
 		}
 		tusHandler = storage.TUSRouteHandler{Manager: tusManager}
+		// Background janitor: crash recovery + stale-upload pruning every 10m,
+		// logging sweep metrics (resumed/orphaned/purged/active).
+		go tusManager.RunJanitor(context.Background(), 0, nil)
 	}
 	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil)
 	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler,
