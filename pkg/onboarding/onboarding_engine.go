@@ -179,21 +179,10 @@ func (s *EnrollmentSimulator) VerifyOfflineReceipt(receipt SignedInspectionRecei
 		return false, errors.New("device revoked or not active")
 	}
 
-	devPubBytes, err := hex.DecodeString(dev.DevicePublicKey)
-	if err != nil {
-		return false, errors.New("corrupted device key in store")
-	}
-
-	sigBytes, err := hex.DecodeString(receipt.DeviceSignature)
-	if err != nil {
-		return false, errors.New("invalid receipt signature encoding")
-	}
-
-	// Receipt signature payload: ReceiptID|ManifestID|AssetID|OverallResult|PayloadDigest
-	receiptSignPayload := fmt.Sprintf("%s|%s|%s|%s|%s", receipt.ReceiptID, receipt.ManifestID, receipt.AssetID, receipt.OverallResult, receipt.PayloadDigest)
-
-	if !ed25519.Verify(devPubBytes, []byte(receiptSignPayload), sigBytes) {
-		return false, errors.New("tamper alert: receipt signature invalid")
+	// Shared canonical receipt-signature verification (also used by the
+	// ingress guard): ReceiptID|ManifestID|AssetID|OverallResult|PayloadDigest.
+	if err := verifyReceiptSignature(receipt, dev.DevicePublicKey); err != nil {
+		return false, err
 	}
 
 	return true, nil

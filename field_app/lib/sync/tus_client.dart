@@ -28,10 +28,20 @@ class TusOffset {
 
 /// Upload completion result returned by the complete endpoint.
 class TusCompletion {
-  const TusCompletion({required this.key, required this.contentType});
+  const TusCompletion({
+    required this.key,
+    required this.contentType,
+    this.sha256Hex = '',
+  });
 
   final String key;
   final String contentType;
+
+  /// Cryptographic SHA-256 digest (64-char lowercase hex) of the uploaded
+  /// payload. The uploader populates it from the capture-time digest; the
+  /// server already verified the same checksum on complete, so this is the
+  /// at-rest proof of exactly what was uploaded.
+  final String sha256Hex;
 }
 
 /// Typed failure surfaced by the TUS client. Callers must fail closed on
