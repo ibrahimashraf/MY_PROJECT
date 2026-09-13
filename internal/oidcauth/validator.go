@@ -32,9 +32,10 @@ var errUnknownKeyID = errors.New("oidc token key identifier is unknown")
 // Principal is the authentication assertion that may be submitted to local INTEGIN identity resolution.
 // It intentionally contains no tenant, organization, role, capability, or device authority.
 type Principal struct {
-	Issuer  string
-	Subject string
-	AMR     []string
+	Issuer          string
+	Subject         string
+	AMR             []string
+	AuthorizedParty string
 }
 
 type discoveryDocument struct {
@@ -193,7 +194,7 @@ func (v *Validator) validateWithCurrentKeys(rawToken string) (Principal, error) 
 	if err := v.validateClaims(parsedClaims); err != nil {
 		return Principal{}, err
 	}
-	return Principal{Issuer: parsedClaims.Issuer, Subject: parsedClaims.Subject, AMR: append([]string(nil), parsedClaims.AMR...)}, nil
+	return Principal{Issuer: parsedClaims.Issuer, Subject: parsedClaims.Subject, AMR: append([]string(nil), parsedClaims.AMR...), AuthorizedParty: parsedClaims.AuthorizedParty}, nil
 }
 
 func (v *Validator) validateClaims(value *claims) error {
