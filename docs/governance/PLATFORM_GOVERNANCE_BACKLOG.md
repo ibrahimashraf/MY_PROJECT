@@ -35,6 +35,7 @@ The current Go modular monolith remains the only authority for workflow acceptan
 | P2 | Build TypeScript operations workbench | Product + Operations | Least-privilege views for device/authority lifecycle, held sync review, audit search, evidence metadata, and reports | No direct DB access; API authorization and privacy tests |
 | P2 | Build independent Rust export verifier | Engineering Change Owner | Read-only verification of manifest, signed envelope, authority package, and ciphertext digest | Repeatable verifier attestation for a recovery export |
 | P2 | Implement advisory governance register | Advisory Reviewer | Model/version inventory, prompt/data constraints, evidence references, feedback loop, and `blocking=false` enforcement | Audit view proves no advisory operation has primary write authority |
+| P2 | Toolchain & Codebase Modernization (Go 1.27.1) | Engineering Change Owner | Upgrade to official Go 1.27.1 toolchain under unmetered broadband; audit sync/crypto/math/time stdlib evolution, escape analysis, and dependency alignment | go vet, clean-cache unit test suite, and race detection PASS under 1.27.1 |
 
 ## Production device-enrollment design gate
 
