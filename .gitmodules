@@ -1,0 +1,15 @@
+[submodule "integin-pilot-source"]
+	path = integin-pilot-source
+	url = https://github.com/ibrahimashraf/integin-pilot-source.git
+[submodule ".agents/skills/archify"]
+	path = .agents/skills/archify
+	url = https://github.com/tt-a1i/archify.git
+[submodule ".agents/skills/hive"]
+	path = .agents/skills/hive
+	url = https://github.com/tt-a1i/hive.git
+[submodule ".agents/skills/mco"]
+	path = .agents/skills/mco
+	url = https://github.com/mco-org/mco.git
+[submodule ".agents/skills/simplify-codebase"]
+	path = .agents/skills/simplify-codebase
+	url = https://github.com/tt-a1i/simplify-codebase.git

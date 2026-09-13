@@ -14,15 +14,15 @@
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                              GLOBAL TRANSITION ROADMAP                                 │
 ├──────────────────────┬──────────────────────┬───────────────────┬──────────────────────┤
-│ Phase 1: Core PKI &  │ Phase 2: Hybrid      │ Phase 3: Hardware │ Phase 4: K8s Svc Mesh│
-│ Dynamic Licensing    │ Standards Discovery  │ & Audit Ledger    │ & Global Verification│
-│ (Sprint 1)           │ (Sprint 2)           │ (Sprint 3 - ACTIVE│ (Sprint 4)           │
+│ Phase 1: Core PKI &  │ Phase 2: Hybrid      │ Phase 3: Hardware │ Phase 4: Unified TIC │
+│ Dynamic Licensing    │ Standards Discovery  │ & Audit Ledger    │ & 3D/4D Sovereign Eng│
+│ (Sprint 1)           │ (Sprint 2)           │ (Sprint 3)        │ (Sprint 4 - ACTIVE)  │
 ├──────────────────────┼──────────────────────┼───────────────────┼──────────────────────┤
 │ • pkg/domain & DIDs  │ • pkg/rulesengine    │ • Tool Registry   │ • Stateless Resolver │
 │ • pkg/licensing      │ • pkg/standardsync   │ • Merkle-CRDT Log │ • Public Verifier App│
-│ • CLI Token Issuer   │ • pkg/jurisdictions  │ • FIPS Enclave Att│ • Helm / K8s Matrix  │
-│                      │ • idempotency cache  │ • Asset Passport  │ • Sovereign Appliance│
-│ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅  │ STATUS: ACTIVE 🚀 │ STATUS: PLANNED      │
+│ • CLI Token Issuer   │ • pkg/jurisdictions  │ • FIPS Enclave Att│ • Unified Engine 4.10│
+│                      │ • idempotency cache  │ • Asset Passport  │ • 7-Phase Execution  │
+│ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅│ STATUS: ACTIVE 🚀    │
 └──────────────────────┴──────────────────────┴───────────────────┴──────────────────────┘
 ```
 
@@ -31,7 +31,7 @@
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | **All 5 deliverables (D2.1–D2.5) complete & verified:** CEL nanocell + D2.2 idempotency/DLQ + D2.3 standards discovery + D2.4 jurisdictions + D2.5 PostgREST query engine. Live matrix PASS, race detector PASS across all packages. |
 | **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **COMPLETE ✅** | **D3.1–D3.13 complete & verified** (D3.2/D3.3 landed `dd091d8`, D3.4 landed `c9f6441`, D3.5 minimal wizard + CDP smoke landed `4edb1c4`/`dd9ddb5`): ISO 17020 § 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT bitemporal ledger, W3C asset passport, executive onboarding wizard, TUS chunked media streamer, offline schema-epoch handshake, RFC 3161 timestamping, bidi engine, enclave PIN + duress, inference sealing, 2D simulator. **Sprint 3 COMPLETE ✅ → Sprint 4 frontier: 4.1 public verifier.** |
-| **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
+| **Phase 4: Cloud-Native K8s Mesh, Universal QR Trust & Unified TIC-3D/4D Engine (Sprint 4)** | **L11** (Stateless Edge Trust) + **L1–L10 Unified Engine** | `pkg/verification`, `tools/public-verifier`, `pkg/id`, `pkg/timeguard`, `pkg/cad/structural` | **ACTIVE 🚀** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), Deliverable 4.10 Unified TIC + 3D/4D Sovereign Engine across 7 implementation phases. |
 
 ---
 
@@ -173,6 +173,24 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Harmonic micro-ripple frequency analysis and normalized Shannon spectral entropy preventing counterfeit load cell spoofing.
 *   [x] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)** — COMPLETE ✅ (2026-09-11, landed `b680d1e`, hardened `a1039ce`):
     *   Volumetric obstacle clearance, soil stress heatmaps, time-stepped ($t_0 \rightarrow t_{\text{final}}$) dual-crane load-share simulation, local Three.js vendor bundle for air-gapped sovereign execution, and statutory PE liability disclaimer banner.
+*   [ ] **4.10: Unified TIC + 3D/4D Sovereign Engine Integration & Master 7-Phase Implementation** — ACTIVE 🚀 (2026-09-13):
+    *   Unified Architecture: Merging Testing, Inspection & Certification (TIC) and 2D/3D/4D CAD into **ONE Single Spatio-Temporal Conformity Engine** across SDOs (Level 1), Conformity Bodies (Level 2), and Site Jurisdictions (Level 3).
+    *   **Phase 1 (Invariants & Non-linear Mechanics)**: RFC 9562 UUIDv7 (`pkg/id`), Monotonic ClockGuard (`pkg/timeguard`, Hazard 33), Outrigger contact lift-off & diagonal rocking (`pkg/cad/structural`), Symbolic Proof Witnesses ($\|Ax - b\|_2 < 10^{-8}$), and DNV-RP-0513 Model Uncertainty Quantification (UQ error propagation). *(Closes Gap 5)*
+    *   **Phase 2 (Rules Gateway Domination)**: Google CEL nanocells (`pkg/rulesengine`) for ASME B30.5, ISO 4309, DNV-ST-N001; dynamic ASD/LRFD switching; zero hardcoded thresholds in domain code.
+    *   **Phase 3 (Twin Unification, ISO 14224 Taxonomy & Prognostics)**: Merge `UniversalAssetPassport` and `ProductPassportDPP` into canonical IEC 63278 AAS; CFIHOS tag vs equipment separation; ISO 14224 9-tier relational equipment tree with component parent-child inheritance *(Closes Gap 2)*; ISO 13374 Block 5 Prognostics with Palmgren-Miner cumulative fatigue damage & Remaining Useful Life (RUL) estimation *(Closes Gap 3)*; fenced custody epochs (`ExpectedEpoch == CurrentEpoch`).
+    *   **Phase 4 (Field Edge Attestation & SCADA Ingress)**: Android StrongBox / Apple Secure Enclave hardware key signing; direct camera-to-TUS resumable upload; server ingress drift rejection; ISA-95 L2-to-L3 bridge connecting real-time crane LMI / sensor telemetry bus directly to active work orders *(Closes Gap 1)*.
+    *   **Phase 5 (Legal Nexus & Merkle Ceremony)**: Non-repudiable Lift Director / Appointed Person cryptographic signing; automated RFC 6962 Merkle log anchoring with public WebCrypto zero-knowledge verification.
+    *   **Phase 6 (Guarded Autonomous Cognitive Dispatch)**: BDI cognitive agent deliberates and remediates strictly on sealed, proven, gated facts; competence & separation-of-duties checks.
+    *   **Phase 7 (Enterprise Harmonization, AASX Packaging & Global Registry Sync)**: Open IEC 63278 `.aasx` package export with eCl@ss semantic identifiers *(Closes Gap 4)*; live IAF/ILAC conformity connector verifying active SASO SABER (PCoC/SCoC) and UAE EIAC/DAC accreditation status *(Closes Gap 6)*; CFIHOS/ISO 18101 exports for SAP PM/Maximo; automated regulatory dossiers for OSHA, LOLER, DNV, Saudi Aramco GI 7.027, and ADNOC CoP-HSE-038.
+*   [ ] **4.11: Scheduled Toolchain Upgrade & Codebase Modernization (Go 1.27.1)** — SCHEDULED 📅 (Tuesday 2026-09-15):
+    *   *Fenced Condition*: Strict zero-network protocol active while roaming. Installation deferred until Tuesday 15/09/2026 on home broadband.
+    *   **Toolchain Installation**: Install official `go1.27.1.windows-amd64.msi` (~63.03 MB) via `winget install --id GoLang.Go`.
+    *   **Module Directive**: Align root and pilot `go.mod` files to `go 1.27.1` / `toolchain go1.27.1`.
+    *   **Codebase Modernization Audit**:
+        - Standard Library Evolution: Audit for Go 1.27 enhancements across `sync`, `crypto/rand`, `crypto/sha256`, `math`, and `time` packages.
+        - Memory & Escape Analysis: Leverage Go 1.27 compiler optimizations to further reduce heap escapes on `pkg/rulesengine` and `pkg/id` hot paths.
+        - Dependency Alignment: Run `go get -u` and `go mod tidy` across all dependencies (`cel.dev/cel-go`, `jackc/pgx/v5`, `riverqueue/river`) once unmetered connection is active.
+        - Full Quality Regression Gate: Execute `go vet ./...`, `go test -count=1 ./...`, and race detection verification under the 1.27.1 compiler.
 
 ---
 

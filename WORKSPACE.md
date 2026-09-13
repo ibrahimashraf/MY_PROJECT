@@ -139,21 +139,63 @@ INTEGIN is an **Integrated Inspection & Assurance Platform** designed for worldw
                        └────────────────────────────────────────────────────────┘
 ```
 
-### The 12-Tier Architecture Topology
+### The 12-Tier Architecture Topology & Unified TIC + 3D/4D Sovereign Engine
+
+INTEGIN unifies Testing, Inspection & Certification (TIC) and the 2D/3D/4D spatial-temporal CAD simulation into **ONE Single Spatio-Temporal Conformity Engine** operating across the 12 tiers:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        THE UNIFIED TIC + 3D/4D SOVEREIGN ENGINE                        │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+   ┌────────────────────────────────────────┴────────────────────────────────────────┐
+   ▼                                                                                 ▼
+[3D/4D SPATIO-TEMPORAL SCENE]                                     [TIC CONFORMITY & HEALTH]
+• L4: Operational Hierarchy & 4D Work Orders                      • L9: Decentralized Asset Passport (DPP)
+• L6: Geodesy / Local ENU Coordinates                             • L7: Calibrated Tool Registry (ISO 17020)
+• Dynamic Rigging Blocks & Kinematic Trajectory                   • L8: Hardware Tablet Attestation
+   │                                                                                 │
+   └────────────────────────────────────────┬────────────────────────────────────────┘
+                                            │ Combined State Vector
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ LEVEL 1 (SDOs): PHYSICAL & RULES CALCULATION ENGINE                                    │
+│ • L1: Hybrid Standards Discovery & Google CEL AST Evaluator (`pkg/rulesengine`)        │
+│ • Physical Continuum & Non-linear Outrigger Contact Solver (`pkg/cad/structural`)      │
+│ • Residual Proof Witness Generation (`pkg/engine/symbolic` with ||Ax - b||_2 < 1e-8)   │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Passes Physical Proof
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ LEVEL 2 (CONFORMITY BODIES): NATIONAL ASSURANCE & JURISDICTION GATE                    │
+│ • L2: Dynamic Jurisdiction Adapters & Conformity Verification (`pkg/jurisdictions`)   │
+│   (SASO/SABER, EIAC, ANSI/ANAB, UKAS/LEEA, IACS Class Surveys)                         │
+│ • L3: Dynamic Discipline & Competency Scoping (Operator/Rigger license validity)       │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Passes Conformity Proof
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ LEVEL 3 (SITE JURISDICTIONS): LEGAL GOVERNANCE, AUDIT & DISPATCH                       │
+│ • L5: Certificate Governance & Statutory Permitting (`internal/domain/certificate`)   │
+│ • L6: Dynamic Competency Scheduling & Cognitive Dispatcher (`scheduling`)              │
+│ • L10: Bitemporal Merkle-CRDT Audit Ledger (`internal/domain/auditlog`)                │
+│ • L11: Stateless Edge Trust & Public Zero-Knowledge Verifier (`pkg/verification`)      │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 | Tier | Name | Key Components & Scope | Active Packages / Status |
 |---|---|---|---|
 | **L0** | **Root PKI & Licensing** | Asymmetric Ed25519 license keys, offline covenants, feature flags | `pkg/licensing`, `licensehttp`, `licensepg` ✅ |
-| **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` ✅ |
-| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `internal/identity`, `internal/tenant` ✅ |
-| **L3** | **Discipline Package Scoping**| Inspector competency gating, training validation, courses | `traininghttp`, `trainingpg`, `equipment` ✅ |
-| **L4** | **Operational Hierarchy** | Work orders, assignments, hierarchical branch/area/zone registers | `workorderhttp`, `workorderpg`, `domain/workorder` ✅ |
-| **L5** | **Certificate Governance** | Deterministic PDF rendering, 4-eyes review, authority lifecycle | `certificatehttp`, `certificatepg`, `certificaterender` ✅ |
-| **L6** | **Competency Matrix** | Dynamic scheduling calendar, qualification tracking | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` ✅ |
+| **L1** | **Hybrid Standards Engine** | SDO equations, proof-loads, wire rope discard, Google CEL AST evaluator | `pkg/standardsync`, `pkg/rulesengine`, `pkg/cad/structural` ✅ |
+| **L2** | **Dynamic Jurisdictions** | Multi-country conformity (SASO/SABER, EIAC, ANSI, BSI, DIN, OSHA, LOLER) | `pkg/jurisdictions`, `internal/identity`, `internal/tenant` ✅ |
+| **L3** | **Discipline Package Scoping**| Inspector/Operator competency gating, training validation, courses | `traininghttp`, `trainingpg`, `equipment` ✅ |
+| **L4** | **Operational Hierarchy** | 4D lift plans, work orders, assignments, hierarchical registers | `workorderhttp`, `workorderpg`, `domain/workorder`, `tools/lifting-simulator` ✅ |
+| **L5** | **Certificate Governance** | Non-repudiable Lift Director signatures, deterministic PDF, 4-eyes review | `certificatehttp`, `certificatepg`, `certificaterender` ✅ |
+| **L6** | **Competency Matrix & Geodesy**| Dynamic scheduling, WGS84 local ENU frames, cognitive BDI dispatch | `internal/domain/scheduling`, `pkg/gis/geodesy`, `pkg/engine/cognitive` ✅ |
 | **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `internal/shared/calibration`, `internal/platform/calibration`, `internal/evidenceapi`, `migrations/0073_*` ✅ |
-| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `pkg/onboarding`, `field_app/lib/workpackages/` ✅ |
-| **L9** | **Decentralized Asset Passport**| W3C DIDs (`did:integin:...`), equipment quarantine lifecycles | `pkg/domain` (models.go, did.go) ✅ |
-| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `internal/domain/auditlog`, `internal/searchhttp`, `internal/searchpg` ✅ |
+| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, Monotonic ClockGuard | `pkg/onboarding`, `pkg/timeguard`, `field_app/lib/workpackages/` ✅ |
+| **L9** | **Decentralized Asset Passport**| Canonical AAS / DPP, W3C DIDs (`did:integin:...`), equipment quarantine | `pkg/domain` (models.go, did.go), `internal/domain/dpp` ✅ |
+| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, RFC 6962 Merkle log | `internal/domain/auditlog`, `pkg/verification/transparency.go`, `internal/searchpg` ✅ |
 | **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification`, `tools/public-verifier/`, `internal/server/` ✅ |
 
 ---
