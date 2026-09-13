@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"integin/pkg/httputil"
 )
 
 // StationEvent represents a real-time event dispatched to connected Flutter clients.
@@ -83,13 +85,13 @@ func (h *StreamHub) SSEHandler() http.HandlerFunc {
 			tenantID = r.URL.Query().Get("tenant_id")
 		}
 		if tenantID == "" {
-			http.Error(w, "missing tenant_id", http.StatusBadRequest)
+			httputil.WriteProblem(w, r, http.StatusBadRequest, "Missing Tenant ID", "Missing required tenant_id in header or query parameter.")
 			return
 		}
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
-			http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+			httputil.WriteProblem(w, r, http.StatusInternalServerError, "Streaming Unsupported", "Server response writer does not support HTTP streaming.")
 			return
 		}
 

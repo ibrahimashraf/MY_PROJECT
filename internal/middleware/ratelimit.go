@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"integin/pkg/httputil"
 	"golang.org/x/time/rate"
 )
 
@@ -213,7 +214,7 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		limiter := rl.getLimiter(limiterKey)
 		if !limiter.AllowN(time.Now(), 1) {
 			rl.denied.Add(1)
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			httputil.WriteProblem(w, r, http.StatusTooManyRequests, "Rate Limit Exceeded", "Too many requests, please slow down.")
 			return
 		}
 

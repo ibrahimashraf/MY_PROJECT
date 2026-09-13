@@ -5,6 +5,7 @@ import (
 
 	"integin/internal/platform/featureflag"
 	"integin/internal/shared/featureflags"
+	"integin/pkg/httputil"
 )
 
 // PortalGuard wraps Handler so client portal is only served when
@@ -18,7 +19,7 @@ type PortalGuard struct {
 
 func (g *PortalGuard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if g.Handler == nil {
-		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+		httputil.WriteProblem(w, r, http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable), "service unavailable")
 		return
 	}
 	// Default deny; org must be ENABLED via featureflag override.
@@ -27,7 +28,7 @@ func (g *PortalGuard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// No org in public request; treat as globally gated: default must be ENABLED.
 		state := g.Flags.Evaluate(featureflags.FlagClientPortal, featureflag.Request{}, g.Handler.Now().UTC())
 		if state != featureflags.Enabled {
-			http.Error(w, "client portal disabled", http.StatusForbidden)
+			httputil.WriteProblem(w, r, http.StatusForbidden, http.StatusText(http.StatusForbidden), "client portal disabled")
 			return
 		}
 	}

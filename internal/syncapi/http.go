@@ -99,7 +99,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var incoming request
-	decoder := json.NewDecoder(r.Body)
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 10<<20))
 	if err := decoder.Decode(&incoming); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON request")
 		return

@@ -6,15 +6,19 @@ import (
 	"integin/pkg/cad/structural"
 	"integin/pkg/engine/bio"
 	"integin/pkg/engine/cognitive"
+	"integin/pkg/engine/economics"
 	"integin/pkg/engine/ecs"
 	"integin/pkg/engine/eventbus"
 	"integin/pkg/engine/geology"
 	"integin/pkg/engine/materials"
+	"integin/pkg/engine/neuro"
 	"integin/pkg/engine/physics"
 	"integin/pkg/engine/planet"
 	"integin/pkg/engine/qfield"
 	"integin/pkg/engine/relativity"
+	"integin/pkg/engine/sim"
 	"integin/pkg/engine/snapshot"
+	"integin/pkg/engine/symbolic"
 	"integin/pkg/engine/timecal"
 	"integin/pkg/gis/geodesy"
 	"integin/pkg/mathcore/verification"
@@ -144,5 +148,90 @@ func TestCrossSystemHarmony(t *testing.T) {
 	}
 	if math.Abs(loaded[0].PosZ-entity.PosZ) > 1e-9 {
 		t.Fatalf("Snapshot entity position mismatch: %v != %v", loaded[0].PosZ, entity.PosZ)
+	}
+
+	// === Sim: multi-agent universe — BDI intention feeds agent target ===
+	// The surveyor agent's deliberated intention ("MapTerrain") drives its sim target.
+	universe := sim.NewUniverseWorld()
+	simTarget := sim.SimVec3{X: 100.0, Y: 0.0, Z: 0.0} // terrain map waypoint
+	surveyor := universe.SpawnAgent("surveyor-1", sim.RoleSurveyor,
+		sim.SimVec3{X: 0, Y: 0, Z: 0}, simTarget)
+	for i := 0; i < 10; i++ {
+		universe.Step(0.1) // 10 × 100ms = 1 simulated second
+	}
+	if surveyor.Status != "MOVING" && surveyor.Status != "GOAL_REACHED" {
+		t.Fatalf("Sim agent expected MOVING or GOAL_REACHED, got %q", surveyor.Status)
+	}
+	if surveyor.Position.X <= 0 {
+		t.Fatal("Sim agent should have advanced toward target")
+	}
+	// Continuous collision check: surveyor path is clear of a distant obstacle.
+	obstacleCenter := sim.SimVec3{X: 500.0, Y: 500.0, Z: 0.0}
+	hit, _ := sim.ContinuousCollisionCheck(
+		sim.SimVec3{X: 0, Y: 0, Z: 0}, simTarget, 1.0, obstacleCenter, 5.0)
+	if hit {
+		t.Fatal("Sim CCD: unexpected collision on clear surveyor path")
+	}
+
+	// === Neuro: Hodgkin-Huxley neuron fires under sustained current ===
+	neuron := neuro.DefaultHodgkinHuxley()
+	// Apply 10 µA/cm² stimulus for 50 × 0.1ms steps.
+	for i := 0; i < 50; i++ {
+		neuron = neuron.Step(0.1, 10.0)
+	}
+	// Under strong depolarising current the membrane potential must rise above rest (−65 mV).
+	if neuron.V <= -65.0 {
+		t.Fatalf("Neuro HH: membrane should depolarise above rest; got V=%v mV", neuron.V)
+	}
+	// STDP: potentiation when pre fires before post (deltaTms > 0).
+	updatedW := neuro.STDPWeightUpdate(0.5, 5.0, 0.1, 0.1, 20.0, 20.0)
+	if updatedW <= 0.5 {
+		t.Fatalf("Neuro STDP: weight should increase for causal spike pair; got %v", updatedW)
+	}
+
+	// === Symbolic: tokenise a CEL-style specification, verify proof witness ===
+	tokens := symbolic.Tokenize("stress_Pa > 0")
+	if len(tokens) < 4 {
+		t.Fatalf("Symbolic tokeniser: expected ≥4 tokens, got %d", len(tokens))
+	}
+	if tokens[0].Type != symbolic.TokenIdent {
+		t.Fatalf("Symbolic tokeniser: first token should be Ident, got %v", tokens[0].Type)
+	}
+	// Verify a structural-stress claim: residual must be within 1 Pa tolerance.
+	witness := symbolic.VerifyClaim("beam_stress_within_limit", "FEA_residual=0.0", 0.0, 1.0)
+	if !witness.IsValid {
+		t.Fatalf("Symbolic proof witness rejected a valid claim: %+v", witness)
+	}
+	// Curry-Howard identity proof for the safety-property type.
+	proof := symbolic.IdentityProof("SafetyProperty")
+	if !proof.Valid {
+		t.Fatal("Symbolic Curry-Howard identity proof must be valid")
+	}
+
+	// === Economics: Nash equilibrium & Dijkstra terrain routing ===
+	// Prisoner's dilemma — (Defect, Defect) is the unique pure Nash equilibrium.
+	game := economics.BimatrixGame{
+		RowPayoffs: [][]float64{{3, 0}, {5, 1}},
+		ColPayoffs: [][]float64{{3, 5}, {0, 1}},
+	}
+	equilibria := game.FindPureNashEquilibria()
+	if len(equilibria) != 1 || equilibria[0] != [2]int{1, 1} {
+		t.Fatalf("Economics Nash: expected [(1,1)], got %v", equilibria)
+	}
+	// Dijkstra: shortest path on a small terrain adjacency graph (4 nodes).
+	graph := [][]float64{
+		{0, 1, 4, 0},
+		{1, 0, 2, 5},
+		{4, 2, 0, 1},
+		{0, 5, 1, 0},
+	}
+	dists := economics.DijkstraShortestPath(graph, 0)
+	if dists[3] != 4.0 { // 0→1→2→3 = 1+2+1 = 4
+		t.Fatalf("Economics Dijkstra: expected dist[3]=4, got %v", dists[3])
+	}
+	// Demand elasticity: price +10% with η=1 should drop quantity ~10%.
+	q := economics.ExponentialDemandElasticity(1000, 100, 110, 1.0)
+	if math.Abs(q-909.09) > 1.0 {
+		t.Fatalf("Economics elasticity: expected ~909 units, got %v", q)
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"integin/internal/domain/training"
 	"integin/internal/shared/httpresponse"
+	"integin/pkg/httputil"
 )
 
 type Handler struct {
@@ -19,7 +20,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "missing tenant or organization header")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "missing tenant or organization header")
 		return
 	}
 	actor := training.ActorContext{TenantID: tenantID, OrganizationID: orgID, ActorID: r.Header.Get("X-Actor-ID")}
@@ -43,14 +44,14 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		techID := strings.TrimSuffix(strings.TrimSuffix(path, "/competencies"), "/")
 		h.handleUpsertCompetency(w, r, actor, techID)
 	default:
-		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "not_found")
 	}
 }
 
 func (h Handler) handleListCourses(w http.ResponseWriter, r *http.Request, actor training.ActorContext) {
 	courses, err := h.Repository.ListCourses(r.Context(), actor)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if courses == nil {
@@ -62,14 +63,14 @@ func (h Handler) handleListCourses(w http.ResponseWriter, r *http.Request, actor
 func (h Handler) handleCreateCourse(w http.ResponseWriter, r *http.Request, actor training.ActorContext) {
 	var course training.Course
 	if err := json.NewDecoder(r.Body).Decode(&course); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	course.TenantID = actor.TenantID
 	course.OrganizationID = actor.OrganizationID
 	result, err := h.Repository.CreateCourse(r.Context(), actor, course)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusCreated, result)
@@ -78,7 +79,7 @@ func (h Handler) handleCreateCourse(w http.ResponseWriter, r *http.Request, acto
 func (h Handler) handleListEnrollments(w http.ResponseWriter, r *http.Request, actor training.ActorContext, courseID string) {
 	enrollments, err := h.Repository.ListEnrollments(r.Context(), actor, courseID)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if enrollments == nil {
@@ -92,7 +93,7 @@ func (h Handler) handleEnroll(w http.ResponseWriter, r *http.Request, actor trai
 		TechnicianID string `json:"technician_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	enrollment := training.CourseEnrollment{
@@ -103,7 +104,7 @@ func (h Handler) handleEnroll(w http.ResponseWriter, r *http.Request, actor trai
 	}
 	result, err := h.Repository.EnrollTechnician(r.Context(), actor, enrollment)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusCreated, result)
@@ -112,7 +113,7 @@ func (h Handler) handleEnroll(w http.ResponseWriter, r *http.Request, actor trai
 func (h Handler) handleListCompetencies(w http.ResponseWriter, r *http.Request, actor training.ActorContext, technicianID string) {
 	comps, err := h.Repository.ListCompetencies(r.Context(), actor, technicianID)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if comps == nil {
@@ -124,7 +125,7 @@ func (h Handler) handleListCompetencies(w http.ResponseWriter, r *http.Request, 
 func (h Handler) handleUpsertCompetency(w http.ResponseWriter, r *http.Request, actor training.ActorContext, technicianID string) {
 	var comp training.Competency
 	if err := json.NewDecoder(r.Body).Decode(&comp); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	comp.TenantID = actor.TenantID
@@ -132,7 +133,7 @@ func (h Handler) handleUpsertCompetency(w http.ResponseWriter, r *http.Request, 
 	comp.TechnicianID = technicianID
 	result, err := h.Repository.UpsertCompetency(r.Context(), actor, comp)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, result)

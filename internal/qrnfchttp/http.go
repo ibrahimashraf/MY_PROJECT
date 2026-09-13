@@ -15,6 +15,7 @@ import (
 	"integin/internal/domain/qrnfc"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/pkg/httputil"
 )
 
 // TokenValidator defines the contract for OIDC bearer token verification.
@@ -59,7 +60,7 @@ func NewHandler(validator TokenValidator, resolver identity.Resolver, verifier E
 // ServeHTTP handles POST /qr-nfc/verify with Bearer token authentication.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, `{"error":"method_not_allowed"}`, http.StatusMethodNotAllowed)
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), "method_not_allowed")
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
@@ -72,7 +73,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bearer, ok := extractBearer(authHeader)
 	if !ok {
 		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "missing or invalid authorization header")
-		http.Error(w, `{"error":"authentication_required"}`, http.StatusUnauthorized)
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "authentication_required")
 		return
 	}
 
@@ -80,7 +81,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	principal, err := h.validator.Validate(r.Context(), bearer)
 	if err != nil {
 		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "oidc validation failed")
-		http.Error(w, `{"error":"invalid_token"}`, http.StatusUnauthorized)
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "invalid_token")
 		return
 	}
 
@@ -91,7 +92,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logAccess(r, nil, "", ip, qrnfc.AccessOutcomeDenied, "actor resolution failed")
-		http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+		httputil.WriteProblem(w, r, http.StatusForbidden, http.StatusText(http.StatusForbidden), "forbidden")
 		return
 	}
 	actor := &qrnfc.ActorContext{
@@ -106,12 +107,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "invalid request body")
-		http.Error(w, `{"error":"invalid_request"}`, http.StatusBadRequest)
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	if strings.TrimSpace(req.Token) == "" {
 		h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "token is required")
-		http.Error(w, `{"error":"token_required"}`, http.StatusBadRequest)
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "token_required")
 		return
 	}
 
@@ -122,15 +123,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, qrnfc.ErrNotFound):
 			// Indistinguishable from revoked/expired for security
 			h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "token not found")
-			http.Error(w, `{"error":"invalid_token"}`, http.StatusNotFound)
+			httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "invalid_token")
 			return
 		case errors.Is(err, qrnfc.ErrExpired):
 			h.logAccess(r, actor, entry.ID, ip, qrnfc.AccessOutcomeExpired, "token expired")
-			http.Error(w, `{"error":"token_expired"}`, http.StatusGone)
+			httputil.WriteProblem(w, r, http.StatusGone, http.StatusText(http.StatusGone), "token_expired")
 			return
 		default:
 			h.logAccess(r, actor, "", ip, qrnfc.AccessOutcomeDenied, "verification failed")
-			http.Error(w, `{"error":"verification_failed"}`, http.StatusInternalServerError)
+			httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "verification_failed")
 			return
 		}
 	}

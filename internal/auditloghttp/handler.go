@@ -8,6 +8,7 @@ import (
 
 	"integin/internal/domain/auditlog"
 	"integin/internal/shared/httpresponse"
+	"integin/pkg/httputil"
 )
 
 type Handler struct {
@@ -25,25 +26,25 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodGet && r.URL.Path == "/api/v1/audit-log":
 		h.handleQuery(w, r)
 	default:
-		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "not_found")
 	}
 }
 
 func (h Handler) handleAppend(w http.ResponseWriter, r *http.Request) {
 	var req auditlog.CreateEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	if err := req.Validate(); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, err.Error())
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), err.Error())
 		return
 	}
 
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "tenant_id and organization_id are required")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "tenant_id and organization_id are required")
 		return
 	}
 
@@ -74,7 +75,7 @@ func (h Handler) handleAppend(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.AuditLogRepository.Append(r.Context(), entry)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, "failed to append audit entry")
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "failed to append audit entry")
 		return
 	}
 
@@ -85,7 +86,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "tenant_id and organization_id are required")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "tenant_id and organization_id are required")
 		return
 	}
 
@@ -101,7 +102,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("from"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid from date")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid from date")
 			return
 		}
 		req.From = &t
@@ -109,7 +110,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("to"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid to date")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid to date")
 			return
 		}
 		req.To = &t
@@ -117,7 +118,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid limit")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid limit")
 			return
 		}
 		req.Limit = n
@@ -125,7 +126,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("offset"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid offset")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid offset")
 			return
 		}
 		req.Offset = n
@@ -133,7 +134,7 @@ func (h Handler) handleQuery(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.AuditLogRepository.Query(r.Context(), req)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, "failed to query audit log")
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "failed to query audit log")
 		return
 	}
 
@@ -144,7 +145,7 @@ func (h Handler) handleVerify(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "tenant_id and organization_id are required")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "tenant_id and organization_id are required")
 		return
 	}
 
@@ -152,7 +153,7 @@ func (h Handler) handleVerify(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("from"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid from date")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid from date")
 			return
 		}
 		from = &t
@@ -160,7 +161,7 @@ func (h Handler) handleVerify(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("to"); v != "" {
 		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
-			httpresponse.Error(w, http.StatusBadRequest, "invalid to date")
+			httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid to date")
 			return
 		}
 		to = &t
@@ -168,7 +169,7 @@ func (h Handler) handleVerify(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.AuditLogRepository.VerifyChain(r.Context(), tenantID, orgID, from, to)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, "failed to verify audit chain")
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "failed to verify audit chain")
 		return
 	}
 

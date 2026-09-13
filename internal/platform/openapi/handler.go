@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"integin/pkg/httputil"
 	"integin/internal/platform/featureflag"
 	"integin/internal/shared/featureflags"
 )
@@ -30,26 +31,26 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.Now = time.Now
 	}
 	if h.Flags != nil && h.Flags.Evaluate(featureflags.FlagOpenAPI, featureflag.Request{}, h.Now().UTC()) != featureflags.Enabled {
-		http.Error(w, "open api disabled", http.StatusForbidden)
+		httputil.WriteProblem(w, r, http.StatusForbidden, "Forbidden", "Open API feature is disabled.")
 		return
 	}
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed method: GET")
 		return
 	}
 	token := strings.TrimSpace(r.Header.Get("X-API-Token"))
 	if token == "" {
-		http.Error(w, "missing api token", http.StatusUnauthorized)
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, "Unauthorized", "Missing required X-API-Token header.")
 		return
 	}
 	if h.Store == nil {
-		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+		httputil.WriteProblem(w, r, http.StatusServiceUnavailable, "Service Unavailable", "Token store service is unavailable.")
 		return
 	}
 	tenantID, orgID, ok := h.Store.Resolve(token)
 	if !ok || strings.TrimSpace(tenantID) == "" || strings.TrimSpace(orgID) == "" {
-		http.Error(w, "invalid api token", http.StatusUnauthorized)
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, "Unauthorized", "Invalid API token.")
 		return
 	}
 	// Echo scope; caller can set_config from here. No cross-tenant read.

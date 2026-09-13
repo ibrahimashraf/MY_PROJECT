@@ -21,6 +21,7 @@ import (
 	"integin/internal/packagemanifestapi"
 	"integin/internal/storage"
 	"integin/internal/syncapi"
+	"integin/pkg/httputil"
 )
 
 // TokenValidator authenticates OIDC bearer tokens at the HTTP boundary;
@@ -67,6 +68,7 @@ type Dependencies struct {
 	AssetEntitlementHandler        http.Handler
 	DPPHandler                     http.Handler
 	TUSHandler                     http.Handler
+	SchedulingHandler              http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }
@@ -224,10 +226,31 @@ func withRequestLimit(next http.Handler, limit int64) http.Handler {
 func requestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		started := time.Now()
+		correlationID := writer.Header().Get("X-Correlation-ID")
+		tenantID := request.Header.Get("X-Tenant-ID")
+		orgID := request.Header.Get("X-Organization-ID")
+
+		// Enrich scoped logger via logger.With() and attach to context
+		reqLogger := slog.Default().With(
+			"correlation_id", correlationID,
+			"method", request.Method,
+			"path", loggedRequestPath(request.URL.EscapedPath()),
+		)
+		if tenantID != "" {
+			reqLogger = reqLogger.With("tenant_id", tenantID)
+		}
+		if orgID != "" {
+			reqLogger = reqLogger.With("org_id", orgID)
+		}
+
+		ctx := httputil.WithLogger(request.Context(), reqLogger)
 		wrapped := &statusWriter{ResponseWriter: writer, status: http.StatusOK}
-		next.ServeHTTP(wrapped, request)
-		path := loggedRequestPath(request.URL.EscapedPath())
-		slog.Default().Info("http_request", "method", request.Method, "path", path, "status", wrapped.status, "duration_ms", time.Since(started).Milliseconds(), "correlation_id", writer.Header().Get("X-Correlation-ID"))
+		next.ServeHTTP(wrapped, request.WithContext(ctx))
+
+		reqLogger.Info("http_request",
+			"status", wrapped.status,
+			"duration_ms", time.Since(started).Milliseconds(),
+		)
 	})
 }
 

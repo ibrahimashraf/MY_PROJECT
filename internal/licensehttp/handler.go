@@ -11,6 +11,7 @@ import (
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/shared/httpresponse"
+	"integin/pkg/httputil"
 )
 
 type TokenValidator interface {
@@ -31,23 +32,23 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if h.Validator == nil || h.Resolver == nil || h.LicenseService == nil {
-		httpresponse.Error(w, http.StatusServiceUnavailable, "service_unavailable")
+		httputil.WriteProblem(w, r, http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable), "service_unavailable")
 		return
 	}
 
 	raw, ok := bearer(r.Header.Get("Authorization"))
 	if !ok {
-		httpresponse.Error(w, http.StatusUnauthorized, "authentication_failed")
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "authentication_failed")
 		return
 	}
 	principal, err := h.Validator.Validate(r.Context(), raw)
 	if err != nil {
-		httpresponse.Error(w, http.StatusUnauthorized, "authentication_failed")
+		httputil.WriteProblem(w, r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "authentication_failed")
 		return
 	}
 	membership, err := h.Resolver.Resolve(r.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject})
 	if err != nil {
-		httpresponse.Error(w, http.StatusForbidden, "authorization_failed")
+		httputil.WriteProblem(w, r, http.StatusForbidden, http.StatusText(http.StatusForbidden), "authorization_failed")
 		return
 	}
 	actor := license.ActorContext{
@@ -68,7 +69,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/licenses/revoke":
 		h.handleRevoke(w, r, actor)
 	default:
-		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "not_found")
 	}
 }
 
@@ -83,7 +84,7 @@ func bearer(value string) (string, bool) {
 func (h Handler) handleValidate(w http.ResponseWriter, r *http.Request, actor license.ActorContext) {
 	result, err := h.LicenseService.ValidateLicense(r.Context(), actor, time.Now())
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, result)
@@ -97,7 +98,7 @@ func (h Handler) handleIssue(w http.ResponseWriter, r *http.Request, actor licen
 		Features               map[string]bool `json:"features"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	lic := license.License{
@@ -111,7 +112,7 @@ func (h Handler) handleIssue(w http.ResponseWriter, r *http.Request, actor licen
 	}
 	result, err := h.LicenseService.IssueLicense(r.Context(), actor, lic)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusCreated, result)
@@ -123,12 +124,12 @@ func (h Handler) handleRenew(w http.ResponseWriter, r *http.Request, actor licen
 		NewExpiresAt time.Time `json:"new_expires_at"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	result, err := h.LicenseService.RenewLicense(r.Context(), actor, req.LicenseID, req.NewExpiresAt)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, result)
@@ -139,11 +140,11 @@ func (h Handler) handleRevoke(w http.ResponseWriter, r *http.Request, actor lice
 		LicenseID string `json:"license_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	if err := h.LicenseService.RevokeLicense(r.Context(), actor, req.LicenseID); err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, map[string]string{"status": "revoked"})
@@ -152,7 +153,7 @@ func (h Handler) handleRevoke(w http.ResponseWriter, r *http.Request, actor lice
 func (h Handler) handleList(w http.ResponseWriter, r *http.Request, actor license.ActorContext) {
 	licenses, err := h.LicenseService.ListLicenses(r.Context(), actor)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, licenses)

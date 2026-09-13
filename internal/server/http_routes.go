@@ -132,6 +132,9 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	if d.WorkOrderAssignmentHandler != nil {
 		mux.Handle("/api/v1/work-orders/", d.WorkOrderAssignmentHandler)
 	}
+	if d.SchedulingHandler != nil {
+		mux.Handle("/api/v1/scheduling/", d.SchedulingHandler)
+	}
 }
 
 // requireTUSAuth gates the TUS upload endpoints behind the same OIDC bearer

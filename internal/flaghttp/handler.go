@@ -9,6 +9,7 @@ import (
 	"integin/internal/flagpg"
 	"integin/internal/shared/featureflags"
 	"integin/internal/shared/httpresponse"
+	"integin/pkg/httputil"
 )
 
 type FlagRepository interface {
@@ -33,7 +34,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/api/v1/admin/feature-flags/"):
 		h.handleDelete(w, r)
 	default:
-		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "not_found")
 	}
 }
 
@@ -41,12 +42,12 @@ func (h Handler) handleList(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "missing tenant or organization header")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "missing tenant or organization header")
 		return
 	}
 	overrides, err := h.Repository.ListOverrides(r.Context(), tenantID, orgID)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if overrides == nil {
@@ -59,7 +60,7 @@ func (h Handler) handleUpsert(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "missing tenant or organization header")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "missing tenant or organization header")
 		return
 	}
 	var req struct {
@@ -72,11 +73,11 @@ func (h Handler) handleUpsert(w http.ResponseWriter, r *http.Request) {
 		ActorID   string             `json:"actor_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	if req.FlagKey == "" || req.Scope == "" || req.ScopeID == "" || req.State == "" || req.ActorID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "flag_key, scope, scope_id, state, and actor_id are required")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "flag_key, scope, scope_id, state, and actor_id are required")
 		return
 	}
 
@@ -93,7 +94,7 @@ func (h Handler) handleUpsert(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.Repository.UpsertOverride(r.Context(), tenantID, orgID, rec)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, result)
@@ -103,13 +104,13 @@ func (h Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "missing tenant or organization header")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "missing tenant or organization header")
 		return
 	}
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/admin/feature-flags/")
 	parts := strings.SplitN(path, "/", 3)
 	if len(parts) < 3 {
-		httpresponse.Error(w, http.StatusBadRequest, "path must be /{flag_key}/{scope}/{scope_id}")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "path must be /{flag_key}/{scope}/{scope_id}")
 		return
 	}
 	flagKey := parts[0]
@@ -118,7 +119,7 @@ func (h Handler) handleDelete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.Repository.DeleteOverride(r.Context(), tenantID, orgID,
 		featureflags.Key(flagKey), featureflags.Scope(scope), scopeID); err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, map[string]string{"status": "deleted"})

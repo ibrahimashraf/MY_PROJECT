@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"bytes"
 	"math"
 	"testing"
 )
@@ -28,3 +29,24 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		t.Fatal("Static entity flag mismatch")
 	}
 }
+
+func TestJSONSnapshotRoundTrip(t *testing.T) {
+	entities := []EntityRecord{
+		{ID: 1, PosX: 100.0, PosY: 200.0, PosZ: 300.0, Mass: 45.5, IsStatic: 0},
+	}
+
+	var buf bytes.Buffer
+	if err := SerializeJSON(&buf, 101, 1.25, entities); err != nil {
+		t.Fatalf("SerializeJSON failed: %v", err)
+	}
+
+	snap, err := DeserializeJSON(&buf)
+	if err != nil {
+		t.Fatalf("DeserializeJSON failed: %v", err)
+	}
+
+	if snap.Tick != 101 || snap.Count != 1 || len(snap.Entities) != 1 {
+		t.Fatalf("JSON snapshot payload mismatch: %+v", snap)
+	}
+}
+

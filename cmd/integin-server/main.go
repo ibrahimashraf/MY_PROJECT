@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/net/http2"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/riverqueue/river"
 
@@ -206,6 +208,7 @@ func main() {
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
 	var tusHandler http.Handler
+	var schedulingHandler http.Handler
 	var certificateRepository *certificatepg.Repository
 	if database != nil {
 		repository, certificateErr := certificatepg.NewRepository(database)
@@ -275,6 +278,10 @@ func main() {
 			}
 		}
 		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, activeResolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
+		schedulingHandler, handlerErr = server.NewSchedulingHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
@@ -419,7 +426,7 @@ func main() {
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler})
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler})
 	if enrollHandler != nil {
 		root := http.NewServeMux()
 		root.Handle("/enroll/", enrollHandler)
@@ -434,6 +441,13 @@ func main() {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
 		MaxHeaderBytes:    1 << 20,
+	}
+	if err := http2.ConfigureServer(httpServer, &http2.Server{
+		MaxConcurrentStreams: 250,
+		MaxReadFrameSize:     1048576,
+		IdleTimeout:          60 * time.Second,
+	}); err != nil {
+		log.Printf("http2 server configuration notice: %v", err)
 	}
 	serverErrors := make(chan error, 1)
 	go func() {

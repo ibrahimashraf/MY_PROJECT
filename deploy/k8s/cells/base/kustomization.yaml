@@ -5,3 +5,4 @@ resources:
   - cell-namespace.yaml
   - network-policy.yaml
   - integin-deployment.yaml
+  - verifier-ingress.yaml

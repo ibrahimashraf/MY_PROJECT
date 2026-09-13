@@ -3,6 +3,7 @@ package snapshot
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 )
@@ -80,3 +81,30 @@ func RoundTrip(tick uint64, timeS float64, entities []EntityRecord) (WorldSnapsh
 	}
 	return Deserialize(&buf)
 }
+
+// WorldJSONSnapshot represents human-readable JSON world snapshot with v2 annotations.
+type WorldJSONSnapshot struct {
+	Tick     uint64         `json:"tick,string"`
+	TimeS    float64        `json:"time_s"`
+	Count    int            `json:"count"`
+	Entities []EntityRecord `json:"entities,omitzero"`
+}
+
+// SerializeJSON writes snapshot to an io.Writer using encoding/json/v2 zero-allocation streaming with canonical determinism.
+func SerializeJSON(w io.Writer, tick uint64, timeS float64, entities []EntityRecord) error {
+	snap := WorldJSONSnapshot{
+		Tick:     tick,
+		TimeS:    timeS,
+		Count:    len(entities),
+		Entities: entities,
+	}
+	return json.MarshalWrite(w, snap, json.Deterministic(true))
+}
+
+// DeserializeJSON reads snapshot from an io.Reader using encoding/json/v2 with strict unknown-member rejection.
+func DeserializeJSON(r io.Reader) (WorldJSONSnapshot, error) {
+	var snap WorldJSONSnapshot
+	err := json.UnmarshalRead(r, &snap, json.RejectUnknownMembers(true))
+	return snap, err
+}
+

@@ -1,0 +1,23 @@
+﻿apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: integin-verifier-ingress
+  namespace: cell-system
+  labels:
+    app.kubernetes.io/name: integin-server
+    app.kubernetes.io/part-of: integin-sovereign-mesh
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+    - host: verify.integin.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: integin-server
+                port:
+                  number: 8080

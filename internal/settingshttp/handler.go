@@ -7,6 +7,7 @@ import (
 
 	"integin/internal/settingspg"
 	"integin/internal/shared/httpresponse"
+	"integin/pkg/httputil"
 )
 
 type Handler struct {
@@ -19,7 +20,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Header.Get("X-Tenant-ID")
 	orgID := r.Header.Get("X-Organization-ID")
 	if tenantID == "" || orgID == "" {
-		httpresponse.Error(w, http.StatusBadRequest, "missing tenant or organization header")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "missing tenant or organization header")
 		return
 	}
 
@@ -38,14 +39,14 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPut && (path == "" || path == "/"):
 		h.handleUpsert(w, r, tenantID, orgID)
 	default:
-		http.Error(w, `{"error":"not_found"}`, http.StatusNotFound)
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "not_found")
 	}
 }
 
 func (h Handler) handleList(w http.ResponseWriter, r *http.Request, tenantID, orgID string) {
 	settings, err := h.Repository.ListSettings(r.Context(), tenantID, orgID)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if settings == nil {
@@ -57,11 +58,11 @@ func (h Handler) handleList(w http.ResponseWriter, r *http.Request, tenantID, or
 func (h Handler) handleGet(w http.ResponseWriter, r *http.Request, tenantID, orgID, key, scope string) {
 	setting, ok, err := h.Repository.GetSetting(r.Context(), tenantID, orgID, key, scope)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	if !ok {
-		httpresponse.Error(w, http.StatusNotFound, "setting not found")
+		httputil.WriteProblem(w, r, http.StatusNotFound, http.StatusText(http.StatusNotFound), "setting not found")
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, setting)
@@ -70,14 +71,14 @@ func (h Handler) handleGet(w http.ResponseWriter, r *http.Request, tenantID, org
 func (h Handler) handleUpsert(w http.ResponseWriter, r *http.Request, tenantID, orgID string) {
 	var s settingspg.Setting
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		httpresponse.Error(w, http.StatusBadRequest, "invalid_request")
+		httputil.WriteProblem(w, r, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), "invalid_request")
 		return
 	}
 	s.TenantID = tenantID
 	s.OrganizationID = orgID
 	result, err := h.Repository.UpsertSetting(r.Context(), tenantID, orgID, s)
 	if err != nil {
-		httpresponse.Error(w, http.StatusInternalServerError, err.Error())
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), err.Error())
 		return
 	}
 	httpresponse.JSON(w, http.StatusOK, result)

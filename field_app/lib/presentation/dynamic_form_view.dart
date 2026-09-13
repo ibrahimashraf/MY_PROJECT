@@ -1,4 +1,10 @@
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+
+import '../sync/downsample.dart';
+import '../sync/tus_client.dart';
 
 enum FieldPrimitiveType {
   textInput,
@@ -36,11 +42,19 @@ class DynamicFormEngineView extends StatefulWidget {
     required this.formTitle,
     required this.fields,
     required this.onSave,
+    this.tusClient,
+    this.onPickPhoto,
+    this.downsampleConfig = const DownsampleConfig(),
+    this.allowMockFallback = false,
   });
 
   final String formTitle;
   final List<DynamicFormFieldDefinition> fields;
   final ValueChanged<Map<String, dynamic>> onSave;
+  final TusClient? tusClient;
+  final Future<Uint8List?> Function()? onPickPhoto;
+  final DownsampleConfig downsampleConfig;
+  final bool allowMockFallback;
 
   @override
   State<DynamicFormEngineView> createState() => _DynamicFormEngineViewState();
@@ -178,14 +192,59 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    // Simulates capturing encrypted evidence
-                    _values[field.fieldId] =
-                        'evidence-sha256:${DateTime.now().millisecondsSinceEpoch}';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Encrypted Photo Evidence Attached')),
-                    );
+                  onPressed: () async {
+                    if (widget.tusClient != null && widget.onPickPhoto != null) {
+                      try {
+                        final rawBytes = await widget.onPickPhoto!();
+                        if (rawBytes == null || rawBytes.isEmpty) {
+                          return;
+                        }
+                        final downsampled = await downsampleForUpload(
+                          rawBytes,
+                          contentType: 'image/jpeg',
+                          config: widget.downsampleConfig,
+                        );
+                        final digest = sha256.convert(downsampled.bytes).toString();
+                        final uploadId = await widget.tusClient!.upload(
+                          data: downsampled.bytes,
+                          size: downsampled.bytes.length,
+                          sha256: digest,
+                          contentType: downsampled.contentType,
+                        );
+                        final completion = await widget.tusClient!.complete(uploadId);
+                        setState(() {
+                          _values[field.fieldId] = completion.key;
+                        });
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Evidence Uploaded: ${completion.key}')),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Upload failed: $e')),
+                          );
+                        }
+                      }
+                    } else if (widget.allowMockFallback) {
+                      // Explicit mock fallback for test harnesses/dev simulation only
+                      setState(() {
+                        _values[field.fieldId] =
+                            'evidence-sha256:mock:${DateTime.now().millisecondsSinceEpoch}';
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Mock Evidence Attached (Simulation Mode)')),
+                      );
+                    } else {
+                      // Production guard: block unattached submissions without cryptographic evidence
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            backgroundColor: Colors.red,
+                            content: Text('Camera or upload service unavailable. Physical evidence cannot be forged.')),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.camera_alt),
                   label: const Text('Capture Encrypted Photo (#q=)'),

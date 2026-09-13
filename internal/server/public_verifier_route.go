@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"integin/pkg/httputil"
 	"integin/pkg/verification"
 )
 
@@ -16,7 +17,7 @@ func publicVerifierHandler() http.Handler {
 		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: GET, HEAD")
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

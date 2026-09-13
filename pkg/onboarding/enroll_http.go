@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+
+	"integin/pkg/httputil"
 )
 
 // EnrollServer is the concrete HTTP glue for the pilot enrollment path: it
@@ -84,7 +86,7 @@ func (s *EnrollServer) submit(w http.ResponseWriter, r *http.Request) {
 func writeEnrollJSON(w http.ResponseWriter, status int, payload any) {
 	body, err := json.Marshal(payload)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		httputil.WriteProblem(w, nil, http.StatusInternalServerError, "Internal Server Error", "Failed to marshal response JSON")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
