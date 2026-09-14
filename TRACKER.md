@@ -416,6 +416,12 @@ The following 17 items represent the remaining identified blind spots across Spr
   * W3C `traceparent` context extraction/propagation, `X-Correlation-ID` + `trace_id` injection in structured logger.
   * Dynamic URL normalization into contract-safe `route_template` dimensions.
   * Concurrency race detector clean (`go test -race`).
+* [x] **P1.2 Formal Release & Migration Gates (`pkg/releasegate/`, `cmd/release-gate/`)** — COMPLETE ✅ (2026-09-14, committed `dacc479`):
+  * Canonical `ReleaseRecord` schema with Ed25519 digital signature and deterministic SHA-256 digest sealing.
+  * Strict migration scanner validating all up/down pairs and cryptographic file digests across `migrations/`.
+  * Verification gate enforcing clean vet status, test evidence, required multi-party approvals, and rollback plans.
+  * Standalone CLI tool `cmd/release-gate` supporting `generate` and `verify` modes.
+
 
 
 
