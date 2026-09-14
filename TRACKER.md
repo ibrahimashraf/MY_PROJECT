@@ -439,6 +439,11 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Database migration `0079_signed_audit_checkpoints.sql` & `.down.sql` creating append-only `audit_checkpoint_registry` with ENABLE & FORCE RLS, NULLIF tenant isolation, and update/delete block trigger.
   * Manager lifecycle (`SealAndPersist`, `VerifyAndAudit`) linking sequence continuity, Ed25519 digital signatures, and dual persistence across PostgreSQL metadata and RustFS object storage (`storage.Store`).
   * Concurrency and chain integration tests verifying genesis anchoring, sequence gap rejection, and cryptographic tamper detection.
+* [x] **P2 Go Authority REST Endpoints for Operations Workbench (`internal/workbenchhttp/`)** — COMPLETE ✅ (2026-09-14, committed `29c5b09`):
+  * Unified REST handler mounting 10 endpoints for the `quiet-signal` operations workbench (`/api/v1/devices`, `/api/v1/sync/held`, `/api/v1/sync/reconcile`, `/api/v1/legal-holds`, `/api/v1/retention-policies`, `/api/v1/exports/approvals`).
+  * Dual storage backing: thread-safe hermetic in-memory store for isolated unit tests, and transaction-scoped PostgreSQL store with strict tenant RLS.
+  * Strict privacy boundary: scrubs private keys, full payloads, and raw evidence bytes.
+
 
 
 
