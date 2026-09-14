@@ -2,6 +2,7 @@ package eventbus
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -64,3 +65,46 @@ func TestCommitterStoresBeforePublishingAndRejectsStaleWrites(t *testing.T) {
 		t.Fatalf("expected one authoritative stored event: %v %#v", err, replay)
 	}
 }
+
+func TestBusDeadLetterAndMultiHandlerResilience(t *testing.T) {
+	bus := NewInProcessBus()
+
+	var handler1Called, handler2Called, dlCalled bool
+	var dlError error
+
+	bus.SetDeadLetterHandler(func(ctx context.Context, stored eventstore.StoredEvent, handlerErr error) {
+		dlCalled = true
+		dlError = handlerErr
+	})
+
+	_ = bus.Subscribe("InspectionStarted", func(ctx context.Context, stored eventstore.StoredEvent) error {
+		handler1Called = true
+		return errors.New("simulated subscriber failure")
+	})
+
+	_ = bus.Subscribe("InspectionStarted", func(ctx context.Context, stored eventstore.StoredEvent) error {
+		handler2Called = true
+		return nil
+	})
+
+	err := bus.Publish(context.Background(), eventstore.StoredEvent{
+		AggregateType:    "inspection",
+		AggregateID:      "inspection-1",
+		AggregateVersion: 1,
+		Event:            busEvent(t, "event-dl-1"),
+	})
+
+	if err == nil {
+		t.Fatal("expected aggregated error from publish")
+	}
+	if !handler1Called {
+		t.Fatal("handler1 was not called")
+	}
+	if !handler2Called {
+		t.Fatal("handler2 must still be executed when handler1 fails")
+	}
+	if !dlCalled || dlError == nil {
+		t.Fatal("dead letter handler must be invoked on subscriber failure")
+	}
+}
+

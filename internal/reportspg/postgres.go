@@ -27,8 +27,26 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 	return &Repository{db: db}, nil
 }
 
+func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *Repository) ListConfigs(ctx context.Context, tenantID, orgID string) ([]domain.ReportConfig, error) {
-	rows, err := r.db.QueryContext(ctx,
+	tx, err := r.beginTenant(ctx, tenantID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx,
 		`SELECT id, tenant_id, organization_id, name, type, format,
 		        schedule, filters, created_by, created_at, updated_at
 		 FROM report_config
@@ -57,13 +75,22 @@ func (r *Repository) ListConfigs(ctx context.Context, tenantID, orgID string) ([
 		}
 		configs = append(configs, c)
 	}
-	return configs, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return configs, tx.Commit()
 }
 
 func (r *Repository) GetConfig(ctx context.Context, tenantID, orgID, id string) (domain.ReportConfig, error) {
+	tx, err := r.beginTenant(ctx, tenantID, orgID)
+	if err != nil {
+		return domain.ReportConfig{}, err
+	}
+	defer tx.Rollback()
+
 	var c domain.ReportConfig
 	var scheduleJSON, filtersJSON []byte
-	err := r.db.QueryRowContext(ctx,
+	err = tx.QueryRowContext(ctx,
 		`SELECT id, tenant_id, organization_id, name, type, format,
 		        schedule, filters, created_by, created_at, updated_at
 		 FROM report_config
@@ -83,10 +110,16 @@ func (r *Repository) GetConfig(ctx context.Context, tenantID, orgID, id string) 
 	if filtersJSON != nil {
 		_ = json.Unmarshal(filtersJSON, &c.Filters)
 	}
-	return c, nil
+	return c, tx.Commit()
 }
 
 func (r *Repository) CreateConfig(ctx context.Context, config domain.ReportConfig) (domain.ReportConfig, error) {
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return domain.ReportConfig{}, err
+	}
+	defer tx.Rollback()
+
 	now := time.Now()
 	if config.ID == "" {
 		config.ID = config.TenantID + ":rpt:" + now.Format("20060102150405.000000000")
@@ -97,7 +130,7 @@ func (r *Repository) CreateConfig(ctx context.Context, config domain.ReportConfi
 	scheduleJSON, _ := json.Marshal(config.Schedule)
 	filtersJSON, _ := json.Marshal(config.Filters)
 
-	_, err := r.db.ExecContext(ctx,
+	_, err = tx.ExecContext(ctx,
 		`INSERT INTO report_config (id, tenant_id, organization_id, name, type, format,
 		        schedule, filters, created_by, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
@@ -107,15 +140,21 @@ func (r *Repository) CreateConfig(ctx context.Context, config domain.ReportConfi
 	if err != nil {
 		return domain.ReportConfig{}, err
 	}
-	return config, nil
+	return config, tx.Commit()
 }
 
 func (r *Repository) UpdateConfig(ctx context.Context, config domain.ReportConfig) (domain.ReportConfig, error) {
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return domain.ReportConfig{}, err
+	}
+	defer tx.Rollback()
+
 	config.UpdatedAt = time.Now()
 	scheduleJSON, _ := json.Marshal(config.Schedule)
 	filtersJSON, _ := json.Marshal(config.Filters)
 
-	result, err := r.db.ExecContext(ctx,
+	result, err := tx.ExecContext(ctx,
 		`UPDATE report_config
 		 SET name = $4, type = $5, format = $6, schedule = $7, filters = $8, updated_at = $9
 		 WHERE id = $1 AND tenant_id = $2 AND organization_id = $3`,
@@ -129,11 +168,17 @@ func (r *Repository) UpdateConfig(ctx context.Context, config domain.ReportConfi
 	if rows == 0 {
 		return domain.ReportConfig{}, domain.ErrConfigNotFound
 	}
-	return config, nil
+	return config, tx.Commit()
 }
 
 func (r *Repository) DeleteConfig(ctx context.Context, tenantID, orgID, id string) error {
-	result, err := r.db.ExecContext(ctx,
+	tx, err := r.beginTenant(ctx, tenantID, orgID)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx,
 		`DELETE FROM report_config WHERE id = $1 AND tenant_id = $2 AND organization_id = $3`,
 		id, tenantID, orgID,
 	)
@@ -144,7 +189,7 @@ func (r *Repository) DeleteConfig(ctx context.Context, tenantID, orgID, id strin
 	if rows == 0 {
 		return domain.ErrConfigNotFound
 	}
-	return nil
+	return tx.Commit()
 }
 
 func (r *Repository) GenerateReport(ctx context.Context, req domain.GenerateRequest, tenantID, orgID string) (domain.GeneratedReport, error) {
@@ -211,13 +256,22 @@ func (r *Repository) GenerateReport(ctx context.Context, req domain.GenerateRequ
 }
 
 func (r *Repository) insertReport(ctx context.Context, report domain.GeneratedReport) error {
-	_, err := r.db.ExecContext(ctx,
+	tx, err := r.beginTenant(ctx, report.TenantID, report.OrgID)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx,
 		`INSERT INTO generated_report (id, config_id, tenant_id, organization_id, status, file_path, row_count, error_msg, created_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		report.ID, report.ConfigID, report.TenantID, report.OrgID, report.Status,
 		report.FilePath, report.RowCount, report.ErrorMsg, report.CreatedAt,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *Repository) queryReportData(ctx context.Context, config domain.ReportConfig, req domain.GenerateRequest) ([]string, [][]string, error) {
@@ -257,7 +311,13 @@ func (r *Repository) queryInspectionSummary(ctx context.Context, config domain.R
 
 	query += " ORDER BY created_at DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -271,7 +331,10 @@ func (r *Repository) queryInspectionSummary(ctx context.Context, config domain.R
 		}
 		data = append(data, []string{id, woID, assetID, inspectorID, lifecycleState, finalizationState, createdAt})
 	}
-	return headers, data, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return headers, data, tx.Commit()
 }
 
 func (r *Repository) queryWorkOrderStatus(ctx context.Context, config domain.ReportConfig, req domain.GenerateRequest) ([]string, [][]string, error) {
@@ -298,7 +361,13 @@ func (r *Repository) queryWorkOrderStatus(ctx context.Context, config domain.Rep
 
 	query += " ORDER BY created_at DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -306,74 +375,27 @@ func (r *Repository) queryWorkOrderStatus(ctx context.Context, config domain.Rep
 
 	var data [][]string
 	for rows.Next() {
-		var id, jobNumber, clientID, requestState, executionState, commercialState, certificateState, createdAt string
-		if err := rows.Scan(&id, &jobNumber, &clientID, &requestState, &executionState, &commercialState, &certificateState, &createdAt); err != nil {
+		var id, jobNum, clientID, reqState, execState, commState, certState, createdAt string
+		if err := rows.Scan(&id, &jobNum, &clientID, &reqState, &execState, &commState, &certState, &createdAt); err != nil {
 			return nil, nil, err
 		}
-		data = append(data, []string{id, jobNumber, clientID, requestState, executionState, commercialState, certificateState, createdAt})
+		data = append(data, []string{id, jobNum, clientID, reqState, execState, commState, certState, createdAt})
 	}
-	return headers, data, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return headers, data, tx.Commit()
 }
 
 func (r *Repository) queryAssetInventory(ctx context.Context, config domain.ReportConfig, req domain.GenerateRequest) ([]string, [][]string, error) {
-	headers := []string{"ID", "Asset ID", "Asset Type", "Serial Number", "Description", "Lifecycle State", "Created At"}
+	headers := []string{"ID", "Tag", "Type", "Status", "Created At"}
 
-	query := `SELECT id, asset_id, asset_type, serial_number, description, lifecycle_state, created_at
-	          FROM asset_registry WHERE tenant_id = $1 AND organization_id = $2`
+	query := `SELECT id, tag, type, status, created_at
+	          FROM asset WHERE tenant_id = $1 AND organization_id = $2`
 	args := []interface{}{config.TenantID, config.OrgID}
 	argIdx := 3
 
 	if req.DateFrom != "" {
-		//nolint:gosec // placeholder index only; values parameterized
-		query += fmt.Sprintf(" AND created_at >= $%d", argIdx)
-		args = append(args, req.DateFrom)
-		argIdx++
-	}
-	if req.DateTo != "" {
-		//nolint:gosec // placeholder index only; values parameterized
-		query += fmt.Sprintf(" AND created_at <= $%d", argIdx)
-		args = append(args, req.DateTo)
-		argIdx++
-	}
-	_ = argIdx // used conditionally
-
-	maxLimit := 5000
-	query += fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d", argIdx)
-	args = append(args, maxLimit)
-
-	rows, err := r.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	var data [][]string
-	for rows.Next() {
-		var id, assetID, assetType, serialNumber, description, lifecycleState, createdAt string
-		if err := rows.Scan(&id, &assetID, &assetType, &serialNumber, &description, &lifecycleState, &createdAt); err != nil {
-			return nil, nil, err
-		}
-		data = append(data, []string{id, assetID, assetType, serialNumber, description, lifecycleState, createdAt})
-	}
-	return headers, data, rows.Err()
-}
-
-func (r *Repository) queryInspectorPerformance(ctx context.Context, config domain.ReportConfig, req domain.GenerateRequest) ([]string, [][]string, error) {
-	headers := []string{"Inspector ID", "Total Inspections", "Finalized", "Completion Rate"}
-
-	query := `SELECT inspector_id,
-	                 COUNT(*) AS total,
-	                 SUM(CASE WHEN finalization_state = 'FINALIZED' THEN 1 ELSE 0 END) AS finalized,
-	                 CASE WHEN COUNT(*) > 0
-	                   THEN ROUND(100.0 * SUM(CASE WHEN finalization_state = 'FINALIZED' THEN 1 ELSE 0 END) / COUNT(*), 1)
-	                   ELSE 0 END AS rate
-	          FROM inspection_record
-	          WHERE tenant_id = $1 AND organization_id = $2`
-	args := []interface{}{config.TenantID, config.OrgID}
-	argIdx := 3
-
-	if req.DateFrom != "" {
-		//nolint:gosec // placeholder index only; values parameterized
 		query += fmt.Sprintf(" AND created_at >= $%d", argIdx)
 		args = append(args, req.DateFrom)
 		argIdx++
@@ -387,7 +409,64 @@ func (r *Repository) queryInspectorPerformance(ctx context.Context, config domai
 
 	query += " ORDER BY created_at DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var data [][]string
+	for rows.Next() {
+		var id, tag, assetType, status, createdAt string
+		if err := rows.Scan(&id, &tag, &assetType, &status, &createdAt); err != nil {
+			return nil, nil, err
+		}
+		data = append(data, []string{id, tag, assetType, status, createdAt})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return headers, data, tx.Commit()
+}
+
+func (r *Repository) queryInspectorPerformance(ctx context.Context, config domain.ReportConfig, req domain.GenerateRequest) ([]string, [][]string, error) {
+	headers := []string{"Inspector ID", "Total Inspections", "Finalized Inspections", "Finalization Rate"}
+
+	query := `SELECT inspector_id,
+	                 COUNT(*) as total,
+	                 COUNT(*) FILTER (WHERE finalization_state = 'FINALIZED') as finalized
+	          FROM inspection_record
+	          WHERE tenant_id = $1 AND organization_id = $2`
+	args := []interface{}{config.TenantID, config.OrgID}
+	argIdx := 3
+
+	if req.DateFrom != "" {
+		query += fmt.Sprintf(" AND created_at >= $%d", argIdx)
+		args = append(args, req.DateFrom)
+		argIdx++
+	}
+	if req.DateTo != "" {
+		query += fmt.Sprintf(" AND created_at <= $%d", argIdx) //nolint:G202 // placeholder index only; values parameterized
+		args = append(args, req.DateTo)
+		argIdx++
+	}
+	_ = argIdx // used conditionally
+
+	query += " GROUP BY inspector_id ORDER BY total DESC"
+
+	tx, err := r.beginTenant(ctx, config.TenantID, config.OrgID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -397,9 +476,12 @@ func (r *Repository) queryInspectorPerformance(ctx context.Context, config domai
 	for rows.Next() {
 		var inspectorID string
 		var total, finalized int
-		var rate float64
-		if err := rows.Scan(&inspectorID, &total, &finalized, &rate); err != nil {
+		if err := rows.Scan(&inspectorID, &total, &finalized); err != nil {
 			return nil, nil, err
+		}
+		rate := 0.0
+		if total > 0 {
+			rate = float64(finalized) / float64(total) * 100.0
 		}
 		data = append(data, []string{
 			inspectorID,
@@ -407,11 +489,20 @@ func (r *Repository) queryInspectorPerformance(ctx context.Context, config domai
 			fmt.Sprintf("%.1f%%", rate),
 		})
 	}
-	return headers, data, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return headers, data, tx.Commit()
 }
 
 func (r *Repository) ListReports(ctx context.Context, tenantID, orgID string) ([]domain.GeneratedReport, error) {
-	rows, err := r.db.QueryContext(ctx,
+	tx, err := r.beginTenant(ctx, tenantID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx,
 		`SELECT id, config_id, tenant_id, organization_id, status, file_path, row_count, error_msg, created_at
 		 FROM generated_report
 		 WHERE tenant_id = $1 AND organization_id = $2
@@ -432,12 +523,21 @@ func (r *Repository) ListReports(ctx context.Context, tenantID, orgID string) ([
 		}
 		result = append(result, rpt)
 	}
-	return result, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, tx.Commit()
 }
 
 func (r *Repository) GetReport(ctx context.Context, tenantID, orgID, id string) (domain.GeneratedReport, error) {
+	tx, err := r.beginTenant(ctx, tenantID, orgID)
+	if err != nil {
+		return domain.GeneratedReport{}, err
+	}
+	defer tx.Rollback()
+
 	var rpt domain.GeneratedReport
-	err := r.db.QueryRowContext(ctx,
+	err = tx.QueryRowContext(ctx,
 		`SELECT id, config_id, tenant_id, organization_id, status, file_path, row_count, error_msg, created_at
 		 FROM generated_report
 		 WHERE id = $1 AND tenant_id = $2 AND organization_id = $3`,
@@ -450,7 +550,7 @@ func (r *Repository) GetReport(ctx context.Context, tenantID, orgID, id string) 
 	if err != nil {
 		return domain.GeneratedReport{}, err
 	}
-	return rpt, nil
+	return rpt, tx.Commit()
 }
 
 func (r *Repository) GenerateCSVData(ctx context.Context, req domain.GenerateRequest, tenantID, orgID string) ([]string, [][]string, error) {

@@ -17,8 +17,26 @@ func New(db *sql.DB) *Repository {
 	return &Repository{DB: db}
 }
 
+func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
+	tx, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (search.SearchResponse, error) {
 	req.Normalize()
+
+	tx, err := r.beginTenant(ctx, req.TenantID, req.OrganizationID)
+	if err != nil {
+		return search.SearchResponse{}, err
+	}
+	defer tx.Rollback()
 
 	var results []search.Result
 
@@ -27,7 +45,7 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 	searchInspection := len(req.Types) == 0 || containsType(req.Types, search.EntityInspection)
 
 	if searchAsset {
-		assets, err := r.searchAssets(ctx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
+		assets, err := r.searchAssets(ctx, tx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
 		if err != nil {
 			return search.SearchResponse{}, fmt.Errorf("search assets: %w", err)
 		}
@@ -35,7 +53,7 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 	}
 
 	if searchWorkOrder {
-		orders, err := r.searchWorkOrders(ctx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
+		orders, err := r.searchWorkOrders(ctx, tx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
 		if err != nil {
 			return search.SearchResponse{}, fmt.Errorf("search work orders: %w", err)
 		}
@@ -43,11 +61,15 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 	}
 
 	if searchInspection {
-		inspections, err := r.searchInspections(ctx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
+		inspections, err := r.searchInspections(ctx, tx, req.TenantID, req.OrganizationID, req.Query, req.Limit, req.Offset)
 		if err != nil {
 			return search.SearchResponse{}, fmt.Errorf("search inspections: %w", err)
 		}
 		results = append(results, inspections...)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return search.SearchResponse{}, err
 	}
 
 	// Sort merged results by relevance rank descending, then by creation time
@@ -59,13 +81,18 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 	})
 
 	total := len(results)
-	if req.Offset >= total {
-		results = nil
-	} else {
-		results = results[req.Offset:]
-		if len(results) > req.Limit {
-			results = results[:req.Limit]
+
+	// Apply pagination to merged result set
+	if req.Offset > 0 {
+		if req.Offset >= len(results) {
+			results = nil
+		} else {
+			results = results[req.Offset:]
 		}
+	}
+
+	if req.Limit > 0 && len(results) > req.Limit {
+		results = results[:req.Limit]
 	}
 
 	return search.SearchResponse{
@@ -75,7 +102,7 @@ func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (sear
 	}, nil
 }
 
-func (r *Repository) searchAssets(ctx context.Context, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
+func (r *Repository) searchAssets(ctx context.Context, tx *sql.Tx, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
 	query := `
 		SELECT id, tenant_id, organization_id,
 			asset_id || ' — ' || asset_type || ' ' || serial_number,
@@ -88,7 +115,7 @@ func (r *Repository) searchAssets(ctx context.Context, tenantID, orgID, rawQuery
 		ORDER BY rank DESC
 		LIMIT $4 OFFSET $5`
 
-	rows, err := r.DB.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
+	rows, err := tx.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +133,7 @@ func (r *Repository) searchAssets(ctx context.Context, tenantID, orgID, rawQuery
 	return results, rows.Err()
 }
 
-func (r *Repository) searchWorkOrders(ctx context.Context, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
+func (r *Repository) searchWorkOrders(ctx context.Context, tx *sql.Tx, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
 	query := `
 		SELECT id, tenant_id, organization_id,
 			job_number || ' — ' || client_id,
@@ -119,7 +146,7 @@ func (r *Repository) searchWorkOrders(ctx context.Context, tenantID, orgID, rawQ
 		ORDER BY rank DESC
 		LIMIT $4 OFFSET $5`
 
-	rows, err := r.DB.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
+	rows, err := tx.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +164,7 @@ func (r *Repository) searchWorkOrders(ctx context.Context, tenantID, orgID, rawQ
 	return results, rows.Err()
 }
 
-func (r *Repository) searchInspections(ctx context.Context, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
+func (r *Repository) searchInspections(ctx context.Context, tx *sql.Tx, tenantID, orgID, rawQuery string, limit, offset int) ([]search.Result, error) {
 	query := `
 		SELECT id, tenant_id, organization_id,
 			asset_id || ' — ' || inspector_id,
@@ -150,7 +177,7 @@ func (r *Repository) searchInspections(ctx context.Context, tenantID, orgID, raw
 		ORDER BY rank DESC
 		LIMIT $4 OFFSET $5`
 
-	rows, err := r.DB.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
+	rows, err := tx.QueryContext(ctx, query, tenantID, orgID, rawQuery, limit, offset)
 	if err != nil {
 		return nil, err
 	}

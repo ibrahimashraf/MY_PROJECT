@@ -11,12 +11,24 @@ import (
 
 type Handler func(context.Context, eventstore.StoredEvent) error
 
+type DeadLetterHandler func(ctx context.Context, stored eventstore.StoredEvent, handlerErr error)
+
 type InProcessBus struct {
-	mu       sync.RWMutex
-	handlers map[string][]Handler
+	mu         sync.RWMutex
+	handlers   map[string][]Handler
+	deadLetter DeadLetterHandler
 }
 
-func NewInProcessBus() *InProcessBus { return &InProcessBus{handlers: make(map[string][]Handler)} }
+func NewInProcessBus() *InProcessBus {
+	return &InProcessBus{handlers: make(map[string][]Handler)}
+}
+
+// SetDeadLetterHandler configures a callback invoked whenever a subscriber returns an error.
+func (b *InProcessBus) SetDeadLetterHandler(dlh DeadLetterHandler) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.deadLetter = dlh
+}
 
 func (b *InProcessBus) Subscribe(eventType string, handler Handler) error {
 	if eventType == "" || handler == nil {
@@ -28,17 +40,29 @@ func (b *InProcessBus) Subscribe(eventType string, handler Handler) error {
 	return nil
 }
 
+// Publish executes all registered handlers for the event type.
+// If any handler fails, the error is passed to the DeadLetterHandler (if registered),
+// subsequent handlers continue to execute, and all encountered errors are joined and returned.
 func (b *InProcessBus) Publish(ctx context.Context, stored eventstore.StoredEvent) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	b.mu.RLock()
 	handlers := append([]Handler(nil), b.handlers[stored.Event.EventType()]...)
+	dlh := b.deadLetter
 	b.mu.RUnlock()
+
+	var errs []error
 	for _, handler := range handlers {
 		if err := handler(ctx, stored); err != nil {
-			return err
+			errs = append(errs, err)
+			if dlh != nil {
+				dlh(ctx, stored, err)
+			}
 		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 	return nil
 }

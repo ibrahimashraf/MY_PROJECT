@@ -30,6 +30,18 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 	return &Repository{db: db}, nil
 }
 
+func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRequest) (analytics.DashboardResponse, error) {
 	resp := analytics.DashboardResponse{}
 
@@ -74,41 +86,51 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 		})
 	}
 
-	summary, err := r.getSummaryKPIs(ctx, req)
+	tx, err := r.beginTenant(ctx, req.TenantID, req.OrganizationID)
+	if err != nil {
+		return resp, err
+	}
+	defer tx.Rollback()
+
+	summary, err := r.getSummaryKPIs(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.Summary = summary
 
-	woByState, err := r.getWorkOrdersByState(ctx, req)
+	woByState, err := r.getWorkOrdersByState(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.WorkOrdersByState = woByState
 
-	insByState, err := r.getInspectionsByState(ctx, req)
+	insByState, err := r.getInspectionsByState(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.InspectionsByState = insByState
 
-	trend, err := r.getInspectionsTrend(ctx, req)
+	trend, err := r.getInspectionsTrend(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.InspectionsTrend = trend
 
-	insPerf, err := r.getInspectorPerformance(ctx, req)
+	insPerf, err := r.getInspectorPerformance(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.InspectorPerformance = insPerf
 
-	assetBD, err := r.getAssetBreakdown(ctx, req)
+	assetBD, err := r.getAssetBreakdown(ctx, tx, req)
 	if err != nil {
 		return resp, err
 	}
 	resp.AssetBreakdown = assetBD
+
+	if err := tx.Commit(); err != nil {
+		return resp, err
+	}
 
 	r.cache.Store(cacheKey, dashboardCacheEntry{
 		response:  resp,
@@ -118,14 +140,14 @@ func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRe
 	return resp, nil
 }
 
-func (r *Repository) getSummaryKPIs(ctx context.Context, req analytics.DashboardRequest) ([]analytics.KPI, error) {
+func (r *Repository) getSummaryKPIs(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.KPI, error) {
 	var totalWO int64
 	var completionRate float64
 	var totalIns int64
 	var avgCycleTime float64
 
 	// Unified work_order aggregation: 1 query instead of 2 roundtrips
-	err := r.db.QueryRowContext(ctx,
+	err := tx.QueryRowContext(ctx,
 		`SELECT COUNT(*),
 		        COALESCE(
 					CASE WHEN COUNT(*) = 0 THEN 0
@@ -141,7 +163,7 @@ func (r *Repository) getSummaryKPIs(ctx context.Context, req analytics.Dashboard
 	}
 
 	// Unified inspection_record aggregation: 1 query instead of 2 roundtrips
-	err = r.db.QueryRowContext(ctx,
+	err = tx.QueryRowContext(ctx,
 		`SELECT COUNT(*),
 		        COALESCE(AVG(CASE WHEN lifecycle_state IN ('approved', 'rejected', 'completed')
 		                          THEN EXTRACT(EPOCH FROM (updated_at - created_at))
@@ -163,8 +185,8 @@ func (r *Repository) getSummaryKPIs(ctx context.Context, req analytics.Dashboard
 	}, nil
 }
 
-func (r *Repository) getWorkOrdersByState(ctx context.Context, req analytics.DashboardRequest) ([]analytics.StateCount, error) {
-	rows, err := r.db.QueryContext(ctx,
+func (r *Repository) getWorkOrdersByState(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.StateCount, error) {
+	rows, err := tx.QueryContext(ctx,
 		`SELECT request_state, COUNT(*) FROM work_order
 		 WHERE tenant_id = $1 AND organization_id = $2
 		   AND created_at BETWEEN $3 AND $4
@@ -190,8 +212,8 @@ func (r *Repository) getWorkOrdersByState(ctx context.Context, req analytics.Das
 	return result, rows.Err()
 }
 
-func (r *Repository) getInspectionsByState(ctx context.Context, req analytics.DashboardRequest) ([]analytics.StateCount, error) {
-	rows, err := r.db.QueryContext(ctx,
+func (r *Repository) getInspectionsByState(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.StateCount, error) {
+	rows, err := tx.QueryContext(ctx,
 		`SELECT lifecycle_state, COUNT(*) FROM inspection_record
 		 WHERE tenant_id = $1 AND organization_id = $2
 		   AND created_at BETWEEN $3 AND $4
@@ -217,7 +239,7 @@ func (r *Repository) getInspectionsByState(ctx context.Context, req analytics.Da
 	return result, rows.Err()
 }
 
-func (r *Repository) getInspectionsTrend(ctx context.Context, req analytics.DashboardRequest) ([]analytics.TimeSeriesPoint, error) {
+func (r *Repository) getInspectionsTrend(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.TimeSeriesPoint, error) {
 	daysDiff := req.To.Sub(req.From).Hours() / 24
 	var trunc string
 	switch {
@@ -239,7 +261,7 @@ func (r *Repository) getInspectionsTrend(ctx context.Context, req analytics.Dash
 		 WHERE tenant_id = $1 AND organization_id = $2
 		   AND created_at BETWEEN $3 AND $4
 		 GROUP BY period ORDER BY period`, trunc) //nolint:G201 // trunc whitelisted
-	rows, err := r.db.QueryContext(ctx, query,
+	rows, err := tx.QueryContext(ctx, query,
 		req.TenantID, req.OrganizationID, req.From, req.To,
 	)
 	if err != nil {
@@ -261,7 +283,7 @@ func (r *Repository) getInspectionsTrend(ctx context.Context, req analytics.Dash
 	return result, rows.Err()
 }
 
-func (r *Repository) getInspectorPerformance(ctx context.Context, req analytics.DashboardRequest) ([]analytics.InspectorPerformance, error) {
+func (r *Repository) getInspectorPerformance(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.InspectorPerformance, error) {
 	query :=
 		`SELECT inspector_id, COUNT(*) AS total,
 		        SUM(CASE WHEN finalization_state = 'approved' THEN 1 ELSE 0 END) AS pass_count,
@@ -278,7 +300,7 @@ func (r *Repository) getInspectorPerformance(ctx context.Context, req analytics.
 
 	query += " GROUP BY inspector_id ORDER BY total DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +323,7 @@ func (r *Repository) getInspectorPerformance(ctx context.Context, req analytics.
 	return result, rows.Err()
 }
 
-func (r *Repository) getAssetBreakdown(ctx context.Context, req analytics.DashboardRequest) ([]analytics.AssetBreakdown, error) {
+func (r *Repository) getAssetBreakdown(ctx context.Context, tx *sql.Tx, req analytics.DashboardRequest) ([]analytics.AssetBreakdown, error) {
 	query :=
 		`SELECT ar.asset_type, COUNT(DISTINCT ir.id) AS count
 		 FROM inspection_record ir
@@ -317,7 +339,7 @@ func (r *Repository) getAssetBreakdown(ctx context.Context, req analytics.Dashbo
 
 	query += " GROUP BY ar.asset_type ORDER BY count DESC"
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
