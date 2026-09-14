@@ -399,6 +399,11 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 			downFile: "0081_audit_log_valid_time.down.sql",
 			required: []string{"ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS valid_time TIMESTAMPTZ", "audit_log_valid_time_idx"},
 		},
+		{
+			upFile:   "0077_retention_and_legal_hold.sql",
+			downFile: "0077_retention_and_legal_hold.down.sql",
+			required: []string{"CREATE TABLE IF NOT EXISTS tenant_retention_policy", "retention_days", "NOT NULL DEFAULT 365", "CHECK (action IN ('ARCHIVE', 'PURGE'))", "PRIMARY KEY (tenant_id, entity_type)", "CREATE TABLE IF NOT EXISTS legal_hold_registry", "CHECK (status IN ('ACTIVE', 'RELEASED'))", "UNIQUE (tenant_id, entity_type, entity_id, id)", "CREATE TABLE IF NOT EXISTS export_approval_registry", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "CREATE TABLE IF NOT EXISTS deletion_evidence_receipt", "tombstone_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT ON deletion_evidence_receipt TO integin_runtime", "deletion_evidence_receipt_immutable", "BEFORE UPDATE OR DELETE ON deletion_evidence_receipt"},
+		},
 	}
 
 	for _, m := range migrations {
@@ -422,5 +427,58 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		if _, err := os.Stat(m.downFile); err != nil {
 			t.Fatalf("missing matching down migration %s: %v", m.downFile, err)
 		}
+	}
+}
+
+func TestRetentionAndLegalHoldMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0077_retention_and_legal_hold.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	tables := []string{
+		"CREATE TABLE IF NOT EXISTS tenant_retention_policy",
+		"CREATE TABLE IF NOT EXISTS legal_hold_registry",
+		"CREATE TABLE IF NOT EXISTS export_approval_registry",
+		"CREATE TABLE IF NOT EXISTS deletion_evidence_receipt",
+	}
+	for _, table := range tables {
+		if !strings.Contains(text, table) {
+			t.Fatalf("migration missing %q", table)
+		}
+	}
+	required := []string{
+		"PRIMARY KEY (tenant_id, entity_type)",
+		"UNIQUE (tenant_id, entity_type, entity_id, id)",
+		"CHECK (action IN ('ARCHIVE', 'PURGE'))",
+		"CHECK (status IN ('ACTIVE', 'RELEASED'))",
+		"CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))",
+		"ENABLE ROW LEVEL SECURITY",
+		"FORCE ROW LEVEL SECURITY",
+		"NULLIF(current_setting('integin.tenant_id', true), '')",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	for _, table := range []string{"tenant_retention_policy", "legal_hold_registry", "export_approval_registry", "deletion_evidence_receipt"} {
+		if !strings.Contains(text, table+"_tenant_isolation") {
+			t.Fatalf("migration missing RLS policy for %s", table)
+		}
+	}
+
+	down, err := os.ReadFile("0077_retention_and_legal_hold.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	downText := string(down)
+	for _, table := range []string{"tenant_retention_policy", "legal_hold_registry", "export_approval_registry", "deletion_evidence_receipt"} {
+		if !strings.Contains(downText, "DROP TABLE IF EXISTS "+table) {
+			t.Fatalf("down migration missing DROP TABLE IF EXISTS %s", table)
+		}
+	}
+	if !strings.Contains(downText, "DROP FUNCTION IF EXISTS deletion_evidence_receipt_immutable()") {
+		t.Fatal("down migration missing immutable trigger function drop")
 	}
 }
