@@ -71,6 +71,10 @@ func (h sessionHandler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		writeFailure(writer, http.StatusForbidden, "authorization_failed")
 		return
 	}
+	if tenantScopeConflict(request, membership.TenantID, membership.OrganizationID) {
+		writeFailure(writer, http.StatusForbidden, "tenant_scope_conflict")
+		return
+	}
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(writer).Encode(sessionResponse{TenantID: membership.TenantID, OrganizationID: membership.OrganizationID})

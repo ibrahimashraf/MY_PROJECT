@@ -358,6 +358,12 @@ func (a *SessionAuthenticator) Middleware(next http.Handler) http.Handler {
 			writeFailure(writer, http.StatusForbidden, reason)
 			return
 		}
+		if tenantScopeConflict(request, org.TenantID, org.OrganizationID) {
+			// Fail closed before any session is opened: client-supplied tenant or
+			// organization scoping can never override the server-resolved projection.
+			writeFailure(writer, http.StatusForbidden, "tenant_scope_conflict")
+			return
+		}
 		if active {
 			if err := a.sessions.Touch(rawToken); err != nil {
 				writeFailure(writer, http.StatusUnauthorized, "session_expired")

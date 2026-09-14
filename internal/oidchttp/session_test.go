@@ -120,6 +120,45 @@ func TestSessionHandlerReturnsUnavailableForResolverFailureAndRejectsWrongMethod
 	}
 }
 
+func TestSessionHandlerRejectsConflictingTenantScope(t *testing.T) {
+	validator := &fakeValidator{principal: oidcauth.Principal{Issuer: "issuer", Subject: "subject"}}
+	resolver := &fakeResolver{membership: identity.Membership{TenantID: "tenant-a", OrganizationID: "org-a", Capabilities: []string{SessionCapability}}}
+	handler, err := NewSessionHandler(validator, resolver, SessionCapability)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for name, spoof := range map[string]func(*http.Request){
+		"header": func(r *http.Request) { r.Header.Set("X-Tenant-ID", "tenant-b") },
+		"org":    func(r *http.Request) { r.Header.Set("X-Organization-ID", "org-b") },
+		"query":  func(r *http.Request) { r.URL.RawQuery = "tenant_id=tenant-b" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/identity/session", nil)
+			request.Header.Set("Authorization", "Bearer token")
+			spoof(request)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("spoofed status=%d body=%s", response.Code, response.Body.String())
+			}
+			var body map[string]string
+			_ = json.Unmarshal(response.Body.Bytes(), &body)
+			if body["error"] != "tenant_scope_conflict" {
+				t.Fatalf("body=%v", body)
+			}
+		})
+	}
+
+	matching := httptest.NewRequest(http.MethodGet, "/identity/session?tenant_id=tenant-a", nil)
+	matching.Header.Set("Authorization", "Bearer token")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, matching)
+	if response.Code != http.StatusOK {
+		t.Fatalf("matching scoping status=%d body=%s", response.Code, response.Body.String())
+	}
+}
+
 func serve(handler http.Handler, method, authorization string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, "/identity/session", nil)
 	if authorization != "" {

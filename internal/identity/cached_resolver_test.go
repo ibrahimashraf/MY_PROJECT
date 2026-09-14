@@ -104,6 +104,41 @@ func TestCachedResolver_InvalidateAndPurge(t *testing.T) {
 	}
 }
 
+func TestCachedResolver_ConcurrentResolveInvalidatePurge(t *testing.T) {
+	mock := &mockResolver{membership: Membership{ActorID: "actor-race"}}
+	cached := NewCachedResolver(mock, time.Millisecond)
+	principal := PrincipalKey{Issuer: "https://auth.example.com", Subject: "user-race"}
+
+	var wg sync.WaitGroup
+	for g := 0; g < 8; g++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 200; i++ {
+				membership, err := cached.Resolve(context.Background(), principal)
+				if err == nil && membership.ActorID != "actor-race" {
+					t.Errorf("corrupted membership observed: %+v", membership)
+					return
+				}
+			}
+		}()
+	}
+	for g := 0; g < 4; g++ {
+		wg.Add(1)
+		go func(alternate bool) {
+			defer wg.Done()
+			for i := 0; i < 100; i++ {
+				if alternate {
+					cached.Invalidate(principal)
+				} else {
+					cached.Purge()
+				}
+			}
+		}(g%2 == 0)
+	}
+	wg.Wait()
+}
+
 func TestCachedResolver_ErrorBypassesCache(t *testing.T) {
 	mock := &mockResolver{
 		err: errors.New("database connection unavailable"),

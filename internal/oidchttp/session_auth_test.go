@@ -302,6 +302,50 @@ func TestSessionAuthenticatorRejectsUnknownMembershipAndResolverFailure(t *testi
 	}
 }
 
+func TestSessionAuthenticatorRejectsConflictingTenantScope(t *testing.T) {
+	sessions, _ := newManaged(t, time.Hour)
+	validator := &fakeValidator{principal: oidcauth.Principal{Issuer: "issuer", Subject: "human-001", AMR: []string{"pwd"}}}
+	resolver := &fakeResolver{membership: identity.Membership{ActorID: "actor-001", TenantID: "tenant-a", OrganizationID: "org-a", Capabilities: []string{"inspection.read"}}}
+	auth := newAuthenticator(t, validator, resolver, sessions, identity.MFAPolicy{})
+	handler := auth.Middleware(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}))
+
+	for name, spoof := range map[string]func(*http.Request){
+		"header": func(r *http.Request) { r.Header.Set("X-Tenant-ID", "tenant-b") },
+		"org":    func(r *http.Request) { r.Header.Set("X-Organization-ID", "org-attacker") },
+		"query":  func(r *http.Request) { r.URL.RawQuery = "tenant_id=tenant-b" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/secure", nil)
+			request.Header.Set("Authorization", "Bearer token-1")
+			spoof(request)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("spoofed status=%d body=%s", response.Code, response.Body.String())
+			}
+			var body map[string]string
+			_ = json.Unmarshal(response.Body.Bytes(), &body)
+			if body["error"] != "tenant_scope_conflict" {
+				t.Fatalf("body=%v", body)
+			}
+			if sessions.IsActive("token-1") {
+				t.Fatal("spoiled scope must not establish a session")
+			}
+		})
+	}
+
+	matching := httptest.NewRequest(http.MethodGet, "/secure", nil)
+	matching.Header.Set("Authorization", "Bearer token-1")
+	matching.Header.Set("X-Tenant-ID", "tenant-a")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, matching)
+	if response.Code != http.StatusOK {
+		t.Fatalf("matching header status=%d", response.Code)
+	}
+}
+
 func TestNewSessionAuthenticatorRejectsNilDependencies(t *testing.T) {
 	sessions, _ := newManaged(t, time.Hour)
 	if _, err := NewSessionAuthenticator(nil, &fakeResolver{}, sessions, identity.MFAPolicy{}); err == nil {
