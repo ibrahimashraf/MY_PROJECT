@@ -25,6 +25,10 @@ import (
 //   - allowedFields:  whitelist of permitted field names
 //   - q:              the parsed Query
 func BuildSELECT(table string, allowedFields []string, q Query) (string, []any, error) {
+	return buildSELECT(table, allowedFields, q)
+}
+
+func buildSELECT(table string, allowedFields []string, q Query) (string, []any, error) {
 	if !validIdent.MatchString(table) {
 		return "", nil, fmt.Errorf("invalid table name %q", table)
 	}

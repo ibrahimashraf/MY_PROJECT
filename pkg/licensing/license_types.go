@@ -50,4 +50,9 @@ type SignedLicenseToken struct {
 	Payload   LicensePayload `json:"payload"`
 	Signature string         `json:"signature"`  // Hex-encoded Ed25519 signature
 	PublicKey string         `json:"public_key"` // Hex-encoded Root Issuer public key
+	// Signoffs carries additional hex-encoded Ed25519 signatures over the same
+	// payload digest from other authorized vendor keys. Used by MOfNValidator
+	// to reach an m-of-n quorum of trusted key signoffs. Empty for single-key
+	// issuance.
+	Signoffs []string `json:"signoffs,omitempty"`
 }

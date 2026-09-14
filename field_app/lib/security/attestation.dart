@@ -192,3 +192,76 @@ Future<Map<String, Object?>> enrollSimulatedDevice({
   }
   return Map<String, Object?>.from(record);
 }
+
+/// Production enrollment submitting directly to `/api/v1/devices/enroll`.
+///
+/// Encapsulates the proof-of-possession challenge-response protocol:
+/// obtains challenge nonce from the server, signs with client Ed25519 key,
+/// and submits the signed EnrollmentVector.
+Future<Map<String, Object?>> enrollProductionDevice({
+  required Uri endpoint,
+  required String tenantId,
+  required String organizationId,
+  required String userId,
+  required String deviceModel,
+  http.Client? client,
+}) async {
+  final httpClient = client ?? http.Client();
+
+  final challengeResponse = await httpClient.post(
+    endpoint.resolve('/enroll/challenge'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode({'tenant_id': tenantId, 'inspector_id': userId}),
+  );
+  if (challengeResponse.statusCode != 201) {
+    throw StateError(
+        'enrollment challenge failed: HTTP ${challengeResponse.statusCode}');
+  }
+  final challengeBody = jsonDecode(challengeResponse.body);
+  final challengeId = challengeBody is Map ? challengeBody['challenge_id'] : null;
+  final nonce = challengeBody is Map ? challengeBody['nonce'] : null;
+  if (challengeId is! String || nonce is! String) {
+    throw StateError('enrollment challenge is missing challenge_id/nonce');
+  }
+
+  final provider = SimulatedAttestationProvider();
+  final bundle = await provider.attestEnrollment(
+    challengeId: challengeId,
+    inspectorId: userId,
+    nonceHex: nonce,
+    deviceModel: deviceModel,
+  );
+
+  final payload = <String, dynamic>{
+    'request_id': challengeId,
+    'tenant_id': tenantId,
+    'organization_id': organizationId,
+    'user_id': userId,
+    'device_id': bundle.deviceFingerprint,
+    'public_key': bundle.devicePublicKeyHex,
+    'nonce': nonce,
+    'signature': bundle.signedNonceHex,
+    'requested_at': DateTime.now().toUtc().toIso8601String(),
+    'attestation': {
+      'type': bundle.keyOrigin,
+      'issuer': 'field_app',
+      'receipt': bundle.signedNonceHex,
+    },
+  };
+
+  final submitResponse = await httpClient.post(
+    endpoint.resolve('/api/v1/devices/enroll'),
+    headers: const {'Content-Type': 'application/json'},
+    body: jsonEncode(payload),
+  );
+  if (submitResponse.statusCode != 200 && submitResponse.statusCode != 201) {
+    throw StateError(
+        'production enrollment submission failed: HTTP ${submitResponse.statusCode}');
+  }
+  final record = jsonDecode(submitResponse.body);
+  if (record is! Map) {
+    throw StateError('production enrollment submission returned invalid JSON');
+  }
+  return Map<String, Object?>.from(record);
+}
+

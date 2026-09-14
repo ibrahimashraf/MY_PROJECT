@@ -21,12 +21,16 @@ class EnrollmentScreen extends StatefulWidget {
   const EnrollmentScreen({
     super.key,
     required this.tenantId,
+    required this.organizationId,
     this.endpoint = enrollLoopbackEndpoint,
+    this.useProductionRoute = false,
     this.client,
   });
 
   final String tenantId;
+  final String organizationId;
   final String endpoint;
+  final bool useProductionRoute;
   final http.Client? client;
 
   @override
@@ -36,13 +40,18 @@ class EnrollmentScreen extends StatefulWidget {
 class _EnrollmentScreenState extends State<EnrollmentScreen> {
   final TextEditingController _inspectorController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
+  late final TextEditingController _orgController;
   _EnrollPhase _phase = _EnrollPhase.idle;
+  late bool _useProduction;
   Map<String, Object?>? _record;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _useProduction = widget.useProductionRoute;
+    _orgController = TextEditingController(text: widget.organizationId);
+    _orgController.addListener(_onFieldChanged);
     _inspectorController.addListener(_onFieldChanged);
     _modelController.addListener(_onFieldChanged);
   }
@@ -51,31 +60,43 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
 
   @override
   void dispose() {
+    _orgController.dispose();
     _inspectorController.dispose();
     _modelController.dispose();
     super.dispose();
   }
 
   bool get _fieldsPopulated =>
+      _orgController.text.trim().isNotEmpty &&
       _inspectorController.text.trim().isNotEmpty &&
       _modelController.text.trim().isNotEmpty;
 
   Future<void> _enroll() async {
     final inspectorId = _inspectorController.text.trim();
     final deviceModel = _modelController.text.trim();
+    final organizationId = _orgController.text.trim();
     setState(() {
       _phase = _EnrollPhase.enrolling;
       _error = null;
       _record = null;
     });
     try {
-      final record = await enrollSimulatedDevice(
-        endpoint: Uri.parse(widget.endpoint),
-        tenantId: widget.tenantId,
-        inspectorId: inspectorId,
-        deviceModel: deviceModel,
-        client: widget.client,
-      );
+      final record = _useProduction
+          ? await enrollProductionDevice(
+              endpoint: Uri.parse(widget.endpoint),
+              tenantId: widget.tenantId,
+              organizationId: organizationId,
+              userId: inspectorId,
+              deviceModel: deviceModel,
+              client: widget.client,
+            )
+          : await enrollSimulatedDevice(
+              endpoint: Uri.parse(widget.endpoint),
+              tenantId: widget.tenantId,
+              inspectorId: inspectorId,
+              deviceModel: deviceModel,
+              client: widget.client,
+            );
       if (!mounted) return;
       setState(() {
         _record = record;
@@ -108,6 +129,15 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
             ),
             const SizedBox(height: 20),
             TextField(
+              controller: _orgController,
+              enabled: _phase != _EnrollPhase.enrolling,
+              decoration: const InputDecoration(
+                labelText: 'Organization ID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
               controller: _inspectorController,
               enabled: _phase != _EnrollPhase.enrolling,
               decoration: const InputDecoration(
@@ -123,6 +153,18 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
                 labelText: 'Device model',
                 border: OutlineInputBorder(),
               ),
+            ),
+
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Production API Route (/api/v1/devices/enroll)'),
+              subtitle: Text(_useProduction
+                  ? 'Active: Submits to production device enrollment vector'
+                  : 'Inactive: Uses pilot loopback simulator endpoints'),
+              value: _useProduction,
+              onChanged: _phase == _EnrollPhase.enrolling
+                  ? null
+                  : (v) => setState(() => _useProduction = v),
             ),
             const SizedBox(height: 24),
             Card(

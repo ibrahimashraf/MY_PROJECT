@@ -69,19 +69,22 @@ func (v *UniversalLicenseValidator) ValidateToken(token *SignedLicenseToken, cur
 		return ErrInvalidSignature
 	}
 
-	now := v.timeSource.Now()
+	return checkLicenseWindow(token.Payload, currentHardwareID, v.timeSource.Now())
+}
 
-	// Validity Window Checks
-	if !token.Payload.NotBefore.IsZero() && now.Before(token.Payload.NotBefore) {
+// checkLicenseWindow enforces the validity window and hardware lock constraints
+// shared by every validator shape (single key and m-of-n quorum).
+func checkLicenseWindow(payload LicensePayload, currentHardwareID string, now time.Time) error {
+	if !payload.NotBefore.IsZero() && now.Before(payload.NotBefore) {
 		return ErrLicenseNotYetValid
 	}
-	if !token.Payload.ExpiresAt.IsZero() && now.After(token.Payload.ExpiresAt) {
+	if !payload.ExpiresAt.IsZero() && now.After(payload.ExpiresAt) {
 		return ErrLicenseExpired
 	}
 
 	// Hardware Lock Constraint (for Air-Gapped Dedicated Appliances)
-	if token.Payload.HardwareLockID != "" {
-		if currentHardwareID == "" || strings.TrimSpace(token.Payload.HardwareLockID) != strings.TrimSpace(currentHardwareID) {
+	if payload.HardwareLockID != "" {
+		if currentHardwareID == "" || strings.TrimSpace(payload.HardwareLockID) != strings.TrimSpace(currentHardwareID) {
 			return ErrHardwareMismatch
 		}
 	}

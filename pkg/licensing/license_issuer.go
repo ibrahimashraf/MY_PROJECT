@@ -52,3 +52,19 @@ func (issuer *MasterLicenseIssuer) IssueLicense(payload LicensePayload) (*Signed
 		PublicKey: hex.EncodeToString(issuer.publicKey),
 	}, nil
 }
+
+// AddSignoff appends a second Ed25519 signature over the same payload digest
+// from another authorized vendor key, contributing to an m-of-n quorum.
+func (issuer *MasterLicenseIssuer) AddSignoff(token *SignedLicenseToken) error {
+	if token == nil {
+		return errors.New("license token cannot be nil")
+	}
+	payloadBytes, err := json.Marshal(token.Payload)
+	if err != nil {
+		return err
+	}
+	digest := sha256.Sum256(payloadBytes)
+	sig := ed25519.Sign(issuer.privateKey, digest[:])
+	token.Signoffs = append(token.Signoffs, hex.EncodeToString(sig))
+	return nil
+}

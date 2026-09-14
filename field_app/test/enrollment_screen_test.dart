@@ -40,15 +40,33 @@ http.Client _fakeServer({required bool failChallenge}) {
         headers: {'content-type': 'application/json'},
       );
     }
+    if (request.url.path == '/api/v1/devices/enroll') {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      return http.Response(
+        jsonEncode({
+          'device_id': body['device_id'] ?? 'device-prod-99',
+          'tenant_id': body['tenant_id'],
+          'organization_id': body['organization_id'],
+          'status': 'PENDING',
+          'attestation_origin': 'SOFTWARE',
+          'attestation_biometric_bound': false,
+          'attestation_verified': false,
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
     return http.Response('not found', 404);
   });
 }
 
-Future<void> _pumpScreen(WidgetTester tester, http.Client client) async {
+Future<void> _pumpScreen(WidgetTester tester, http.Client client, {bool useProduction = false}) async {
   await tester.pumpWidget(
     MaterialApp(
       home: EnrollmentScreen(
         tenantId: 'tenant-1',
+        organizationId: 'org-1',
+        useProductionRoute: useProduction,
         client: client,
       ),
     ),
@@ -64,11 +82,14 @@ void main() {
     expect(find.text(simEnrollmentPosture), findsOneWidget);
 
     final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'inspector-1');
-    await tester.enterText(fields.at(1), 'RuggedPad X1');
+    await tester.enterText(fields.at(0), 'org-1');
+    await tester.enterText(fields.at(1), 'inspector-1');
+    await tester.enterText(fields.at(2), 'RuggedPad X1');
     await tester.pump();
 
-    await tester.tap(find.text('Enroll device'));
+    final enrollBtn = find.text('Enroll device');
+    await tester.ensureVisible(enrollBtn);
+    await tester.tap(enrollBtn);
     await tester.pumpAndSettle();
 
     expect(find.text('Device ID: device-42'), findsOneWidget);
@@ -83,11 +104,14 @@ void main() {
     await _pumpScreen(tester, _fakeServer(failChallenge: true));
 
     final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'inspector-1');
-    await tester.enterText(fields.at(1), 'RuggedPad X1');
+    await tester.enterText(fields.at(0), 'org-1');
+    await tester.enterText(fields.at(1), 'inspector-1');
+    await tester.enterText(fields.at(2), 'RuggedPad X1');
     await tester.pump();
 
-    await tester.tap(find.text('Enroll device'));
+    final enrollBtn = find.text('Enroll device');
+    await tester.ensureVisible(enrollBtn);
+    await tester.tap(enrollBtn);
     await tester.pumpAndSettle();
 
     expect(
@@ -96,5 +120,24 @@ void main() {
     );
     expect(find.text('Enrolled'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('enrollment successfully executes via production route (/api/v1/devices/enroll)',
+      (WidgetTester tester) async {
+    await _pumpScreen(tester, _fakeServer(failChallenge: false), useProduction: true);
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'org-1');
+    await tester.enterText(fields.at(1), 'inspector-1');
+    await tester.enterText(fields.at(2), 'RuggedPad X1');
+    await tester.pump();
+
+    final enrollBtn = find.text('Enroll device');
+    await tester.ensureVisible(enrollBtn);
+    await tester.tap(enrollBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enrolled'), findsOneWidget);
+    expect(find.text('Attestation origin: SOFTWARE'), findsOneWidget);
   });
 }
