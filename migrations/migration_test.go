@@ -482,3 +482,65 @@ func TestRetentionAndLegalHoldMigrationContract(t *testing.T) {
 		t.Fatal("down migration missing immutable trigger function drop")
 	}
 }
+
+func TestAdvisoryGovernanceRegisterMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0078_advisory_governance_register.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	tables := []string{
+		"CREATE TABLE IF NOT EXISTS advisory_model_registry",
+		"CREATE TABLE IF NOT EXISTS advisory_prompt_registry",
+		"CREATE TABLE IF NOT EXISTS advisory_audit_trail",
+		"CREATE TABLE IF NOT EXISTS advisory_feedback",
+	}
+	for _, table := range tables {
+		if !strings.Contains(text, table) {
+			t.Fatalf("migration missing %q", table)
+		}
+	}
+	required := []string{
+		"CHECK (status IN ('APPROVED', 'DEPRECATED'))",
+		"allowed_zones TEXT[]      NOT NULL",
+		"NOT NULL DEFAULT 4096",
+		"CHECK (status IN ('ACTIVE', 'SUPERSEDED'))",
+		"system_prompt_hash TEXT        NOT NULL",
+		"input_schema_hash  TEXT        NOT NULL",
+		"evidence_refs  TEXT[]           NOT NULL DEFAULT '{}'",
+		"confidence     DOUBLE PRECISION NOT NULL",
+		"CHECK (blocking = FALSE)",
+		"CHECK (disposition IN ('ACCEPTED', 'REJECTED', 'IGNORED', 'CORRECTED'))",
+		"ENABLE ROW LEVEL SECURITY",
+		"FORCE ROW LEVEL SECURITY",
+		"NULLIF(current_setting('integin.tenant_id', true), '')",
+		"GRANT SELECT ON advisory_model_registry TO integin_runtime",
+		"GRANT SELECT ON advisory_prompt_registry TO integin_runtime",
+		"GRANT SELECT, INSERT ON advisory_audit_trail TO integin_runtime",
+		"GRANT SELECT, INSERT ON advisory_feedback TO integin_runtime",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	for _, table := range []string{"advisory_audit_trail", "advisory_feedback"} {
+		if !strings.Contains(text, table+"_tenant_isolation") {
+			t.Fatalf("migration missing RLS policy for %s", table)
+		}
+	}
+
+	down, err := os.ReadFile("0078_advisory_governance_register.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	downText := string(down)
+	for _, table := range []string{"advisory_feedback", "advisory_audit_trail", "advisory_prompt_registry", "advisory_model_registry"} {
+		if !strings.Contains(downText, "DROP TABLE IF EXISTS "+table) {
+			t.Fatalf("down migration missing DROP TABLE IF EXISTS %s", table)
+		}
+	}
+	if !strings.Contains(downText, "DISABLE ROW LEVEL SECURITY") {
+		t.Fatal("down migration missing RLS disable")
+	}
+}
