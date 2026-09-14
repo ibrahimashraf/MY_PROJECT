@@ -430,6 +430,12 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Database migration `0078_advisory_governance_register.sql` with model & prompt registries, append-only tenant audit trail (`CHECK (blocking = FALSE)`), and inspector feedback loop (`ACCEPTED`, `REJECTED`, `IGNORED`, `CORRECTED`).
   * Full RLS enabled & forced with NULLIF session variable isolation.
   * Thread-safe Go advisory governance engine rejecting unapproved models, deprecated prompts, and AI-free zones (VERDICT, CERTIFICATE, CALIBRATION, etc.).
+* [x] **P2 TypeScript Operations Workbench (`quiet-signal/src/admin/pages/`)** — COMPLETE ✅ (2026-09-14, committed `7b70c02`):
+  * React 19 + TypeScript + Vite operational console with 4 least-privilege views: `DeviceWorkbenchPage`, `HeldSyncPage`, `EvidenceWorkbenchPage`, and `RetentionGovernancePage`.
+  * Zero direct DB access: strictly connects to authorized tenant HTTP endpoints using headers (`X-Tenant-ID`, `X-Organization-ID`) and Bearer auth.
+  * Strict privacy enforcement: never renders plaintext evidence bytes or private cryptographic keys (fingerprints & dual-digests only).
+  * Strict TypeScript check (`tsc -b`) and oxlint clean.
+
 
 
 
