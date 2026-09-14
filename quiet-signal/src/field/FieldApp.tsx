@@ -88,8 +88,8 @@ export function FieldApp() {
     const now = new Date().toISOString()
     const inspection: InspectionRecord = {
       id,
-      tenant_id: 'tenant-1',
-      organization_id: 'org-1',
+      tenant_id: tenantId,
+      organization_id: orgId,
       work_order_id: form.work_order_id,
       asset_id: form.asset_id,
       equipment_type: form.equipment_type,

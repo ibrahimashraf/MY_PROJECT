@@ -71,7 +71,8 @@ func TestExportSAP_PMInvalidClass(t *testing.T) {
 
 func TestExportMaximoEquipment(t *testing.T) {
 	shell := evidencedEquipmentShell()
-	out, err := ExportMaximo(shell)
+	testSite := "SITE-YANBU-01"
+	out, err := ExportMaximo(shell, testSite)
 	if err != nil {
 		t.Fatalf("export: %v", err)
 	}
@@ -82,7 +83,7 @@ func TestExportMaximoEquipment(t *testing.T) {
 	if a.AssetNum != "SER-LIEBHERR-99401" || a.SerialNum != "SER-LIEBHERR-99401" {
 		t.Fatalf("ASSET MBO = %+v", a)
 	}
-	if a.SiteID != defaultSiteID || a.Classification != CFIHOSInstalledEquipment {
+	if a.SiteID != testSite || a.Classification != CFIHOSInstalledEquipment {
 		t.Fatalf("ASSET MBO site/classification = %+v", a)
 	}
 	if a.Status != string(AssetStatusOperational) {
@@ -91,11 +92,18 @@ func TestExportMaximoEquipment(t *testing.T) {
 	if len(out.Locations) != 0 {
 		t.Fatalf("equipment export must not emit LOCATIONS MBO")
 	}
+
+	// Verify empty siteID error
+	_, err = ExportMaximo(shell, "")
+	if !errors.Is(err, ErrEmptySiteID) {
+		t.Fatalf("expected ErrEmptySiteID for empty site, got %v", err)
+	}
 }
 
 func TestExportMaximoFunctionalLocation(t *testing.T) {
 	shell := tagShellA()
-	out, err := ExportMaximo(shell)
+	// Functional location with fallback to shell.Location.FacilityID ("FAC-RIG01")
+	out, err := ExportMaximo(shell, "")
 	if err != nil {
 		t.Fatalf("export: %v", err)
 	}
@@ -106,8 +114,20 @@ func TestExportMaximoFunctionalLocation(t *testing.T) {
 	if loc.Location != "TAG-RIG01-CRANE-A" || loc.Classification != CFIHOSFunctionalLocation {
 		t.Fatalf("LOCATIONS MBO = %+v", loc)
 	}
+	if loc.SiteID != "FAC-RIG01" {
+		t.Fatalf("expected SiteID FAC-RIG01, got %q", loc.SiteID)
+	}
 	if len(out.Assets) != 0 {
 		t.Fatalf("functional location export must not emit ASSET MBO")
+	}
+
+	// Functional location with explicit siteID override
+	outExplicit, err := ExportMaximo(shell, "SITE-OFFSHORE-02")
+	if err != nil {
+		t.Fatalf("export explicit: %v", err)
+	}
+	if outExplicit.Locations[0].SiteID != "SITE-OFFSHORE-02" {
+		t.Fatalf("expected SiteID SITE-OFFSHORE-02, got %q", outExplicit.Locations[0].SiteID)
 	}
 }
 

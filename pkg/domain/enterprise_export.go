@@ -26,6 +26,7 @@ const (
 var (
 	ErrUnsupportedRegulatoryStandard = errors.New("unsupported statutory regulatory standard")
 	ErrNilShell                      = errors.New("asset administration shell cannot be nil")
+	ErrEmptySiteID                   = errors.New("site id cannot be empty")
 )
 
 // SAPPMExport is the SAP Plant Maintenance representation: Equipment Master
@@ -161,13 +162,21 @@ type MaximoLocation struct {
 	Classification string `json:"CFIHOS_CLASSIFICATION"`
 }
 
-const defaultSiteID = "INTEGIN"
-
 // ExportMaximo formats the shell for IBM Maximo as ASSET (equipment) or
 // LOCATIONS (functional location) MBO records with CFIHOS classification.
-func ExportMaximo(shell *AssetAdministrationShell) (MaximoAssetExport, error) {
+// The siteID identifies the target Maximo organizational site/facility and must
+// be explicitly supplied from tenant/site context.
+func ExportMaximo(shell *AssetAdministrationShell, siteID string) (MaximoAssetExport, error) {
 	if err := shell.Validate(); err != nil {
 		return MaximoAssetExport{}, err
+	}
+	if siteID == "" {
+		// If functional location provides FacilityID, use it as fallback site identifier
+		if shell.Class == ClassFunctionalLocation && shell.Location != nil && shell.Location.FacilityID != "" {
+			siteID = shell.Location.FacilityID
+		} else {
+			return MaximoAssetExport{}, ErrEmptySiteID
+		}
 	}
 
 	var out MaximoAssetExport
@@ -177,7 +186,7 @@ func ExportMaximo(shell *AssetAdministrationShell) (MaximoAssetExport, error) {
 		out.Locations = []MaximoLocation{{
 			Location:       loc.TagID,
 			Description:    loc.Description,
-			SiteID:         defaultSiteID,
+			SiteID:         siteID,
 			Status:         "OPERATING",
 			Classification: CFIHOSFunctionalLocation,
 		}}
@@ -193,7 +202,7 @@ func ExportMaximo(shell *AssetAdministrationShell) (MaximoAssetExport, error) {
 			Description:      eq.Description,
 			SerialNum:        tech.SerialNumber,
 			Status:           status,
-			SiteID:           defaultSiteID,
+			SiteID:           siteID,
 			AssetTag:         eq.MountedTagID,
 			ClassStructureID: "INTEGER-PM",
 			Classification:   CFIHOSInstalledEquipment,
