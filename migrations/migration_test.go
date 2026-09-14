@@ -544,3 +544,60 @@ func TestAdvisoryGovernanceRegisterMigrationContract(t *testing.T) {
 		t.Fatal("down migration missing RLS disable")
 	}
 }
+
+func TestSignedAuditCheckpointsMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0079_signed_audit_checkpoints.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	required := []string{
+		"CREATE TABLE IF NOT EXISTS audit_checkpoint_registry",
+		"id                   TEXT        PRIMARY KEY",
+		"sequence_start       BIGINT      NOT NULL",
+		"sequence_end         BIGINT      NOT NULL",
+		"previous_root_sha256 TEXT        NOT NULL",
+		"root_sha256          TEXT        NOT NULL",
+		"signature            TEXT        NOT NULL",
+		"key_id               TEXT        NOT NULL",
+		"object_key           TEXT        NOT NULL",
+		"UNIQUE (tenant_id, id)",
+		"UNIQUE (tenant_id, root_sha256)",
+		"CHECK (sequence_end >= sequence_start)",
+		"btrim(tenant_id) <> ''",
+		"btrim(environment) <> ''",
+		"btrim(root_sha256) <> ''",
+		"ENABLE ROW LEVEL SECURITY",
+		"FORCE ROW LEVEL SECURITY",
+		"audit_checkpoint_registry_tenant_isolation",
+		"NULLIF(current_setting('integin.tenant_id', true), '')",
+		"audit_checkpoint_no_update",
+		"BEFORE UPDATE OR DELETE ON audit_checkpoint_registry",
+		"GRANT SELECT, INSERT ON TABLE audit_checkpoint_registry TO integin_runtime",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	if !strings.Contains(text, "CREATE POLICY ") {
+		t.Fatalf("migration missing CREATE POLICY")
+	}
+
+	down, err := os.ReadFile("0079_signed_audit_checkpoints.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	downText := string(down)
+	for _, fragment := range []string{
+		"DISABLE ROW LEVEL SECURITY",
+		"DROP TRIGGER IF EXISTS audit_checkpoint_immutable ON audit_checkpoint_registry",
+		"DROP FUNCTION IF EXISTS audit_checkpoint_no_update()",
+		"DROP POLICY IF EXISTS audit_checkpoint_registry_tenant_isolation ON audit_checkpoint_registry",
+		"DROP TABLE IF EXISTS audit_checkpoint_registry",
+	} {
+		if !strings.Contains(downText, fragment) {
+			t.Fatalf("down migration missing %q", fragment)
+		}
+	}
+}
