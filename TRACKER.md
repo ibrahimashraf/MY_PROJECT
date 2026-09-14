@@ -443,14 +443,45 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Unified REST handler mounting 10 endpoints for the `quiet-signal` operations workbench (`/api/v1/devices`, `/api/v1/sync/held`, `/api/v1/sync/reconcile`, `/api/v1/legal-holds`, `/api/v1/retention-policies`, `/api/v1/exports/approvals`).
   * Dual storage backing: thread-safe hermetic in-memory store for isolated unit tests, and transaction-scoped PostgreSQL store with strict tenant RLS.
   * Strict privacy boundary: scrubs private keys, full payloads, and raw evidence bytes.
+* [x] **Workstream 1: OpenBao Production Secrets Delivery & Leased Database Credentials (`internal/security/database_lease.go`)** — COMPLETE ✅ (2026-09-15):
+  * Implemented `LeasedDatabaseConfigProvider` in `internal/security/database_lease.go` bound to `DynamicSecretManager` and OpenBao KV v2 path `kv/production/integin/runtime/postgres`.
+  * Dynamic PostgreSQL DSN and credential resolution with lease expiry verification, `ErrDatabaseLeaseExpired`, and strict fail-closed boundary on expired or unmapped secrets.
+  * In-memory graceful fallback preserving unexpired cached credentials across temporary upstream secret fetch failures with safety margin.
+  * Pure standard library implementation (`net/url`, `net`, `strconv`) with zero secrets logged or printed.
+  * Comprehensive test suite in `internal/security/database_lease_test.go` (11 tests covering parsing, expiry, renewal detection, malformed fields, fallback, and concurrent resolution) passing cleanly under `go test -race` with 0 race conditions.
+* [x] **Workstream 2: Casdoor Go-Native Identity-Only Service (Standardized per ADR 0032)** — COMPLETE ✅ (2026-09-15):
+  * Standardized on Casdoor (`casbin/casdoor:latest`, ~110 MB RAM, 2s boot, 100% Apache 2.0) replacing legacy Keycloak per ADR 0032.
+  * Operational lifecycle scripts established (`operations/pilot/start-casdoor-pilot.ps1`, `initialize-casdoor-pilot-realm.ps1`, `stop-casdoor-pilot.ps1`).
+  * Identity-only boundary enforced: Casdoor provides OpenID Connect discovery, RS256 token signing (`.well-known/openid-configuration`, `/certs`), and user authentication; zero INTEGIN tenant authorization or capabilities are managed inside Casdoor.
+  * Hardened client settings: PKCE / authorization-code and client-credentials configured, implicit flow rejected, and isolated PostgreSQL database (`integin-pilot-casdoor-postgres`).
+  * Integration verified live: `TestCasdoorPartialSubmissionHTTPPostgresIntegration` passes end-to-end against local Casdoor.
 
-
-
-
-
-
-
-
+* [x] **Workstream 3: Go OIDC Integration & Local Authorization Projection (`internal/oidcauth/`, `internal/identity/`, `internal/oidchttp/`)** — COMPLETE ✅ (2026-09-15):
+  * Hardened cross-tenant spoofing boundary: added `RejectTenantScopeConflict` middleware and `tenantScopeConflict` detector in `internal/oidchttp/tenant_boundary.go` matching `X-Tenant-ID`/`X-Organization-ID` and query parameters against server-resolved `OrganizationContext`.
+  * Wired fail-closed spoof rejection directly into `SessionAuthenticator.Middleware` before session establishment and into `/identity/session` endpoints.
+  * Extended test coverage: token key rotation under JWKS refresh, AMR / MFA requirements for administrative roles, cross-tenant spoof attempts, expired/revoked session fail-closed, and cache stampede concurrency (`cached_resolver_test.go`).
+  * 100% clean verification: `gofmt` clean, `go vet` clean, 59 tests passing, and 0 data races under `go test -race`.
+* [x] **Workstream 4: Production Device Enrollment & Offline Authority (`internal/deviceenrollhttp/`)** — COMPLETE ✅ (2026-09-15):
+  * Built `internal/deviceenrollhttp/` implementing the production device enrollment and offline authority protocol:
+    * `POST /v1/device-enrollment/requests`: Validates protocol version v1, Ed25519 public key, and server-derived key ID; rejects client-supplied tenant/org scoping; issues single-use random challenge (5-min TTL).
+    * `POST /v1/device-enrollment/requests/{id}/proof`: Validates Ed25519 signature proof of possession over the challenge; enforces single-use replay protection; transitions request to pending approval.
+    * `POST /v1/device-enrollment/requests/{id}/approve`: Tenant Administrator capability gate, enforces self-approval prohibition (Hazard 10), promotes to trusted device, issues signed `AuthorityPackage` (8h TTL), and persists to device trust state.
+    * `POST /v1/devices/{id}/revoke`: Admin-authenticated device trust revocation, increments authority epoch, and immediately revokes all active authority packages.
+  * Built hermetic in-memory store and `syncstate.Repository` adapter (`store.go`).
+  * Comprehensive test suite in `internal/deviceenrollhttp/handler_test.go` (11 tests, 0 failures, 0 races under `go test -race`).
+* [x] **Workstream 5: Operational Evidence and Release Control (`pkg/telemetry/`, `pkg/releasegate/`, `cmd/release-gate/`)** — COMPLETE ✅ (2026-09-15):
+  * Verified contract enforcement (`contracts/observability_foundation_v1.json`) prohibiting evidence bytes, secrets, tokens, full payloads, or raw PII in metrics, traces, and logs.
+  * Verified `pkg/telemetry/` scrubber drops prohibited dimensions and increments `integin_telemetry_dropped_total` while preserving valid metric series.
+  * Verified `pkg/releasegate/` cryptographic release attestation with deterministic JSON digest, canonical migration scanner against `migrations/`, and Ed25519 signature checks.
+  * Verification gate: 100% tests pass, 0 data races under `go test -race`.
+* [x] **Workstream 6: Signed Checkpoints, Export Verification & Independent Assurance (`internal/auditcheckpoint/`, `contracts/audit_checkpoint_v1.schema.json`, `migrations/0079_*`)** — COMPLETE ✅ (2026-09-15):
+  * Verified canonical audit checkpoint engine in `internal/auditcheckpoint`: deterministic SHA-256 Merkle root calculation, domain-separated entry hashes (`audit:checkpoint:v1:`), strict sequence bounds, and previous root hash linkage.
+  * Tested multi-checkpoint continuity, sequence gap rejection, and payload tampering detection.
+  * Verification gate: 10/10 tests pass, 0 data races under `go test -race`.
+* [x] **Toolchain & Codebase Modernization (Go 1.27.1)** — COMPLETE ✅ (2026-09-15):
+  * Upgraded `integin-pilot-source/go.mod` to directive `go 1.27.1`.
+  * Verified whole codebase with `go1.27.1 vet ./...` (0 warnings).
+  * Passed full test suites and race detector clean under `go1.27.1 test -race -count=1` with 0 data races.
 
 ---
 

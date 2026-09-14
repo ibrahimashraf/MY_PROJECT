@@ -83,19 +83,20 @@ flowchart LR
 
 **Stop conditions:** Do not rely on a single human-held unseal/recovery value, do not store Flutter private keys, and do not block an accepted field transaction solely because a nonessential secret-refresh call is temporarily unavailable.
 
-### Workstream 2 — Keycloak identity-only service
+### Workstream 2 — Casdoor Go-native identity-only service (Standardized per ADR 0032)
 
-**Objective:** Introduce self-hosted OIDC and MFA without creating a competing tenant-authorization model.
+**Objective:** Standardize on Casdoor as the Go-native, lightweight, Apache-2.0 self-hosted OIDC provider (replacing Keycloak per ADR 0032) without creating a competing tenant-authorization model.
 
 | Implementation slice | Required control | Fitness test |
 |---|---|---|
-| Deploy Keycloak with its own PostgreSQL database | Separate database, non-owner runtime credentials, HTTPS edge, pinned image, backup/recovery runbook | Isolated identity-database restore permits a controlled test login but does not change INTEGIN business state. |
-| Configure environment realm and clients | One realm per environment; exact redirect/CORS/logout URLs; no password/implicit grants | Cross-environment token, wildcard callback, and non-PKCE client attempts are rejected. |
-| Configure authentication assurance | MFA for privileged roles; recovery codes and audited reset procedure; short access tokens and refresh rotation | A Tenant Administrator cannot approve enrollment without required MFA/step-up. |
+| Deploy Casdoor with isolated database | Dedicated PostgreSQL container (`integin-pilot-casdoor-postgres`), non-owner runtime credentials, isolated network, pinned image digest | Isolated identity-database restore permits a controlled test login but does not change INTEGIN business state. |
+| Configure environment application & clients | One organization per environment (`integin-pilot`); exact redirect/CORS URLs; no implicit grant; PKCE/authorization code | Cross-environment token, wildcard callback, and non-PKCE client attempts are rejected. |
+| Configure authentication assurance | Password and MFA for privileged roles; short access tokens (MaxTokenAge ≤ 15m) and refresh rotation | A Tenant Administrator cannot approve enrollment without required MFA/step-up. |
 | Configure service clients | One confidential service account per automation; narrow audience and least privilege | A service account cannot impersonate a person, approve a device, create tenant membership, or access an unrelated tenant. |
-| Operate and recover | Admin events, key rotation, session invalidation, backup/restore exercise | Invalid issuer/audience/signature/expiry and stale JWKS key tests all fail closed. |
+| Operate and recover | Admin audit logs, key rotation, session invalidation, backup/restore exercise | Invalid issuer/audience/signature/expiry and stale JWKS key tests all fail closed. |
 
-**Stop conditions:** Do not use a realm per customer tenant, do not infer authorization from Keycloak group/role claims alone, and do not expose the Keycloak administration console on a public unauthenticated route.
+**Stop conditions:** Do not use an organization per customer tenant, do not infer authorization from Casdoor group/role claims alone, and do not expose the Casdoor administration console on a public unauthenticated route.
+
 
 ### Workstream 3 — Go OIDC integration and local authorization projection
 
