@@ -435,6 +435,11 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Zero direct DB access: strictly connects to authorized tenant HTTP endpoints using headers (`X-Tenant-ID`, `X-Organization-ID`) and Bearer auth.
   * Strict privacy enforcement: never renders plaintext evidence bytes or private cryptographic keys (fingerprints & dual-digests only).
   * Strict TypeScript check (`tsc -b`) and oxlint clean.
+* [x] **P1 Signed INTEGIN Audit Checkpoints (`internal/auditcheckpoint/`, `migrations/0079*`)** — COMPLETE ✅ (2026-09-14, committed `84419ab`):
+  * Database migration `0079_signed_audit_checkpoints.sql` & `.down.sql` creating append-only `audit_checkpoint_registry` with ENABLE & FORCE RLS, NULLIF tenant isolation, and update/delete block trigger.
+  * Manager lifecycle (`SealAndPersist`, `VerifyAndAudit`) linking sequence continuity, Ed25519 digital signatures, and dual persistence across PostgreSQL metadata and RustFS object storage (`storage.Store`).
+  * Concurrency and chain integration tests verifying genesis anchoring, sequence gap rejection, and cryptographic tamper detection.
+
 
 
 
