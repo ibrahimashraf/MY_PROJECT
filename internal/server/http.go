@@ -5,10 +5,10 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"runtime"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +22,7 @@ import (
 	"integin/internal/storage"
 	"integin/internal/syncapi"
 	"integin/pkg/httputil"
+	"integin/pkg/telemetry"
 )
 
 // TokenValidator authenticates OIDC bearer tokens at the HTTP boundary;
@@ -107,7 +108,8 @@ func NewMux(dependencies Dependencies) http.Handler {
 	}
 
 	mux := http.NewServeMux()
-	registerCoreRoutes(mux, dependencies, syncHTTP, withIdempotency)
+	rateLimiter := middleware.DefaultRateLimiter()
+	registerCoreRoutes(mux, dependencies, rateLimiter, syncHTTP, withIdempotency)
 	registerLicensedAPIRoutes(mux, dependencies)
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writeOperationalJSON(writer, http.StatusOK, `{"status":"ok","service":"integin"}`)
@@ -122,47 +124,6 @@ func NewMux(dependencies Dependencies) http.Handler {
 			}
 		}
 		writeOperationalJSON(writer, http.StatusOK, `{"status":"ready","service":"integin"}`)
-	})
-	rateLimiter := middleware.DefaultRateLimiter()
-	mux.HandleFunc("/metrics", func(writer http.ResponseWriter, _ *http.Request) {
-		allowed, denied := rateLimiter.Stats()
-		writer.Header().Set("Content-Type", "text/plain; version=0.0.4")
-		writer.WriteHeader(http.StatusOK)
-		fmt.Fprintf(writer, "# HELP integin_ratelimit_allowed_total Total requests allowed by rate limiter.\n")
-		fmt.Fprintf(writer, "# TYPE integin_ratelimit_allowed_total counter\n")
-		fmt.Fprintf(writer, "integin_ratelimit_allowed_total %d\n", allowed)
-		fmt.Fprintf(writer, "# HELP integin_ratelimit_denied_total Total requests denied by rate limiter.\n")
-		fmt.Fprintf(writer, "# TYPE integin_ratelimit_denied_total counter\n")
-		fmt.Fprintf(writer, "integin_ratelimit_denied_total %d\n", denied)
-		fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
-		fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
-		fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
-		if dependencies.SyncProcessor != nil {
-			fmt.Fprintf(writer, "# HELP integin_sync_offline_hmac_fallback_total Total offline sync transactions accepted via deprecated HMAC fallback.\n")
-			fmt.Fprintf(writer, "# TYPE integin_sync_offline_hmac_fallback_total counter\n")
-			fmt.Fprintf(writer, "integin_sync_offline_hmac_fallback_total %d\n", dependencies.SyncProcessor.HMACFallbackCount.Load())
-		}
-		if dependencies.DB != nil {
-			stats := dependencies.DB.Stats()
-			fmt.Fprintf(writer, "# HELP integin_db_max_open_connections Maximum open database connections.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_max_open_connections gauge\n")
-			fmt.Fprintf(writer, "integin_db_max_open_connections %d\n", stats.MaxOpenConnections)
-			fmt.Fprintf(writer, "# HELP integin_db_open_connections Current open database connections.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_open_connections gauge\n")
-			fmt.Fprintf(writer, "integin_db_open_connections %d\n", stats.OpenConnections)
-			fmt.Fprintf(writer, "# HELP integin_db_in_use Current in-use database connections.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_in_use gauge\n")
-			fmt.Fprintf(writer, "integin_db_in_use %d\n", stats.InUse)
-			fmt.Fprintf(writer, "# HELP integin_db_idle Current idle database connections.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_idle gauge\n")
-			fmt.Fprintf(writer, "integin_db_idle %d\n", stats.Idle)
-			fmt.Fprintf(writer, "# HELP integin_db_wait_count Total database connections waited for.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_wait_count counter\n")
-			fmt.Fprintf(writer, "integin_db_wait_count %d\n", stats.WaitCount)
-			fmt.Fprintf(writer, "# HELP integin_db_wait_duration_ms Total database connection wait duration.\n")
-			fmt.Fprintf(writer, "# TYPE integin_db_wait_duration_ms counter\n")
-			fmt.Fprintf(writer, "integin_db_wait_duration_ms %d\n", stats.WaitDuration.Milliseconds())
-		}
 	})
 	return productionMiddlewareWithLimiter(mux, rateLimiter)
 }
@@ -230,9 +191,25 @@ func requestLogger(next http.Handler) http.Handler {
 		tenantID := request.Header.Get("X-Tenant-ID")
 		orgID := request.Header.Get("X-Organization-ID")
 
+		// W3C trace context: accept a valid inbound traceparent, otherwise
+		// generate a fresh one. Propagate downstream via context and echo the
+		// header so any client can join the trace.
+		traceContext, traceErr := telemetry.ParseTraceParent(request.Header.Get("Traceparent"))
+		if traceErr != nil {
+			traceContext, traceErr = telemetry.NewTraceContext()
+		}
+		if traceErr != nil {
+			// Cryptographic randomness unavailable; fall back to an unsampled
+			// zero-length trace so the pipeline still flows without blocking.
+			traceContext = telemetry.TraceContext{Sampled: false}
+		}
+		writer.Header().Set("Traceparent", traceContext.String())
+		traced := request.WithContext(telemetry.WithTraceContext(request.Context(), traceContext))
+
 		// Enrich scoped logger via logger.With() and attach to context
 		reqLogger := slog.Default().With(
 			"correlation_id", correlationID,
+			"trace_id", traceContext.TraceID,
 			"method", request.Method,
 			"path", loggedRequestPath(request.URL.EscapedPath()),
 		)
@@ -243,15 +220,81 @@ func requestLogger(next http.Handler) http.Handler {
 			reqLogger = reqLogger.With("org_id", orgID)
 		}
 
-		ctx := httputil.WithLogger(request.Context(), reqLogger)
+		ctx := httputil.WithLogger(traced.Context(), reqLogger)
 		wrapped := &statusWriter{ResponseWriter: writer, status: http.StatusOK}
 		next.ServeHTTP(wrapped, request.WithContext(ctx))
 
+		elapsed := time.Since(started)
 		reqLogger.Info("http_request",
 			"status", wrapped.status,
-			"duration_ms", time.Since(started).Milliseconds(),
+			"duration_ms", elapsed.Milliseconds(),
 		)
+		recordHTTPMetrics(request, wrapped.status, elapsed)
 	})
+}
+
+// recordHTTPMetrics records the request total and duration with contract-safe
+// dimensions derived from the normalized route template.
+func recordHTTPMetrics(request *http.Request, status int, elapsed time.Duration) {
+	statusClass := status / 100
+	outcome := "success"
+	errorClass := ""
+	switch statusClass {
+	case 4:
+		outcome, errorClass = "client_error", "http_4xx"
+	case 5:
+		outcome, errorClass = "server_error", "http_5xx"
+	}
+	labels := map[string]string{
+		"service":          metricService(),
+		"environment":      metricEnvironment(),
+		"route_template":   normalizedRouteTemplate(request.URL.EscapedPath()),
+		"method":           request.Method,
+		"http_status_code": strconv.Itoa(status),
+		"operation":        "http_server",
+		"outcome":          outcome,
+		"error_class":      errorClass,
+	}
+	metrics := telemetry.DefaultMetrics()
+	metrics.IncHTTPRequest(labels)
+	metrics.ObserveHTTPRequestDuration(elapsed.Seconds(), labels)
+}
+
+func metricService() string {
+	if value := strings.TrimSpace(os.Getenv("INTEGIN_SERVICE_NAME")); value != "" {
+		return value
+	}
+	return "integin"
+}
+
+func metricEnvironment() string {
+	if value := strings.TrimSpace(os.Getenv("INTEGIN_ENVIRONMENT")); value != "" {
+		return value
+	}
+	return "dev"
+}
+
+// normalizedRouteTemplate maps dynamic URL paths onto contract-safe route
+// templates so request identifiers never appear as metric dimensions.
+func normalizedRouteTemplate(path string) string {
+	switch {
+	case strings.HasPrefix(path, "/verify/certificates/"):
+		return "/verify/certificates/:token"
+	case strings.HasPrefix(path, "/certificates/"):
+		return "/certificates/:id"
+	case strings.HasPrefix(path, "/work-orders/handovers/"):
+		return "/work-orders/handovers/:id"
+	case strings.HasPrefix(path, "/work-orders/receipts/"):
+		return "/work-orders/receipts/:id"
+	case strings.HasPrefix(path, "/work-orders/held/"):
+		return "/work-orders/held/:id"
+	case strings.HasPrefix(path, "/s/"):
+		return "/s/:code"
+	case path == "":
+		return "/"
+	default:
+		return path
+	}
 }
 
 func loggedRequestPath(path string) string {

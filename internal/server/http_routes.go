@@ -1,10 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 
 	"integin/internal/evidenceapi"
+	"integin/internal/middleware"
+	"integin/pkg/telemetry"
 )
 
 // idempotencyWrapper wraps an ingress handler with the idempotency middleware.
@@ -19,7 +23,8 @@ func wrapOrIdentity(wrapper idempotencyWrapper, handler http.Handler) http.Handl
 	return wrapper(handler)
 }
 
-func registerCoreRoutes(mux *http.ServeMux, d Dependencies, syncHandler http.Handler, withIdempotency idempotencyWrapper) {
+func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middleware.RateLimiter, syncHandler http.Handler, withIdempotency idempotencyWrapper) {
+	mux.Handle("/metrics", telemetryMetricsHandler(telemetry.DefaultMetrics(), d, rateLimiter))
 	mux.Handle("/sync", wrapOrIdentity(withIdempotency, syncHandler))
 	if d.PilotManifestHandler != nil {
 		mux.Handle("/work-package-manifest", d.PilotManifestHandler)
@@ -170,4 +175,62 @@ func bearerToken(value string) (string, bool) {
 
 func newEvidenceHandler(d Dependencies) http.Handler {
 	return evidenceapi.Handler{Store: d.EvidenceStore, Validator: d.Validator, Resolver: d.Resolver}
+}
+
+// telemetryMetricsHandler composes the observability contract exposition with
+// the runtime process, rate-limit, and database families.
+func telemetryMetricsHandler(metrics *telemetry.Metrics, d Dependencies, rateLimiter *middleware.RateLimiter) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet && request.Method != http.MethodHead {
+			writer.Header().Set("Allow", "GET, HEAD")
+			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		writer.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+		if err := metrics.WritePrometheus(writer); err != nil {
+			return // client disconnected; nothing further to do
+		}
+		writeLegacyMetrics(writer, d, rateLimiter)
+	})
+}
+
+// writeLegacyMetrics emits the process-level families that predate the
+// telemetry contract; each value is a concrete observable, never a label.
+func writeLegacyMetrics(writer http.ResponseWriter, d Dependencies, rateLimiter *middleware.RateLimiter) {
+	allowed, denied := rateLimiter.Stats()
+	fmt.Fprintf(writer, "# HELP integin_ratelimit_allowed_total Total requests allowed by rate limiter.\n")
+	fmt.Fprintf(writer, "# TYPE integin_ratelimit_allowed_total counter\n")
+	fmt.Fprintf(writer, "integin_ratelimit_allowed_total %d\n", allowed)
+	fmt.Fprintf(writer, "# HELP integin_ratelimit_denied_total Total requests denied by rate limiter.\n")
+	fmt.Fprintf(writer, "# TYPE integin_ratelimit_denied_total counter\n")
+	fmt.Fprintf(writer, "integin_ratelimit_denied_total %d\n", denied)
+	fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
+	fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
+	fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
+	if d.SyncProcessor != nil {
+		fmt.Fprintf(writer, "# HELP integin_sync_offline_hmac_fallback_total Total offline sync transactions accepted via deprecated HMAC fallback.\n")
+		fmt.Fprintf(writer, "# TYPE integin_sync_offline_hmac_fallback_total counter\n")
+		fmt.Fprintf(writer, "integin_sync_offline_hmac_fallback_total %d\n", d.SyncProcessor.HMACFallbackCount.Load())
+	}
+	if d.DB != nil {
+		stats := d.DB.Stats()
+		fmt.Fprintf(writer, "# HELP integin_db_max_open_connections Maximum open database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_max_open_connections gauge\n")
+		fmt.Fprintf(writer, "integin_db_max_open_connections %d\n", stats.MaxOpenConnections)
+		fmt.Fprintf(writer, "# HELP integin_db_open_connections Current open database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_open_connections gauge\n")
+		fmt.Fprintf(writer, "integin_db_open_connections %d\n", stats.OpenConnections)
+		fmt.Fprintf(writer, "# HELP integin_db_in_use Current in-use database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_in_use gauge\n")
+		fmt.Fprintf(writer, "integin_db_in_use %d\n", stats.InUse)
+		fmt.Fprintf(writer, "# HELP integin_db_idle Current idle database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_idle gauge\n")
+		fmt.Fprintf(writer, "integin_db_idle %d\n", stats.Idle)
+		fmt.Fprintf(writer, "# HELP integin_db_wait_count Total database connections waited for.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_wait_count counter\n")
+		fmt.Fprintf(writer, "integin_db_wait_count %d\n", stats.WaitCount)
+		fmt.Fprintf(writer, "# HELP integin_db_wait_duration_ms Total database connection wait duration.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_wait_duration_ms counter\n")
+		fmt.Fprintf(writer, "integin_db_wait_duration_ms %d\n", stats.WaitDuration.Milliseconds())
+	}
 }

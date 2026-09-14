@@ -143,4 +143,3 @@ func TestNewWorkOrderAssignmentHandlerBuildsWithoutConnecting(t *testing.T) {
 		t.Fatal("expected composed handler")
 	}
 }
-
