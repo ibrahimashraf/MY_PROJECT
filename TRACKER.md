@@ -405,6 +405,19 @@ The following 17 items represent the remaining identified blind spots across Spr
 16. **Live BLE GATT Sensor Ingress**: COMPLETE ✅ (`pkg/rulesengine/ble_bridge.go` 54-byte MTU frame decoder feeding `jitter.go`).
 17. **Postgres Container Dependency in DPP Tests**: COMPLETE ✅ (`internal/dpppg/repository_test.go` graceful skip when `:15432` absent).
 
+---
+
+## 12b. 🔭 Platform Governance P1/P2 Implementation Progress
+
+* [x] **P1.1 Observability Foundation (`pkg/telemetry/`, `internal/server/`)** — COMPLETE ✅ (2026-09-14, committed `9e50646`):
+  * Pure-Go dependency-free thread-safe Prometheus exposition registry (`/metrics`).
+  * 7 contract metric definitions matching `contracts/observability_foundation_v1.json`.
+  * Negative boundary filtering: automatic drop/redaction and `integin_telemetry_dropped_total` increment on prohibited dimensions.
+  * W3C `traceparent` context extraction/propagation, `X-Correlation-ID` + `trace_id` injection in structured logger.
+  * Dynamic URL normalization into contract-safe `route_template` dimensions.
+  * Concurrency race detector clean (`go test -race`).
+
+
 
 ---
 
