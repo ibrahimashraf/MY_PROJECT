@@ -426,6 +426,11 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Strict append-only immutable trigger on deletion receipts preventing modification or deletion.
   * Multi-tenant RLS enabled & forced with NULLIF session variable isolation.
   * Go policy evaluator with active legal hold purge gating (`ErrLegalHoldActive`), retention schedule windows (`ErrRetentionPeriodActive`), self-approval prevention, and deterministic SHA-256 deletion certificates.
+* [x] **P2 Advisory Governance Register (`internal/advisory/`, `migrations/0078*`)** — COMPLETE ✅ (2026-09-14, committed `647be7d`):
+  * Database migration `0078_advisory_governance_register.sql` with model & prompt registries, append-only tenant audit trail (`CHECK (blocking = FALSE)`), and inspector feedback loop (`ACCEPTED`, `REJECTED`, `IGNORED`, `CORRECTED`).
+  * Full RLS enabled & forced with NULLIF session variable isolation.
+  * Thread-safe Go advisory governance engine rejecting unapproved models, deprecated prompts, and AI-free zones (VERDICT, CERTIFICATE, CALIBRATION, etc.).
+
 
 
 
