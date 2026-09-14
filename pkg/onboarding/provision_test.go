@@ -110,8 +110,105 @@ func resetAttestationGlobals() {
 	enrollmentExpectedAppID = ""
 }
 
+func TestVerifyRootBundleValidPEMs(t *testing.T) {
+	for _, name := range []string{"google", "apple"} {
+		pemPath := writeRootPEM(t, t.TempDir(), name)
+		data, err := os.ReadFile(pemPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		pool, subjects, err := VerifyRootBundle(name, data, time.Now())
+		if err != nil {
+			t.Fatalf("VerifyRootBundle(%s): %v", name, err)
+		}
+		if pool == nil {
+			t.Fatalf("VerifyRootBundle(%s) returned nil pool", name)
+		}
+		if len(subjects) != 1 {
+			t.Fatalf("VerifyRootBundle(%s) subjects = %d, want 1", name, len(subjects))
+		}
+		if subjects[0].CommonName != name+" root" || !subjects[0].IsCA {
+			t.Fatalf("VerifyRootBundle(%s) subject = %+v", name, subjects[0])
+		}
+	}
+}
+
+func TestVerifyRootBundleRejectsMalformed(t *testing.T) {
+	_, _, err := VerifyRootBundle("google", []byte("not a certificate"), time.Now())
+	if err == nil {
+		t.Fatal("malformed root PEM accepted")
+	}
+	if !strings.Contains(err.Error(), "google") {
+		t.Fatalf("error does not name the bundle: %v", err)
+	}
+}
+
+func TestValidateProvisionedRootsRejectsExpired(t *testing.T) {
+	pemPath := writeExpiredRootPEM(t, t.TempDir(), "expired-ca")
+	data, err := os.ReadFile(pemPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := VerifyRootBundle("apple", data, time.Now()); err == nil {
+		t.Fatal("expired root accepted")
+	} else if !strings.Contains(err.Error(), "expired") {
+		t.Fatalf("error does not mention expiry: %v", err)
+	}
+
+	empty := x509.NewCertPool()
+	if err := ValidateProvisionedRoots(empty, "google", time.Now()); err == nil {
+		t.Fatal("empty pool accepted")
+	}
+	if err := ValidateProvisionedRoots(nil, "google", time.Now()); err == nil {
+		t.Fatal("nil pool accepted")
+	}
+}
+
+func TestValidateProvisionedAppleAttestationAllOrNothing(t *testing.T) {
+	roots, err := LoadAttestationRootPEM(validRootPEM(t, "apple"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateProvisionedAppleAttestation(nil, testAppleAppID, time.Now()); err == nil {
+		t.Fatal("appID without roots accepted")
+	}
+	if err := ValidateProvisionedAppleAttestation(roots, "", time.Now()); err == nil {
+		t.Fatal("roots without appID accepted")
+	}
+	if err := ValidateProvisionedAppleAttestation(nil, "", time.Now()); err != nil {
+		t.Fatalf("all-unset must not fail: %v", err)
+	}
+	if err := ValidateProvisionedAppleAttestation(roots, testAppleAppID, time.Now()); err != nil {
+		t.Fatalf("valid pair rejected: %v", err)
+	}
+	if err := ValidateProvisionedAppleAttestation(roots, "NOBUNDLE", time.Now()); err == nil {
+		t.Fatal("appID without a '.' separator accepted")
+	}
+}
+
+// validRootPEM returns the PEM bytes of a fresh self-signed CA.
+func validRootPEM(t *testing.T, name string) []byte {
+	t.Helper()
+	data, err := os.ReadFile(writeRootPEM(t, t.TempDir(), name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
+}
+
+// writeExpiredRootPEM creates a self-signed CA already past its NotAfter.
+func writeExpiredRootPEM(t *testing.T, dir, name string) string {
+	t.Helper()
+	return writeRootPEMWithValidity(t, dir, name, time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
+}
+
 // writeRootPEM creates a fresh self-signed CA and returns its PEM file path.
 func writeRootPEM(t *testing.T, dir, name string) string {
+	t.Helper()
+	return writeRootPEMWithValidity(t, dir, name, time.Now().Add(-time.Hour), time.Now().Add(24*time.Hour))
+}
+
+func writeRootPEMWithValidity(t *testing.T, dir, name string, notBefore, notAfter time.Time) string {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -120,8 +217,8 @@ func writeRootPEM(t *testing.T, dir, name string) string {
 	tmpl := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
 		Subject:               pkix.Name{CommonName: name + " root"},
-		NotBefore:             time.Now().Add(-time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
+		NotBefore:             notBefore,
+		NotAfter:              notAfter,
 		IsCA:                  true,
 		BasicConstraintsValid: true,
 	}

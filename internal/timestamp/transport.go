@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -72,7 +73,7 @@ func (t *HTTPTransport) RoundTrip(ctx context.Context, request []byte) ([]byte, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("tsa returned http status %d", resp.StatusCode)
+		return nil, &StatusError{Code: resp.StatusCode}
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, tsaMaxBodyBytes+1))
 	if err != nil {
@@ -82,6 +83,37 @@ func (t *HTTPTransport) RoundTrip(ctx context.Context, request []byte) ([]byte, 
 		return nil, errors.New("tsa response exceeds the size limit")
 	}
 	return body, nil
+}
+
+// StatusError reports a non-2xx RFC 3161 HTTP response. It is typed so the
+// store-and-forward fallback can classify 5xx responses as transient.
+type StatusError struct {
+	Code int
+}
+
+func (e *StatusError) Error() string {
+	return fmt.Sprintf("tsa returned http status %d", e.Code)
+}
+
+// IsTransient classifies a timestamp round-trip error as retry-safe: transport
+// timeouts, other net-level failures, and 5xx responses qualify; 4xx
+// rejections and verification failures do not.
+func IsTransient(err error) bool {
+	if err == nil {
+		return false
+	}
+	var statusErr *StatusError
+	if errors.As(err, &statusErr) {
+		return statusErr.Code >= 500
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+	return false
 }
 
 // TSA is a provisioned timestamp authority: a signed transport plus the

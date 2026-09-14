@@ -10,6 +10,8 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
+
+	"integin/internal/timestamp"
 )
 
 // CertificateRenderJobArgs defines the durable River payload for background PDF/A-4b rendering.
@@ -178,4 +180,28 @@ func (q *Queue) InsertManyTx(ctx context.Context, tx *sql.Tx, batch []river.Inse
 	}
 	_, err := q.client.InsertManyTx(ctx, tx, batch)
 	return err
+}
+
+// TSABacklogSink adapts Queue to timestamp.BacklogSink so the TSA
+// store-and-forward fallback can durably buffer unreachable-authority
+// requests until the external RFC 3161 endpoint is reachable again.
+type TSABacklogSink struct {
+	q *Queue
+}
+
+// NewTSABacklogSink wraps a Queue as a durable TSA backlog sink. A nil queue
+// fails closed at enqueue time.
+func NewTSABacklogSink(q *Queue) *TSABacklogSink {
+	return &TSABacklogSink{q: q}
+}
+
+// Enqueue durably stores a store-and-forward TSA backlog job.
+func (s *TSABacklogSink) Enqueue(ctx context.Context, job timestamp.TSABacklogJobArgs) error {
+	if s == nil || s.q == nil || s.q.client == nil {
+		return errors.New("queue client is not configured for tsa backlog")
+	}
+	if _, err := s.q.client.Insert(ctx, job, nil); err != nil {
+		return fmt.Errorf("enqueue tsa backlog job: %w", err)
+	}
+	return nil
 }

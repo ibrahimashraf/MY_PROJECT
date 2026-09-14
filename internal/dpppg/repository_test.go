@@ -30,7 +30,7 @@ func TestDPP4PillarsLifecycleIntegration(t *testing.T) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-		t.Fatalf("database ping failed: %v", err)
+		t.Skipf("skipping integration test: postgres container not available (%v)", err)
 	}
 
 	repo, err := NewRepository(db)
