@@ -14,6 +14,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/workbenchhttp"
 )
 
 func TestNewMuxMountsHealthAndSyncRoutes(t *testing.T) {
@@ -280,5 +281,32 @@ func TestPublicVerifierRouteServesEmbeddedHTML(t *testing.T) {
 	mux.ServeHTTP(postRec, postReq)
 	if postRec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("POST /verify status = %d, want 405", postRec.Code)
+	}
+}
+
+func TestNewMuxMountsWorkbenchRoutes(t *testing.T) {
+	workbench := workbenchhttp.NewHandler(nil, nil)
+	mux := NewMux(Dependencies{WorkbenchHandler: workbench})
+
+	noTenant := httptest.NewRecorder()
+	mux.ServeHTTP(noTenant, httptest.NewRequest(http.MethodGet, "/api/v1/devices", nil))
+	if noTenant.Code != http.StatusBadRequest {
+		t.Fatalf("workbench devices without tenant headers = %d, want 400", noTenant.Code)
+	}
+
+	scoped := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/sync/held", nil)
+	request.Header.Set("X-Tenant-ID", "tenant-1")
+	request.Header.Set("X-Organization-ID", "org-1")
+	mux.ServeHTTP(scoped, request)
+	if scoped.Code != http.StatusOK {
+		t.Fatalf("workbench sync/held with tenant headers = %d body=%s", scoped.Code, scoped.Body.String())
+	}
+
+	unmounted := httptest.NewRecorder()
+	unmountedMux := NewMux(Dependencies{})
+	unmountedMux.ServeHTTP(unmounted, httptest.NewRequest(http.MethodGet, "/api/v1/devices", nil))
+	if unmounted.Code != http.StatusNotFound {
+		t.Fatalf("workbench route mounted without dependency = %d, want 404", unmounted.Code)
 	}
 }

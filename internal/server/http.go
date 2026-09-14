@@ -70,6 +70,7 @@ type Dependencies struct {
 	DPPHandler                     http.Handler
 	TUSHandler                     http.Handler
 	SchedulingHandler              http.Handler
+	WorkbenchHandler               http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }
