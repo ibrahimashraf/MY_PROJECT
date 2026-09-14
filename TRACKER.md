@@ -421,6 +421,12 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Strict migration scanner validating all up/down pairs and cryptographic file digests across `migrations/`.
   * Verification gate enforcing clean vet status, test evidence, required multi-party approvals, and rollback plans.
   * Standalone CLI tool `cmd/release-gate` supporting `generate` and `verify` modes.
+* [x] **P1.3 Retention, Legal Hold & Export Access Policy (`pkg/retention/`, `migrations/0077*`)** — COMPLETE ✅ (2026-09-14, committed `3bab57f`):
+  * Database migration `0077_retention_and_legal_hold.sql` with 4 tenant-scoped tables (`tenant_retention_policy`, `legal_hold_registry`, `export_approval_registry`, `deletion_evidence_receipt`).
+  * Strict append-only immutable trigger on deletion receipts preventing modification or deletion.
+  * Multi-tenant RLS enabled & forced with NULLIF session variable isolation.
+  * Go policy evaluator with active legal hold purge gating (`ErrLegalHoldActive`), retention schedule windows (`ErrRetentionPeriodActive`), self-approval prevention, and deterministic SHA-256 deletion certificates.
+
 
 
 
