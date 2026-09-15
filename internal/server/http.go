@@ -61,6 +61,7 @@ type Dependencies struct {
 	AuditLogHandler                http.Handler
 	AnalyticsHandler               http.Handler
 	ReportsHandler                 http.Handler
+	AdvisoryHandler                http.Handler
 	ShortLinkHandler               http.Handler
 	QRNFCHandler                   http.Handler
 	AssuranceHandler               http.Handler

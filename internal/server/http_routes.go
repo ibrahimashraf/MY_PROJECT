@@ -102,6 +102,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	if d.AnalyticsHandler != nil {
 		mux.Handle("/api/v1/analytics/", d.AnalyticsHandler)
 	}
+	if d.AdvisoryHandler != nil {
+		mux.Handle("/api/v1/advisory", d.AdvisoryHandler)
+		mux.Handle("/api/v1/advisory/", d.AdvisoryHandler)
+	}
 	if d.ReportsHandler != nil {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
 	}
