@@ -82,6 +82,7 @@ class _FieldHomePageState extends State<FieldHomePage> {
             MaterialPageRoute(
               builder: (_) => EnrollmentScreen(
                 tenantId: controller.context.tenantId,
+                organizationId: controller.context.organizationId,
               ),
             ),
           ),

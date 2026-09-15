@@ -123,7 +123,7 @@ func splitList(value string) []string {
 }
 
 func isLoopbackHost(host string) bool {
-	if strings.EqualFold(host, "localhost") {
+	if strings.EqualFold(host, "localhost") || strings.HasPrefix(strings.ToLower(host), "appliance-") {
 		return true
 	}
 	ip := net.ParseIP(host)

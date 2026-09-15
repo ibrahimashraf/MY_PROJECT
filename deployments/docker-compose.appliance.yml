@@ -73,7 +73,7 @@ services:
       POSTGRES_USER: ${APPLIANCE_POSTGRES_USER:-integin_owner}
       POSTGRES_PASSWORD: ${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}
     volumes:
-      - appliance-postgres-data:/var/lib/postgresql/data
+      - appliance-postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -152,15 +152,20 @@ services:
     restart: unless-stopped
     environment:
       INTEGIN_HTTP_ADDR: "0.0.0.0:8080"
-      INTEGIN_DB_URL: "postgres://${APPLIANCE_POSTGRES_USER:-integin_owner}:${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}@appliance-pgcat:6432/${APPLIANCE_POSTGRES_DB:-integin_appliance}?sslmode=disable"
+      INTEGIN_DB_URL: "postgres://${APPLIANCE_POSTGRES_USER:-integin_owner}:${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}@appliance-pgcat:6432/${APPLIANCE_POSTGRES_DB:-integin_appliance}?sslmode=disable&default_query_exec_mode=simple_protocol"
+      INTEGIN_EVIDENCE_STORE: "rustfs"
       INTEGIN_RUSTFS_ENDPOINT: "http://appliance-rustfs:9000"
       INTEGIN_RUSTFS_REGION: "sovereign-edge"
       INTEGIN_RUSTFS_BUCKET: "evidence"
       INTEGIN_RUSTFS_ACCESS_KEY: "${RUSTFS_ACCESS_KEY:-sovereign_rustfs_admin}"
       INTEGIN_RUSTFS_SECRET_KEY: "${RUSTFS_SECRET_KEY:-sovereign_rustfs_secret_key_643}"
       INTEGIN_SYNC_SECRET: "${APPLIANCE_SYNC_SECRET:-sovereign_sync_master_key}"
+      INTEGIN_TENANT_ID: "${APPLIANCE_TENANT_ID:-integin-integration-tenant}"
+      INTEGIN_ORGANIZATION_ID: "${APPLIANCE_ORGANIZATION_ID:-org-phone-01}"
       INTEGIN_OIDC_ENABLED: "true"
       INTEGIN_OIDC_ISSUER: "http://appliance-casdoor:8000"
+      INTEGIN_OIDC_AUDIENCE: "${APPLIANCE_OIDC_AUDIENCE:-integin-live-matrix}"
+      INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK: "true"
     ports:
       - "8080:8080"
     networks:

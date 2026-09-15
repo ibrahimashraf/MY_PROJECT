@@ -126,7 +126,7 @@ func (c *postgresClaim) Commit(ctx context.Context, status string, httpStatus in
 		_ = c.tx.Rollback()
 		return nil
 	}
-	if _, err := c.tx.ExecContext(ctx, `UPDATE sync_idempotency_cache SET status = $1, http_status = $2, response_payload = $3, request_hash = $4, expires_at = now() + make_interval(hours => 24) WHERE tenant_id = $5 AND organization_id = $6 AND key_hash = $7`, status, httpStatus, payload, c.scope.RequestHash, c.scope.TenantID, c.scope.OrganizationID, c.scope.KeyHash); err != nil {
+	if _, err := c.tx.ExecContext(ctx, `UPDATE sync_idempotency_cache SET status = $1, http_status = $2, response_payload = $3, request_hash = $4, expires_at = now() + make_interval(hours => 24) WHERE tenant_id = $5 AND organization_id = $6 AND key_hash = $7`, status, httpStatus, string(payload), c.scope.RequestHash, c.scope.TenantID, c.scope.OrganizationID, c.scope.KeyHash); err != nil {
 		_ = c.tx.Rollback()
 		return err
 	}

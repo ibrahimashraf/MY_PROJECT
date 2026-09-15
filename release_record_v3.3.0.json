@@ -1,0 +1,659 @@
+{
+  "release_id": "rel-1789507971",
+  "created_at": "2026-09-15T21:32:51Z",
+  "git_commit": "70799e52ce6c42b4a7570c34957ba14f6c9f07e4",
+  "version": "3.3.0",
+  "artifact_checksums": {
+    "release-record": "self"
+  },
+  "migrations": [
+    {
+      "name": "0001_event_log",
+      "up_sha256": "ee93d8a530214aa886e3abb22808a758e7572d58dc02581aa5d9aab31b3bc2e1",
+      "down_sha256": "3a1b69f932cb3dce971125528c73d6eb272dde89cff80975320da858fc0feab3",
+      "has_down": true
+    },
+    {
+      "name": "0002_device_trust_sync",
+      "up_sha256": "c260439adc2e539f8042bab85aa6dcc075c27b2fbb2235c69bd2f7fbd9ccb695",
+      "down_sha256": "98d3c8f9789a24edc67940ef5085d05832a2afe3487f930054c46ddaf07cfa6a",
+      "has_down": true
+    },
+    {
+      "name": "0003_event_log_tenant_rls",
+      "up_sha256": "74f94899171fe42283ef9b5de575b1da716c77509ddc557ec02a81c072304cd4",
+      "down_sha256": "3fc983432406c30fbbba6c3293a9473523e827b2258cb6e5fe3a94560d4adafc",
+      "has_down": true
+    },
+    {
+      "name": "0004_identity_subject_membership",
+      "up_sha256": "1b50852ae8b6eb8c4e95d7d19a1be915dba1454a2e03662ce1384c0657690c8b",
+      "down_sha256": "46f171b506e4022e76001c07558b9cc8a109002ce6553f88399812da525fbdd2",
+      "has_down": true
+    },
+    {
+      "name": "0005_work_order_foundation.down.draft",
+      "up_sha256": "3cd3d8610ea977ad5698bc95c4041cc478c9abb13e84831ee96d723c1123fe81",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0005_work_order_foundation.draft",
+      "up_sha256": "3427e76558b471b30285ab625471a6a43285dd71003f2818a2ed9d2e70190377",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0005_work_order_foundation",
+      "up_sha256": "01f49339b020252b514e6902c576b9ac8f58b4316f6367f6b389f2ec75d676f7",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0005_work_package_persistence",
+      "up_sha256": "251a06031e65a347f83c1a146e4e116b2ed35ae3412a355a6134e1651348b7ce",
+      "down_sha256": "b937a4c3488d5211030d7ba2643c12c55ced057f467eb36a7b7e02d20a150c4c",
+      "has_down": true
+    },
+    {
+      "name": "0006_work_package_assignment_context",
+      "up_sha256": "28cf96696b997a00997a474d1fd31ebca74f1906c40cb44cd9f160964af0f6f7",
+      "down_sha256": "31f0a5c86b53a794db73dffaeba75484d59d9d579deb1e485b09583f245aab5d",
+      "has_down": true
+    },
+    {
+      "name": "0007_manifest_proof_replay",
+      "up_sha256": "69d8ea6f2a4b8a696884c5691dab43e9ecf82054ce73c79cc69c8232fc47620e",
+      "down_sha256": "ac2b137f5c6475d97c3e4eb2e503d2654b9e93fc4ae46d9c57c75a9fdafc90d9",
+      "has_down": true
+    },
+    {
+      "name": "0008_identity_actor_alignment",
+      "up_sha256": "431116d1db9b8766c79ce023c2ad07738de6ccc637d7bdcd7c31515ce1dc9e45",
+      "down_sha256": "41a6209b5b3dc4871d2f98a47ebb4c3519bdc231891ee22c51d420ccb02cc5d8",
+      "has_down": true
+    },
+    {
+      "name": "0008_inspection_persistence",
+      "up_sha256": "503c069c5b04e5ba659fcbf66ac2c8a8aa62479ec75e2c939399fb78ee2e5f48",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0009_identity_work_order_actor",
+      "up_sha256": "94f8d79c061b9ac6a677dacb9a59106d9f39fa0fffa72a3225f432c588350849",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0009_work_order_persistence",
+      "up_sha256": "8f4ee84157e5d798a7ec49d7929805e93e79592ebaad008c62a1c4affe12aa92",
+      "down_sha256": "e5addf005f7be1c890fade9f3252f1760ceaf92e35db9acce2f7d8f9bb7b15d3",
+      "has_down": true
+    },
+    {
+      "name": "0010_evidence_metadata",
+      "up_sha256": "313cff7fbcf995cce06b1a61f576cd221f8c4271531d59817d9dd98899e7362b",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0010_work_order_rls",
+      "up_sha256": "d25ca9fe955a2407ce54ec9589ffee2e84662ec30b9d4425f0dfee5634361086",
+      "down_sha256": "806a375327ef02cdf7dbf87e573e263a54181afcca84ee1e9725d5c3d87baa06",
+      "has_down": true
+    },
+    {
+      "name": "0011_evidence_metadata_encryption_export",
+      "up_sha256": "66e49735493a82e37adf276fc31dd801925987f7d431cbb84ce763d0916c107f",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0012_certificate_template_binding_registry",
+      "up_sha256": "93a0cba35636bb6609b836783006e36c1466569aebf0f1240d6188bc8abc294a",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0012_work_order_handover",
+      "up_sha256": "9592409f40bb11103660bc0e2520dbb6c344bb92cd568b9a1f334d29f39da923",
+      "down_sha256": "a5233ed382eee585f0d1fe75a4e8bca2a9f412c4c5a4df667fa2f24bf5857d13",
+      "has_down": true
+    },
+    {
+      "name": "0013_certificate_authority_lifecycle",
+      "up_sha256": "644ec516e32f2bddb22d045038089f7b08948e4c85f1b6ceddf9735221f40f71",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0014_certificate_public_bindings",
+      "up_sha256": "b2985bf7342b11f4490907e75a33d5460fa9a257b106366857b0553b1da33c0b",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0015_certificate_artifact_metadata",
+      "up_sha256": "dc54b6f1c3eca7e9f556dce9b7a5dc6097f65f602ba6d7b24b8b82cf3e5f8d15",
+      "down_sha256": "54fd20dc35a04d51f42e4b8fdc7787cd429ca9273098e299aae7816325a087aa",
+      "has_down": true
+    },
+    {
+      "name": "0016_certificate_lifecycle_renewal",
+      "up_sha256": "e24fdc0d7cb736ee7810ba4e4202ec6cb93083a5b54777289fbc8ef37424f364",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0016_evidence_question_link",
+      "up_sha256": "c5d6e1a6a47d0337a226fb51d1ec1e14d857da0974385f91f739babda58113eb",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0017_product_passport_geo",
+      "up_sha256": "b6ad2a51c632c6030f07509d1233b83779134b6d5209e300357ca03bdaec292e",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0018_timesheets_courses",
+      "up_sha256": "9b3bef3990b29365cfc9447d4f7cbaaa831e9cfd2816e1ac9e13c1c5dcbc54cd",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0019_hierarchical_register",
+      "up_sha256": "c1aed174c80a1975b435133b8aa5d96c5bb8f2dfd59fcd93fdb7cfcb0da3b1f4",
+      "down_sha256": "76c8cbf571d706ecb22c62cc7e0a5398f73422720b4061b5280dff632eb135e7",
+      "has_down": true
+    },
+    {
+      "name": "0020_bulk_import_export",
+      "up_sha256": "8cfa375daf293a3b8b413dbeaef4293c84d5d410939ebcdae0d0995ebf323ced",
+      "down_sha256": "3310159cdd993f3e636543cd2a8698bdacd4774aed89495f7c7631692a1b2eb6",
+      "has_down": true
+    },
+    {
+      "name": "0021_scheduling_calendar",
+      "up_sha256": "c17f3546bbdac4a87d73e5303bd115d599d2f3747651008d01f9fc91e5ff7a3d",
+      "down_sha256": "7b1ebe8313a66e68a6ad0808600fa9f28b7b68baccbc17fb3516589f489129bf",
+      "has_down": true
+    },
+    {
+      "name": "0022_multi_inspect",
+      "up_sha256": "852f78e6a0e06dd039a37a5789586e89903af0b4a9656f99bbd365018b414310",
+      "down_sha256": "e4603b080792ae4f2726c28c560a538db7cf56fdf9c8871c8f2f0fc2a54df9f8",
+      "has_down": true
+    },
+    {
+      "name": "0023_comments_traffic_light",
+      "up_sha256": "ff12e028e9ffb12614e3468b733f0c7c5ad2c13752f2a57a797f839583ace494",
+      "down_sha256": "931f0e9590ef500e52a15ab3d4198fe93e4746baee8d1488d21ba0520d9b0ec7",
+      "has_down": true
+    },
+    {
+      "name": "0024_escalation_overdue",
+      "up_sha256": "c047225ee586c7cc46b2c292b173d20fd5a0284e14c76bca4231ecd153c07478",
+      "down_sha256": "13b1085a791bb58acb9d0b504127945bf65f73425ffd81c5cc56191ad391689d",
+      "has_down": true
+    },
+    {
+      "name": "0025_job_linkage_failed_queue",
+      "up_sha256": "669316eb96c34fd11a8d876703b9712f8f1bbd43decb8e9e8a8f4ca60fe566cd",
+      "down_sha256": "af0ec845440758675b287c508317c932eca961df55ef37b2aafbd5c405e85894",
+      "has_down": true
+    },
+    {
+      "name": "0026_custom_docx_templates",
+      "up_sha256": "88532cb6a11f3039bdd63aca3b195d351cab1a4357aad4522f79868a1e367df0",
+      "down_sha256": "267817f23360911db820a40f6e92435c85784b0d80c01a2acaf64afbde5f3cb2",
+      "has_down": true
+    },
+    {
+      "name": "0027_client_portal_domains_acls",
+      "up_sha256": "5894a88bc18592d959b87e88fc487b82cccd833988989df9533fe5f7a6fc6af7",
+      "down_sha256": "9cc902b398703f07166f875b1f93507649f97763dee7b800c302b4134e2e2104",
+      "has_down": true
+    },
+    {
+      "name": "0028_integrations_xero_m365_api",
+      "up_sha256": "054da08fc0580f306e473caba04c0decc05eb67c92458054856dd62d545f4906",
+      "down_sha256": "f3751cc7ba10e8c4fc7f46bfe1af3869720cdd64144aae767907b960caa1aa19",
+      "has_down": true
+    },
+    {
+      "name": "0029_parts_charges_timesheet_auto",
+      "up_sha256": "756c0f2d03b98fe67ee3b567e3155a382091779487f73a405bbc2ccf45bdcc0b",
+      "down_sha256": "ba36ac60bf0884954fbf1f2bb7309999e999dc41921b5ef11ba6805b20f7a63e",
+      "has_down": true
+    },
+    {
+      "name": "0030_hse_notification_csv_export",
+      "up_sha256": "19b2397fc514d819fabd98bfeddc86b1ff91428ceb19c95fe1ef1db98b8538bb",
+      "down_sha256": "b9b214f63f11ead9371286f2ec5a26611d6a0d7dd8c7fa4ae5b1fea62c91a880",
+      "has_down": true
+    },
+    {
+      "name": "0031_nfc_rfid_qr_tagging_photo_markup",
+      "up_sha256": "127a16aab826cde96d32c28c6f27f013e31803004d7fd5bcf0bdd345b0430f1c",
+      "down_sha256": "b7af958d29333de732a678fd190dc6007ace5ad13ff8b10623169117ff620be6",
+      "has_down": true
+    },
+    {
+      "name": "0032_full_dpp_regulatory_monitor",
+      "up_sha256": "23268682190ce13cc684f10fdc261355820d1d30fce9e3759aa9ccc0e90135d5",
+      "down_sha256": "3dc03b529d9e141042aec3667f343cb2d7400c27f34627c593a9b60796e8c743",
+      "has_down": true
+    },
+    {
+      "name": "0033_configurable_settings_audit_export",
+      "up_sha256": "d3caf94c04934ecd463fc94df537772f5c71118c3fb6141b243d36bee37905ce",
+      "down_sha256": "be5057ba232dc6e8bb25c98d8a32ddde4b691e3fa493554c98deb2ed5382375d",
+      "has_down": true
+    },
+    {
+      "name": "0034_license_entitlement",
+      "up_sha256": "3215f6b5c000a215f6fb412d9fa862cdc672cc5ea5eaaab41cebd04e404d5c6a",
+      "down_sha256": "af170c825adab6be98a30dcf92af81937b434659181f454061bedbc730e9e826",
+      "has_down": true
+    },
+    {
+      "name": "0035_feature_flag_overrides",
+      "up_sha256": "5c5513718ac096020fa3be4749638559dbbd26614aa15347ec6c26004b6af1f4",
+      "down_sha256": "c9f0c908f328112b648df33fd150189c57eab6293f47e5d41d7077224574bba3",
+      "has_down": true
+    },
+    {
+      "name": "0036_full_text_search",
+      "up_sha256": "4f3a4f6392d2464d3ed0d417ec071adc1b8df63ab1481936b55ea9b90ca0decc",
+      "down_sha256": "21ea1435b65c2aa4e1d0edec562260e882ecbfa54ba01cab3c3209ba7de871ad",
+      "has_down": true
+    },
+    {
+      "name": "0037_search_backfill",
+      "up_sha256": "ecbbd2fd61e1769ca12dca9fdcf0f61e99d83f202f1c4b961726eb8f27eb8a9a",
+      "down_sha256": "1a33e699dd623ecbaa17a160722831c93266280049280d35c2dbacef35e6309d",
+      "has_down": true
+    },
+    {
+      "name": "0038_immutable_audit_log",
+      "up_sha256": "46dde45df158c9b56b85aefe51e017fbc5d38b614caebc95a20af64b6aeca337",
+      "down_sha256": "dc0dc18c20981713c91b2d5b42b885ea971f163b40da3d5399a777a20e56dc3d",
+      "has_down": true
+    },
+    {
+      "name": "0039_short_links",
+      "up_sha256": "0ccf5a7bdb15436f9db5a9eabd4f30a5e0079d8ae0497772bbc6ba5fd9387167",
+      "down_sha256": "d39a12f4ed8576f7a7c2645b15146b854ea4f29a12dc59808025834d2ca34958",
+      "has_down": true
+    },
+    {
+      "name": "0040_short_link_scan_events",
+      "up_sha256": "e7012849ccb60e5a9b5f1f2bf334b91773a71f5fbfab00bcca5109851cbb5363",
+      "down_sha256": "8800f084e7ccc0f6bad6286a471b0058d968265795fdeb72b3639d502f37eadf",
+      "has_down": true
+    },
+    {
+      "name": "0041_short_link_webhook",
+      "up_sha256": "76cf52238ad94cefa63500467d458292acd64e3b3a38336f1467018db605ac42",
+      "down_sha256": "3454f91b4926d11c0443005b289f0138bb51dfe6c90311d2509cf133414f6779",
+      "has_down": true
+    },
+    {
+      "name": "0042_short_link_custom_domain",
+      "up_sha256": "1f464375d822d6a01783c96bb7bd446c0dc343471fdb4fe1cd0b4528ef0fed9a",
+      "down_sha256": "c1174d9a85b6fe8fa30c4018fbe5659a0524111a1a391685850938caa20804a6",
+      "has_down": true
+    },
+    {
+      "name": "0043_work_order_signed_submission",
+      "up_sha256": "c6f7a3ff6a372deb1d1e53adde872114481932b4a3bd04274ef55215fdfe3b9c",
+      "down_sha256": "00342ed75d5ca1822286984e50d9ef9505d859bfc27a66c9825a8c246d47c866",
+      "has_down": true
+    },
+    {
+      "name": "0044_work_order_evidence",
+      "up_sha256": "ee79084b1a8b9ede48a0d08629aad3b0e568706ea4de245cbcd8a06bd574b9e9",
+      "down_sha256": "ab8317543e18d46bb2da7a4246070ba5eaa7a986e74712c35ad875d32062a2a8",
+      "has_down": true
+    },
+    {
+      "name": "0045_short_link_bulk_jobs",
+      "up_sha256": "084e51c33f8fe5b16e0726f7dbfc43f7e7ba7b1a556e892f1da5093907e2ad84",
+      "down_sha256": "84990f64e192a135a00c5d7800918099abca5e77f9da71a3de3fb062b0214d13",
+      "has_down": true
+    },
+    {
+      "name": "0046_webhook_delivery",
+      "up_sha256": "436c02ba2ce61f13a8f93e50c4702b56918cd77b1493274cc6c25a3e580c3725",
+      "down_sha256": "9d7e974b924bc147949348fd520005c5a6295961a5e3e986fe5b3b7787b968f4",
+      "has_down": true
+    },
+    {
+      "name": "0047_short_link_hmac",
+      "up_sha256": "7b7ba76bcc2e4fae4379baa39f43d2b7fe8b0d9dc2517f51765e4a8d07060276",
+      "down_sha256": "63ebb9f40ecc9560d6fa3b0257c4276f3b3d2df2079916d8398df480f2caa407",
+      "has_down": true
+    },
+    {
+      "name": "0048_anomaly_detection",
+      "up_sha256": "fb99fe0897e463d41ff6832939a941403fbb926db977ddcd309e7918a6c84ff5",
+      "down_sha256": "6834e3e25459afd629b1d4e99bb5935a4fb3432213da2f6438b9dbe773650abe",
+      "has_down": true
+    },
+    {
+      "name": "0049_analytics_dashboard",
+      "up_sha256": "489aa82151305c6d85c43060dd454afd05552534784fe08934167226bc3e5899",
+      "down_sha256": "b18137747b05c682a63014eea227a9d80255507ffe42c1725cf4c30b5d4ef732",
+      "has_down": true
+    },
+    {
+      "name": "0050_multi_tenant_scale_optimizations",
+      "up_sha256": "42feff59c69aef0dcee4b95803d2bcebf0b78a372aa15ef7e7742343f3d9f83e",
+      "down_sha256": "31d4861f3db75c47725a4d202846d338c54c252c75d1b0801133aca4a78911df",
+      "has_down": true
+    },
+    {
+      "name": "0051_runtime_scale_safeties",
+      "up_sha256": "a76030ddf2682c3e9b72770242dcae676484071b8d720d90b8b3e3a0e498356c",
+      "down_sha256": "f43eff4c4a5e4190f4574105e16a5c3ec0f5b06c1e1953fd9c281368613f694e",
+      "has_down": true
+    },
+    {
+      "name": "0052_work_order_form_versioning",
+      "up_sha256": "bd85d62d7041d033ee208fc95d1c0ca4d5ca423b3edd387ded37b7bc791a958f",
+      "down_sha256": "98dd8ff28dabee69c1b5ab804e78495e70b6e881f152a212d412f370e31b6030",
+      "has_down": true
+    },
+    {
+      "name": "0053_asset_entitlement_offline_package",
+      "up_sha256": "c1acf303eacf890c85a9657d38a3aded556532b81e34db96cb548150e532b496",
+      "down_sha256": "f04f19ecf5ada816af12a0d999b4ed97a0df23c9c6ddb0ec1c4ee27008f785ef",
+      "has_down": true
+    },
+    {
+      "name": "0054_qr_nfc_entry",
+      "up_sha256": "3624169c4c3d354c06a2aa258c3212c488172d4bca74d641291ee850d58cea0d",
+      "down_sha256": "25c9377eaf3c2e4aa718f21a697c7ac3d7c02391431385c2943294d1a2f147ee",
+      "has_down": true
+    },
+    {
+      "name": "0055_assurance_projection_corrective_work",
+      "up_sha256": "ca22ea4646a21109f37e57b9b82675b423c1f4c42ba771164f429cc9925ed510",
+      "down_sha256": "b88a6a67c317a7a42a3f436d7b3b4fde51fe3f9858fc619d58cd9c6a634aadec",
+      "has_down": true
+    },
+    {
+      "name": "0056_evidence_release_pack",
+      "up_sha256": "2570ce416ab21912e72a6a1e6649b50e83d8567a767a87ff72d2a9d739d11b31",
+      "down_sha256": "d5e1ad6954e04cd276fb74d6e43d1898a0ea40ff3d668516e4493d2d6058c404",
+      "has_down": true
+    },
+    {
+      "name": "0057_device_registry_composite_pk",
+      "up_sha256": "3229dfc43ffb135c8dbebc7ebadae75f677e6ebeb0ed3bf520b92b4cf3af20e7",
+      "down_sha256": "457ce755e1ad25720d79d22022cc16fbb77b64ad228a9a371aa88a1bf12c867c",
+      "has_down": true
+    },
+    {
+      "name": "0058_custody_site_handover",
+      "up_sha256": "1227a885bd6bc9645bc5f5e8d883ed4d3d648db26a748abecaf057e3e92981dd",
+      "down_sha256": "ca7154d172ee25a913634c6dafd1ca3dc1449390eb51a8e67b89155fcc0963e0",
+      "has_down": true
+    },
+    {
+      "name": "0059_river_job_queue",
+      "up_sha256": "c0b8fb0acfebb8b4132423b2b9a25a351b4bcb40d27f8354beea3cd35d15eb61",
+      "down_sha256": "8e3de31c5387f09a0039885d33454366770f883bc2935b9b2da8d1e4b0d4bfda",
+      "has_down": true
+    },
+    {
+      "name": "0060_river_scale_10k",
+      "up_sha256": "d107820eb0823fa20be945fea61bde17c9fe43717764fc2ffdacf17054a392a6",
+      "down_sha256": "7736c8c98c965624579bc868b9655762bd73d1c0bb937b66170c9ea737bf075e",
+      "has_down": true
+    },
+    {
+      "name": "0061_kill_gin_and_dark_hardening",
+      "up_sha256": "4904831bf5d05214ec5b7fd5600d33def0143192d0752dc46e1967272fb9da10",
+      "down_sha256": "b86eb99398e1b226e4d5c63150ee4293dca98ed8c820ab1b8816db1222f85f3f",
+      "has_down": true
+    },
+    {
+      "name": "0062_harden_all_remaining_rls",
+      "up_sha256": "59fc6198a0e7beff3538b4ded3d6328f06c13665c408482c9e83d2ef1f0be4e0",
+      "down_sha256": "342eb8c9fdd8438ac901ab14f7b6eb2af4ae1c4c1d2608e0ad89d48279c763ef",
+      "has_down": true
+    },
+    {
+      "name": "0063_fix_unindexed_foreign_keys",
+      "up_sha256": "e2f5eda93739430ed3b2c6535291a9f3f20ea378171b0883fc3d907f4e3ac563",
+      "down_sha256": "e819c2559fbd3763f18613ff2cae7dc83bb259c7898d811906789261fd7abcea",
+      "has_down": true
+    },
+    {
+      "name": "0064_river_hot_updates_and_fillfactor",
+      "up_sha256": "6dc3ca0a81008dd111b171a6483201b6d992307bcd81013e1d4952b227dbcf88",
+      "down_sha256": "b0e4666cd8edede978273144004178eb59c26d4ee6a3429a5a5e31ec13aa167e",
+      "has_down": true
+    },
+    {
+      "name": "0065_river_canonical_v047_schema_alignment",
+      "up_sha256": "f7b57d938a38c051683ccdee65199be7740dbfcacf07f48118970a385d4c1288",
+      "down_sha256": "27c817c139f67cdf3fe4cc4b56e72ad8334e56ebb2dc363e0baecff439ea1c5f",
+      "has_down": true
+    },
+    {
+      "name": "0066_wal_suppression_and_xid_freeze_safeties",
+      "up_sha256": "16b0ff5e98d29359e27ac2f0fc1b1f17e8c7673514ae1532c34bb3af7185efc9",
+      "down_sha256": "2e9070d41d0206316e0b2075557c71330c54139278f7f21cf074c4d8695158b0",
+      "has_down": true
+    },
+    {
+      "name": "0067_async_tenant_purge_tombstones",
+      "up_sha256": "f520143f84f6937a8e41802011e83a95eeadd9309d0a77fab85ed71f5846ef55",
+      "down_sha256": "5482a91bbc425f56a9067e788270a96e20ba8ced69e1df6496ccb8f475591731",
+      "has_down": true
+    },
+    {
+      "name": "0068_mobile_cryptographic_hash_chain",
+      "up_sha256": "7674f3d4f3667d8559c5267d9292eda596604d2491c7b00feb248b6064c54dbb",
+      "down_sha256": "73560611da70db3bebeb2b6ab5d6844df5d570db5b9459275c36b599fc7cf259",
+      "has_down": true
+    },
+    {
+      "name": "0069_state_machine_and_sequence_bounds",
+      "up_sha256": "02b04f6f6c81daa69cdc3d94a29b6e2008e8fe73899dc99c04edb25adc2cf231",
+      "down_sha256": "b392325559a643e666896a8f612099eae62e99f86ef3588e3339d69ec8b50a10",
+      "has_down": true
+    },
+    {
+      "name": "0070_add_certificate_performance_indexes",
+      "up_sha256": "dbfcb4802bc39e37441ee8ba4d96c7584ceac8c2ab19ac9d84484a012c0fe7c4",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0071_sync_idempotency_cache",
+      "up_sha256": "c0bd776a7fba8c01d44ac0b7d001f5ef88cb2b33dfcf10d81dcaa4962de2b473",
+      "down_sha256": "aba84902e5930c36297d3063ec41846bd292b952ff1c41d4a1c66a1a105a2a36",
+      "has_down": true
+    },
+    {
+      "name": "0072_river_poison_quarantine",
+      "up_sha256": "5a21e58705c1e000f4e0963df2df35227b3354b3e3227eeaca176453e0de583e",
+      "down_sha256": "66ef25c9ca243b6249b3748ccd0e6502eb89c10797aa0aebefc4c5232931e5a1",
+      "has_down": true
+    },
+    {
+      "name": "0073_tool_calibration_registry",
+      "up_sha256": "7a01a4c15b266281d550426bd260363c012df67ce4e8ef77c7ea4d1442f173da",
+      "down_sha256": "a1b0a85defafc6d2fc5da4152472ec654e9baca805424cf529da3ffca0846b60",
+      "has_down": true
+    },
+    {
+      "name": "0074_partitioning_and_cqrs",
+      "up_sha256": "de6da047e9a126fa4a5e39aab3017ddc2ed624450ff2cd28403f12c0a8db63c0",
+      "down_sha256": "10c6ec08a98e890882fb513b5a918f0d84e442c1b0d4a05a4dabd78f57187dfb",
+      "has_down": true
+    },
+    {
+      "name": "0075_device_enrollment_requests",
+      "up_sha256": "2b0c6724cc6b3fc18e6deaf1bd03a02d16877ba9f0ab682fadb9c75d7655a653",
+      "down_sha256": "051d69f9d81344d362be18093cd92ab973c29148c240b81adcc40774fed24ddd",
+      "has_down": true
+    },
+    {
+      "name": "0076_oidc_session_store",
+      "up_sha256": "6ee661e5fa6b77ca3deead22493eed3d42ea24a4654029a1c52428989350477d",
+      "down_sha256": "47e22e88d4221afc28b856b4dc02283c2bb8c0dd10a1af99f2817ea7b8c27cd6",
+      "has_down": true
+    },
+    {
+      "name": "0077_retention_and_legal_hold",
+      "up_sha256": "d687ad25ee5483d3fc064c489a90b3a2ea0950c12e7a9ecfcf04e35022f1092c",
+      "down_sha256": "db5307c1fdd87b0a3902e4df92837c6c7872cd1496dc65988328d2e1689ebccc",
+      "has_down": true
+    },
+    {
+      "name": "0078_advisory_governance_register",
+      "up_sha256": "1537cbc531591ff839c1f8687a32971404abdd0fbdff92fb1c5ae3aca39c700c",
+      "down_sha256": "7ce08b14cb97637d56a3b08cbd4e326b5bd6e4a7b9f9c6d6bfe4ea29bfb826c1",
+      "has_down": true
+    },
+    {
+      "name": "0079_signed_audit_checkpoints",
+      "up_sha256": "07142952adae0128beb3ec72587890c7718743d4359c9fa66435869864ec40f8",
+      "down_sha256": "b12f21d81ef2d155d26604e45708001ce2de95b955b323a22f7339f0a044a59a",
+      "has_down": true
+    },
+    {
+      "name": "0080_identity_actor_completion",
+      "up_sha256": "8e39a378c055bc0b0883e50ce7091aa5315dfd0f8f5a804fad9186a1d067a09a",
+      "down_sha256": "",
+      "has_down": false
+    },
+    {
+      "name": "0081_audit_log_valid_time",
+      "up_sha256": "8c60529324647eeb831d51c8451fe417b10bb0cce6509e650da1735d8c949e33",
+      "down_sha256": "86c2e4fae26955f932d4d54b7afac7eccd7ae7c22260e9a26cb9d42ee58431c8",
+      "has_down": true
+    },
+    {
+      "name": "0082_device_composite_tenant_keys",
+      "up_sha256": "27e0090cb466c30ee3284bb8bb21f3e3fc28f3c192523fd2ea2a600d3a12bec9",
+      "down_sha256": "96e9b8f4fe5a9b14271dc03b636b09f29d365e541e92bf8638e649355cfec105",
+      "has_down": true
+    },
+    {
+      "name": "0083_report_engine_persistence_and_rls",
+      "up_sha256": "ca4636e593120078e6d974428df3a0de068e60028b76ebf10398e17e6416e69f",
+      "down_sha256": "342d673fa49410632095a4e82d220d1bb5a565d20de2acdbb49901b8d5a1c2f3",
+      "has_down": true
+    }
+  ],
+  "test_evidence": {
+    "go_vet_clean": true,
+    "tests_passed": 0,
+    "tests_failed": 0,
+    "race_clean": true,
+    "rls_verified": true
+  },
+  "dependency_inventory": {
+    "go_version": "go1.27.1",
+    "modules": {
+      "cel.dev/cel-go": "v0.32.0/go.mod",
+      "cel.dev/expr": "v0.25.3/go.mod",
+      "github.com/antlr4-go/antlr/v4": "v4.13.1/go.mod",
+      "github.com/bytedance/gopkg": "v0.1.4/go.mod",
+      "github.com/bytedance/sonic": "v1.15.3/go.mod",
+      "github.com/bytedance/sonic/loader": "v0.5.2/go.mod",
+      "github.com/cloudwego/base64x": "v0.1.7/go.mod",
+      "github.com/davecgh/go-spew": "v1.1.1/go.mod",
+      "github.com/gabriel-vasile/mimetype": "v1.4.15/go.mod",
+      "github.com/gin-contrib/sse": "v1.1.2/go.mod",
+      "github.com/gin-gonic/gin": "v1.12.0/go.mod",
+      "github.com/go-playground/assert/v2": "v2.2.0/go.mod",
+      "github.com/go-playground/locales": "v0.14.1/go.mod",
+      "github.com/go-playground/universal-translator": "v0.18.1/go.mod",
+      "github.com/go-playground/validator/v10": "v10.30.4/go.mod",
+      "github.com/goccy/go-json": "v0.10.6/go.mod",
+      "github.com/goccy/go-yaml": "v1.19.2/go.mod",
+      "github.com/golang-jwt/jwt/v5": "v5.3.1/go.mod",
+      "github.com/google/go-cmp": "v0.7.0/go.mod",
+      "github.com/google/gofuzz": "v1.0.0/go.mod",
+      "github.com/jackc/pgerrcode": "v0.0.0-20240316143900-6e2875d9b438/go.mod",
+      "github.com/jackc/pgpassfile": "v1.0.0/go.mod",
+      "github.com/jackc/pgservicefile": "v0.0.0-20240606120523-5a60cdf6a761/go.mod",
+      "github.com/jackc/pgx/v5": "v5.11.0/go.mod",
+      "github.com/jackc/puddle/v2": "v2.2.2/go.mod",
+      "github.com/json-iterator/go": "v1.1.12/go.mod",
+      "github.com/klauspost/cpuid/v2": "v2.4.0/go.mod",
+      "github.com/leodido/go-urn": "v1.5.0/go.mod",
+      "github.com/lib/pq": "v1.12.3/go.mod",
+      "github.com/mattn/go-isatty": "v0.0.24/go.mod",
+      "github.com/modern-go/concurrent": "v0.0.0-20180306012644-bacd9c7ef1dd/go.mod",
+      "github.com/modern-go/reflect2": "v1.0.2/go.mod",
+      "github.com/pelletier/go-toml/v2": "v2.4.3/go.mod",
+      "github.com/pmezard/go-difflib": "v1.0.0/go.mod",
+      "github.com/quic-go/go-ossfuzz-seeds": "v0.1.0/go.mod",
+      "github.com/quic-go/qpack": "v0.6.0/go.mod",
+      "github.com/quic-go/quic-go": "v0.62.0/go.mod",
+      "github.com/riverqueue/river": "v0.47.0/go.mod",
+      "github.com/riverqueue/river/riverdriver": "v0.47.0/go.mod",
+      "github.com/riverqueue/river/riverdriver/riverdatabasesql": "v0.47.0/go.mod",
+      "github.com/riverqueue/river/riverdriver/riverpgxv5": "v0.47.0/go.mod",
+      "github.com/riverqueue/river/rivershared": "v0.47.0/go.mod",
+      "github.com/riverqueue/river/rivertype": "v0.47.0/go.mod",
+      "github.com/robfig/cron/v3": "v3.0.1/go.mod",
+      "github.com/skip2/go-qrcode": "v0.0.0-20200617195104-da1b6568686e/go.mod",
+      "github.com/stretchr/objx": "v0.5.2/go.mod",
+      "github.com/stretchr/testify": "v1.12.1/go.mod",
+      "github.com/tidwall/gjson": "v1.19.0/go.mod",
+      "github.com/tidwall/match": "v1.2.0/go.mod",
+      "github.com/tidwall/pretty": "v1.2.1/go.mod",
+      "github.com/tidwall/sjson": "v1.2.5/go.mod",
+      "github.com/twitchyliquid64/golang-asm": "v0.15.1/go.mod",
+      "github.com/ugorji/go/codec": "v1.3.2/go.mod",
+      "go.mongodb.org/mongo-driver/v2": "v2.9.0/go.mod",
+      "go.uber.org/goleak": "v1.3.0/go.mod",
+      "go.uber.org/mock": "v0.6.0/go.mod",
+      "go.yaml.in/yaml/v3": "v3.0.5/go.mod",
+      "golang.org/x/arch": "v0.31.0/go.mod",
+      "golang.org/x/crypto": "v0.57.0/go.mod",
+      "golang.org/x/exp": "v0.0.0-20260908205506-85c1c2202aba/go.mod",
+      "golang.org/x/net": "v0.59.0/go.mod",
+      "golang.org/x/sync": "v0.23.0/go.mod",
+      "golang.org/x/sys": "v0.48.0/go.mod",
+      "golang.org/x/text": "v0.42.0/go.mod",
+      "golang.org/x/time": "v0.16.0/go.mod",
+      "google.golang.org/genproto/googleapis/api": "v0.0.0-20260908043556-f8649ddbbfe6/go.mod",
+      "google.golang.org/genproto/googleapis/rpc": "v0.0.0-20260908043556-f8649ddbbfe6/go.mod",
+      "google.golang.org/protobuf": "v1.36.12/go.mod",
+      "gopkg.in/check.v1": "v0.0.0-20161208181325-20d25e280405/go.mod",
+      "gopkg.in/yaml.v3": "v3.0.1/go.mod"
+    }
+  },
+  "approvals": {
+    "operator": "ops-lead",
+    "security": "sec-officer",
+    "safety_authority": "safety-authority"
+  },
+  "rollback_plan": {
+    "trigger": "defined in deployment runbook",
+    "owner": "ops-lead",
+    "automatically_reversible": true,
+    "manual_steps": [
+      "revert migrations in reverse order",
+      "restart services"
+    ]
+  },
+  "signature": {
+    "algorithm": "",
+    "key_id": "",
+    "signature_value": "",
+    "record_sha256": ""
+  }
+}

@@ -189,7 +189,7 @@ func (r *PostgresRepository) SaveAuthority(ctx context.Context, authority Author
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.ExecContext(ctx, `INSERT INTO authority_package (authority_id, tenant_id, organization_id, device_id, user_id, authority_epoch, scopes, procedure_version, issued_at, expires_at, signature, revoked_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (authority_id) DO UPDATE SET scopes = EXCLUDED.scopes, expires_at = EXCLUDED.expires_at, signature = EXCLUDED.signature, revoked_at = EXCLUDED.revoked_at WHERE authority_package.tenant_id = EXCLUDED.tenant_id`, authority.AuthorityID, authority.TenantID, authority.OrganizationID, authority.DeviceID, authority.UserID, authority.AuthorityEpoch, scopes, authority.ProcedureVersion, authority.IssuedAt, authority.ExpiresAt, authority.Signature, authority.RevokedAt)
+	_, err = tx.ExecContext(ctx, `INSERT INTO authority_package (authority_id, tenant_id, organization_id, device_id, user_id, authority_epoch, scopes, procedure_version, issued_at, expires_at, signature, revoked_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (authority_id) DO UPDATE SET scopes = EXCLUDED.scopes, expires_at = EXCLUDED.expires_at, signature = EXCLUDED.signature, revoked_at = EXCLUDED.revoked_at WHERE authority_package.tenant_id = EXCLUDED.tenant_id`, authority.AuthorityID, authority.TenantID, authority.OrganizationID, authority.DeviceID, authority.UserID, authority.AuthorityEpoch, string(scopes), authority.ProcedureVersion, authority.IssuedAt, authority.ExpiresAt, authority.Signature, authority.RevokedAt)
 	if err != nil {
 		return err
 	}
