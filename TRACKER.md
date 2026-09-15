@@ -505,6 +505,10 @@ The following 17 items represent the remaining identified blind spots across Spr
     *   **Chunk 4 (`pkg/perf/arena`)**: Implemented request-scoped 8-byte aligned byte slab allocator with `sync.Pool` recycling, bypassing `runtime.mallocgc` and eliminating GC mark/sweep assist overhead (0 allocs/op on hot path).
     *   **Chunk 5 (`internal/server/concurrency_gate.go`)**: Wired cache-line padded in-flight request counters (`activeRequests`, `activeHealthRequests`) to the concurrency semaphore gate, guaranteeing non-blocking core isolation under 10k-client bursts.
     *   Quality gates: 100% clean verification across `go vet`, CGO race detector (`go test -race -count=1`), and 0 data races.
+* [x] **Public Verifier 1A & PgCat Appliance 2B Deployment Blueprint** — COMPLETE ✅ (2026-09-15, delegated `opencode/big-pickle`):
+    *   **1A Edge Verifier Packaging (`tools/public-verifier/`)**: Configured zero-cost static edge bundle with Cloudflare Pages `_headers` (strict CSP `frame-ancestors 'none'`, nosniff, no-referrer) and step-by-step 0-cost deployment manual (`README.md`). Preserved byte equality with `pkg/verification/verifier_page.go`.
+    *   **2B PgCat Appliance Blueprint (`deployments/pgcat.toml`, `deployments/docker-compose.appliance.yml`)**: Reconciled PgCat pool configuration for `integin_appliance` (transaction mode, 80 pool connections, `integin_owner` user credentials, `appliance-postgres:5432` DNS shard) while retaining migration test pool. Added automated DSN parser & config validation tests in `pkg/verification/pgcat_test.go`.
+    *   Quality gates: All tests pass cleanly (`go test -race -count=1 ./pkg/verification/...`), 0 data races.
 
 ---
 
