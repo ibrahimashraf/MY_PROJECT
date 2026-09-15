@@ -491,11 +491,13 @@ The following 17 items represent the remaining identified blind spots across Spr
   * Multi-Tenant Device Key Boundaries: formalized composite uniqueness constraints across `device_registry` and `sync_device_state` (`migrations/0082_device_composite_tenant_keys.sql`).
   * Reporting Engine Persistence & Strict RLS: added `report_config` and `generated_report` tables with NULLIF session RLS policies (`migrations/0083_report_engine_persistence_and_rls.sql`) and fortified `internal/reportspg/postgres.go` to enforce tenant session GUCs across all operations.
   * Search Engine & Analytics RLS Fortification: fortified `internal/searchpg/postgres.go` and `internal/analyticspg/postgres.go` with transaction-scoped `beginTenant(ctx, tenantID, orgID)` ensuring zero query execution bypasses row-level security.
-* [x] **Stage D: Bounded Intelligence & Advisory Extractors (`internal/advisory/extractor.go`)** — COMPLETE ✅ (2026-09-15, delegated `opencode/big-pickle`):
+* [x] **Stage D: Bounded Intelligence & Advisory Extractors (`internal/advisory/extractor.go`, `internal/advisoryhttp/`)** — COMPLETE ✅ (2026-09-15, delegated `opencode/big-pickle`):
     *   Implemented `DocumentExtractor` for extracting non-binding structural metadata and checklist references from regulatory texts with hardcoded `Blocking: false`.
     *   Implemented deterministic `TrendSummarizer` synthesizing historical defect observations into non-blocking advisory summaries (`Insight`) with bounded confidence (0.45–0.90) and defensive evidence cloning.
     *   Added `EnsureAdvisoryStrict` combining `EnsureAdvisory` with the 4 approved AI zones (`ZoneMonitoring`, `ZoneRegulation`, `ZoneNDTDefect`, `ZoneLiftingDefect`).
-    *   Quality gates: 0 warnings from `go vet`, 40/40 tests PASS in `internal/advisory`.
+    *   Built `internal/advisoryhttp/handler.go` mounting `GET /models`, `POST /extract`, `POST /trends`, and `POST /feedback` under `/api/v1/advisory` with strict multi-tenant boundary and fail-closed blocking rejection.
+    *   Quality gates: 0 warnings from `go vet`, 53/53 tests PASS across `internal/advisory` and `internal/advisoryhttp`.
+
 
 ---
 
