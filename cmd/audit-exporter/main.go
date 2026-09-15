@@ -25,8 +25,9 @@ func main() {
 	os.Exit(runCLI(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 }
 
-// runCLI is the testable CLI entrypoint: it parses flags, loads the input
-// chain, seals the export, and writes the receipt. It never calls os.Exit.
+// runCLI is the testable CLI entrypoint: it parses flags, loads the input,
+// seals the audit chain into an export receipt, and writes the sealed JSON.
+// It never calls os.Exit and returns one of {0,1,2} for direct assertions.
 func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("audit-exporter", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -51,20 +52,16 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 2
 	}
 
+	if *showHelp {
+		printUsage(stderr, fs)
+		return 0
+	}
+
 	cli := cliSettings{
 		tenant: *tenant,
 		org:    *org,
 		input:  *input,
 		output: *output,
-		from:   *from,
-		to:     *to,
-		entity: *entity,
-		help:   *showHelp,
-	}
-
-	if cli.help {
-		printUsage(stderr, fs)
-		return 0
 	}
 	if cli.tenant == "" {
 		fmt.Fprintln(stderr, "audit-exporter: --tenant is required")
@@ -88,20 +85,20 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "audit-exporter: %v\n", err)
 		return 1
 	}
+
 	req.TenantID = firstNonEmpty(req.TenantID, cli.tenant)
 	req.OrganizationID = firstNonEmpty(req.OrganizationID, cli.org)
 
 	exporter := NewExporter()
 	receipt, err := exporter.BuildReceipt(records, req.TenantID, req.OrganizationID)
 	if err != nil {
-		fmt.Fprintf(stderr, "audit-exporter: chain integrity verification FAILED: %v\n", err)
+		fmt.Fprintf(stderr, "audit-exporter: chain verification FAILED: %v\n", err)
 		return 1
 	}
 
 	out := struct {
-		Request  ExportRequest  `json:"request"`
-		Receipt  *ExportReceipt `json:"receipt"`
-		Verified *ExportReceipt `json:"verified_receipt,omitempty"`
+		Request ExportRequest  `json:"request"`
+		Receipt *ExportReceipt `json:"receipt"`
 	}{
 		Request: req,
 		Receipt: receipt,
@@ -155,11 +152,7 @@ func readAllInput(path string, stdin io.Reader) ([]byte, error) {
 		}
 		return io.ReadAll(io.LimitReader(stdin, 256<<20))
 	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read input %q: %w", path, err)
-	}
-	return data, nil
+	return os.ReadFile(path)
 }
 
 func writeOutput(path string, data []byte, stdout io.Writer) error {
@@ -181,5 +174,6 @@ func printUsage(w io.Writer, fs *flag.FlagSet) {
 	fs.PrintDefaults()
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Exit status: 0 = chain verified and receipt sealed; 1 = tamper/gap/integrity failure; 2 = usage error")
-	_ = strings.TrimSpace
+	fmt.Fprintln(w)
+	defer func() { _ = strings.TrimSpace("") }()
 }

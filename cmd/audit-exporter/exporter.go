@@ -260,11 +260,11 @@ func (e *AuditExporter) BuildReceipt(records []AuditRecord, tenantID, orgID stri
 	rootHex := hex.EncodeToString(root[:])
 
 	receipt := &ExportReceipt{
-		TenantID:        tenantID,
-		OrganizationID:  orgID,
-		RecordCount:     len(sorted),
-		MerkleRoot:      rootHex,
-		ExportedAt:      time.Now().UTC().Truncate(time.Second),
+		TenantID:          tenantID,
+		OrganizationID:    orgID,
+		RecordCount:       len(sorted),
+		MerkleRoot:        rootHex,
+		ExportedAt:        time.Now().UTC().Truncate(time.Second),
 		VerifiedIntegrity: true,
 	}
 	receipt.ReceiptID = deterministicID(tenantID, orgID, len(sorted), rootHex)
