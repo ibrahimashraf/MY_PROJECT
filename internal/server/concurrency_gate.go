@@ -5,13 +5,17 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"integin/pkg/perf/cachepad"
 )
 
 // concurrencyGate implements an in-flight counting semaphore to protect the Go runtime
 // and database connection pool from unbounded concurrency storms under 10,000 clients.
 type concurrencyGate struct {
-	sem       chan struct{}
-	healthSem chan struct{}
+	sem                  chan struct{}
+	healthSem            chan struct{}
+	activeRequests       cachepad.PaddedInt64
+	activeHealthRequests cachepad.PaddedInt64
 }
 
 func newConcurrencyGateFromEnv() *concurrencyGate {
@@ -33,6 +37,16 @@ func newConcurrencyGateFromEnv() *concurrencyGate {
 	}
 }
 
+// ActiveRequests returns the number of non-health requests currently in flight.
+func (cg *concurrencyGate) ActiveRequests() int64 {
+	return cg.activeRequests.Load()
+}
+
+// ActiveHealthRequests returns the number of health-check requests currently in flight.
+func (cg *concurrencyGate) ActiveHealthRequests() int64 {
+	return cg.activeHealthRequests.Load()
+}
+
 func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 	// Enforce an absolute maximum throughput timeout (HARDEN-002)
 	timeoutHandler := http.TimeoutHandler(next, 30*time.Second, `{"error":"request_timeout"}`)
@@ -42,7 +56,11 @@ func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 			r.URL.Path == "/readyz" || r.URL.Path == "/readyz/" {
 			select {
 			case cg.healthSem <- struct{}{}:
-				defer func() { <-cg.healthSem }()
+				cg.activeHealthRequests.Add(1)
+				defer func() {
+					cg.activeHealthRequests.Add(-1)
+					<-cg.healthSem
+				}()
 				next.ServeHTTP(w, r)
 			default:
 				w.Header().Set("Retry-After", "1")
@@ -53,7 +71,11 @@ func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 
 		select {
 		case cg.sem <- struct{}{}:
-			defer func() { <-cg.sem }()
+			cg.activeRequests.Add(1)
+			defer func() {
+				cg.activeRequests.Add(-1)
+				<-cg.sem
+			}()
 			timeoutHandler.ServeHTTP(w, r)
 		default:
 			// Fail fast in microseconds: 0 DB queries, 0 stack growth
@@ -62,4 +84,3 @@ func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 		}
 	})
 }
-
