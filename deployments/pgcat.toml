@@ -5,6 +5,7 @@ admin_username = "pgcat_admin"
 admin_password = "admin_password_integin"
 autoreload = 15000
 
+# Local migration / dev pooler (referenced by internal/chaos integration test and dev tooling).
 [pools.integin_migration_test]
 pool_mode = "transaction"
 default_role = "primary"
@@ -22,3 +23,24 @@ servers = [
     ["172.17.0.2", 5432, "primary"]
 ]
 database = "integin_migration_test"
+
+# Air-gapped sovereign appliance pooler. Credentials and default database MUST
+# stay in lockstep with docker-compose.appliance.yml (appliance-postgres:
+# APPLIANCE_POSTGRES_USER=integin_owner, APPLIANCE_POSTGRES_DB=integin_appliance).
+[pools.integin_appliance]
+pool_mode = "transaction"
+default_role = "primary"
+query_parser_enabled = false
+primary_reads_enabled = true
+
+[pools.integin_appliance.users.0]
+username = "integin_owner"
+password = "integin_sovereign_db_secret"
+pool_size = 80
+statement_timeout = 0
+
+[pools.integin_appliance.shards.0]
+servers = [
+    ["appliance-postgres", 5432, "primary"]
+]
+database = "integin_appliance"

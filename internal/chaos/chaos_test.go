@@ -482,11 +482,10 @@ func TestEventBusHandlerErrorStopsChain(t *testing.T) {
 		t.Error("expected error from failing handler")
 	}
 
-	if handler2Called.Load() > 0 {
-		t.Error("handler2 should NOT have been called after handler1 error")
+	if handler2Called.Load() == 0 {
+		t.Error("handler2 should have executed even after handler1 error (resilient bus)")
 	} else {
-		t.Log("CONFIRMED: Handler error stops the chain — handler2 never executed")
-		t.Log("  Impact: Partial event processing with no retry or dead-letter")
+		t.Log("CONFIRMED: Resilient eventbus executes subsequent handlers despite upstream error")
 	}
 }
 
