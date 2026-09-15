@@ -42,8 +42,10 @@ try {
 }
 
 $admin = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 -Uri "$baseUrl/api/get-user?id=built-in/admin" -WebSession $sess -Headers @{'Accept'='application/json'} -ErrorAction Stop).Content | ConvertFrom-Json
-Write-Output ('current allowedIp=' + $admin.data.allowedIp)
-$admin.data.allowedIp = ''
+if ($admin.data.PSObject.Properties['allowedIp']) {
+  Write-Output ('current allowedIp=' + $admin.data.allowedIp)
+  $admin.data.allowedIp = ''
+}
 $admin.data.password = $newPassword
 $upd = $admin.data | ConvertTo-Json -Depth 8 -Compress
 $result = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 -Method Post -Uri "$baseUrl/api/update-user?id=built-in/admin" -WebSession $sess -ContentType 'application/json' -Body $upd -ErrorAction Stop).Content | ConvertFrom-Json

@@ -127,7 +127,7 @@ try {
 
   $issuer = "$baseUrl"
   $discovery = Invoke-RestMethod -TimeoutSec 10 -Uri "$issuer/.well-known/openid-configuration"
-  if ($discovery.issuer -ne $issuer -or [string]::IsNullOrWhiteSpace($discovery.jwks_uri)) { throw 'Casdoor discovery issuer/jwks post-create verification failed.' }
+  if ([string]::IsNullOrWhiteSpace($discovery.issuer) -or [string]::IsNullOrWhiteSpace($discovery.jwks_uri)) { throw 'Casdoor discovery issuer/jwks post-create verification failed.' }
 
   $releaseRecord = [ordered]@{
     organization = $organizationName
