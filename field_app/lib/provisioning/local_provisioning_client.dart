@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../domain/models.dart';
+import '../security/endpoint_guard.dart';
+import '../security/pinned_http_client.dart';
 import '../security/transaction_signer.dart';
 
 class ProvisionedFieldSession {
@@ -49,8 +51,13 @@ class ProvisionedFieldSession {
 
 /// Local-integration provisioning client. It never exports a device private key.
 class LocalProvisioningClient {
-  LocalProvisioningClient({required this.endpoint, http.Client? client})
-      : _client = client ?? http.Client();
+  LocalProvisioningClient({
+    required this.endpoint,
+    http.Client? client,
+    bool allowLoopbackHttp = false,
+  }) : _client = client ?? PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: allowLoopbackHttp) {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
+  }
 
   final Uri endpoint;
   final http.Client _client;

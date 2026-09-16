@@ -3,11 +3,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../domain/models.dart';
+import '../security/endpoint_guard.dart';
+import '../security/pinned_http_client.dart';
 import 'sync_client.dart';
 
 class HttpSyncTransport implements SyncTransport {
-  HttpSyncTransport({required this.endpoint, http.Client? client})
-      : client = client ?? http.Client();
+  HttpSyncTransport({
+    required this.endpoint,
+    http.Client? client,
+    bool allowLoopbackHttp = false,
+  })  : client = client ?? PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: allowLoopbackHttp) {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
+  }
 
   final Uri endpoint;
   final http.Client client;

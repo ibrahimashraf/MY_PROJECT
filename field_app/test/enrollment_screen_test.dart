@@ -66,6 +66,10 @@ Future<void> _pumpScreen(WidgetTester tester, http.Client client, {bool useProdu
       home: EnrollmentScreen(
         tenantId: 'tenant-1',
         organizationId: 'org-1',
+        // Production route requires https:// — use https for useProduction=true.
+        // The MockClient ignores the scheme so test behaviour is identical.
+        endpoint:
+            useProduction ? 'https://127.0.0.1:18080' : enrollLoopbackEndpoint,
         useProductionRoute: useProduction,
         client: client,
       ),
@@ -74,6 +78,21 @@ Future<void> _pumpScreen(WidgetTester tester, http.Client client, {bool useProdu
 }
 
 void main() {
+  // pumpAndSettle() can return while the enroll future chain is still
+  // in-flight (no frame scheduled yet across an await boundary), leaving
+  // the progress indicator on screen and failing the assertions below.
+  // Wait for the terminal state (indicator gone, no pending frames) instead;
+  // no assertion is changed.
+  Future<void> pumpEnrollResult(WidgetTester tester) async {
+    for (var i = 0; i < 40; i += 1) {
+      await tester.pump(const Duration(milliseconds: 500));
+      if (find.byType(CircularProgressIndicator).evaluate().isEmpty &&
+          tester.binding.transientCallbackCount == 0) {
+        break;
+      }
+    }
+  }
+
   testWidgets('enrollment reaches success state with SOFTWARE posture',
       (WidgetTester tester) async {
     await _pumpScreen(tester, _fakeServer(failChallenge: false));
@@ -89,8 +108,12 @@ void main() {
 
     final enrollBtn = find.text('Enroll device');
     await tester.ensureVisible(enrollBtn);
-    await tester.tap(enrollBtn);
+    // Settle the scroll animation first: tapping mid-scroll misses the
+    // off-screen button (non-fatal warning) and the test then fails at the
+    // assertions with the form still idle. No animation persists here.
     await tester.pumpAndSettle();
+    await tester.tap(enrollBtn);
+    await pumpEnrollResult(tester);
 
     expect(find.text('Device ID: device-42'), findsOneWidget);
     expect(find.text('Attestation origin: SOFTWARE'), findsOneWidget);
@@ -111,8 +134,12 @@ void main() {
 
     final enrollBtn = find.text('Enroll device');
     await tester.ensureVisible(enrollBtn);
-    await tester.tap(enrollBtn);
+    // Settle the scroll animation first: tapping mid-scroll misses the
+    // off-screen button (non-fatal warning) and the test then fails at the
+    // assertions with the form still idle. No animation persists here.
     await tester.pumpAndSettle();
+    await tester.tap(enrollBtn);
+    await pumpEnrollResult(tester);
 
     expect(
       find.textContaining('enrollment challenge failed: HTTP 500'),
@@ -134,8 +161,12 @@ void main() {
 
     final enrollBtn = find.text('Enroll device');
     await tester.ensureVisible(enrollBtn);
-    await tester.tap(enrollBtn);
+    // Settle the scroll animation first: tapping mid-scroll misses the
+    // off-screen button (non-fatal warning) and the test then fails at the
+    // assertions with the form still idle. No animation persists here.
     await tester.pumpAndSettle();
+    await tester.tap(enrollBtn);
+    await pumpEnrollResult(tester);
 
     expect(find.text('Enrolled'), findsOneWidget);
     expect(find.text('Attestation origin: SOFTWARE'), findsOneWidget);

@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../security/endpoint_guard.dart';
+import '../security/pinned_http_client.dart';
+
 /// A constrained pilot-only reader for the existing advisory service.
 class PilotAdvisoryResult {
   const PilotAdvisoryResult({
@@ -46,7 +49,11 @@ class PilotAdvisoryResult {
 /// Sends only a monitoring request; it cannot approve or mutate field work.
 class PilotAdvisoryClient {
   PilotAdvisoryClient({required this.endpoint, http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ??
+            PinnedHttpClient.forEndpoint(endpoint,
+                allowLoopbackHttp: true) {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: true);
+  }
 
   final Uri endpoint;
   final http.Client _client;

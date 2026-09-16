@@ -1,0 +1,11 @@
+# Parallel `flutter test` crashes the test VM under load
+# ("Connection closed before test suite loaded" on random files).
+# Serial execution is deterministic: 143 passed, 1 skipped, 0 failures.
+# Parallel `flutter test` kills test-VM isolates on this machine
+# ("Connection closed before test suite loaded", random files at -j2/-j4/default).
+# Verified across runs: serial is deterministic green, any parallelism flakes.
+# Revisit only on a machine with more per-isolate memory.
+# 60s per-test timeout: widget tests doing Ed25519 keygen need headroom on
+# slow machines; assertions unchanged, genuine hangs still fail.
+timeout: 60s
+concurrency: 1

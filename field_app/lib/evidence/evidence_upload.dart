@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../security/pinned_http_client.dart';
+
 import 'evidence_crypto.dart';
 import 'evidence_store.dart';
 
@@ -26,7 +28,7 @@ abstract interface class EvidenceUploadTransport {
 }
 
 class HttpEvidenceUploadTransport implements EvidenceUploadTransport {
-  HttpEvidenceUploadTransport({required this.endpoint, http.Client? client}) : client = client ?? http.Client();
+  HttpEvidenceUploadTransport({required this.endpoint, http.Client? client}) : client = client ?? PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: true);
 
   final Uri endpoint;
   final http.Client client;
