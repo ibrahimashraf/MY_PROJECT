@@ -8,6 +8,7 @@ import 'adaptive_scaffold.dart';
 import 'custody_handover_view.dart';
 import 'dynamic_form_view.dart';
 import 'enrollment_screen.dart';
+import '../sync/image_picker_service.dart';
 
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
@@ -145,6 +146,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
                     helpText: 'Encrypted close-up photograph under high illumination',
                   ),
                 ],
+                tusClient: controller.tusClient,
+                onPickPhoto: ImagePickerPhotoService().pickImage,
                 onSave: (values) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

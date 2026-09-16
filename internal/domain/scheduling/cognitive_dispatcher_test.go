@@ -1,12 +1,14 @@
 package scheduling
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/riverqueue/river"
 	"integin/pkg/engine/cognitive"
 	"integin/pkg/engine/eventbus"
 )
@@ -251,5 +253,53 @@ func TestSubscribeAlertDispatcherEndToEnd(t *testing.T) {
 	})
 	if agent.Intention.Action != "wo-remedy" {
 		t.Fatalf("unsubscribed dispatcher must not alter the intention, got %v", agent.Intention.Action)
+	}
+}
+
+func TestSubscribeEnvironmentalTelemetry(t *testing.T) {
+	bus := eventbus.NewBus()
+	defer bus.Close()
+	agent := &cognitive.BDIAgent{ID: "tech-1"}
+
+	var jobArgs river.JobArgs
+	inserter := func(ctx context.Context, args river.JobArgs) error {
+		jobArgs = args
+		return nil
+	}
+
+	unsubscribe := SubscribeEnvironmentalTelemetry(bus, agent, inserter)
+	defer unsubscribe()
+
+	// 1. Wind Update
+	bus.Publish(eventbus.Event{
+		Topic: eventbus.TopicWindUpdate,
+		Payload: eventbus.WindEvent{
+			SpeedMps: 25.5,
+		},
+	})
+
+	if !agentBelieves(agent, "wind_speed_mps:25.50") {
+		t.Fatal("agent should believe high wind speed")
+	}
+
+	// 2. Structural Alert (Utilization > 90%)
+	bus.Publish(eventbus.Event{
+		Topic: eventbus.TopicStructuralAlert,
+		Payload: eventbus.StressAlertEvent{
+			ComponentID: "crane-leg-A",
+			Utilization: 0.95, // exceeds 0.90
+		},
+	})
+
+	if !agentBelieves(agent, "structural_alert:crane-leg-A") {
+		t.Fatal("agent should believe structural alert")
+	}
+
+	if jobArgs == nil {
+		t.Fatal("expected corrective work order job to be inserted via river queue")
+	}
+	correctiveArgs, ok := jobArgs.(CorrectiveWorkOrderArgs)
+	if !ok || correctiveArgs.ComponentID != "crane-leg-A" {
+		t.Fatalf("expected CorrectiveWorkOrderArgs for crane-leg-A, got %v", jobArgs)
 	}
 }

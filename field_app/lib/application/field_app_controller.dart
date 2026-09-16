@@ -11,6 +11,7 @@ import '../security/transaction_signer.dart';
 import '../sync/event_stream_client.dart';
 import '../sync/sync_client.dart';
 import '../sync/sync_guard.dart';
+import '../sync/tus_client.dart';
 
 class FieldAppController extends ChangeNotifier {
   FieldAppController({
@@ -25,6 +26,7 @@ class FieldAppController extends ChangeNotifier {
     this.syncClient,
     this.eventStreamClient,
     this.advisoryClient,
+    this.tusClient,
     this.trace,
   }) {
     _initStream();
@@ -40,6 +42,7 @@ class FieldAppController extends ChangeNotifier {
   final String? deviceKeyId;
   final SyncClient? syncClient;
   final EventStreamClient? eventStreamClient;
+  final TusClient? tusClient;
 
   /// Present only in the isolated pilot build; advisory data has no authority.
   final PilotAdvisoryClient? advisoryClient;

@@ -18,6 +18,8 @@ import 'storage/persistent_outbox.dart';
 import 'storage/secure_key_value_store.dart';
 import 'sync/http_sync_transport.dart';
 import 'sync/sync_client.dart';
+import 'sync/tus_client.dart';
+import 'security/pinned_http_client.dart';
 
 const _windowsStartupTracePath =
     String.fromEnvironment('INTEGIN_WINDOWS_STARTUP_TRACE_PATH');
@@ -163,6 +165,16 @@ Future<void> main() async {
             allowLoopbackHttp: pilotMode,
           ),
         );
+  final TusClient? tusClient = syncEndpoint.isEmpty
+      ? null
+      : TusClient(
+          http: HttpTusHttp(
+            baseUrl: Uri.parse(syncEndpoint).resolve('/uploads'),
+            client: PinnedHttpClient.forEndpoint(Uri.parse(syncEndpoint), allowLoopbackHttp: pilotMode),
+            allowLoopbackHttp: pilotMode,
+            // In a real device environment, this needs the OIDC token
+          ),
+        );
   final controller = FieldAppController(
     context: context,
     deviceId: deviceId,
@@ -173,6 +185,7 @@ Future<void> main() async {
     deviceSigner: deviceSigner,
     deviceKeyId: deviceKeyId,
     syncClient: syncClient,
+    tusClient: tusClient,
     advisoryClient: advisoryClient,
     trace: _traceWindowsStartup,
   );

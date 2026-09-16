@@ -16,6 +16,7 @@ dependencies:
   image: ^4.9.2
   sqflite_sqlcipher: ^3.4.1
   path: ^1.9.1
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:

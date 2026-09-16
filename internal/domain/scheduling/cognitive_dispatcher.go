@@ -1,11 +1,13 @@
 package scheduling
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/riverqueue/river"
 	"integin/pkg/engine/cognitive"
 	"integin/pkg/engine/eventbus"
 )
@@ -158,4 +160,59 @@ func agentBelieves(a *cognitive.BDIAgent, proposition string) bool {
 		}
 	}
 	return false
+}
+
+type CorrectiveWorkOrderArgs struct {
+	ComponentID string     `json:"component_id"`
+	Utilization float64    `json:"utilization"`
+	HazardKind  string     `json:"hazard_kind"`
+	Location    [3]float64 `json:"location"` // WGS84 ENU frame
+}
+
+func (CorrectiveWorkOrderArgs) Kind() string { return "corrective_work_order" }
+
+type RiverInserter func(ctx context.Context, args river.JobArgs) error
+
+// SubscribeEnvironmentalTelemetry wires TopicStructuralAlert and TopicWindUpdate
+// directly into the BDI Agent's belief set, and triggers River queue work orders
+// if statutory utilization limits are breached (> 90%).
+func SubscribeEnvironmentalTelemetry(bus *eventbus.Bus, agent *cognitive.BDIAgent, insertJob RiverInserter) func() {
+	windHandler := func(e eventbus.Event) {
+		wind, ok := e.Payload.(eventbus.WindEvent)
+		if !ok {
+			return
+		}
+		dispatchMu.Lock()
+		agent.UpdateBelief(fmt.Sprintf("wind_speed_mps:%.2f", wind.SpeedMps), 1.0)
+		agent.Deliberate()
+		dispatchMu.Unlock()
+	}
+
+	stressHandler := func(e eventbus.Event) {
+		alert, ok := e.Payload.(eventbus.StressAlertEvent)
+		if !ok {
+			return
+		}
+		dispatchMu.Lock()
+		agent.UpdateBelief("structural_alert:"+alert.ComponentID, 1.0)
+		agent.Deliberate()
+		dispatchMu.Unlock()
+
+		if alert.Utilization > 0.90 && insertJob != nil {
+			// Trigger corrective work order generation, passing along ENU coordinates
+			_ = insertJob(context.Background(), CorrectiveWorkOrderArgs{
+				ComponentID: alert.ComponentID,
+				Utilization: alert.Utilization,
+				HazardKind:  "MOMENT_UTILIZATION_EXCEEDED",
+			})
+		}
+	}
+
+	bus.Subscribe(eventbus.TopicWindUpdate, windHandler)
+	bus.Subscribe(eventbus.TopicStructuralAlert, stressHandler)
+
+	return func() {
+		bus.Unsubscribe(eventbus.TopicWindUpdate, windHandler)
+		bus.Unsubscribe(eventbus.TopicStructuralAlert, stressHandler)
+	}
 }

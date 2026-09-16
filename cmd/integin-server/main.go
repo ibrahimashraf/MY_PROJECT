@@ -26,6 +26,9 @@ import (
 	"integin/internal/assetentitlementpg"
 	"integin/internal/assurancehttp"
 	"integin/internal/assurancepg"
+	"integin/internal/domain/scheduling"
+	"integin/pkg/engine/cognitive"
+	"integin/pkg/engine/eventbus"
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/certificaterender"
@@ -441,6 +444,23 @@ func main() {
 			log.Fatalf("failed to initialize poison-pill quarantine recorder: %v", poisonErr)
 		}
 		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
+		
+		// Mount Phase 6: Cognitive Dispatcher and Corrective Work Order Worker
+		sysEventBus := eventbus.NewBus()
+		defer sysEventBus.Close()
+		dummyAgent := &cognitive.BDIAgent{
+			ID: "autonomous-tech-1",
+			Position: [3]float64{0, 0, 0},
+		}
+		agentRegistry := &scheduling.InMemoryAgentRegistry{
+			Agents: []*cognitive.BDIAgent{dummyAgent},
+			Competencies: map[string]scheduling.TechnicianCompetency{
+				"autonomous-tech-1": {Status: scheduling.CompetencyStatusCurrent},
+			},
+		}
+		river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{
+			Registry: agentRegistry,
+		})
 		if evidenceStore != nil && certificateRepository != nil {
 			renderer := domainrender.NewDeterministicPDFRenderer()
 			renderSvc, renderErr := certificaterender.NewRenderService(renderer, evidenceStore, certificateRepository)
@@ -460,6 +480,15 @@ func main() {
 		}
 		// Start automated retention pruner (sweeps every 10m, retain for 1h) to prevent XID wraparound table bloat
 		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
+
+		// Wire up the Cognitive Dispatcher (Phase 6)
+		scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, dummyAgent, func(ctx context.Context, args river.JobArgs) error {
+			if riverQueue != nil {
+				_, err := riverQueue.Client().Insert(ctx, args, nil)
+				return err
+			}
+			return nil
+		})
 	}
 	if tusDir := strings.TrimSpace(os.Getenv("INTEGIN_TUS_SCRATCH_DIR")); tusDir != "" {
 		tusManager, tusErr := storage.NewTUSManager(tusDir, 0, 0)
