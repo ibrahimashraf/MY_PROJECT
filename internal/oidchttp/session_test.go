@@ -168,3 +168,54 @@ func serve(handler http.Handler, method, authorization string) *httptest.Respons
 	handler.ServeHTTP(response, request)
 	return response
 }
+
+type fakeRevoker struct {
+	revokedSessions []string
+	revokedSubjects []string
+}
+
+func (f *fakeRevoker) RevokeSession(sessionID string) error {
+	f.revokedSessions = append(f.revokedSessions, sessionID)
+	return nil
+}
+
+func (f *fakeRevoker) RevokeSubject(subject string) error {
+	f.revokedSubjects = append(f.revokedSubjects, subject)
+	return nil
+}
+
+func TestSessionRevocationHandlerSingleAndAll(t *testing.T) {
+	validator := &fakeValidator{principal: oidcauth.Principal{Issuer: "issuer-1", Subject: "subject-1"}}
+	revoker := &fakeRevoker{}
+
+	singleHandler, err := NewSessionRevocationHandler(validator, revoker, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/identity/session/revoke", nil)
+	req.Header.Set("Authorization", "Bearer tok-123")
+	rec := httptest.NewRecorder()
+	singleHandler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("single revoke status = %d", rec.Code)
+	}
+	if len(revoker.revokedSessions) != 1 || revoker.revokedSessions[0] != "tok-123" {
+		t.Fatalf("revoked sessions: %v", revoker.revokedSessions)
+	}
+
+	allHandler, err := NewSessionRevocationHandler(validator, revoker, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reqAll := httptest.NewRequest(http.MethodPost, "/identity/session/revoke-all", nil)
+	reqAll.Header.Set("Authorization", "Bearer tok-123")
+	recAll := httptest.NewRecorder()
+	allHandler.ServeHTTP(recAll, reqAll)
+	if recAll.Code != http.StatusOK {
+		t.Fatalf("revoke-all status = %d", recAll.Code)
+	}
+	if len(revoker.revokedSubjects) != 1 || revoker.revokedSubjects[0] != "subject-1" {
+		t.Fatalf("revoked subjects: %v", revoker.revokedSubjects)
+	}
+}
+

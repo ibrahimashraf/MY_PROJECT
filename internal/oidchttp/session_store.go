@@ -30,6 +30,7 @@ type SessionStore interface {
 	Save(ctx context.Context, session StoredSession) error
 	Get(ctx context.Context, sessionID string) (StoredSession, error)
 	PurgeExpired(ctx context.Context, now time.Time) error
+	RevokeSubject(ctx context.Context, subject string, revokedAt time.Time) error
 }
 
 var ErrSessionStoreNilDB = errors.New("OIDC session store requires a database")
@@ -51,6 +52,10 @@ var (
 
 	sqlPurgeExpiredSessions = `DELETE FROM oidc_session_store
 		WHERE revoked_at IS NULL AND expires_at < $1`
+
+	sqlRevokeSubject = `UPDATE oidc_session_store
+		SET revoked_at = $1
+		WHERE subject = $2 AND revoked_at IS NULL`
 )
 
 // PostgresSessionStore persists session lifecycle state in oidc_session_store.
@@ -108,6 +113,18 @@ func (s *PostgresSessionStore) Get(ctx context.Context, sessionID string) (Store
 // retained so their tokens keep failing closed.
 func (s *PostgresSessionStore) PurgeExpired(ctx context.Context, now time.Time) error {
 	_, err := s.db.ExecContext(ctx, sqlPurgeExpiredSessions, now.UTC())
+	return err
+}
+
+// RevokeSubject sets the revoked_at tombstone on all active sessions for a subject.
+func (s *PostgresSessionStore) RevokeSubject(ctx context.Context, subject string, revokedAt time.Time) error {
+	if subject == "" {
+		return errors.New("subject is required for revocation")
+	}
+	if revokedAt.IsZero() {
+		revokedAt = time.Now()
+	}
+	_, err := s.db.ExecContext(ctx, sqlRevokeSubject, revokedAt.UTC(), subject)
 	return err
 }
 

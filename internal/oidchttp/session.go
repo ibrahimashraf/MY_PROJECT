@@ -102,3 +102,60 @@ func writeFailure(writer http.ResponseWriter, status int, reason string) {
 	writer.WriteHeader(status)
 	_ = json.NewEncoder(writer).Encode(map[string]string{"error": reason})
 }
+
+// SessionRevoker provides token and subject level revocation.
+type SessionRevoker interface {
+	RevokeSession(sessionID string) error
+	RevokeSubject(subject string) error
+}
+
+type sessionRevocationHandler struct {
+	validator TokenValidator
+	revoker   SessionRevoker
+	revokeAll bool
+}
+
+// NewSessionRevocationHandler handles POST /identity/session/revoke (single token)
+// or POST /identity/session/revoke-all (all tokens for the subject).
+func NewSessionRevocationHandler(validator TokenValidator, revoker SessionRevoker, revokeAll bool) (http.Handler, error) {
+	if validator == nil {
+		return nil, errors.New("token validator is required")
+	}
+	if revoker == nil {
+		return nil, errors.New("session revoker is required")
+	}
+	return &sessionRevocationHandler{validator: validator, revoker: revoker, revokeAll: revokeAll}, nil
+}
+
+func (h *sessionRevocationHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		writer.Header().Set("Allow", http.MethodPost)
+		writer.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	rawToken, ok := bearerToken(request.Header.Get("Authorization"))
+	if !ok {
+		writeFailure(writer, http.StatusUnauthorized, "authentication_failed")
+		return
+	}
+	principal, err := h.validator.Validate(request.Context(), rawToken)
+	if err != nil {
+		writeFailure(writer, http.StatusUnauthorized, "authentication_failed")
+		return
+	}
+	if h.revokeAll {
+		if err := h.revoker.RevokeSubject(principal.Subject); err != nil {
+			writeFailure(writer, http.StatusInternalServerError, "revocation_failed")
+			return
+		}
+	} else {
+		if err := h.revoker.RevokeSession(rawToken); err != nil && !errors.Is(err, ErrSessionMissing) {
+			writeFailure(writer, http.StatusInternalServerError, "revocation_failed")
+			return
+		}
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	_, _ = writer.Write([]byte(`{"status":"revoked"}`))
+}
+

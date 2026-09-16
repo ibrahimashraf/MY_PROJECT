@@ -3,6 +3,8 @@ package oidchttp
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -31,21 +33,39 @@ type SessionRecord struct {
 	LastActiveAt time.Time
 }
 
+// PrincipalInvalidator invalidates cached identity memberships when revoked.
+type PrincipalInvalidator interface {
+	Invalidate(principal identity.PrincipalKey)
+}
+
 // SessionLifecycleManager tracks active sessions with issue time, sliding
 // inactivity time, and maximum TTL. With a nil store it is single-process and
 // in-memory only; with a SessionStore it persists every lifecycle write so
 // multi-instance restarts retain active session state.
 type SessionLifecycleManager struct {
-	mu       sync.RWMutex
-	sessions map[string]SessionRecord
-	revoked  map[string]time.Time
-	maxTTL   time.Duration
-	now      func() time.Time
-	store    SessionStore
+	mu          sync.RWMutex
+	sessions    map[string]SessionRecord
+	revoked     map[string]time.Time
+	maxTTL      time.Duration
+	now         func() time.Time
+	store       SessionStore
+	invalidator PrincipalInvalidator
+}
+
+// SetInvalidator registers an identity membership cache invalidator.
+func (m *SessionLifecycleManager) SetInvalidator(invalidator PrincipalInvalidator) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.invalidator = invalidator
 }
 
 func (m *SessionLifecycleManager) sessionID(sessionID string) string {
-	return strings.TrimSpace(sessionID)
+	raw := strings.TrimSpace(sessionID)
+	if raw == "" {
+		return ""
+	}
+	hash := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(hash[:])
 }
 
 // NewSessionLifecycleManager returns an in-memory lifecycle manager bound to
@@ -153,6 +173,12 @@ func (m *SessionLifecycleManager) Touch(token string) error {
 	if m.expired(SessionRecord{IssuedAt: stored.IssuedAt, LastActiveAt: stored.LastActiveAt}, now) {
 		return ErrSessionExpired
 	}
+	// Throttle sliding touch updates so active sessions do not thrash database writes
+	// on high-frequency mobile client requests.
+	const touchThrottle = time.Minute
+	if now.Sub(stored.LastActiveAt) < touchThrottle {
+		return nil
+	}
 	return m.store.Save(ctx, StoredSession{
 		SessionID: token, Subject: stored.Subject, IssuedAt: stored.IssuedAt,
 		LastActiveAt: now, ExpiresAt: now.Add(m.maxTTL),
@@ -185,8 +211,40 @@ func (m *SessionLifecycleManager) RevokeSession(sessionID string) error {
 		}
 		return err
 	}
-	stored.RevokedAt = m.now()
+	now := m.now()
+	stored.RevokedAt = now
+	m.mu.Lock()
+	m.revoked[sessionID] = now
+	delete(m.sessions, sessionID)
+	m.mu.Unlock()
 	return m.store.Save(ctx, stored)
+}
+
+// RevokeSubject invalidates all active sessions for a subject across instances.
+func (m *SessionLifecycleManager) RevokeSubject(subject string) error {
+	subject = strings.TrimSpace(subject)
+	if subject == "" {
+		return errors.New("subject is required for revocation")
+	}
+	now := m.now()
+	m.mu.Lock()
+	invalidator := m.invalidator
+	for token, rec := range m.sessions {
+		if rec.Subject == subject {
+			delete(m.sessions, token)
+			m.revoked[token] = now
+		}
+	}
+	m.mu.Unlock()
+	if invalidator != nil {
+		invalidator.Invalidate(identity.PrincipalKey{Subject: subject})
+	}
+	if m.store != nil {
+		ctx, cancel := m.sessionCtx()
+		defer cancel()
+		return m.store.RevokeSubject(ctx, subject, now)
+	}
+	return nil
 }
 
 // IsRevoked reports whether the session ID carries a revocation tombstone.

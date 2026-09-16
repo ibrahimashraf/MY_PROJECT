@@ -106,6 +106,33 @@ func TestSessionLifecycleRevocation(t *testing.T) {
 	}
 }
 
+func TestSessionLifecycleRevokeSubject(t *testing.T) {
+	manager, _ := newManaged(t, time.Hour)
+	if err := manager.Open("token-a", "user-1", time.Now()); err != nil {
+		t.Fatalf("open a: %v", err)
+	}
+	if err := manager.Open("token-b", "user-1", time.Now()); err != nil {
+		t.Fatalf("open b: %v", err)
+	}
+	if err := manager.Open("token-c", "user-2", time.Now()); err != nil {
+		t.Fatalf("open c: %v", err)
+	}
+
+	if err := manager.RevokeSubject("user-1"); err != nil {
+		t.Fatalf("revoke subject: %v", err)
+	}
+
+	if manager.IsActive("token-a") || manager.IsActive("token-b") {
+		t.Fatal("user-1 sessions must both be inactive")
+	}
+	if !manager.IsRevoked("token-a") || !manager.IsRevoked("token-b") {
+		t.Fatal("user-1 tokens must report revoked")
+	}
+	if !manager.IsActive("token-c") {
+		t.Fatal("user-2 session must remain active")
+	}
+}
+
 func TestSessionLifecycleConcurrentAccess(t *testing.T) {
 	manager := NewSessionLifecycleManager(time.Hour)
 	var wg sync.WaitGroup

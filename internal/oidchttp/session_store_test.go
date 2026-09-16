@@ -87,8 +87,20 @@ func (c *fakeSessionConn) ExecContext(ctx context.Context, query string, args []
 		c.upsert(values)
 	case strings.Contains(query, "DELETE"):
 		c.purge(values)
+	case strings.Contains(query, "UPDATE"):
+		c.revokeSubject(values)
 	}
 	return fakeSessionResult{}, nil
+}
+
+func (c *fakeSessionConn) revokeSubject(values []driver.Value) {
+	revokedAt := values[0].(time.Time)
+	subject := values[1].(string)
+	for _, row := range c.rows {
+		if row.subject == subject && row.revokedAt == nil {
+			row.revokedAt = revokedAt
+		}
+	}
 }
 
 func (c *fakeSessionConn) upsert(values []driver.Value) {
@@ -207,6 +219,34 @@ func TestPostgresSessionStoreRevokePersistsTombstone(t *testing.T) {
 	}
 	if !got.RevokedAt.Equal(revokedAt) {
 		t.Fatalf("tombstone not persisted: %+v", got)
+	}
+}
+
+func TestPostgresSessionStoreRevokeSubject(t *testing.T) {
+	c := &fakeSessionConn{rows: make(map[string]*fakeSessionRow)}
+	store := newFakeSessionStore(c)
+	ctx := context.Background()
+	now := time.Now()
+	_ = store.Save(ctx, StoredSession{SessionID: "tok-1", Subject: "user-alpha", IssuedAt: now, LastActiveAt: now, ExpiresAt: now.Add(time.Hour)})
+	_ = store.Save(ctx, StoredSession{SessionID: "tok-2", Subject: "user-alpha", IssuedAt: now, LastActiveAt: now, ExpiresAt: now.Add(time.Hour)})
+	_ = store.Save(ctx, StoredSession{SessionID: "tok-3", Subject: "user-beta", IssuedAt: now, LastActiveAt: now, ExpiresAt: now.Add(time.Hour)})
+
+	revokedAt := now.Add(time.Minute)
+	if err := store.RevokeSubject(ctx, "user-alpha", revokedAt); err != nil {
+		t.Fatalf("revoke subject: %v", err)
+	}
+
+	s1, _ := store.Get(ctx, "tok-1")
+	if !s1.RevokedAt.Equal(revokedAt) {
+		t.Fatalf("expected s1 revoked, got: %+v", s1)
+	}
+	s2, _ := store.Get(ctx, "tok-2")
+	if !s2.RevokedAt.Equal(revokedAt) {
+		t.Fatalf("expected s2 revoked, got: %+v", s2)
+	}
+	s3, _ := store.Get(ctx, "tok-3")
+	if !s3.RevokedAt.IsZero() {
+		t.Fatalf("user-beta session should not be revoked: %+v", s3)
 	}
 }
 
