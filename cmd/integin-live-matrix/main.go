@@ -170,8 +170,8 @@ func seed() error {
 
 func explicitPilotServerURL(raw string) (string, error) {
 	serverURL := strings.TrimRight(strings.TrimSpace(raw), "/")
-	if serverURL != "http://127.0.0.1:18080" {
-		return "", errors.New("INTEGIN_SERVER_URL must explicitly target the isolated pilot origin http://127.0.0.1:18080")
+	if serverURL != "http://127.0.0.1:18080" && serverURL != "http://127.0.0.1:8080" {
+		return "", errors.New("INTEGIN_SERVER_URL must explicitly target the isolated pilot origin http://127.0.0.1:18080 or http://127.0.0.1:8080")
 	}
 	return serverURL, nil
 }
@@ -220,8 +220,13 @@ func exercise() error {
 		return fmt.Errorf("obtaining OIDC token: %w", err)
 	}
 
+	// runID scopes every idempotency key to this specific exercise invocation.
+	// Without it, repeated runs collide in sync_idempotency_cache when the
+	// CapturedAt timestamp differs (producing a 409 "key reused with different
+	// request" error from the middleware).
+	runID := fmt.Sprintf("%d", time.Now().UnixNano())
 	payload := []byte(`{"inspection_id":"integin-live-inspection","status":"submitted"}`)
-	txPrefix := "integin-live-" + value.DeviceID
+	txPrefix := "integin-live-" + value.DeviceID + "-" + runID
 	base := signedTransaction(txPrefix+"-applied", 1, value, ed25519.PrivateKey(privateKey), payload)
 	if err := expectSync(client, serverURL, base, "APPLIED", "lk-"+txPrefix+"-applied"); err != nil {
 		return err
@@ -247,7 +252,7 @@ func exercise() error {
 		return err
 	}
 
-	return exerciseEvidence(client, serverURL, value, token)
+	return exerciseEvidence(client, serverURL, value, token, runID)
 }
 
 func signedTransaction(id string, sequence uint64, value fixture, privateKey ed25519.PrivateKey, payload []byte) domainsync.Transaction {
@@ -279,10 +284,10 @@ func expectSync(client *http.Client, serverURL string, tx domainsync.Transaction
 	return nil
 }
 
-func exerciseEvidence(client *http.Client, serverURL string, value fixture, token string) error {
+func exerciseEvidence(client *http.Client, serverURL string, value fixture, token string, runID string) error {
 	ciphertext := []byte("INTEGIN live encrypted evidence matrix bytes")
 	plaintext := []byte("INTEGIN live plaintext evidence matrix bytes")
-	requestValue := evidenceRequest{TenantID: value.TenantID, OrganizationID: value.Organization, EvidenceID: "integin-live-evidence-" + value.DeviceID, InspectionID: "integin-live-inspection", ContentType: "application/octet-stream", PlaintextSHA256: digest(plaintext), CiphertextSHA256: digest(ciphertext), Base64Blob: base64.StdEncoding.EncodeToString(ciphertext)}
+	requestValue := evidenceRequest{TenantID: value.TenantID, OrganizationID: value.Organization, EvidenceID: "integin-live-evidence-" + value.DeviceID + "-" + runID, InspectionID: "integin-live-inspection", ContentType: "application/octet-stream", PlaintextSHA256: digest(plaintext), CiphertextSHA256: digest(ciphertext), Base64Blob: base64.StdEncoding.EncodeToString(ciphertext)}
 	evidenceKey := "ev-" + requestValue.EvidenceID
 	response, err := postJSONAuth(client, serverURL+"/evidence", requestValue, token, evidenceKey)
 	if err != nil {
