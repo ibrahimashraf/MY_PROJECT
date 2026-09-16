@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../security/endpoint_guard.dart';
+
 /// Server-side cap for a single append, mirrored from
 /// `internal/storage/tus_handler.go` (`DefaultTUSChunkSize = 2 << 20`).
 const int tusChunkSize = 2 * 1024 * 1024;
@@ -131,9 +133,12 @@ class HttpTusHttp implements TusHttp {
     required http.Client client,
     String? authToken,
     this.timeout = const Duration(seconds: 30),
+    bool allowLoopbackHttp = false,
   })  : _base = baseUrl.toString().replaceAll(RegExp(r'/+$'), ''),
         _client = client,
-        _authToken = authToken;
+        _authToken = authToken {
+    assertEndpointSafe(baseUrl, allowLoopbackHttp: allowLoopbackHttp);
+  }
 
   final String _base;
   final http.Client _client;

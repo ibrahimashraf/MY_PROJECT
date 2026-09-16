@@ -2,8 +2,6 @@
 # Complete Pure FOSS Architecture (Zero Freemium, Zero Open-Core, Zero Cloud Callbacks)
 # Components: HAProxy 3.1 + Casdoor IdP + PgCat Pooler + PostgreSQL 18 + RustFS S3 + INTEGIN Server Monolith
 
-version: '3.8'
-
 services:
   # 1. Edge Ingress Proxy & WAF (GPL-2.0 / LGPL-2.1)
   # Defense-in-depth: dual stick-table rate limiting, token enumeration ban, TLS termination
@@ -37,6 +35,12 @@ services:
       POSTGRES_PASSWORD: ${CASDOOR_PASSWORD:-casdoor_sovereign_secret}
     volumes:
       - casdoor-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - appliance-network
     deploy:
@@ -57,11 +61,12 @@ services:
     networks:
       - appliance-network
     depends_on:
-      - casdoor-postgres
+      casdoor-postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 512M
 
   # 3. Relational Core Database (PostgreSQL License / BSD-style)
   postgres:
@@ -73,7 +78,7 @@ services:
       POSTGRES_USER: ${APPLIANCE_POSTGRES_USER:-integin_owner}
       POSTGRES_PASSWORD: ${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}
     volumes:
-      - appliance-postgres-data:/var/lib/postgresql
+      - appliance-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
