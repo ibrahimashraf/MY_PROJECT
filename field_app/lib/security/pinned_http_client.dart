@@ -47,7 +47,11 @@ class PinnedHttpClient {
       }
       return http.Client();
     }
-    final io = inner ?? HttpClient();
+    // Security gap fix: A compromised system CA could bypass the badCertificateCallback 
+    // by providing a trusted cert. By using withTrustedRoots: false, all certs are "bad" 
+    // and MUST be validated against our pins.
+    final context = SecurityContext(withTrustedRoots: false);
+    final io = inner ?? HttpClient(context: context);
     io.badCertificateCallback = (cert, host, port) {
       try {
         return pinList.contains(spkiPin(cert.der));

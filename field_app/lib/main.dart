@@ -6,7 +6,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'advisory/pilot_advisory_client.dart';
 import 'application/field_app_controller.dart';
@@ -85,11 +84,8 @@ Future<void> main() async {
   }
 
   _traceWindowsStartup('preferences-start');
-  final preferences = await SharedPreferences.getInstance();
   _traceWindowsStartup('preferences-ready');
-  final KeyValueStore storage = kIsWeb
-      ? SharedPreferencesKeyValueStore(preferences)
-      : SecureKeyValueStore();
+  final KeyValueStore storage = SecureKeyValueStore();
   final outboxKey = _pilotOutboxNamespace.isEmpty
       ? 'integin.outbox.v1'
       : 'integin.outbox.v1.$_pilotOutboxNamespace';

@@ -59,6 +59,10 @@ class DiskBackedEvidenceStore implements EvidenceStore {
     );
   }
 
-  String _key(EvidenceScope scope, String evidenceId) =>
-      '${scope.tenantId}_${scope.organizationId}_$evidenceId';
+  String _key(EvidenceScope scope, String evidenceId) {
+    final sanitizedTenant = scope.tenantId.replaceAll(RegExp(r'[/\\]'), '_');
+    final sanitizedOrg = scope.organizationId.replaceAll(RegExp(r'[/\\]'), '_');
+    final sanitizedId = evidenceId.replaceAll(RegExp(r'[/\\]'), '_');
+    return '${sanitizedTenant}_${sanitizedOrg}_$sanitizedId';
+  }
 }

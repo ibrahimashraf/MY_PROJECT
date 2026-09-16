@@ -1,27 +1,11 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../outbox/merkle_hash_chain.dart';
 import '../outbox/outbox.dart';
 
 abstract interface class KeyValueStore {
   Future<String?> read(String key);
   Future<void> write(String key, String value);
-}
-
-class SharedPreferencesKeyValueStore implements KeyValueStore {
-  SharedPreferencesKeyValueStore(this.preferences);
-
-  final SharedPreferences preferences;
-
-  @override
-  Future<String?> read(String key) async => preferences.getString(key);
-
-  @override
-  Future<void> write(String key, String value) async {
-    await preferences.setString(key, value);
-  }
 }
 
 class JsonOutboxStore implements OutboxStore {
