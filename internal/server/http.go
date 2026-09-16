@@ -43,6 +43,8 @@ type Dependencies struct {
 	EvidenceRegistrationHandler    http.Handler
 	LocalProvisioning              http.Handler
 	OIDCSessionHandler             http.Handler
+	SessionRevocationHandler       http.Handler
+	SessionRevokeAllHandler        http.Handler
 	WorkOrderHandler               http.Handler
 	WorkOrderEvidenceHandler       http.Handler
 	WorkOrderHandoverHandler       http.Handler
@@ -62,6 +64,7 @@ type Dependencies struct {
 	AnalyticsHandler               http.Handler
 	ReportsHandler                 http.Handler
 	AdvisoryHandler                http.Handler
+	ContextGroundHandler           http.Handler
 	ShortLinkHandler               http.Handler
 	QRNFCHandler                   http.Handler
 	AssuranceHandler               http.Handler

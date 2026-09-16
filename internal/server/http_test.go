@@ -310,3 +310,27 @@ func TestNewMuxMountsWorkbenchRoutes(t *testing.T) {
 		t.Fatalf("workbench route mounted without dependency = %d, want 404", unmounted.Code)
 	}
 }
+
+func TestNewMuxMountsContextGroundRoutesOnlyWhenProvided(t *testing.T) {
+	unmounted := httptest.NewRecorder()
+	unmountedMux := NewMux(Dependencies{})
+	unmountedMux.ServeHTTP(unmounted, httptest.NewRequest(http.MethodPost, "/api/v1/context/ground", nil))
+	if unmounted.Code != http.StatusNotFound {
+		t.Fatalf("context ground route mounted without dependency = %d, want 404", unmounted.Code)
+	}
+
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	mountedMux := NewMux(Dependencies{ContextGroundHandler: handler})
+	mounted := httptest.NewRecorder()
+	mountedMux.ServeHTTP(mounted, httptest.NewRequest(http.MethodPost, "/api/v1/context/ground", nil))
+	if mounted.Code != http.StatusOK || calls != 1 {
+		t.Fatalf("context ground mounted status=%d calls=%d, want 200/1", mounted.Code, calls)
+	}
+}
+

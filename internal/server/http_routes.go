@@ -32,6 +32,12 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middlew
 	if d.OIDCSessionHandler != nil {
 		mux.Handle("/identity/session", d.OIDCSessionHandler)
 	}
+	if d.SessionRevocationHandler != nil {
+		mux.Handle("/identity/session/revoke", d.SessionRevocationHandler)
+	}
+	if d.SessionRevokeAllHandler != nil {
+		mux.Handle("/identity/session/revoke-all", d.SessionRevokeAllHandler)
+	}
 	if d.WorkOrderHandler != nil {
 		mux.Handle("/work-orders/partial-submissions", d.WorkOrderHandler)
 	}
@@ -105,6 +111,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	if d.AdvisoryHandler != nil {
 		mux.Handle("/api/v1/advisory", d.AdvisoryHandler)
 		mux.Handle("/api/v1/advisory/", d.AdvisoryHandler)
+	}
+	if d.ContextGroundHandler != nil {
+		mux.Handle("/api/v1/context/ground", d.ContextGroundHandler)
+		mux.Handle("/api/v1/context/", d.ContextGroundHandler)
 	}
 	if d.ReportsHandler != nil {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
