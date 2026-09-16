@@ -201,6 +201,8 @@ func main() {
 		enrollHandler = onboarding.NewEnrollServer(sim).Handler()
 	}
 	var oidcSessionHandler http.Handler
+	var sessionRevocationHandler http.Handler
+	var sessionRevokeAllHandler http.Handler
 	var workOrderHandler http.Handler
 	var workOrderEvidenceHandler http.Handler
 	var workOrderAssignmentHandler http.Handler
@@ -259,6 +261,27 @@ func main() {
 			log.Fatal(sessionHandlerErr)
 		}
 		oidcSessionHandler = sessionHandler
+
+		sessionStore, storeErr := oidchttp.NewPostgresSessionStore(database)
+		if storeErr != nil {
+			log.Fatal(storeErr)
+		}
+		sessionManager, managerErr := oidchttp.NewSessionLifecycleManagerWithStore(8*time.Hour, sessionStore)
+		if managerErr != nil {
+			log.Fatal(managerErr)
+		}
+		if cachedResolver, ok := activeResolver.(*identity.CachedResolver); ok {
+			sessionManager.SetInvalidator(cachedResolver)
+		}
+		sessionRevocationHandler, handlerErr = oidchttp.NewSessionRevocationHandler(validator, sessionManager, false)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
+		sessionRevokeAllHandler, handlerErr = oidchttp.NewSessionRevocationHandler(validator, sessionManager, true)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
+
 		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
@@ -423,7 +446,7 @@ func main() {
 		go tusManager.RunJanitor(context.Background(), 0, nil)
 	}
 	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil)
-	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler,
+	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, SessionRevocationHandler: sessionRevocationHandler, SessionRevokeAllHandler: sessionRevokeAllHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler,
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
