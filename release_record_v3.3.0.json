@@ -1,8 +1,8 @@
 {
-  "release_id": "rel-1789507971",
-  "created_at": "2026-09-15T21:32:51Z",
-  "git_commit": "70799e52ce6c42b4a7570c34957ba14f6c9f07e4",
-  "version": "3.3.0",
+  "release_id": "rel-1789563749",
+  "created_at": "2026-09-16T13:02:29Z",
+  "git_commit": "6183af66bada1933733b9b0eab8d98c739845f4a",
+  "version": "v3.3.0",
   "artifact_checksums": {
     "release-record": "self"
   },
@@ -637,13 +637,13 @@
     }
   },
   "approvals": {
-    "operator": "ops-lead",
-    "security": "sec-officer",
-    "safety_authority": "safety-authority"
+    "operator": "INTEGIN Engineering",
+    "security": "FIPS-140-3-Gate",
+    "safety_authority": "ISO-17020-Authority"
   },
   "rollback_plan": {
     "trigger": "defined in deployment runbook",
-    "owner": "ops-lead",
+    "owner": "INTEGIN Engineering",
     "automatically_reversible": true,
     "manual_steps": [
       "revert migrations in reverse order",
