@@ -509,6 +509,11 @@ The following 17 items represent the remaining identified blind spots across Spr
     *   **1A Edge Verifier Packaging (`tools/public-verifier/`)**: Configured zero-cost static edge bundle with Cloudflare Pages `_headers` (strict CSP `frame-ancestors 'none'`, nosniff, no-referrer) and step-by-step 0-cost deployment manual (`README.md`). Preserved byte equality with `pkg/verification/verifier_page.go`.
     *   **2B PgCat Appliance Blueprint (`deployments/pgcat.toml`, `deployments/docker-compose.appliance.yml`)**: Reconciled PgCat pool configuration for `integin_appliance` (transaction mode, 80 pool connections, `integin_owner` user credentials, `appliance-postgres:5432` DNS shard) while retaining migration test pool. Added automated DSN parser & config validation tests in `pkg/verification/pgcat_test.go`.
     *   Quality gates: All tests pass cleanly (`go test -race -count=1 ./pkg/verification/...`), 0 data races.
+* [x] **Autonomous AI Execution & Governance Stack (RAG, RSI, Audit Exporter)** — COMPLETE ✅ (2026-09-16, committed `9590272` in `integin-pilot-source`, delegated `opencode/big-pickle`):
+    *   **1. RAG Context-Grounding Engine (`pkg/contextground/`)**: Deterministic AST extractor (`go/parser`, `go/ast`) + SHA-256 state digest + standard secret redaction (`AIza...`, `bearer ...`, PEM keys). 5/5 tests PASS.
+    *   **2. RSI Mutation & Verification CLI (`cmd/integin-rsi/`)**: Closed-loop Red-Green-Refactor test runner with in-memory backups, patch application, and automatic rollback on compile/vet/test failure. 6/6 tests PASS.
+    *   **3. L10 Merkle-CRDT Audit Exporter (`cmd/audit-exporter/`)**: Sequential SHA-256 Merkle root computation, ISO 17020 / EU AI Act compliance receipt generation, and sequence gap/tamper detection. 10/10 tests PASS.
+    *   Quality gates: `go test -count=1` clean across all three packages (0 failures, 0 warnings).
 
 ---
 
