@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"integin/internal/identity"
+	"integin/internal/oidcauth"
 )
 
 var (
@@ -434,3 +435,37 @@ func (a *SessionAuthenticator) Middleware(next http.Handler) http.Handler {
 		next.ServeHTTP(writer, request.WithContext(WithOrganizationContext(request.Context(), org)))
 	})
 }
+
+// SessionAwareValidator wraps a TokenValidator and checks session lifecycle revocation
+// so any consumer of TokenValidator fails closed if the session is revoked or expired.
+type SessionAwareValidator struct {
+	inner    TokenValidator
+	sessions *SessionLifecycleManager
+}
+
+// NewSessionAwareValidator returns a TokenValidator that enforces session revocation.
+func NewSessionAwareValidator(inner TokenValidator, sessions *SessionLifecycleManager) (*SessionAwareValidator, error) {
+	if inner == nil {
+		return nil, errors.New("inner validator is required")
+	}
+	if sessions == nil {
+		return nil, errors.New("session lifecycle manager is required")
+	}
+	return &SessionAwareValidator{inner: inner, sessions: sessions}, nil
+}
+
+// Validate ensures the session is not revoked and not expired before validating the token signature.
+func (v *SessionAwareValidator) Validate(ctx context.Context, rawToken string) (oidcauth.Principal, error) {
+	if v.sessions.IsRevoked(rawToken) {
+		return oidcauth.Principal{}, ErrSessionRevoked
+	}
+	if v.sessions.Known(rawToken) && !v.sessions.IsActive(rawToken) {
+		return oidcauth.Principal{}, ErrSessionExpired
+	}
+	principal, err := v.inner.Validate(ctx, rawToken)
+	if err != nil {
+		return oidcauth.Principal{}, err
+	}
+	return principal, nil
+}
+

@@ -54,6 +54,7 @@ import (
 	"integin/internal/storage"
 	"integin/internal/syncstate"
 	"integin/internal/timestamp"
+	"integin/pkg/contextground"
 	"integin/pkg/onboarding"
 )
 
@@ -282,15 +283,20 @@ func main() {
 			log.Fatal(handlerErr)
 		}
 
-		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, validator, activeResolver)
+		sessionAwareValidator, sessionAwareErr := oidchttp.NewSessionAwareValidator(validator, sessionManager)
+		if sessionAwareErr != nil {
+			log.Fatal(sessionAwareErr)
+		}
+
+		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, sessionAwareValidator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
-		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, validator, activeResolver)
+		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, sessionAwareValidator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
-		workOrderAssignmentHandler, handlerErr = server.NewWorkOrderAssignmentHandler(database, validator, activeResolver)
+		workOrderAssignmentHandler, handlerErr = server.NewWorkOrderAssignmentHandler(database, sessionAwareValidator, activeResolver)
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
@@ -452,7 +458,8 @@ func main() {
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler})
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
+		ContextGroundHandler: contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
 		root := http.NewServeMux()
 		root.Handle("/enroll/", enrollHandler)

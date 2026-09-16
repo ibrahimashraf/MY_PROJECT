@@ -4,6 +4,7 @@ package oidchttp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -385,3 +386,31 @@ func TestNewSessionAuthenticatorRejectsNilDependencies(t *testing.T) {
 		t.Fatal("nil lifecycle manager must be rejected")
 	}
 }
+
+func TestSessionAwareValidatorEnforcesRevocation(t *testing.T) {
+	sessions, _ := newManaged(t, time.Hour)
+	inner := &fakeValidator{principal: oidcauth.Principal{Issuer: "issuer-1", Subject: "subject-1"}}
+
+	validator, err := NewSessionAwareValidator(inner, sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	// Active session passes
+	if err := sessions.Open("tok-valid", "subject-1", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validator.Validate(ctx, "tok-valid"); err != nil {
+		t.Fatalf("expected valid session to pass, got %v", err)
+	}
+
+	// Revoked session fails closed
+	if err := sessions.RevokeSession("tok-valid"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validator.Validate(ctx, "tok-valid"); !errors.Is(err, ErrSessionRevoked) {
+		t.Fatalf("expected ErrSessionRevoked, got %v", err)
+	}
+}
+
