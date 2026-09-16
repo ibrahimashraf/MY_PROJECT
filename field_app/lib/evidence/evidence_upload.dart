@@ -28,7 +28,11 @@ abstract interface class EvidenceUploadTransport {
 }
 
 class HttpEvidenceUploadTransport implements EvidenceUploadTransport {
-  HttpEvidenceUploadTransport({required this.endpoint, http.Client? client}) : client = client ?? PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: true);
+  HttpEvidenceUploadTransport(
+      {required this.endpoint, http.Client? client, bool allowLoopbackHttp = false})
+      : client = client ??
+            PinnedHttpClient.forEndpoint(endpoint,
+                allowLoopbackHttp: allowLoopbackHttp);
 
   final Uri endpoint;
   final http.Client client;

@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 import 'package:http/http.dart' as http;
 
+import 'endpoint_guard.dart';
+import 'pinned_http_client.dart';
+
 /// The only key origin this file may emit. Simulated claims are permanently
 /// labeled SOFTWARE so they enroll as CLAIMED-unverified, never VERIFIED: the
 /// Go server (pkg/onboarding) only sets AttestationVerified when a hardware
@@ -146,7 +149,11 @@ Future<Map<String, Object?>> enrollSimulatedDevice({
   required String deviceModel,
   http.Client? client,
 }) async {
-  final httpClient = client ?? http.Client();
+  // Pilot sim always targets loopback — but guard explicitly so a misconfigured
+  // endpoint is caught before key material crosses the wire.
+  assertEndpointSafe(endpoint, allowLoopbackHttp: true);
+  final httpClient = client ??
+      PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: true);
 
   final challengeResponse = await httpClient.post(
     endpoint.resolve('/enroll/challenge'),
@@ -206,7 +213,10 @@ Future<Map<String, Object?>> enrollProductionDevice({
   required String deviceModel,
   http.Client? client,
 }) async {
-  final httpClient = client ?? http.Client();
+  // Production enrollment must use HTTPS — reject any plaintext endpoint.
+  assertEndpointSafe(endpoint, allowLoopbackHttp: false);
+  final httpClient = client ??
+      PinnedHttpClient.forEndpoint(endpoint, allowLoopbackHttp: false);
 
   final challengeResponse = await httpClient.post(
     endpoint.resolve('/enroll/challenge'),

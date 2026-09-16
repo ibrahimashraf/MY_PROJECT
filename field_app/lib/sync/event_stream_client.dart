@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../security/endpoint_guard.dart';
+import '../security/pinned_http_client.dart';
+
 class StationEvent {
   const StationEvent({
     required this.id,
@@ -43,7 +46,12 @@ class EventStreamClient {
     required this.endpoint,
     required this.tenantId,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+    bool allowLoopbackHttp = false,
+  }) : _client = client ??
+            PinnedHttpClient.forEndpoint(endpoint,
+                allowLoopbackHttp: allowLoopbackHttp) {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
+  }
 
   final Uri endpoint;
   final String tenantId;

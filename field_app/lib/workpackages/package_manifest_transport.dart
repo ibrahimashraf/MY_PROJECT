@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
+import '../security/endpoint_guard.dart';
 import '../security/transaction_signer.dart';
 import 'package_manifest_client.dart';
 
@@ -94,6 +95,7 @@ class PackageManifestTransport implements PackageManifestFetcher {
     ManifestRequestIdGenerator? requestIdGenerator,
     this.proofLifetime = const Duration(minutes: 5),
     this.requestTimeout = const Duration(seconds: 15),
+    this.allowLoopbackHttp = false,
   })  : _client = client ?? http.Client(),
         _requestIdGenerator = requestIdGenerator ?? _secureRequestId {
     if (proofLifetime <= Duration.zero) {
@@ -117,6 +119,9 @@ class PackageManifestTransport implements PackageManifestFetcher {
   final Duration proofLifetime;
   final Duration requestTimeout;
 
+  /// Pilot-only loopback cleartext allowance; production stays fail-closed.
+  final bool allowLoopbackHttp;
+
   /// Requests one manifest for a device, authority, and inspection binding.
   ///
   /// [now] is supplied by the caller for deterministic protocol testing. The
@@ -131,6 +136,7 @@ class PackageManifestTransport implements PackageManifestFetcher {
     required String inspectionId,
     required DateTime now,
   }) async {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
     _validateRequest(
       endpoint: endpoint,
       signer: signer,

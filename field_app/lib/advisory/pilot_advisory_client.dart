@@ -48,11 +48,12 @@ class PilotAdvisoryResult {
 
 /// Sends only a monitoring request; it cannot approve or mutate field work.
 class PilotAdvisoryClient {
-  PilotAdvisoryClient({required this.endpoint, http.Client? client})
+  PilotAdvisoryClient(
+      {required this.endpoint, http.Client? client, bool allowLoopbackHttp = false})
       : _client = client ??
             PinnedHttpClient.forEndpoint(endpoint,
-                allowLoopbackHttp: true) {
-    assertEndpointSafe(endpoint, allowLoopbackHttp: true);
+                allowLoopbackHttp: allowLoopbackHttp) {
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
   }
 
   final Uri endpoint;

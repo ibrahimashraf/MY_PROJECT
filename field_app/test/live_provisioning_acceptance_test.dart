@@ -22,6 +22,9 @@ const _evidenceEndpoint =
 const _receiptPath = String.fromEnvironment('INTEGIN_LIVE_RECEIPT_PATH');
 const _tenantID = String.fromEnvironment('INTEGIN_LIVE_TENANT_ID');
 const _organizationID = String.fromEnvironment('INTEGIN_LIVE_ORGANIZATION_ID');
+// Bearer token for the OIDC-gated evidence route (D-02). Empty outside a
+// provisioned drill harness; the test skips instead of failing unauthenticated.
+const _idToken = String.fromEnvironment('INTEGIN_LIVE_ID_TOKEN');
 
 InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
       inspectionId: inspectionID,
@@ -49,7 +52,8 @@ void main() {
       _evidenceEndpoint.isNotEmpty &&
       _receiptPath.isNotEmpty &&
       _tenantID.isNotEmpty &&
-      _organizationID.isNotEmpty;
+      _organizationID.isNotEmpty &&
+      _idToken.isNotEmpty;
 
   test(
     'provisioned Flutter client applies signed sync and duplicate-safe evidence',
@@ -76,6 +80,7 @@ void main() {
       }));
       final session = await LocalProvisioningClient(
         endpoint: Uri.parse(_provisionEndpoint),
+        allowLoopbackHttp: true, // live acceptance test uses loopback server
       ).provision(signer);
       expect(session.deviceId, plannedDeviceID);
       expect(session.context.tenantId, _tenantID);
@@ -100,7 +105,10 @@ void main() {
         deviceKeyId: signer.keyId,
         syncClient: SyncClient(
           store: store,
-          transport: HttpSyncTransport(endpoint: Uri.parse(_syncEndpoint)),
+          transport: HttpSyncTransport(
+            endpoint: Uri.parse(_syncEndpoint),
+            allowLoopbackHttp: true, // live acceptance test uses loopback server
+          ),
         ),
       );
       controller.beginInspection(workPack);
@@ -128,14 +136,25 @@ void main() {
       };
       final first = await http.post(
         Uri.parse(_evidenceEndpoint),
-        headers: const {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          // Distinct keys per attempt: the route mandates Idempotency-Key,
+          // and the test exercises server-side evidence_id dedupe
+          // (APPLIED then DUPLICATE), not middleware replay.
+          'Idempotency-Key': '$evidenceID-attempt-1',
+          'Authorization': 'Bearer $_idToken',
+        },
         body: jsonEncode(body),
       );
       expect(first.statusCode, 200);
       expect(jsonDecode(first.body)['outcome'], 'APPLIED');
       final duplicate = await http.post(
         Uri.parse(_evidenceEndpoint),
-        headers: const {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': '$evidenceID-attempt-2',
+          'Authorization': 'Bearer $_idToken',
+        },
         body: jsonEncode(body),
       );
       expect(duplicate.statusCode, 200);
@@ -143,6 +162,6 @@ void main() {
     },
     skip: shouldRun
         ? false
-        : 'Set all INTEGIN_LIVE_* endpoints, tenant context, and INTEGIN_LIVE_RECEIPT_PATH to run live acceptance.',
+        : 'Set all INTEGIN_LIVE_* endpoints, tenant context, INTEGIN_LIVE_RECEIPT_PATH, and INTEGIN_LIVE_ID_TOKEN to run live acceptance.',
   );
 }

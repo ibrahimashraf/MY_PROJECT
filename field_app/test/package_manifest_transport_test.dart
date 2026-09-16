@@ -21,6 +21,8 @@ void main() {
     final transport = PackageManifestTransport(
       client: client,
       requestIdGenerator: () => 'request-1',
+      // Pilot loopback fixture requires the explicit opt-in.
+      allowLoopbackHttp: true,
     );
 
     await transport.fetch(
@@ -48,7 +50,10 @@ void main() {
   test('transport fails before request when signer key ID is absent', () async {
     final client = MockClient((_) async => http.Response('{}', 200));
     final signer = DeviceSigner(await Ed25519().newKeyPair());
-    final transport = PackageManifestTransport(client: client);
+    final transport = PackageManifestTransport(
+      client: client,
+      allowLoopbackHttp: true,
+    );
 
     expect(
       () => transport.fetch(

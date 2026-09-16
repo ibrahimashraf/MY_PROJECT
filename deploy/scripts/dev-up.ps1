@@ -69,6 +69,7 @@ if ($dockerOk -and (Test-Path -LiteralPath $migrationsDir)) {
         "0003_event_log_tenant_rls.sql",
         "0004_identity_subject_membership.sql",
         "0005_work_package_persistence.sql",
+        "0008_identity_actor_alignment.sql",
         "0009_identity_work_order_actor.candidate.sql",
         "0009_work_order_persistence.sql",
         "0010_work_order_rls.sql",

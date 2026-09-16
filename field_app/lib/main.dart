@@ -124,6 +124,7 @@ Future<void> main() async {
     if (localProvisioningEndpoint.isNotEmpty) {
       final session = await LocalProvisioningClient(
         endpoint: Uri.parse(localProvisioningEndpoint),
+        allowLoopbackHttp: pilotMode,
       ).provision(deviceSigner);
       context = session.context;
       deviceId = session.deviceId;
@@ -149,13 +150,22 @@ Future<void> main() async {
 
   final PilotAdvisoryClient? advisoryClient =
       pilotMode && pilotAdvisoryEndpoint.isNotEmpty
-          ? PilotAdvisoryClient(endpoint: Uri.parse(pilotAdvisoryEndpoint))
+          ? PilotAdvisoryClient(
+              endpoint: Uri.parse(pilotAdvisoryEndpoint),
+              allowLoopbackHttp: pilotMode,
+            )
           : null;
   final SyncClient? syncClient = syncEndpoint.isEmpty
       ? null
       : SyncClient(
           store: outboxStore,
-          transport: HttpSyncTransport(endpoint: Uri.parse(syncEndpoint)),
+          transport: HttpSyncTransport(
+            endpoint: Uri.parse(syncEndpoint),
+            // Pilot mode uses http://127.0.0.1:18080 — loopback cleartext is
+            // explicitly permitted and validated above. Production never hits
+            // this branch with an http:// URL.
+            allowLoopbackHttp: pilotMode,
+          ),
         );
   final controller = FieldAppController(
     context: context,
