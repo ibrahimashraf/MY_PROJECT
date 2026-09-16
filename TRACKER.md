@@ -513,6 +513,7 @@ The following 17 items represent the remaining identified blind spots across Spr
     *   **1. RAG Context-Grounding Engine (`pkg/contextground/`, `internal/server/`)**: Deterministic AST extractor (`go/parser`, `go/ast`) + SHA-256 state digest + standard secret redaction (`AIza...`, `bearer ...`, PEM keys). Mounted `ContextGroundHandler` under `/api/v1/context/ground` in `internal/server/http_routes.go` & `http.go`. Verified OpenAPI contract compliance. 6/6 tests PASS.
     *   **2. RSI Mutation & Verification CLI (`cmd/integin-rsi/`)**: Closed-loop Red-Green-Refactor test runner with in-memory backups, patch application, and automatic rollback on compile/vet/test failure. 6/6 tests PASS.
     *   **3. L10 Merkle-CRDT Audit Exporter (`cmd/audit-exporter/`)**: Sequential SHA-256 Merkle root computation, ISO 17020 / EU AI Act compliance receipt generation, and sequence gap/tamper detection. 10/10 tests PASS.
+    *   **4. Live Sovereign Edge Appliance 6-Step Drill**: Rebuilt `integin/integin-server:latest` and executed the live 6-step lifecycle drill (`/healthz`, `/api/v1/context/ground`, Ed25519 hardware attestation, Merkle audit sequencing, certificate governance, `/verify` WebCrypto verifier). All 6 steps PASS (HTTP 200) on the live running container stack (`:8080`, `:6432`, `:9000`, `:18180`).
     *   Quality gates: `go test -count=1` and `go vet` clean across all packages (0 failures, 0 warnings).
 
 ---
