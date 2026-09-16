@@ -78,6 +78,10 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middlew
 	if d.QRNFCHandler != nil {
 		mux.Handle("/qr-nfc/verify", d.QRNFCHandler)
 	}
+	if d.DeviceEnrollmentHandler != nil {
+		mux.Handle("/v1/device-enrollment/", d.DeviceEnrollmentHandler)
+		mux.Handle("/v1/devices/", d.DeviceEnrollmentHandler)
+	}
 }
 
 func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {

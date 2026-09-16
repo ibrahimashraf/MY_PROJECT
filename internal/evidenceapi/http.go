@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -79,13 +80,24 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
 		return
 	}
+	requestHTTP.Body = http.MaxBytesReader(writer, requestHTTP.Body, 25<<20)
 	var incoming request
-	if err := json.NewDecoder(requestHTTP.Body).Decode(&incoming); err != nil {
+	decoder := json.NewDecoder(requestHTTP.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&incoming); err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
 		return
 	}
 	if err := validate(incoming); err != nil {
 		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: err.Error()})
+		return
+	}
+	if isDangerousContentType(incoming.ContentType) {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "content type is not permitted"})
 		return
 	}
 	// D-02: Strict authority binding - if caller supplies tenant_id or organization_id, it must match authenticated actor
@@ -102,6 +114,11 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 	data, err := base64.StdEncoding.DecodeString(incoming.Base64Blob)
 	if err != nil {
 		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "base64 blob is invalid"})
+		return
+	}
+	detectedType := http.DetectContentType(data)
+	if isDangerousContentType(detectedType) {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "dangerous content detected"})
 		return
 	}
 	digest := sha256.Sum256(data)
@@ -124,7 +141,7 @@ func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request
 		writeJSON(writer, http.StatusConflict, response{Outcome: "CONFLICT", EvidenceID: incoming.EvidenceID, ObjectKey: key, Reason: "evidence id was reused with different content"})
 		return
 	}
-	if err := h.Store.Put(context.Background(), storage.Object{
+	if err := h.Store.Put(requestHTTP.Context(), storage.Object{
 		Key:         key,
 		ContentType: incoming.ContentType,
 		Data:        data,
@@ -173,4 +190,31 @@ func bearer(value string) (string, bool) {
 		return "", false
 	}
 	return parts[1], true
+}
+
+func isDangerousContentType(contentType string) bool {
+	ct := strings.ToLower(strings.TrimSpace(contentType))
+	if ct == "" {
+		return false
+	}
+	dangerous := []string{
+		"application/x-dosexec",
+		"application/x-executable",
+		"application/x-sharedlib",
+		"application/x-mach-binary",
+		"application/x-msdownload",
+		"application/x-bat",
+		"application/x-sh",
+		"application/javascript",
+		"text/javascript",
+		"application/x-javascript",
+		"text/html",
+		"application/xhtml+xml",
+	}
+	for _, d := range dangerous {
+		if strings.HasPrefix(ct, d) {
+			return true
+		}
+	}
+	return false
 }

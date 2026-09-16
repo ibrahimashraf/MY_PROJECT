@@ -96,6 +96,9 @@ func TestHandlerRejectsMalformedEvidenceRequests(t *testing.T) {
 		{name: "malformed json", body: []byte(`{"tenant_id":`)},
 		{name: "invalid base64", body: evidenceRequestBody("%%%", "digest")},
 		{name: "missing ciphertext digest", body: evidenceRequestBody(base64.StdEncoding.EncodeToString([]byte("evidence")), "")},
+		{name: "unknown field", body: []byte(`{"tenant_id":"tenant-1","organization_id":"org-1","evidence_id":"photo-1","inspection_id":"insp-1","content_type":"application/octet-stream","ciphertext_sha256":"` + hex.EncodeToString(sha256.New().Sum([]byte("data"))) + `","base64_blob":"` + base64.StdEncoding.EncodeToString([]byte("data")) + `","unexpected":"field"}`)},
+		{name: "trailing json token", body: []byte(`{"tenant_id":"tenant-1","organization_id":"org-1","evidence_id":"photo-1","inspection_id":"insp-1","content_type":"application/octet-stream","ciphertext_sha256":"` + hex.EncodeToString(sha256.New().Sum([]byte("data"))) + `","base64_blob":"` + base64.StdEncoding.EncodeToString([]byte("data")) + `"}{"extra":"data"}`)},
+		{name: "dangerous content type", body: []byte(`{"tenant_id":"tenant-1","organization_id":"org-1","evidence_id":"photo-1","inspection_id":"insp-1","content_type":"application/x-executable","ciphertext_sha256":"` + hex.EncodeToString(sha256.New().Sum([]byte("data"))) + `","base64_blob":"` + base64.StdEncoding.EncodeToString([]byte("data")) + `"}`)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

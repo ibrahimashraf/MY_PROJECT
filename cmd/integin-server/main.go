@@ -29,6 +29,7 @@ import (
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/certificaterender"
+	"integin/internal/deviceenrollhttp"
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/device_trust"
 	"integin/internal/domain/dpp"
@@ -80,6 +81,7 @@ func main() {
 	}
 	var database *sql.DB
 	var stateRepo syncstate.SyncStateRepository
+	var syncRepo syncstate.Repository
 	var devices []device_trust.Device
 	var authorities []device_trust.AuthorityPackage
 	if dbURL := strings.TrimSpace(os.Getenv("INTEGIN_DB_URL")); dbURL != "" {
@@ -110,6 +112,7 @@ func main() {
 			log.Fatal(err)
 		}
 		stateRepo = repository
+		syncRepo = repository
 		loadContext, loadCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		devices, authorities, err = loadFromPostgres(loadContext, repository, envList("INTEGIN_TENANT_IDS", "INTEGIN_TENANT_ID"))
 		loadCancel()
@@ -212,6 +215,7 @@ func main() {
 	var certificatePublicHandler http.Handler
 	var tusHandler http.Handler
 	var schedulingHandler http.Handler
+	var deviceEnrollmentHandler http.Handler
 	var certificateRepository *certificatepg.Repository
 	if database != nil {
 		repository, certificateErr := certificatepg.NewRepository(database)
@@ -314,6 +318,22 @@ func main() {
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
+
+		enrollCfg := deviceenrollhttp.Config{
+			SigningSecret: secrets["default"],
+		}
+		if syncRepo != nil {
+			enrollCfg.Repo = deviceenrollhttp.SyncRepository(syncRepo)
+		}
+		rawEnrollHandler, enrollErr := deviceenrollhttp.NewHandler(enrollCfg)
+		if enrollErr != nil {
+			log.Fatal(enrollErr)
+		}
+		sessionAuth, authErr := oidchttp.NewSessionAuthenticator(validator, activeResolver, sessionManager, identity.MFAPolicy{RequireMFA: false})
+		if authErr != nil {
+			log.Fatal(authErr)
+		}
+		deviceEnrollmentHandler = sessionAuth.Middleware(oidchttp.RejectTenantScopeConflict(rawEnrollHandler.Routes()))
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
@@ -446,7 +466,7 @@ func main() {
 		if tusErr != nil {
 			log.Fatal(tusErr)
 		}
-		tusHandler = storage.TUSRouteHandler{Manager: tusManager}
+		tusHandler = storage.TUSRouteHandler{Manager: tusManager, Store: evidenceStore}
 		// Background janitor: crash recovery + stale-upload pruning every 10m,
 		// logging sweep metrics (resumed/orphaned/purged/active).
 		go tusManager.RunJanitor(context.Background(), 0, nil)
@@ -459,6 +479,7 @@ func main() {
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
+		DeviceEnrollmentHandler: deviceEnrollmentHandler,
 		ContextGroundHandler: contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
 		root := http.NewServeMux()

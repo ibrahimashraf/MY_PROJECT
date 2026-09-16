@@ -65,7 +65,8 @@ func TestTUSAuthenticatedUploadFlowThroughMux(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager}, Validator: tusValidatorStub{}})
+	store := storage.NewInMemoryStore()
+	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager, Store: store}, Validator: tusValidatorStub{}})
 
 	payload := make([]byte, 3000)
 	for i := range payload {

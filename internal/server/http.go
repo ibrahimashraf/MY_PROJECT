@@ -75,6 +75,7 @@ type Dependencies struct {
 	TUSHandler                     http.Handler
 	SchedulingHandler              http.Handler
 	WorkbenchHandler               http.Handler
+	DeviceEnrollmentHandler        http.Handler
 	Readiness                      func(context.Context) error
 	ReadinessTimeout               time.Duration
 }

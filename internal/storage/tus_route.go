@@ -4,14 +4,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 )
+
+// MaxUploadSize caps media uploads at 100 MiB.
+const MaxUploadSize = 100 << 20
 
 // TUSRouteHandler exposes the TUSManager over HTTP. Routes are dispatched by
 // method and path prefix following the server's stdlib ServeMux conventions.
 type TUSRouteHandler struct {
 	Manager *TUSManager
+	Store   Store
 }
 
 type tusCreateRequest struct {
@@ -76,9 +81,24 @@ func (h TUSRouteHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 }
 
 func (h TUSRouteHandler) handleCreate(writer http.ResponseWriter, request *http.Request) {
+	request.Body = http.MaxBytesReader(writer, request.Body, 1<<20)
 	var req tusCreateRequest
-	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "invalid JSON request"})
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "invalid JSON request"})
+		return
+	}
+	if req.Size <= 0 || req.Size > MaxUploadSize {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "upload size must be between 1 byte and 100 MiB"})
+		return
+	}
+	if isDangerousContentType(req.ContentType) {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "content type is not permitted"})
 		return
 	}
 	id, err := h.Manager.Create(request.Context(), req.Size, req.Checksum, req.ContentType)
@@ -90,14 +110,40 @@ func (h TUSRouteHandler) handleCreate(writer http.ResponseWriter, request *http.
 }
 
 func (h TUSRouteHandler) handleAppend(writer http.ResponseWriter, request *http.Request, id string) {
+	session, err := h.Manager.Offset(request.Context(), id)
+	if err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, ErrUploadNotFound) {
+			status = http.StatusNotFound
+		}
+		writeTUSJSON(writer, status, tusErrorResponse{Error: err.Error()})
+		return
+	}
+	remaining := session.Size - session.Offset
+	if remaining <= 0 {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "upload is already complete"})
+		return
+	}
+
+	request.Body = http.MaxBytesReader(writer, request.Body, 4<<20)
 	var req tusAppendRequest
-	if err := json.NewDecoder(request.Body).Decode(&req); err != nil {
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "invalid JSON request"})
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "invalid JSON request"})
 		return
 	}
 	data, err := base64.StdEncoding.DecodeString(req.Data)
 	if err != nil {
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "base64 data is invalid"})
+		return
+	}
+	if int64(len(data)) > remaining {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "chunk payload size exceeds remaining upload bytes"})
 		return
 	}
 	next, err := h.Manager.Append(request.Context(), id, req.Offset, data)
@@ -140,6 +186,20 @@ func (h TUSRouteHandler) handleComplete(writer http.ResponseWriter, request *htt
 		writeTUSJSON(writer, status, tusErrorResponse{Error: err.Error()})
 		return
 	}
+
+	detectedType := http.DetectContentType(object.Data)
+	if isDangerousContentType(detectedType) || isDangerousContentType(object.ContentType) {
+		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "executable or dangerous content detected"})
+		return
+	}
+
+	if h.Store != nil {
+		if err := h.Store.Put(request.Context(), object); err != nil {
+			writeTUSJSON(writer, http.StatusInternalServerError, tusErrorResponse{Error: "failed to persist completed object"})
+			return
+		}
+	}
+
 	writeTUSJSON(writer, http.StatusOK, map[string]string{
 		"key":          object.Key,
 		"content_type": object.ContentType,
@@ -156,6 +216,33 @@ func (h TUSRouteHandler) handleAbort(writer http.ResponseWriter, request *http.R
 		return
 	}
 	writer.WriteHeader(http.StatusNoContent)
+}
+
+func isDangerousContentType(contentType string) bool {
+	ct := strings.ToLower(strings.TrimSpace(contentType))
+	if ct == "" {
+		return false
+	}
+	dangerous := []string{
+		"application/x-dosexec",
+		"application/x-executable",
+		"application/x-sharedlib",
+		"application/x-mach-binary",
+		"application/x-msdownload",
+		"application/x-bat",
+		"application/x-sh",
+		"application/javascript",
+		"text/javascript",
+		"application/x-javascript",
+		"text/html",
+		"application/xhtml+xml",
+	}
+	for _, d := range dangerous {
+		if strings.HasPrefix(ct, d) {
+			return true
+		}
+	}
+	return false
 }
 
 func writeTUSJSON(writer http.ResponseWriter, status int, payload any) {

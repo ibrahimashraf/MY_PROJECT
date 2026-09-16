@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -102,3 +103,35 @@ func TestHandlerRejectsNonLoopbackClient(t *testing.T) {
 		t.Fatalf("status=%d want=%d", recorder.Code, http.StatusForbidden)
 	}
 }
+
+func TestHandlerRejectsUnknownFieldsAndMalformedJSON(t *testing.T) {
+	repository := &memoryRepository{}
+	processor, err := domainsync.NewProcessor(map[string]string{"default": "local-secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler, err := NewHandler(Config{Repository: repository, Processor: processor, SigningSecret: "local-secret", TenantID: "tenant", OrganizationID: "org", UserID: "user", AuthorityLifetime: time.Minute})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler.SetAuthorityRegistrar(func(device_trust.AuthorityPackage) {})
+
+	// Unknown field
+	req := httptest.NewRequest(http.MethodPost, "http://localhost/local/provision", strings.NewReader(`{"device_id":"dev-1","key_id":"k-1","public_key":"pk","unknown_field":"rejected"}`))
+	req.RemoteAddr = "127.0.0.1:40101"
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("unknown field status=%d want 400", rec.Code)
+	}
+
+	// Extra json token after EOF
+	req = httptest.NewRequest(http.MethodPost, "http://localhost/local/provision", strings.NewReader(`{"device_id":"dev-1","key_id":"k-1","public_key":"pk"}{"trailing":"data"}`))
+	req.RemoteAddr = "127.0.0.1:40101"
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("trailing json status=%d want 400", rec.Code)
+	}
+}
+

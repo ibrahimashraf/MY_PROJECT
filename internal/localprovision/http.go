@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -111,8 +112,15 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, httpRequest *http.Reques
 		writeError(writer, http.StatusServiceUnavailable, "local provisioning authority registry is unavailable")
 		return
 	}
+	httpRequest.Body = http.MaxBytesReader(writer, httpRequest.Body, 1<<20)
 	var incoming request
-	if err := json.NewDecoder(httpRequest.Body).Decode(&incoming); err != nil {
+	decoder := json.NewDecoder(httpRequest.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&incoming); err != nil {
+		writeError(writer, http.StatusBadRequest, "invalid JSON request")
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		writeError(writer, http.StatusBadRequest, "invalid JSON request")
 		return
 	}

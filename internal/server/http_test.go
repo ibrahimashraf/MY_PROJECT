@@ -334,3 +334,32 @@ func TestNewMuxMountsContextGroundRoutesOnlyWhenProvided(t *testing.T) {
 	}
 }
 
+func TestNewMuxMountsDeviceEnrollmentRoutesOnlyWhenProvided(t *testing.T) {
+	unmounted := httptest.NewRecorder()
+	unmountedMux := NewMux(Dependencies{})
+	unmountedMux.ServeHTTP(unmounted, httptest.NewRequest(http.MethodPost, "/v1/device-enrollment/requests", nil))
+	if unmounted.Code != http.StatusNotFound {
+		t.Fatalf("device-enrollment unmounted status=%d, want 404", unmounted.Code)
+	}
+
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusCreated)
+	})
+
+	mountedMux := NewMux(Dependencies{DeviceEnrollmentHandler: handler})
+	rec := httptest.NewRecorder()
+	mountedMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/v1/device-enrollment/requests", nil))
+	if rec.Code != http.StatusCreated || calls != 1 {
+		t.Fatalf("device enrollment mounted status=%d calls=%d, want 201/1", rec.Code, calls)
+	}
+
+	rec = httptest.NewRecorder()
+	mountedMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/v1/devices/dev-1/revoke", nil))
+	if rec.Code != http.StatusCreated || calls != 2 {
+		t.Fatalf("devices mounted status=%d calls=%d, want 201/2", rec.Code, calls)
+	}
+}
+
+

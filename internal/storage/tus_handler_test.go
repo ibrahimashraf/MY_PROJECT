@@ -445,7 +445,8 @@ func TestTUSRecoverOrphansKeepsLiveSessions(t *testing.T) {
 
 func TestTUSHTTPUploadFlowAndErrorMapping(t *testing.T) {
 	manager := newTestTUSManager(t, time.Hour)
-	handler := TUSRouteHandler{Manager: manager}
+	store := NewInMemoryStore()
+	handler := TUSRouteHandler{Manager: manager, Store: store}
 
 	_, payload, checksum := testPayload(DefaultTUSChunkSize + 100)
 	createBody := strings.NewReader(`{"size":` + strconv.Itoa(DefaultTUSChunkSize+100) + `,"checksum":"` + checksum + `","content_type":"image/jpeg"}`)
@@ -517,5 +518,83 @@ func TestTUSAbortUnknownReturnsNotFoundViaHTTP(t *testing.T) {
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads/unknown/abort", nil))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("abort unknown status=%d want 404", rec.Code)
+	}
+}
+
+func TestTUSRouteHandlerRejectsOversizedAndUnknownFields(t *testing.T) {
+	manager := newTestTUSManager(t, time.Hour)
+	store := NewInMemoryStore()
+	handler := TUSRouteHandler{Manager: manager, Store: store}
+
+	// Unknown field in create
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":100,"checksum":"`+strings.Repeat("a", 64)+`","content_type":"image/jpeg","unknown":"field"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("unknown field status=%d want 400", rec.Code)
+	}
+
+	// Size <= 0
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":0,"checksum":"`+strings.Repeat("a", 64)+`","content_type":"image/jpeg"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("zero size status=%d want 400", rec.Code)
+	}
+
+	// Size > MaxUploadSize (100 MiB)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":`+strconv.FormatInt(MaxUploadSize+1, 10)+`,"checksum":"`+strings.Repeat("a", 64)+`","content_type":"image/jpeg"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("oversized status=%d want 400", rec.Code)
+	}
+
+	// Dangerous content type (e.g. application/x-executable)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":100,"checksum":"`+strings.Repeat("a", 64)+`","content_type":"application/x-executable"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("dangerous content type status=%d want 400", rec.Code)
+	}
+}
+
+func TestTUSRouteHandlerEnforcesChunkRemainingBytes(t *testing.T) {
+	manager := newTestTUSManager(t, time.Hour)
+	store := NewInMemoryStore()
+	handler := TUSRouteHandler{Manager: manager, Store: store}
+
+	ctx := context.Background()
+	_, payload, checksum := testPayload(100)
+	id, err := manager.Create(ctx, 100, checksum, "image/jpeg")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Try to append 150 bytes when remaining is 100
+	oversizedChunk := base64.StdEncoding.EncodeToString(make([]byte, 150))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads/"+id+"/chunks", strings.NewReader(`{"offset":0,"data":"`+oversizedChunk+`"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("chunk exceeding remaining status=%d want 400", rec.Code)
+	}
+
+	// Append valid payload
+	validChunk := base64.StdEncoding.EncodeToString(payload)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads/"+id+"/chunks", strings.NewReader(`{"offset":0,"data":"`+validChunk+`"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("valid chunk append status=%d want 200", rec.Code)
+	}
+
+	// Complete should persist to store
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads/"+id+"/complete", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("complete status=%d want 200", rec.Code)
+	}
+
+	obj, err := store.Get(ctx, id)
+	if err != nil {
+		t.Fatalf("completed object was not persisted in Store: %v", err)
+	}
+	if obj.Key != id || len(obj.Data) != 100 {
+		t.Fatalf("unexpected stored object: %#v", obj)
 	}
 }
