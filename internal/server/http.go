@@ -155,7 +155,7 @@ func productionMiddleware(next http.Handler) http.Handler {
 
 func productionMiddlewareWithLimiter(next http.Handler, rateLimiter *middleware.RateLimiter) http.Handler {
 	gate := newConcurrencyGateFromEnv()
-	return withSecurityHeaders(requestLogger(withCorrelationID(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20))))
+	return withSecurityHeaders(requestLogger(withCorrelationID(middleware.EarlyDataMiddleware(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20)))))
 }
 
 func withSecurityHeaders(next http.Handler) http.Handler {

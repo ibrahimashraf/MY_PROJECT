@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  INTEGIN Field App — Android Network Security Configuration
+  =========================================================
+  Policy (adversarial red-team rationale):
+  • All non-loopback traffic MUST use TLS (cleartext blocked by default).
+  • Loopback (127.0.0.1 / localhost) cleartext is allowed exclusively for the
+    Windows debug pilot server (port 18080) and the advisory server (port 8001).
+    This exception is intentional and documented:
+      - main.dart validates pilotMode restricts endpoint to 127.0.0.1 only.
+      - The production code path never targets loopback.
+  • No certificate-pinning trust anchors are declared here because the pilot
+    server uses a self-signed loopback cert that changes per environment.
+    TODO(SECURITY): When a stable production cert is provisioned, add a
+    <pin-set> block under a <domain includeSubdomains="true"> for the
+    production INTEGIN hostname. Use SHA-256 SPKI pins. Never ship without pins
+    in a production distribution.
+  • trust-anchors: system CAs only — no user-installed CAs trusted at runtime.
+-->
+<network-security-config>
+    <!-- Production default: TLS only, system CAs, no user certs -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Loopback exception: pilot dev server only. Explicitly scoped. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

@@ -362,4 +362,30 @@ func TestNewMuxMountsDeviceEnrollmentRoutesOnlyWhenProvided(t *testing.T) {
 	}
 }
 
+func TestNewMux_EarlyDataRejectionOnMutatingRoutes(t *testing.T) {
+	mux := NewMux(Dependencies{})
+
+	// Mutating POST with Early-Data: 1 rejected with 425 Too Early
+	postRec := httptest.NewRecorder()
+	postReq := httptest.NewRequest(http.MethodPost, "/sync", nil)
+	postReq.Header.Set("Early-Data", "1")
+	mux.ServeHTTP(postRec, postReq)
+	if postRec.Code != http.StatusTooEarly {
+		t.Fatalf("POST /sync with Early-Data: 1 status = %d, want %d", postRec.Code, http.StatusTooEarly)
+	}
+	if postRec.Header().Get("Retry-After") != "0" {
+		t.Fatalf("expected Retry-After: 0, got %q", postRec.Header().Get("Retry-After"))
+	}
+
+	// GET on healthz with Early-Data: 1 allowed
+	getRec := httptest.NewRecorder()
+	getReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	getReq.Header.Set("Early-Data", "1")
+	mux.ServeHTTP(getRec, getReq)
+	if getRec.Code != http.StatusOK {
+		t.Fatalf("GET /healthz with Early-Data: 1 status = %d, want %d", getRec.Code, http.StatusOK)
+	}
+}
+
+
 

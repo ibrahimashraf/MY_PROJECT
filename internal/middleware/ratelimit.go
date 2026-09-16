@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"hash/fnv"
 	"net"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"integin/internal/oidchttp"
 	"integin/pkg/httputil"
 	"golang.org/x/time/rate"
 )
@@ -148,8 +151,15 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 
 	// Determine burst: per-tenant if configured, otherwise global
 	burst := rl.burst
-	if tenantID, ok := strings.CutPrefix(key, "tenant:"); ok {
+	if tenantKey, ok := strings.CutPrefix(key, "tenant:"); ok {
+		tenantID := strings.Split(tenantKey, ":")[0]
 		if b, exists := rl.perTenantBurst[tenantID]; exists {
+			burst = b
+		} else if b, exists := rl.perTenantBurst[tenantKey]; exists {
+			burst = b
+		}
+	} else if unauthKey, ok := strings.CutPrefix(key, "unauth_tenant:"); ok {
+		if b, exists := rl.perTenantBurst[unauthKey]; exists {
 			burst = b
 		}
 	}
@@ -195,6 +205,23 @@ func extractClientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+func sanitizeLimiterKey(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if len(raw) > 64 {
+		raw = raw[:64]
+	}
+	var b strings.Builder
+	b.Grow(len(raw))
+	for _, ch := range raw {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '_' || ch == '.' {
+			b.WriteRune(ch)
+		} else {
+			b.WriteByte('_')
+		}
+	}
+	return b.String()
+}
+
 // Middleware applies rate limiting to HTTP handlers.
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -205,8 +232,23 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		}
 
 		var limiterKey string
-		if tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); tenantID != "" {
-			limiterKey = "tenant:" + tenantID
+		if org, ok := oidchttp.OrganizationContextFrom(r.Context()); ok && org.TenantID != "" {
+			// Authenticated session: partition by TenantID + ":" + ActorID (or TenantID if ActorID is empty)
+			if org.ActorID != "" {
+				limiterKey = "tenant:" + org.TenantID + ":" + org.ActorID
+			} else {
+				limiterKey = "tenant:" + org.TenantID
+			}
+		} else if rawTenant := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); rawTenant != "" {
+			// Unauthenticated request with client-supplied X-Tenant-ID:
+			// Do NOT trust as verified tenant; sanitize and prefix with unauth_tenant:
+			sanitized := sanitizeLimiterKey(rawTenant)
+			limiterKey = "unauth_tenant:" + sanitized
+		} else if authHdr := strings.TrimSpace(r.Header.Get("Authorization")); strings.HasPrefix(strings.ToLower(authHdr), "bearer ") {
+			// Bearer token present without resolved OrganizationContext: partition by SHA-256 hash
+			token := strings.TrimSpace(authHdr[7:])
+			hash := sha256.Sum256([]byte(token))
+			limiterKey = "token:" + hex.EncodeToString(hash[:])
 		} else {
 			limiterKey = "ip:" + extractClientIP(r)
 		}
@@ -292,4 +334,22 @@ func DefaultRateLimiter() *RateLimiter {
 // DefaultRateLimiterWithConfig returns a rate limiter with custom configuration
 func DefaultRateLimiterWithConfig(requestsPerSecond float64, burst int, opts ...RateLimitConfigOption) *RateLimiter {
 	return NewRateLimiter(requestsPerSecond, burst, opts...)
+}
+
+// EarlyDataMiddleware enforces RFC 8470 anti-replay defense.
+// Requests carrying "Early-Data: 1" on unsafe / mutating HTTP methods
+// (POST, PUT, PATCH, DELETE) are rejected immediately with HTTP 425 (Too Early)
+// to prevent replay attacks during 0-RTT TLS handshakes.
+func EarlyDataMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.TrimSpace(r.Header.Get("Early-Data")) == "1" {
+			switch r.Method {
+			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+				w.Header().Set("Retry-After", "0")
+				httputil.WriteProblem(w, r, http.StatusTooEarly, "Too Early", "Request rejected due to potential 0-RTT early data replay")
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
