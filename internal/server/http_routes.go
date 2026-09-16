@@ -25,7 +25,12 @@ func wrapOrIdentity(wrapper idempotencyWrapper, handler http.Handler) http.Handl
 
 func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middleware.RateLimiter, syncHandler http.Handler, withIdempotency idempotencyWrapper) {
 	mux.Handle("/metrics", telemetryMetricsHandler(telemetry.DefaultMetrics(), d, rateLimiter))
-	mux.Handle("/sync", wrapOrIdentity(withIdempotency, syncHandler))
+	// NOTE: syncHandler already carries the Sync-scoped idempotency wrapper
+	// (applied in NewMux). Do NOT wrap it again here: a second wrapper opens
+	// a second claim transaction on the same request, and its INSERT trigger
+	// scan blocks on the first claim's uncommitted row — an undetectable
+	// self-deadlock that hangs every /sync request until client timeout.
+	mux.Handle("/sync", syncHandler)
 	if d.PilotManifestHandler != nil {
 		mux.Handle("/work-package-manifest", d.PilotManifestHandler)
 	}
