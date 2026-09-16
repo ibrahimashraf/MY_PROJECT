@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/identity"
+	"integin/internal/oidchttp"
 )
 
 func TestHandlerAppliesAndDeduplicatesSignedTransaction(t *testing.T) {
@@ -158,3 +161,71 @@ func TestHandlerDrainsHeldTransactionsWhenSequenceArrives(t *testing.T) {
 		t.Fatalf("expected 0 held transactions after cascade drain, got %d", len(processor.HeldTransactions()))
 	}
 }
+
+func TestHandlerRejectsUnknownFields(t *testing.T) {
+	processor, authority := testProcessor(t)
+	handler := NewHandler(processor)
+	handler.RegisterAuthority(authority)
+
+	// Inject unknown/smuggled field "malicious_extra"
+	payload := `{"transaction_id":"tx-1","authority_id":"` + authority.ID + `","malicious_extra":"injected"}`
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/sync", strings.NewReader(payload)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request for unknown fields, got %d", rec.Code)
+	}
+}
+
+func TestHandlerEnforcesBoundOrganizationContext(t *testing.T) {
+	processor, authority := testProcessor(t)
+	handler := NewHandler(processor)
+	handler.Now = func() time.Time { return time.Date(2026, 8, 13, 11, 0, 0, 0, time.UTC) }
+	handler.RegisterAuthority(authority)
+
+	payload := []byte(`{"inspection_id":"inspection-1"}`)
+	transaction := domainsync.NewTransaction("tx-1", "tenant-1", "device-1", "user-1", 1, "InspectionSubmitted", payload)
+	transaction.OrganizationID = "org-1"
+	transaction.EntityID = "inspection-1"
+	transaction.AuthorityID = authority.ID
+	transaction.AuthorityEpoch = authority.Epoch
+	transaction = domainsync.SignTransaction(transaction, "secret", "default")
+	body := requestBody(t, transaction, authority.ID)
+
+	// Tenant mismatch
+	reqMismatchTenant := httptest.NewRequest(http.MethodPost, "/sync", bytes.NewReader(body))
+	reqMismatchTenant = reqMismatchTenant.WithContext(oidchttp.WithOrganizationContext(reqMismatchTenant.Context(), identity.OrganizationContext{
+		TenantID: "tenant-attacker",
+		ActorID:  "user-1",
+	}))
+	rec1 := httptest.NewRecorder()
+	handler.ServeHTTP(rec1, reqMismatchTenant)
+	if rec1.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden for tenant mismatch, got %d", rec1.Code)
+	}
+
+	// User mismatch
+	reqMismatchUser := httptest.NewRequest(http.MethodPost, "/sync", bytes.NewReader(body))
+	reqMismatchUser = reqMismatchUser.WithContext(oidchttp.WithOrganizationContext(reqMismatchUser.Context(), identity.OrganizationContext{
+		TenantID: "tenant-1",
+		ActorID:  "user-attacker",
+	}))
+	rec2 := httptest.NewRecorder()
+	handler.ServeHTTP(rec2, reqMismatchUser)
+	if rec2.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 Forbidden for user mismatch, got %d", rec2.Code)
+	}
+
+	// Matching context succeeds
+	reqMatch := httptest.NewRequest(http.MethodPost, "/sync", bytes.NewReader(body))
+	reqMatch = reqMatch.WithContext(oidchttp.WithOrganizationContext(reqMatch.Context(), identity.OrganizationContext{
+		TenantID: "tenant-1",
+		ActorID:  "user-1",
+	}))
+	rec3 := httptest.NewRecorder()
+	handler.ServeHTTP(rec3, reqMatch)
+	if rec3.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK for matched context, got %d: %s", rec3.Code, rec3.Body.String())
+	}
+}
+
+

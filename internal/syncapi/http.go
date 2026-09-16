@@ -3,6 +3,7 @@ package syncapi
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/oidchttp"
 	"integin/internal/workpackageenforcement"
 )
 
@@ -100,13 +102,28 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	var incoming request
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 10<<20))
+	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&incoming); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON request")
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
 		writeError(w, http.StatusBadRequest, "invalid JSON request")
 		return
 	}
 	if strings.TrimSpace(incoming.AuthorityID) == "" {
 		writeError(w, http.StatusBadRequest, "authority_id is required")
 		return
+	}
+	if org, ok := oidchttp.OrganizationContextFrom(r.Context()); ok {
+		if strings.TrimSpace(org.TenantID) != "" && incoming.TenantID != org.TenantID {
+			writeError(w, http.StatusForbidden, "tenant_scope_conflict")
+			return
+		}
+		if strings.TrimSpace(org.ActorID) != "" && incoming.UserID != org.ActorID {
+			writeError(w, http.StatusForbidden, "user_scope_conflict")
+			return
+		}
 	}
 	authority, exists := h.Authorities.Get(incoming.AuthorityID)
 	if !exists {
