@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/riverqueue/river"
 	
@@ -26,6 +26,7 @@ func (CFIHOSExportArgs) Kind() string { return "cfihos_export" }
 // StorageService defines where the generated CSV will be persisted.
 type StorageService interface {
 	PutFile(ctx context.Context, key string, data []byte) error
+	PutStream(ctx context.Context, key string, data io.Reader) error
 }
 
 // CFIHOSExportWorker implements the ISO 18101 export engine via a River worker.
@@ -43,7 +44,7 @@ func (w *CFIHOSExportWorker) Work(ctx context.Context, job *river.Job[CFIHOSExpo
 		ActorID:        job.Args.RequestedBy,
 	}
 
-	// 1. Fetch Taxonomy from Equipment Repo
+	// 1. Fetch Taxonomy from Equipment Repo (Paginated/Filtered)
 	filter := equipment.AssetFilter{
 		BranchID: job.Args.FacilityID,
 	}
@@ -75,15 +76,18 @@ func (w *CFIHOSExportWorker) Work(ctx context.Context, job *river.Job[CFIHOSExpo
 		})
 	}
 
-	// 3. Serialize
-	var buf bytes.Buffer
-	if err := cfihos.WriteCSV(&buf, tags, equip); err != nil {
-		return fmt.Errorf("failed to serialize CFIHOS dataset: %w", err)
-	}
+	// 3. Serialize & Store via Stream (preventing OOM on enterprise datasets)
+	pr, pw := io.Pipe()
 
-	// 4. Store (using tenant-isolated path and deterministic export ID)
+	go func() {
+		defer pw.Close()
+		if err := cfihos.WriteCSV(pw, tags, equip); err != nil {
+			pw.CloseWithError(fmt.Errorf("failed to serialize CFIHOS dataset: %w", err))
+		}
+	}()
+
 	key := fmt.Sprintf("cfihos/%s/%s/export_%s.csv", job.Args.TenantID, job.Args.OrganizationID, job.Args.ExportID)
-	if err := w.Storage.PutFile(ctx, key, buf.Bytes()); err != nil {
+	if err := w.Storage.PutStream(ctx, key, pr); err != nil {
 		return fmt.Errorf("failed to upload CFIHOS export to storage: %w", err)
 	}
 

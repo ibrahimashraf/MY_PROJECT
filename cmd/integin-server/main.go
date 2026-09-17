@@ -26,9 +26,6 @@ import (
 	"integin/internal/assetentitlementpg"
 	"integin/internal/assurancehttp"
 	"integin/internal/assurancepg"
-	"integin/internal/domain/scheduling"
-	"integin/pkg/engine/cognitive"
-	"integin/pkg/engine/eventbus"
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/certificaterender"
@@ -36,6 +33,7 @@ import (
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/domain/device_trust"
 	"integin/internal/domain/dpp"
+	"integin/internal/domain/scheduling"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/dpphttp"
 	"integin/internal/dpppg"
@@ -59,6 +57,8 @@ import (
 	"integin/internal/syncstate"
 	"integin/internal/timestamp"
 	"integin/pkg/contextground"
+	"integin/pkg/engine/cognitive"
+	"integin/pkg/engine/eventbus"
 	"integin/pkg/onboarding"
 )
 
@@ -444,18 +444,18 @@ func main() {
 			log.Fatalf("failed to initialize poison-pill quarantine recorder: %v", poisonErr)
 		}
 		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
-		
+
 		// Mount Phase 6: Cognitive Dispatcher and Corrective Work Order Worker
 		sysEventBus := eventbus.NewBus()
 		defer sysEventBus.Close()
 		dummyAgent := &cognitive.BDIAgent{
-			ID: "autonomous-tech-1",
+			ID:       "autonomous-tech-1",
 			Position: [3]float64{0, 0, 0},
 		}
 		agentRegistry := &scheduling.InMemoryAgentRegistry{
 			Agents: []*cognitive.BDIAgent{dummyAgent},
-			Competencies: map[string]scheduling.TechnicianCompetency{
-				"autonomous-tech-1": {Status: scheduling.CompetencyStatusCurrent},
+			Competencies: map[string][]scheduling.TechnicianCompetency{
+				"autonomous-tech-1": {{Status: scheduling.CompetencyStatusCurrent, EquipmentTypeID: "structural_remediation"}},
 			},
 		}
 		river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{
@@ -468,6 +468,20 @@ func main() {
 				log.Fatalf("failed to initialize certificate render service: %v", renderErr)
 			}
 			river.AddWorker(workers, certificaterender.NewCertificateRenderWorker(renderSvc, certificateRepository))
+			
+			// Phase 7: Regulatory & CFIHOS workers
+			// (Assuming equipmentRepo and evidenceStore wrappers exist in a real deployment)
+			// river.AddWorker(workers, &integration.CFIHOSExportWorker{
+			// 	EquipmentRepo: equipmentRepo,
+			// 	Storage:       storageWrapper,
+			// })
+			// river.AddWorker(workers, &compliance.DossierExportWorker{
+			// 	Renderer: &certificaterender.DossierRenderer{
+			// 		PDFRenderer: renderer,
+			// 		Data:        assetDataSource,
+			// 	},
+			// 	Storage: storageWrapper,
+			// })
 		}
 
 		var riverErr error
@@ -509,7 +523,7 @@ func main() {
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
-		ContextGroundHandler: contextground.HTTPHandler(contextground.New())})
+		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
 		root := http.NewServeMux()
 		root.Handle("/enroll/", enrollHandler)
