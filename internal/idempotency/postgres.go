@@ -6,11 +6,20 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	leimenv "integin/internal/shared/env"
 	"time"
 )
 
 // CacheTTL bounds how long a committed idempotent response may be replayed.
-const CacheTTL = 24 * time.Hour // lean-ctx: exported const, callers override per-deployment; no env needed
+const DefaultCacheTTL = 24 * time.Hour
+
+// CacheTTL is kept for backward compatibility; prefer CacheTTLHours.
+const CacheTTL = DefaultCacheTTL
+
+// CacheTTLHours returns the replay window in whole hours.
+func CacheTTLHours() int {
+	return leimenv.Int("INTEGIN_IDEMPOTENCY_CACHE_TTL_HOURS", 24, 1, 168)
+}
 
 // maximalReplayableStatus is the highest HTTP status that is persisted for
 // replay. Server-side failures (5xx) are never cached so a retry can succeed.
@@ -82,7 +91,7 @@ func (s *PostgresStore) Acquire(ctx context.Context, scope Scope) (Claim, *Cache
 	if _, err := tx.ExecContext(ctx, `DELETE FROM sync_idempotency_cache WHERE tenant_id = $1 AND organization_id = $2 AND key_hash = $3 AND expires_at <= now()`, scope.TenantID, scope.OrganizationID, scope.KeyHash); err != nil {
 		return nil, nil, err
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO sync_idempotency_cache (key_hash, tenant_id, organization_id, endpoint, request_hash, status, expires_at) VALUES ($1,$2,$3,$4,$5,$6, now() + make_interval(hours => 24)) ON CONFLICT (tenant_id, organization_id, key_hash) DO NOTHING`, scope.KeyHash, scope.TenantID, scope.OrganizationID, scope.Endpoint, scope.RequestHash, string(StatusInProgress)); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO sync_idempotency_cache (key_hash, tenant_id, organization_id, endpoint, request_hash, status, expires_at) VALUES ($1,$2,$3,$4,$5,$6, now() + make_interval(hours => $7)) ON CONFLICT (tenant_id, organization_id, key_hash) DO NOTHING`, scope.KeyHash, scope.TenantID, scope.OrganizationID, scope.Endpoint, scope.RequestHash, string(StatusInProgress), CacheTTLHours()); err != nil {
 		return nil, nil, err
 	}
 	// Lock the just-inserted row for the duration of downstream execution.
@@ -126,7 +135,7 @@ func (c *postgresClaim) Commit(ctx context.Context, status string, httpStatus in
 		_ = c.tx.Rollback()
 		return nil
 	}
-	if _, err := c.tx.ExecContext(ctx, `UPDATE sync_idempotency_cache SET status = $1, http_status = $2, response_payload = $3, request_hash = $4, expires_at = now() + make_interval(hours => 24) WHERE tenant_id = $5 AND organization_id = $6 AND key_hash = $7`, status, httpStatus, string(payload), c.scope.RequestHash, c.scope.TenantID, c.scope.OrganizationID, c.scope.KeyHash); err != nil {
+	if _, err := c.tx.ExecContext(ctx, `UPDATE sync_idempotency_cache SET status = $1, http_status = $2, response_payload = $3, request_hash = $4, expires_at = now() + make_interval(hours => $8) WHERE tenant_id = $5 AND organization_id = $6 AND key_hash = $7`, status, httpStatus, string(payload), c.scope.RequestHash, c.scope.TenantID, c.scope.OrganizationID, c.scope.KeyHash, CacheTTLHours()); err != nil {
 		_ = c.tx.Rollback()
 		return err
 	}
