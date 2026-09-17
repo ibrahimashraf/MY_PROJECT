@@ -51,6 +51,8 @@ type Certificate struct {
 	supersededByID        string
 	revocationReason      string
 	exception             *SeparationException
+	signatures            []SignatureEvent
+	signWaiver            *SignWaiver
 	emitted               []events.Envelope
 	renewalAuthorityToken []byte // 32-byte authority token set by migration 0016 renewal tracking
 	renewalCount          int    // incremented by SetRenewalAuthority
@@ -104,6 +106,16 @@ func (c Certificate) Exception() *SeparationException {
 	return &copy
 }
 func (c Certificate) Events() []events.Envelope { return append([]events.Envelope(nil), c.emitted...) }
+func (c Certificate) Signatures() []SignatureEvent {
+	return append([]SignatureEvent(nil), c.signatures...)
+}
+func (c Certificate) SignWaiver() *SignWaiver {
+	if c.signWaiver == nil {
+		return nil
+	}
+	waiver := *c.signWaiver
+	return &waiver
+}
 
 func (c *Certificate) SubmitForApproval(actorID string) error {
 	if err := c.require(Draft); err != nil {

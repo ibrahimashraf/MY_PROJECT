@@ -15,6 +15,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/internal/queue"
@@ -158,6 +159,10 @@ func TestCertificateRenderRustFSIntegration(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'APPROVED',7,'FINALIZED',$8,$8)`, inspectionID, tenantID, orgID, workOrderID, scopeID, assignmentID, assetID, actorID); err != nil {
 		t.Fatal(err)
 	}
+	evidenceID := fmt.Sprintf("ev-sig-%d", stamp)
+	if _, err := db.ExecContext(ctx, `INSERT INTO evidence_metadata (id,tenant_id,organization_id,inspection_id,object_key,content_type,ciphertext_bytes,plaintext_sha256,ciphertext_sha256,captured_at,device_id,authority_id,authority_epoch,transaction_id,receipt_id,signature_algorithm,key_id,encryption_algorithm,encryption_key_reference,classification,retention_reference,hold_state,redaction_policy_reference,registered_by) VALUES ($1,$2,$3,$4,$2||'/'||$3||'/evidence/'||$1,'image/png',48210,'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08','5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9',$5,'device-a','authority-a',1,'transaction-a','receipt-a','Ed25519','key-a','AES-256-GCM','storage-key-a','CONFIDENTIAL','retention-v1','NONE','redaction-v1',$6)`, evidenceID, tenantID, orgID, inspectionID, now, actorID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Seed template
 	if _, err := db.ExecContext(ctx, `INSERT INTO certificate_template (id,tenant_id,organization_id,template_code,version,title,asset_type,status,catalog_version,page_count,page_width_points,page_height_points,created_by,approved_by,approved_at) VALUES ($1,$2,$3,$4,$5,'Lifting certificate','lifting','APPROVED',1,1,612,792,$6,$6,$7)`, tmplID, tenantID, orgID, tmplCode, tmplVersion, actorID, now); err != nil {
@@ -213,7 +218,7 @@ func TestCertificateRenderRustFSIntegration(t *testing.T) {
 	if err := repo.Review(ctx, reviewer, certID, now); err != nil {
 		t.Fatalf("failed to review: %v", err)
 	}
-	if err := repo.Sign(ctx, signerActor, certID, now); err != nil {
+	if err := repo.Sign(ctx, signerActor, certID, certificate.SignatureEvent{SignerID: "signer-a", SignerName: "Test Signer", Capacity: certificate.CapacityClient, StatementVersion: "client_ack_v1", ImageSHA256Hex: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", ImageBytes: 48210, ImageEvidenceID: evidenceID, SnapshotSHA256: "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"}, now); err != nil {
 		t.Fatalf("failed to sign: %v", err)
 	}
 	issued, err := repo.Issue(ctx, issuer, certID, now)

@@ -7,6 +7,7 @@ import (
 
 	"integin/internal/certificatehttp"
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
@@ -24,7 +25,13 @@ func (compositionTestLifecycle) Submit(context.Context, certificateauthority.Act
 func (compositionTestLifecycle) Review(context.Context, certificateauthority.ActorContext, string, time.Time) error {
 	return nil
 }
-func (compositionTestLifecycle) Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+func (compositionTestLifecycle) Sign(context.Context, certificateauthority.ActorContext, string, certificate.SignatureEvent, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
+	return nil
+}
+func (compositionTestLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
 	return nil
 }
 func (compositionTestLifecycle) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {

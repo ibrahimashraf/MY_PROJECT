@@ -3,11 +3,13 @@ package certificatepg
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 )
 
@@ -21,8 +23,202 @@ func (r *Repository) Review(ctx context.Context, actor certificateauthority.Acto
 	return r.transition(ctx, actor, certificateID, "PENDING_REVIEW", "APPROVED", "certificate.review", "REVIEWED", now)
 }
 
-func (r *Repository) Sign(ctx context.Context, actor certificateauthority.ActorContext, certificateID string, now time.Time) error {
-	return r.transition(ctx, actor, certificateID, "APPROVED", "SIGNED", "certificate.sign", "SIGNED", now)
+func (r *Repository) Sign(ctx context.Context, actor certificateauthority.ActorContext, certificateID string, event certificate.SignatureEvent, now time.Time) error {
+	if err := validateActor(actor); err != nil {
+		return err
+	}
+	if err := event.Validate(); err != nil {
+		return err
+	}
+	if event.SignerID != actor.ActorID {
+		return fmt.Errorf("signature signer must match authenticated actor")
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := setScope(ctx, tx, actor); err != nil {
+		return err
+	}
+	profile, inspectorID, err := loadAuthority(ctx, tx, actor, certificateID, "APPROVED")
+	if err != nil {
+		return err
+	}
+	if err := authorizeTransition(actor, profile, inspectorID, "certificate.sign"); err != nil {
+		return err
+	}
+	if err := verifySignatureEvidence(ctx, tx, actor, certificateID, event); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE certificate_record SET status = $1, signed_by = $2, signed_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, "SIGNED", actor.ActorID, now.UTC(), certificateID, actor.TenantID, actor.OrganizationID, "APPROVED")
+	if err != nil {
+		return err
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if changed != 1 {
+		return fmt.Errorf("certificate transition conflict")
+	}
+	evidence := map[string]any{
+		"profile":           profile,
+		"signer_name":       strings.TrimSpace(event.SignerName),
+		"capacity":          event.Capacity,
+		"statement_version": strings.TrimSpace(event.StatementVersion),
+		"image_sha256_hex":  event.ImageSHA256Hex,
+		"image_bytes":       event.ImageBytes,
+		"image_evidence_id": strings.TrimSpace(event.ImageEvidenceID),
+		"snapshot_sha256":   event.SnapshotSHA256,
+	}
+	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "SIGNED", now, evidence); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// verifySignatureEvidence binds the signature to a registered evidence blob:
+// the row must exist in tenant scope, its plaintext digest must match the
+// submitted image digest, it must be an image, and it must belong to the same
+// inspection as the certificate being signed.
+func verifySignatureEvidence(ctx context.Context, tx *sql.Tx, actor certificateauthority.ActorContext, certificateID string, event certificate.SignatureEvent) error {
+	var certInspectionID string
+	err := tx.QueryRowContext(ctx, `SELECT inspection_id FROM certificate_record WHERE id = $1 AND tenant_id = $2 AND organization_id = $3`, certificateID, actor.TenantID, actor.OrganizationID).Scan(&certInspectionID)
+	if err != nil {
+		return err
+	}
+	var plaintextSHA, contentType, evidenceInspectionID string
+	err = tx.QueryRowContext(ctx, `SELECT plaintext_sha256, content_type, inspection_id FROM evidence_metadata WHERE id = $1 AND tenant_id = $2 AND organization_id = $3`, strings.TrimSpace(event.ImageEvidenceID), actor.TenantID, actor.OrganizationID).Scan(&plaintextSHA, &contentType, &evidenceInspectionID)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("signature image evidence is not registered")
+	}
+	if err != nil {
+		return err
+	}
+	if plaintextSHA != event.ImageSHA256Hex {
+		return fmt.Errorf("signature image digest does not match registered evidence")
+	}
+	if !strings.HasPrefix(contentType, "image/") {
+		return fmt.Errorf("signature evidence is not an image")
+	}
+	if evidenceInspectionID != certInspectionID {
+		return fmt.Errorf("signature evidence belongs to a different inspection")
+	}
+	return nil
+}
+
+// WaiveSign records a waived sign-off: no ink was captured, and the waiver
+// authority plus reason stand in for the signature. The granter must be the
+// authenticated actor performing the waiver.
+func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.ActorContext, certificateID, grantedBy, reason, capacity string, now time.Time) error {
+	if err := validateActor(actor); err != nil {
+		return err
+	}
+	if actor.Capabilities == nil || !actor.Capabilities["certificate.sign"] {
+		return fmt.Errorf("actor lacks certificate.sign capability")
+	}
+	if strings.TrimSpace(grantedBy) == "" || grantedBy != actor.ActorID {
+		return fmt.Errorf("waiver granter must match authenticated actor")
+	}
+	if strings.TrimSpace(reason) == "" || len(reason) > certificate.MaxTextFieldChars {
+		return fmt.Errorf("waiver reason is required")
+	}
+	switch capacity {
+	case certificate.CapacityClient, certificate.CapacityVerifier:
+	default:
+		return fmt.Errorf("waiver capacity must be client or verifier")
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := setScope(ctx, tx, actor); err != nil {
+		return err
+	}
+	profile, inspectorID, err := loadAuthority(ctx, tx, actor, certificateID, "APPROVED")
+	if err != nil {
+		return err
+	}
+	if err := authorizeTransition(actor, profile, inspectorID, "certificate.sign"); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE certificate_record SET status = $1, signed_by = $2, signed_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, "SIGNED", actor.ActorID, now.UTC(), certificateID, actor.TenantID, actor.OrganizationID, "APPROVED")
+	if err != nil {
+		return err
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if changed != 1 {
+		return fmt.Errorf("certificate transition conflict")
+	}
+	evidence := map[string]any{
+		"profile":    profile,
+		"waived":     true,
+		"granted_by": actor.ActorID,
+		"reason":     strings.TrimSpace(reason),
+		"capacity":   capacity,
+	}
+	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "SIGN_WAIVED", now, evidence); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+func (r *Repository) Attest(ctx context.Context, actor certificateauthority.ActorContext, certificateID, attestorName, qualificationBasis, statementVersion, snapshotSHA256Hex string, now time.Time) error {
+	if err := validateActor(actor); err != nil {
+		return err
+	}
+	if actor.Capabilities == nil || !actor.Capabilities["certificate.attest"] {
+		return fmt.Errorf("actor lacks certificate.attest capability")
+	}
+	if strings.TrimSpace(attestorName) == "" || len(attestorName) > certificate.MaxTextFieldChars {
+		return fmt.Errorf("attestor name is required")
+	}
+	if strings.TrimSpace(qualificationBasis) == "" || len(qualificationBasis) > certificate.MaxTextFieldChars {
+		return fmt.Errorf("qualification basis is required")
+	}
+	if strings.TrimSpace(statementVersion) == "" || len(statementVersion) > certificate.MaxTextFieldChars {
+		return fmt.Errorf("statement version is required")
+	}
+	if _, err := hex.DecodeString(snapshotSHA256Hex); err != nil || len(snapshotSHA256Hex) != 64 {
+		return fmt.Errorf("snapshot digest must be 64 hex characters")
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := setScope(ctx, tx, actor); err != nil {
+		return err
+	}
+	var inspectorID, status string
+	err = tx.QueryRowContext(ctx, `SELECT i.inspector_id, c.status FROM certificate_record c JOIN inspection_record i ON i.id = c.inspection_id AND i.tenant_id = c.tenant_id AND i.organization_id = c.organization_id WHERE c.id = $1 AND c.tenant_id = $2 AND c.organization_id = $3`, certificateID, actor.TenantID, actor.OrganizationID).Scan(&inspectorID, &status)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("certificate is not available for attestation")
+	}
+	if err != nil {
+		return err
+	}
+	if status != "DRAFT" && status != "PENDING_REVIEW" && status != "APPROVED" {
+		return fmt.Errorf("cannot attest certificate in status %s", status)
+	}
+	if actor.ActorID != inspectorID {
+		return fmt.Errorf("only the assigned inspector can attest findings")
+	}
+	evidence := map[string]any{
+		"attestor_name":       strings.TrimSpace(attestorName),
+		"qualification_basis": strings.TrimSpace(qualificationBasis),
+		"statement_version":   strings.TrimSpace(statementVersion),
+		"snapshot_sha256":     snapshotSHA256Hex,
+		"capacity":            certificate.CapacityInspector,
+	}
+	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "ATTESTED", now, evidence); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *Repository) transition(ctx context.Context, actor certificateauthority.ActorContext, certificateID, expected, next, capability, action string, now time.Time) error {
@@ -45,15 +241,11 @@ func (r *Repository) transition(ctx context.Context, actor certificateauthority.
 		return err
 	}
 	// Column prefix is derived from a fixed internal whitelist; never from user input.
-	var field string
-	switch next {
-	case "APPROVED":
-		field = "reviewed"
-	case "SIGNED":
-		field = "signed"
-	default:
+	// transition currently serves Review only.
+	if next != "APPROVED" {
 		return fmt.Errorf("unsupported transition target %q", next)
 	}
+	field := "reviewed"
 	query := fmt.Sprintf(`UPDATE certificate_record SET status = $1, %s_by = $2, %s_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, field, field) //nolint:gosec // field is a fixed internal whitelist (reviewed|signed)
 	result, err := tx.ExecContext(ctx, query, next, actor.ActorID, now.UTC(), certificateID, actor.TenantID, actor.OrganizationID, expected)
 	if err != nil {

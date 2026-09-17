@@ -17,11 +17,25 @@ import (
 	"testing"
 	"time"
 
+	domaincert "integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/timestamp"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+func testSignatureEvent(signerID, evidenceID string) domaincert.SignatureEvent {
+	return domaincert.SignatureEvent{
+		SignerID:         signerID,
+		SignerName:       "Test Signer",
+		Capacity:         domaincert.CapacityClient,
+		StatementVersion: "client_ack_v1",
+		ImageSHA256Hex:   "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+		ImageBytes:       48210,
+		ImageEvidenceID:  evidenceID,
+		SnapshotSHA256:   "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+	}
+}
 
 func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	dsn := os.Getenv("INTEGIN_TEST_DATABASE_URL")
@@ -70,6 +84,7 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 				`DELETE FROM inspection_public_scope_item WHERE tenant_id = $1`,
 				`DELETE FROM inspection_public_scope WHERE tenant_id = $1`,
 				`DELETE FROM asset_registry WHERE tenant_id = $1`,
+				`DELETE FROM evidence_metadata WHERE tenant_id = $1`,
 				`DELETE FROM inspection_record WHERE tenant_id = $1`,
 				`DELETE FROM work_order_assignment_scope WHERE tenant_id = $1`,
 				`DELETE FROM work_order_assignment WHERE tenant_id = $1`,
@@ -124,6 +139,10 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	evidenceID := fmt.Sprintf("evidence-signature-%d", stamp)
+	if _, err := db.ExecContext(ctx, `INSERT INTO evidence_metadata (id,tenant_id,organization_id,inspection_id,object_key,content_type,ciphertext_bytes,plaintext_sha256,ciphertext_sha256,captured_at,device_id,authority_id,authority_epoch,transaction_id,receipt_id,signature_algorithm,key_id,encryption_algorithm,encryption_key_reference,classification,retention_reference,hold_state,redaction_policy_reference,registered_by) VALUES ($1,$2,$3,$4,$2||'/'||$3||'/evidence/'||$1,'image/png',48210,'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08','5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9',$5,'device-a','authority-a',1,'transaction-a','receipt-a','Ed25519','key-a','AES-256-GCM','storage-key-a','CONFIDENTIAL','retention-v1','NONE','redaction-v1',$6)`, evidenceID, tenantID, organizationID, inspectionID, now, actor.ActorID); err != nil {
+		t.Fatal(err)
+	}
 	repository, err := NewRepository(db)
 	if err != nil {
 		t.Fatal(err)
@@ -157,8 +176,17 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	signer := actor
 	signer.ActorID = "signer-a"
 	signer.Capabilities = map[string]bool{"certificate.sign": true}
-	if err := repository.Sign(ctx, signer, certificateID, now); err != nil {
+	if err := repository.Sign(ctx, signer, certificateID, testSignatureEvent("signer-a", evidenceID), now); err != nil {
 		t.Fatal(err)
+	}
+	var signedEvidence string
+	if err := db.QueryRowContext(ctx, `SELECT policy_evidence::text FROM certificate_audit_event WHERE tenant_id = $1 AND certificate_id = $2 AND action = 'SIGNED'`, tenantID, certificateID).Scan(&signedEvidence); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Test Signer", "client_ack_v1", "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", evidenceID} {
+		if !strings.Contains(signedEvidence, want) {
+			t.Fatalf("signed audit evidence missing %q: %s", want, signedEvidence)
+		}
 	}
 	issuer := actor
 	issuer.ActorID = "issuer-a"
@@ -225,7 +253,12 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if err := repository.Review(ctx, selfActor, selfCertificateID, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.Sign(ctx, selfActor, selfCertificateID, now); err != nil {
+	tampered := testSignatureEvent(selfActor.ActorID, evidenceID)
+	tampered.ImageSHA256Hex = "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+	if err := repository.Sign(ctx, selfActor, selfCertificateID, tampered, now); err == nil {
+		t.Fatal("expected digest mismatch rejection")
+	}
+	if err := repository.Sign(ctx, selfActor, selfCertificateID, testSignatureEvent(selfActor.ActorID, evidenceID), now); err != nil {
 		t.Fatal(err)
 	}
 	selfIssued, err := repository.Issue(ctx, selfActor, selfCertificateID, now)
@@ -251,12 +284,46 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if err := repository.Review(ctx, selfActor, replacementID, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.Sign(ctx, selfActor, replacementID, now); err != nil {
+	if err := repository.Sign(ctx, selfActor, replacementID, testSignatureEvent(selfActor.ActorID, evidenceID), now); err != nil {
 		t.Fatal(err)
 	}
 	replacement, err := repository.Issue(ctx, selfActor, replacementID, now)
 	if err != nil || replacement.CertificateNumber == "" {
 		t.Fatalf("replacement issuance failed value=%#v err=%v", replacement, err)
+	}
+	waiverID := selfCertificateID + "-waiver"
+	if _, err := db.ExecContext(ctx, `UPDATE inspection_record SET revision=9,updated_by=$1 WHERE tenant_id=$2 AND id=$3`, selfActor.ActorID, tenantID, inspectionID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `INSERT INTO inspection_public_scope (id,tenant_id,organization_id,inspection_id,inspection_revision,inspection_type,taxonomy_version,result_state,created_by) VALUES ($1,$2,$3,$4,9,'periodic_lifting',1,'PASS',$5)`, publicScopeID+"-r9", tenantID, organizationID, inspectionID, selfActor.ActorID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `INSERT INTO inspection_public_scope_item (id,tenant_id,organization_id,scope_id,scope_code,display_label,outcome,display_order) VALUES ($1,$2,$3,$4,'visual','Visual examination','PASS',1)`, publicScopeID+"-r9-item", tenantID, organizationID, publicScopeID+"-r9"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repository.CreateDraft(ctx, selfActor, certificateauthority.CreateDraftRequest{CertificateID: waiverID, InspectionID: inspectionID, TemplateCode: "lifting", TemplateVersion: 3, Profile: certificateauthority.SeniorSelfIssue, SelfIssueReason: "waiver path exercise"}, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.Submit(ctx, selfActor, waiverID, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.Review(ctx, selfActor, waiverID, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "client unreachable on site", domaincert.CapacityClient, now); err != nil {
+		t.Fatal(err)
+	}
+	var waivedEvidence string
+	if err := db.QueryRowContext(ctx, `SELECT policy_evidence::text FROM certificate_audit_event WHERE tenant_id = $1 AND certificate_id = $2 AND action = 'SIGN_WAIVED'`, tenantID, waiverID).Scan(&waivedEvidence); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"client unreachable on site", domaincert.CapacityClient} {
+		if !strings.Contains(waivedEvidence, want) {
+			t.Fatalf("waiver audit evidence missing %q: %s", want, waivedEvidence)
+		}
+	}
+	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "", domaincert.CapacityClient, now); err == nil {
+		t.Fatal("expected blank waiver reason rejection")
 	}
 	superseder := actor
 	superseder.ActorID = "authority-a"

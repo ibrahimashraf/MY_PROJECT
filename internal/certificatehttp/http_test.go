@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
@@ -31,6 +32,7 @@ func (s actorStub) Resolve(context.Context, oidcauth.Principal) (certificateauth
 
 type lifecycleStub struct {
 	actor certificateauthority.ActorContext
+	event certificate.SignatureEvent
 }
 
 func (s *lifecycleStub) CreateDraft(_ context.Context, a certificateauthority.ActorContext, r certificateauthority.CreateDraftRequest, _ time.Time) (*certificateauthority.Certificate, error) {
@@ -43,7 +45,15 @@ func (s *lifecycleStub) Submit(context.Context, certificateauthority.ActorContex
 func (s *lifecycleStub) Review(context.Context, certificateauthority.ActorContext, string, time.Time) error {
 	return nil
 }
-func (s *lifecycleStub) Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+func (s *lifecycleStub) Sign(_ context.Context, a certificateauthority.ActorContext, _ string, event certificate.SignatureEvent, _ time.Time) error {
+	s.actor = a
+	s.event = event
+	return event.Validate()
+}
+func (s *lifecycleStub) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
+	return nil
+}
+func (s *lifecycleStub) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
 	return nil
 }
 func (s *lifecycleStub) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {
@@ -128,6 +138,63 @@ func TestHandlerRenewsCertificate(t *testing.T) {
 	h.ServeHTTP(unauthResponse, unauthorized)
 	if unauthResponse.Code != http.StatusUnauthorized {
 		t.Fatalf("missing auth status=%d", unauthResponse.Code)
+	}
+}
+
+func TestHandlerSignsWithSignatureEvent(t *testing.T) {
+	life := &lifecycleStub{}
+	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "signer", Capabilities: map[string]bool{"certificate.sign": true}}
+	h := Handler{Validator: validatorStub{}, Actors: actorStub{actor: actor}, Lifecycle: life}
+	body := `{"signer_id":"signer","signer_name":"Sahil Singh","capacity":"client","statement_version":"client_ack_v1","image_sha256_hex":"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08","image_bytes":48210,"image_evidence_id":"evidence-signature-1","snapshot_sha256_hex":"5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"}`
+	request := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/sign", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer token")
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	if life.event.SignerName != "Sahil Singh" || life.event.Capacity != "client" {
+		t.Fatalf("event not forwarded: %#v", life.event)
+	}
+	hollow := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/sign", nil)
+	hollow.Header.Set("Authorization", "Bearer token")
+	hollowResponse := httptest.NewRecorder()
+	h.ServeHTTP(hollowResponse, hollow)
+	if hollowResponse.Code != http.StatusBadRequest {
+		t.Fatalf("bodyless sign must be rejected, status=%d", hollowResponse.Code)
+	}
+}
+
+func TestHandlerAttestsFindings(t *testing.T) {
+	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "inspector", Capabilities: map[string]bool{"certificate.attest": true}}
+	h := Handler{Validator: validatorStub{}, Actors: actorStub{actor: actor}, Lifecycle: &lifecycleStub{}}
+	body := `{"attestor_name":"Inspector I","qualification_basis":"Company Appointed Examiner","statement_version":"inspector_attest_v1","snapshot_sha256_hex":"5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"}`
+	request := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/attest", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer token")
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestHandlerWaivesSignWithReason(t *testing.T) {
+	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "authority", Capabilities: map[string]bool{"certificate.sign": true}}
+	h := Handler{Validator: validatorStub{}, Actors: actorStub{actor: actor}, Lifecycle: &lifecycleStub{}}
+	body := `{"granted_by":"authority","reason":"client unreachable on site","capacity":"client"}`
+	request := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/sign-waiver", strings.NewReader(body))
+	request.Header.Set("Authorization", "Bearer token")
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	hollow := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/sign-waiver", nil)
+	hollow.Header.Set("Authorization", "Bearer token")
+	hollowResponse := httptest.NewRecorder()
+	h.ServeHTTP(hollowResponse, hollow)
+	if hollowResponse.Code != http.StatusBadRequest {
+		t.Fatalf("bodyless waiver must be rejected, status=%d", hollowResponse.Code)
 	}
 }
 

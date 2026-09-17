@@ -21,6 +21,7 @@ import (
 
 	"integin/internal/certificatehttp"
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
@@ -46,7 +47,13 @@ func (l *runtimeLifecycle) Submit(_ context.Context, a certificateauthority.Acto
 func (l *runtimeLifecycle) Review(context.Context, certificateauthority.ActorContext, string, time.Time) error {
 	return nil
 }
-func (l *runtimeLifecycle) Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error {
+func (l *runtimeLifecycle) Sign(context.Context, certificateauthority.ActorContext, string, certificate.SignatureEvent, time.Time) error {
+	return nil
+}
+func (l *runtimeLifecycle) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
+	return nil
+}
+func (l *runtimeLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
 	return nil
 }
 func (l *runtimeLifecycle) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {
@@ -462,8 +469,9 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		t.Fatalf("review status=%d", status)
 	}
 
-	// Sign (different actor)
-	if status := certificatePostWithPath(t, runtime.URL, issuerToken, "/certificates/"+certificateID+"/sign", ``); status != http.StatusNoContent {
+	// Sign (different actor, with signature event body)
+	signBody := `{"signer_id":"` + issuerActor + `","signer_name":"Issuer I","capacity":"client","statement_version":"client_ack_v1","image_sha256_hex":"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08","image_bytes":48210,"image_evidence_id":"` + certificateID + `-signature-evidence","snapshot_sha256_hex":"5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"}`
+	if status := certificatePostWithPath(t, runtime.URL, issuerToken, "/certificates/"+certificateID+"/sign", signBody); status != http.StatusNoContent {
 		t.Fatalf("sign status=%d", status)
 	}
 
@@ -538,6 +546,7 @@ func setupCertificateFixture(t *testing.T, ctx context.Context, db *sql.DB, f ce
 		{`INSERT INTO asset_registry (id,tenant_id,organization_id,asset_id,asset_type,serial_number,description,lifecycle_state,created_by,updated_by) VALUES ($1,$2,$3,$4,'lifting','SERIAL-A','Controlled lifting asset','ACTIVE',$5,$5)`, []any{f.AssetRegistryID, f.TenantID, f.OrganizationID, assetID, f.InspectorActorID}},
 		{`INSERT INTO inspection_public_scope (id,tenant_id,organization_id,inspection_id,inspection_revision,inspection_type,taxonomy_version,result_state,created_by) VALUES ($1,$2,$3,$4,7,'periodic_lifting',1,'PASS',$5)`, []any{f.PublicScopeID, f.TenantID, f.OrganizationID, f.InspectionID, f.InspectorActorID}},
 		{`INSERT INTO inspection_public_scope_item (id,tenant_id,organization_id,scope_id,scope_code,display_label,outcome,display_order) VALUES ($1,$2,$3,$4,'visual','Visual examination','PASS',1)`, []any{f.PublicScopeID + "-item", f.TenantID, f.OrganizationID, f.PublicScopeID}},
+		{`INSERT INTO evidence_metadata (id,tenant_id,organization_id,inspection_id,object_key,content_type,ciphertext_bytes,plaintext_sha256,ciphertext_sha256,captured_at,device_id,authority_id,authority_epoch,transaction_id,receipt_id,signature_algorithm,key_id,encryption_algorithm,encryption_key_reference,classification,retention_reference,hold_state,redaction_policy_reference,registered_by) VALUES ($1,$2,$3,$4,$2||'/'||$3||'/evidence/'||$1,'image/png',48210,'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08','5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9',$5,'device-a','authority-a',1,'transaction-a','receipt-a','Ed25519','key-a','AES-256-GCM','storage-key-a','CONFIDENTIAL','retention-v1','NONE','redaction-v1',$6)`, []any{f.CertificateID + "-signature-evidence", f.TenantID, f.OrganizationID, f.InspectionID, now, f.InspectorActorID}},
 	}
 
 	for _, seed := range seeds {
@@ -573,6 +582,7 @@ func cleanupCertificateFixture(t *testing.T, ctx context.Context, db *sql.DB, f 
 		`DELETE FROM inspection_public_scope_item WHERE tenant_id = $1`,
 		`DELETE FROM inspection_public_scope WHERE tenant_id = $1`,
 		`DELETE FROM asset_registry WHERE tenant_id = $1`,
+		`DELETE FROM evidence_metadata WHERE tenant_id = $1`,
 		`DELETE FROM inspection_record WHERE tenant_id = $1`,
 		`DELETE FROM work_order_assignment_scope WHERE tenant_id = $1`,
 		`DELETE FROM work_order_assignment WHERE tenant_id = $1`,

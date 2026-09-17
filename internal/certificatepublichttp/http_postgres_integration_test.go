@@ -13,11 +13,25 @@ import (
 	"time"
 
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/server"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+func signatureEvent(signerID, evidenceID string) certificate.SignatureEvent {
+	return certificate.SignatureEvent{
+		SignerID:         signerID,
+		SignerName:       "Test Signer",
+		Capacity:         certificate.CapacityClient,
+		StatementVersion: "client_ack_v1",
+		ImageSHA256Hex:   "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+		ImageBytes:       48210,
+		ImageEvidenceID:  evidenceID,
+		SnapshotSHA256:   "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+	}
+}
 
 func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	dsn := os.Getenv("INTEGIN_TEST_DATABASE_URL")
@@ -63,6 +77,7 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 			`DELETE FROM inspection_public_scope_item WHERE tenant_id = $1`,
 			`DELETE FROM inspection_public_scope WHERE tenant_id = $1`,
 			`DELETE FROM asset_registry WHERE tenant_id = $1`,
+			`DELETE FROM evidence_metadata WHERE tenant_id = $1`,
 			`DELETE FROM inspection_record WHERE tenant_id = $1`,
 			`DELETE FROM work_order_assignment_scope WHERE tenant_id = $1`,
 			`DELETE FROM work_order_assignment WHERE tenant_id = $1`,
@@ -103,6 +118,10 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	evidenceID := fmt.Sprintf("evidence-signature-%d", stamp)
+	if _, err := db.ExecContext(ctx, `INSERT INTO evidence_metadata (id,tenant_id,organization_id,inspection_id,object_key,content_type,ciphertext_bytes,plaintext_sha256,ciphertext_sha256,captured_at,device_id,authority_id,authority_epoch,transaction_id,receipt_id,signature_algorithm,key_id,encryption_algorithm,encryption_key_reference,classification,retention_reference,hold_state,redaction_policy_reference,registered_by) VALUES ($1,$2,$3,$4,$2||'/'||$3||'/evidence/'||$1,'image/png',48210,'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08','5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9',$5,'device-a','authority-a',1,'transaction-a','receipt-a','Ed25519','key-a','AES-256-GCM','storage-key-a','CONFIDENTIAL','retention-v1','NONE','redaction-v1',$6)`, evidenceID, tenantID, organizationID, inspectionID, now, actor.ActorID); err != nil {
+		t.Fatal(err)
+	}
 	for order, bindingKey := range []string{"asset.serial_number", "asset.description", "asset.type", "inspection.type", "inspection.public_scope"} {
 		if _, err := db.ExecContext(ctx, `INSERT INTO certificate_policy_public_binding (id,tenant_id,organization_id,policy_id,binding_key,required,display_order,created_by) VALUES ($1,$2,$3,$4,$5,true,$6,$7)`, fmt.Sprintf("binding-%d-%d", stamp, order), tenantID, organizationID, policyID, bindingKey, order+1, actor.ActorID); err != nil {
 			t.Fatal(err)
@@ -128,7 +147,7 @@ func TestPostgresPublicVerifierHTTPIntegration(t *testing.T) {
 	issuer := actor
 	issuer.ActorID = "issuer-a"
 	issuer.Capabilities = map[string]bool{"certificate.sign": true, "certificate.issue": true}
-	if err := repository.Sign(ctx, issuer, certificateID, now); err != nil {
+	if err := repository.Sign(ctx, issuer, certificateID, signatureEvent("issuer-a", evidenceID), now); err != nil {
 		t.Fatal(err)
 	}
 	issued, err := repository.Issue(ctx, issuer, certificateID, now)

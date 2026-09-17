@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"integin/internal/certificatepg"
+	"integin/internal/domain/certificate"
 	"integin/internal/domain/certificateauthority"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
@@ -24,7 +25,9 @@ type Lifecycle interface {
 	CreateDraft(context.Context, certificateauthority.ActorContext, certificateauthority.CreateDraftRequest, time.Time) (*certificateauthority.Certificate, error)
 	Submit(context.Context, certificateauthority.ActorContext, string, time.Time) error
 	Review(context.Context, certificateauthority.ActorContext, string, time.Time) error
-	Sign(context.Context, certificateauthority.ActorContext, string, time.Time) error
+	Sign(context.Context, certificateauthority.ActorContext, string, certificate.SignatureEvent, time.Time) error
+	WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error
+	Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error
 	Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error)
 	Revoke(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
 	Renew(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
@@ -60,6 +63,27 @@ type supersedeRequest struct {
 }
 type renewalRequest struct {
 	Reason string `json:"reason"`
+}
+type signRequest struct {
+	SignerID         string `json:"signer_id"`
+	SignerName       string `json:"signer_name"`
+	Capacity         string `json:"capacity"`
+	StatementVersion string `json:"statement_version"`
+	ImageSHA256Hex   string `json:"image_sha256_hex"`
+	ImageBytes       int64  `json:"image_bytes"`
+	ImageEvidenceID  string `json:"image_evidence_id"`
+	SnapshotSHA256   string `json:"snapshot_sha256_hex"`
+}
+type attestRequest struct {
+	AttestorName       string `json:"attestor_name"`
+	QualificationBasis string `json:"qualification_basis"`
+	StatementVersion   string `json:"statement_version"`
+	SnapshotSHA256Hex  string `json:"snapshot_sha256_hex"`
+}
+type signWaiverRequest struct {
+	GrantedBy string `json:"granted_by"`
+	Reason    string `json:"reason"`
+	Capacity  string `json:"capacity"`
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +222,43 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		write(w, http.StatusOK, "", map[string]any{"certificate_number": result.CertificateNumber, "public_token": result.PublicToken, "expires_at": result.ExpiresAt})
 		return
 	}
+	if action == "sign" {
+		var body signRequest
+		if !decode(w, r, &body) {
+			return
+		}
+		event := certificate.SignatureEvent{SignerID: body.SignerID, SignerName: body.SignerName, Capacity: body.Capacity, StatementVersion: body.StatementVersion, ImageSHA256Hex: body.ImageSHA256Hex, ImageBytes: body.ImageBytes, ImageEvidenceID: body.ImageEvidenceID, SnapshotSHA256: body.SnapshotSHA256}
+		if err := h.Lifecycle.Sign(r.Context(), actor, id, event, now().UTC()); err != nil {
+			write(w, http.StatusConflict, "certificate_rejected", nil)
+			return
+		}
+		write(w, http.StatusNoContent, "", nil)
+		return
+	}
+	if action == "attest" {
+		var body attestRequest
+		if !decode(w, r, &body) {
+			return
+		}
+		if err := h.Lifecycle.Attest(r.Context(), actor, id, body.AttestorName, body.QualificationBasis, body.StatementVersion, body.SnapshotSHA256Hex, now().UTC()); err != nil {
+			write(w, http.StatusConflict, "certificate_rejected", nil)
+			return
+		}
+		write(w, http.StatusNoContent, "", nil)
+		return
+	}
+	if action == "sign-waiver" {
+		var body signWaiverRequest
+		if !decode(w, r, &body) {
+			return
+		}
+		if err := h.Lifecycle.WaiveSign(r.Context(), actor, id, body.GrantedBy, body.Reason, body.Capacity, now().UTC()); err != nil {
+			write(w, http.StatusConflict, "certificate_rejected", nil)
+			return
+		}
+		write(w, http.StatusNoContent, "", nil)
+		return
+	}
 	if !emptyBody(w, r) {
 		return
 	}
@@ -207,8 +268,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		operation = h.Lifecycle.Submit(r.Context(), actor, id, now().UTC())
 	case "review":
 		operation = h.Lifecycle.Review(r.Context(), actor, id, now().UTC())
-	case "sign":
-		operation = h.Lifecycle.Sign(r.Context(), actor, id, now().UTC())
 	default:
 		write(w, http.StatusNotFound, "not_found", nil)
 		return
