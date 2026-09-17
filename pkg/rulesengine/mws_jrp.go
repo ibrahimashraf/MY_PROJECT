@@ -53,7 +53,7 @@ func MWSJRPDefinition() DynamicStandardDefinition {
 		RevisionYear:     2021,
 		Title:            "Marine Warranty Survey sea-state operational windows",
 		ScopeAbstract:    "Offshore lift execution cutoffs: significant wave height (Hs) and wave peak period (Tp) must remain within the Marine Warranty Surveyor / joint review panel approved window for the lift procedure.",
-		LifecycleState:   "ACTIVE",
+		LifecycleState:   LifecycleActive,
 		ReplacesStandard: "did:integin:standard:mws-jnrc",
 		OfficialStoreURL: "https://www.dnv.com/standards/downloads/",
 	}

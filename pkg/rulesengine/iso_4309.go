@@ -53,7 +53,7 @@ func ISO4309Definition() DynamicStandardDefinition {
 		RevisionYear:     2017,
 		Title:            "Cranes — Wire ropes — Care and maintenance, inspection and discard",
 		ScopeAbstract:    "Discard criteria for steel wire ropes used on cranes, including outer-wire break counts and diameter loss thresholds.",
-		LifecycleState:   "ACTIVE",
+		LifecycleState:   LifecycleActive,
 		ReplacesStandard: "did:integin:standard:iso-4309-2010",
 		OfficialStoreURL: "https://www.iso.org/standard/75886.html",
 	}

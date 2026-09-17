@@ -21,6 +21,8 @@ const (
 	Superseded    Status = "SUPERSEDED"
 )
 
+const MaxCertificateValidityDays = 3650
+
 // RenewalAttempt records a certificate renewal attempt with authority derivation.
 type RenewalAttempt struct {
 	ID                      string
@@ -95,7 +97,7 @@ type Policy struct {
 }
 
 func (p Policy) validateFor(templateCode string, templateVersion int64) error {
-	if strings.TrimSpace(p.ID) == "" || p.Status != string(Approved) || p.ValidityDays <= 0 || p.ValidityDays > 3650 {
+	if strings.TrimSpace(p.ID) == "" || p.Status != string(Approved) || p.ValidityDays <= 0 || p.ValidityDays > MaxCertificateValidityDays {
 		return fmt.Errorf("certificate policy is not approved")
 	}
 	if p.TemplateCode != templateCode || p.TemplateVersion != templateVersion {
@@ -246,7 +248,7 @@ func (c *Certificate) Issue(actor ActorContext, policy Policy, now time.Time) er
 	if err := c.authorize(actor, "certificate.issue", true); err != nil {
 		return err
 	}
-	if policy.ID != c.policyID || policy.ValidityDays <= 0 || policy.ValidityDays > 3650 || policy.Status != string(Approved) {
+	if policy.ID != c.policyID || policy.ValidityDays <= 0 || policy.ValidityDays > MaxCertificateValidityDays || policy.Status != string(Approved) {
 		return fmt.Errorf("certificate policy is not issuable")
 	}
 	c.status, c.issuedBy, c.issuedAt, c.expiresAt = Issued, actor.ActorID, now.UTC(), now.UTC().AddDate(0, 0, policy.ValidityDays)

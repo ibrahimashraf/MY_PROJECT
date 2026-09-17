@@ -54,7 +54,7 @@ func (w *CorrectiveWorkOrderWorker) Work(ctx context.Context, job *river.Job[Cor
 	var nearest *cognitive.BDIAgent
 	var minDst float64 = math.MaxFloat64
 	var bestComp TechnicianCompetency
-	reqSkill := resolveSkill(job.Args)
+	reqSkill := job.Args.RequiredSkill
 
 	for _, a := range agents {
 		comps, err := w.Registry.GetCompetencies(ctx, a.ID)

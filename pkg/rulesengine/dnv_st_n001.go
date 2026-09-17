@@ -55,7 +55,7 @@ func DNVSTN001Definition() DynamicStandardDefinition {
 		RevisionYear:     2024,
 		Title:            "Marine operations and marine warranty",
 		ScopeAbstract:    "Marine operations planning and criteria, including multi-sling offshore lifts where a skew load factor (SKL) of at least 1.25 is applied per sling leg to compensate for load share imbalance.",
-		LifecycleState:   "ACTIVE",
+		LifecycleState:   LifecycleActive,
 		OfficialStoreURL: "https://www.dnv.com/standards/downloads/",
 	}
 }

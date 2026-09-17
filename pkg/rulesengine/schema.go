@@ -11,6 +11,13 @@ const (
 	SeverityWarning            Severity = "WARNING"
 )
 
+const (
+	LifecycleActive     = "ACTIVE"
+	LifecycleSuperseded = "SUPERSEDED"
+	LifecycleWithdrawn  = "WITHDRAWN"
+	LifecycleDraft      = "DRAFT"
+)
+
 // DynamicStandardDefinition carries the immutable metadata of a governed
 // engineering standard (ASME, ISO, ...). It never contains copyrighted full
 // text; it is a citation card plus links to the official publisher.

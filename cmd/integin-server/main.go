@@ -265,7 +265,13 @@ func main() {
 		if resolverErr != nil {
 			log.Fatal(resolverErr)
 		}
-		activeResolver = identity.NewCachedResolver(rawResolver, 60*time.Second)
+		cacheTTL := 60 * time.Second
+		if raw := os.Getenv("INTEGIN_IDENTITY_CACHE_TTL"); raw != "" {
+			if parsed, err := time.ParseDuration(raw); err == nil && parsed > 0 {
+				cacheTTL = parsed
+			}
+		}
+		activeResolver = identity.NewCachedResolver(rawResolver, cacheTTL)
 		if certificateRepository == nil {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
@@ -458,18 +464,16 @@ func main() {
 		// Mount Phase 6: Cognitive Dispatcher and Corrective Work Order Worker
 		sysEventBus := eventbus.NewBus()
 		defer sysEventBus.Close()
-		var dummyAgent *cognitive.BDIAgent
 		agentRegistry := &scheduling.InMemoryAgentRegistry{
 			Competencies: map[string][]scheduling.TechnicianCompetency{},
 		}
-		if os.Getenv("INTEGIN_DEMO_AGENTS") == "1" {
-			// ponytail: demo-only registry, never enable in prod
-			dummyAgent = &cognitive.BDIAgent{
-				ID:       "autonomous-tech-1",
-				Position: [3]float64{0, 0, 0},
+		if envJSON := os.Getenv("INTEGIN_BDI_AGENTS_JSON"); envJSON != "" {
+			var agents []*cognitive.BDIAgent
+			if err := json.Unmarshal([]byte(envJSON), &agents); err != nil {
+				log.Fatalf("failed to unmarshal INTEGIN_BDI_AGENTS_JSON: %v", err)
 			}
-			agentRegistry.Agents = []*cognitive.BDIAgent{dummyAgent}
-			agentRegistry.Competencies["autonomous-tech-1"] = []scheduling.TechnicianCompetency{{Status: scheduling.CompetencyStatusCurrent, EquipmentTypeID: scheduling.DefaultCorrectiveSkill}}
+			agentRegistry.Agents = agents
+			// Note: Competencies should similarly be loaded via config if needed.
 		}
 		river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{
 			Registry: agentRegistry,
@@ -509,8 +513,8 @@ func main() {
 		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
 
 		// Wire up the Cognitive Dispatcher (Phase 6)
-		if dummyAgent != nil {
-			scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, dummyAgent, func(ctx context.Context, args river.JobArgs) error {
+		if len(agentRegistry.Agents) > 0 {
+			scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, agentRegistry.Agents[0], func(ctx context.Context, args river.JobArgs) error {
 				if riverQueue != nil {
 					_, err := riverQueue.Client().Insert(ctx, args, nil)
 					return err

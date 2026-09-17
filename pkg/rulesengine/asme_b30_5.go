@@ -54,7 +54,7 @@ func B30_5Definition() DynamicStandardDefinition {
 		RevisionYear:     2024,
 		Title:            "Mobile and Locomotive Cranes",
 		ScopeAbstract:    "Safety requirements for construction, operation, and maintenance of mobile and locomotive cranes, including proof-load testing.",
-		LifecycleState:   "ACTIVE",
+		LifecycleState:   LifecycleActive,
 		ReplacesStandard: "did:integin:standard:asme-b30.5-2018",
 		OfficialStoreURL: "https://www.asme.org/codes-standards/b30-5",
 	}

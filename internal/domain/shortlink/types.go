@@ -14,7 +14,7 @@ var (
 )
 
 // DefaultWebhookMaxAttempts is the default webhook delivery retry budget.
-const DefaultWebhookMaxAttempts = 6
+const DefaultWebhookMaxAttempts = 5
 
 type AnomalyType string
 

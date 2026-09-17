@@ -16,6 +16,7 @@ type concurrencyGate struct {
 	healthSem            chan struct{}
 	activeRequests       cachepad.PaddedInt64
 	activeHealthRequests cachepad.PaddedInt64
+	timeout              time.Duration
 }
 
 func newConcurrencyGateFromEnv() *concurrencyGate {
@@ -31,9 +32,16 @@ func newConcurrencyGateFromEnv() *concurrencyGate {
 			healthMax = val
 		}
 	}
+	timeout := 30 * time.Second
+	if raw := os.Getenv("INTEGIN_REQUEST_TIMEOUT"); raw != "" {
+		if parsed, err := time.ParseDuration(raw); err == nil && parsed > 0 {
+			timeout = parsed
+		}
+	}
 	return &concurrencyGate{
 		sem:       make(chan struct{}, max),
 		healthSem: make(chan struct{}, healthMax),
+		timeout:   timeout,
 	}
 }
 
@@ -49,7 +57,7 @@ func (cg *concurrencyGate) ActiveHealthRequests() int64 {
 
 func (cg *concurrencyGate) Middleware(next http.Handler) http.Handler {
 	// Enforce an absolute maximum throughput timeout (HARDEN-002)
-	timeoutHandler := http.TimeoutHandler(next, 30*time.Second, `{"error":"request_timeout"}`)
+	timeoutHandler := http.TimeoutHandler(next, cg.timeout, `{"error":"request_timeout"}`)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Health check endpoints are protected by their own dedicated semaphore (max 50)
 		if r.URL.Path == "/healthz" || r.URL.Path == "/healthz/" ||

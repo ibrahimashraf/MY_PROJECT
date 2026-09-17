@@ -231,9 +231,13 @@ func ValidateReconcileProvisionalCommand(command ReconcileProvisionalCommand) er
 	}
 	return nil
 }
+const (
+	InspectionLifecycleCompleted = "COMPLETED"
+	InspectionFinalizationSubmitted = "SUBMITTED"
+)
 
 func ValidateCertificateInspectionState(lifecycleState, finalizationState string) error {
-	if lifecycleState != "COMPLETED" || finalizationState != "SUBMITTED" {
+	if lifecycleState != InspectionLifecycleCompleted || finalizationState != InspectionFinalizationSubmitted {
 		return ErrInvalidScope
 	}
 	return nil

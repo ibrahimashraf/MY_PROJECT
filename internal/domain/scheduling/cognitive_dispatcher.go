@@ -166,10 +166,11 @@ func agentBelieves(a *cognitive.BDIAgent, proposition string) bool {
 }
 
 type CorrectiveWorkOrderArgs struct {
-	ComponentID string     `json:"component_id"`
-	Utilization float64    `json:"utilization"`
-	HazardKind  string     `json:"hazard_kind"`
-	Location    [3]float64 `json:"location"` // WGS84 ENU frame
+	ComponentID   string     `json:"component_id"`
+	Utilization   float64    `json:"utilization"`
+	HazardKind    string     `json:"hazard_kind"`
+	Location      [3]float64 `json:"location"` // WGS84 ENU frame
+	RequiredSkill string     `json:"required_skill"`
 }
 
 func (CorrectiveWorkOrderArgs) Kind() string { return "corrective_work_order" }
@@ -205,9 +206,11 @@ func SubscribeEnvironmentalTelemetry(bus *eventbus.Bus, agent *cognitive.BDIAgen
 			// Trigger corrective work order generation async to prevent EventBus stall
 			go func() {
 				_ = insertJob(context.Background(), CorrectiveWorkOrderArgs{
-					ComponentID: alert.ComponentID,
-					Utilization: alert.Utilization,
-					HazardKind:  "MOMENT_UTILIZATION_EXCEEDED",
+					ComponentID:   alert.ComponentID,
+					Utilization:   alert.Utilization,
+					HazardKind:    "MOMENT_UTILIZATION_EXCEEDED",
+					Location:      [3]float64{0.0, 0.0, 0.0}, // In a real system, query component ENU
+					RequiredSkill: "structural_remediation",
 				})
 			}()
 		}
