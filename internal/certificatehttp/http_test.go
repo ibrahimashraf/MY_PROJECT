@@ -53,7 +53,7 @@ func (s *lifecycleStub) Sign(_ context.Context, a certificateauthority.ActorCont
 func (s *lifecycleStub) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
-func (s *lifecycleStub) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
+func (s *lifecycleStub) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
 func (s *lifecycleStub) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {
@@ -181,7 +181,7 @@ func TestHandlerAttestsFindings(t *testing.T) {
 func TestHandlerWaivesSignWithReason(t *testing.T) {
 	actor := certificateauthority.ActorContext{TenantID: "tenant", OrganizationID: "org", ActorID: "authority", Capabilities: map[string]bool{"certificate.sign": true}}
 	h := Handler{Validator: validatorStub{}, Actors: actorStub{actor: actor}, Lifecycle: &lifecycleStub{}}
-	body := `{"granted_by":"authority","reason":"client unreachable on site","capacity":"client"}`
+	body := `{"granted_by":"authority","reason":"client unreachable on site","capacity":"client","authorized_by":"office-a"}`
 	request := httptest.NewRequest(http.MethodPost, "/certificates/certificate-a/sign-waiver", strings.NewReader(body))
 	request.Header.Set("Authorization", "Bearer token")
 	response := httptest.NewRecorder()

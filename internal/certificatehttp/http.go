@@ -26,7 +26,7 @@ type Lifecycle interface {
 	Submit(context.Context, certificateauthority.ActorContext, string, time.Time) error
 	Review(context.Context, certificateauthority.ActorContext, string, time.Time) error
 	Sign(context.Context, certificateauthority.ActorContext, string, certificate.SignatureEvent, time.Time) error
-	WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error
+	WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error
 	Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error
 	Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error)
 	Revoke(context.Context, certificateauthority.ActorContext, string, string, time.Time) error
@@ -81,9 +81,10 @@ type attestRequest struct {
 	SnapshotSHA256Hex  string `json:"snapshot_sha256_hex"`
 }
 type signWaiverRequest struct {
-	GrantedBy string `json:"granted_by"`
-	Reason    string `json:"reason"`
-	Capacity  string `json:"capacity"`
+	GrantedBy    string `json:"granted_by"`
+	Reason       string `json:"reason"`
+	Capacity     string `json:"capacity"`
+	AuthorizedBy string `json:"authorized_by"`
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -252,7 +253,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !decode(w, r, &body) {
 			return
 		}
-		if err := h.Lifecycle.WaiveSign(r.Context(), actor, id, body.GrantedBy, body.Reason, body.Capacity, now().UTC()); err != nil {
+		if err := h.Lifecycle.WaiveSign(r.Context(), actor, id, body.GrantedBy, body.Reason, body.Capacity, body.AuthorizedBy, now().UTC()); err != nil {
 			write(w, http.StatusConflict, "certificate_rejected", nil)
 			return
 		}

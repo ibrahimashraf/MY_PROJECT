@@ -133,7 +133,7 @@ func TestAttestRejectsNonInspectorAndBlankBasis(t *testing.T) {
 
 func TestWaiveSignatureSealsWaiverAndAdvances(t *testing.T) {
 	certificate := approveTestCertificate(t)
-	if err := certificate.WaiveSignature("authority-1", "client unreachable on site, office confirmed by phone", CapacityClient); err != nil {
+	if err := certificate.WaiveSignature("authority-1", "client unreachable on site, office confirmed by phone", CapacityClient, ""); err != nil {
 		t.Fatal(err)
 	}
 	if certificate.Status() != Signed {
@@ -155,14 +155,15 @@ func TestWaiveSignatureSealsWaiverAndAdvances(t *testing.T) {
 }
 
 func TestWaiveSignatureRejectsHollowWaivers(t *testing.T) {
-	for name, tc := range map[string][3]string{
-		"blank granter":   {" ", "reason", CapacityClient},
-		"blank reason":    {"authority-1", "", CapacityClient},
-		"oversize reason": {"authority-1", strings.Repeat("r", MaxTextFieldChars+1), CapacityClient},
-		"bad capacity":    {"authority-1", "reason", CapacityInspector},
+	for name, tc := range map[string][4]string{
+		"blank granter":   {" ", "reason", CapacityClient, ""},
+		"blank reason":    {"authority-1", "", CapacityClient, ""},
+		"oversize reason": {"authority-1", strings.Repeat("r", MaxTextFieldChars+1), CapacityClient, ""},
+		"bad capacity":    {"authority-1", "reason", CapacityInspector, ""},
+		"self authorized": {"authority-1", "reason", CapacityClient, "authority-1"},
 	} {
 		certificate := approveTestCertificate(t)
-		if err := certificate.WaiveSignature(tc[0], tc[1], tc[2]); err == nil {
+		if err := certificate.WaiveSignature(tc[0], tc[1], tc[2], tc[3]); err == nil {
 			t.Fatalf("%s should be rejected", name)
 		}
 		if certificate.Status() != Approved || certificate.SignWaiver() != nil {
@@ -170,7 +171,20 @@ func TestWaiveSignatureRejectsHollowWaivers(t *testing.T) {
 		}
 	}
 	draft := newTestCertificate(t)
-	if err := draft.WaiveSignature("authority-1", "reason", CapacityClient); err == nil {
+	if err := draft.WaiveSignature("authority-1", "reason", CapacityClient, ""); err == nil {
 		t.Fatal("waiver from draft should be rejected")
+	}
+}
+
+func TestWaiveSignatureHybridRule(t *testing.T) {
+	inspector := approveTestCertificate(t)
+	if err := inspector.WaiveSignature("inspector-1", "client off-site", CapacityClient, ""); err == nil {
+		t.Fatal("inspector waiver without office authorizer should be rejected")
+	}
+	if err := inspector.WaiveSignature("inspector-1", "client off-site", CapacityClient, "office-1"); err != nil {
+		t.Fatal(err)
+	}
+	if waiver := inspector.SignWaiver(); waiver == nil || waiver.AuthorizedBy != "office-1" {
+		t.Fatalf("authorizer not recorded: %+v", waiver)
 	}
 }

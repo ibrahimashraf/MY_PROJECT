@@ -177,6 +177,7 @@ type SignWaiver struct {
 	GrantedBy         string    `json:"granted_by"`
 	Reason            string    `json:"reason"`
 	Capacity          string    `json:"capacity"`
+	AuthorizedBy      string    `json:"authorized_by,omitempty"`
 	CertificateNumber string    `json:"certificate_number"`
 	Revision          int       `json:"revision"`
 	WaivedAt          time.Time `json:"waived_at"`
@@ -194,19 +195,29 @@ func (w SignWaiver) Validate() error {
 	default:
 		return fmt.Errorf("waiver capacity must be client or verifier")
 	}
+	if len(w.AuthorizedBy) > MaxTextFieldChars {
+		return fmt.Errorf("authorized_by exceeds %d characters", MaxTextFieldChars)
+	}
+	if strings.TrimSpace(w.AuthorizedBy) != "" && strings.TrimSpace(w.AuthorizedBy) == strings.TrimSpace(w.GrantedBy) {
+		return fmt.Errorf("authorizer must differ from granter")
+	}
 	return nil
 }
 
 // WaiveSignature records a waived sign-off for the given capacity. It requires
 // Approved status and seals the waiver to the current certificate number,
-// revision, and server time.
-func (c *Certificate) WaiveSignature(grantedBy, reason, capacity string) error {
+// revision, and server time. Hybrid rule: when the granter is the assigned
+// inspector, an office authorizer must be named; office granters need none.
+func (c *Certificate) WaiveSignature(grantedBy, reason, capacity, authorizedBy string) error {
 	if err := c.require(Approved); err != nil {
 		return err
 	}
-	waiver := SignWaiver{GrantedBy: grantedBy, Reason: reason, Capacity: capacity}
+	waiver := SignWaiver{GrantedBy: grantedBy, Reason: reason, Capacity: capacity, AuthorizedBy: authorizedBy}
 	if err := waiver.Validate(); err != nil {
 		return err
+	}
+	if grantedBy == c.inspectorID && strings.TrimSpace(authorizedBy) == "" {
+		return fmt.Errorf("inspector waiver requires an office authorizer")
 	}
 	waiver.CertificateNumber = c.number
 	waiver.Revision = c.revision

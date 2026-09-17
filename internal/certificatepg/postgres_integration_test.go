@@ -310,7 +310,7 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 	if err := repository.Review(ctx, selfActor, waiverID, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "client unreachable on site", domaincert.CapacityClient, now); err != nil {
+	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "client unreachable on site", domaincert.CapacityClient, "office-a", now); err != nil {
 		t.Fatal(err)
 	}
 	var waivedEvidence string
@@ -322,7 +322,7 @@ func TestPostgresCreateCertificateDraftIntegration(t *testing.T) {
 			t.Fatalf("waiver audit evidence missing %q: %s", want, waivedEvidence)
 		}
 	}
-	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "", domaincert.CapacityClient, now); err == nil {
+	if err := repository.WaiveSign(ctx, selfActor, waiverID, selfActor.ActorID, "", domaincert.CapacityClient, "office-a", now); err == nil {
 		t.Fatal("expected blank waiver reason rejection")
 	}
 	superseder := actor

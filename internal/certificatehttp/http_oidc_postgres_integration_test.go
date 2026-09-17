@@ -53,7 +53,7 @@ func (l *runtimeLifecycle) Sign(context.Context, certificateauthority.ActorConte
 func (l *runtimeLifecycle) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
-func (l *runtimeLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
+func (l *runtimeLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
 func (l *runtimeLifecycle) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {

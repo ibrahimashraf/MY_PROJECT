@@ -31,7 +31,7 @@ func (compositionTestLifecycle) Sign(context.Context, certificateauthority.Actor
 func (compositionTestLifecycle) Attest(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
-func (compositionTestLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, time.Time) error {
+func (compositionTestLifecycle) WaiveSign(context.Context, certificateauthority.ActorContext, string, string, string, string, string, time.Time) error {
 	return nil
 }
 func (compositionTestLifecycle) Issue(context.Context, certificateauthority.ActorContext, string, time.Time) (certificatepg.IssueResult, error) {

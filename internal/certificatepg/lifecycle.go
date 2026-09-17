@@ -111,7 +111,7 @@ func verifySignatureEvidence(ctx context.Context, tx *sql.Tx, actor certificatea
 // WaiveSign records a waived sign-off: no ink was captured, and the waiver
 // authority plus reason stand in for the signature. The granter must be the
 // authenticated actor performing the waiver.
-func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.ActorContext, certificateID, grantedBy, reason, capacity string, now time.Time) error {
+func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.ActorContext, certificateID, grantedBy, reason, capacity, authorizedBy string, now time.Time) error {
 	if err := validateActor(actor); err != nil {
 		return err
 	}
@@ -129,6 +129,12 @@ func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.A
 	default:
 		return fmt.Errorf("waiver capacity must be client or verifier")
 	}
+	if len(authorizedBy) > certificate.MaxTextFieldChars {
+		return fmt.Errorf("waiver authorizer is invalid")
+	}
+	if strings.TrimSpace(authorizedBy) != "" && strings.TrimSpace(authorizedBy) == grantedBy {
+		return fmt.Errorf("waiver authorizer must differ from granter")
+	}
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -144,6 +150,9 @@ func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.A
 	if err := authorizeTransition(actor, profile, inspectorID, "certificate.sign"); err != nil {
 		return err
 	}
+	if actor.ActorID == inspectorID && strings.TrimSpace(authorizedBy) == "" {
+		return fmt.Errorf("inspector waiver requires an office authorizer")
+	}
 	result, err := tx.ExecContext(ctx, `UPDATE certificate_record SET status = $1, signed_by = $2, signed_at = $3 WHERE id = $4 AND tenant_id = $5 AND organization_id = $6 AND status = $7`, "SIGNED", actor.ActorID, now.UTC(), certificateID, actor.TenantID, actor.OrganizationID, "APPROVED")
 	if err != nil {
 		return err
@@ -156,11 +165,12 @@ func (r *Repository) WaiveSign(ctx context.Context, actor certificateauthority.A
 		return fmt.Errorf("certificate transition conflict")
 	}
 	evidence := map[string]any{
-		"profile":    profile,
-		"waived":     true,
-		"granted_by": actor.ActorID,
-		"reason":     strings.TrimSpace(reason),
-		"capacity":   capacity,
+		"profile":       profile,
+		"waived":        true,
+		"granted_by":    actor.ActorID,
+		"reason":        strings.TrimSpace(reason),
+		"capacity":      capacity,
+		"authorized_by": strings.TrimSpace(authorizedBy),
 	}
 	if err := insertLifecycleAudit(ctx, tx, actor, certificateID, "SIGN_WAIVED", now, evidence); err != nil {
 		return err

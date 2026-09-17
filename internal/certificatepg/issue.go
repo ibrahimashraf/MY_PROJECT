@@ -60,7 +60,11 @@ func (r *Repository) Issue(ctx context.Context, actor certificateauthority.Actor
 	}
 	evidence := map[string]any{"certificate_number": number}
 	if r.tsa != nil {
-		stamp, err := r.tsa.Timestamp(ctx, snapshotDigest(state.templateSnapshot, state.cellSnapshot, state.publicBindingSnapshot), now)
+		// Timestamp the raw snapshot bytes: TSA.Timestamp hashes its input,
+		// so the token imprint equals snapshotDigest (persisted below).
+		// Passing snapshotDigest here would double-hash and break the
+		// notarization binding.
+		stamp, err := r.tsa.Timestamp(ctx, snapshotRaw(state.templateSnapshot, state.cellSnapshot, state.publicBindingSnapshot), now)
 		if err != nil {
 			return IssueResult{}, fmt.Errorf("trusted timestamp failed: %w", err)
 		}
@@ -138,7 +142,12 @@ func persistSnapshot(ctx context.Context, tx *sql.Tx, actor certificateauthority
 // is the exact byte sequence persisted as certificate_snapshot.snapshot_sha256
 // and, when a trusted timestamp authority is provisioned, the TST message
 // imprint — making the stored digest independently notarizable.
+// snapshotRaw is the exact byte sequence the snapshot digest covers.
+func snapshotRaw(templateSnapshot, cellSnapshot, publicBindingSnapshot []byte) []byte {
+	return append(append(append([]byte{}, templateSnapshot...), cellSnapshot...), publicBindingSnapshot...)
+}
+
 func snapshotDigest(templateSnapshot, cellSnapshot, publicBindingSnapshot []byte) []byte {
-	sum := sha256.Sum256(append(append(append([]byte{}, templateSnapshot...), cellSnapshot...), publicBindingSnapshot...))
+	sum := sha256.Sum256(snapshotRaw(templateSnapshot, cellSnapshot, publicBindingSnapshot))
 	return sum[:]
 }
