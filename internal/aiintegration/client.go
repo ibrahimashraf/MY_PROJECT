@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"integin/internal/advisory"
+	leimenv "integin/internal/shared/env"
 )
 
 const ContractVersion = "v1"
@@ -59,7 +60,7 @@ func New(config Config, httpClient *http.Client) (*Client, error) {
 		return nil, errors.New("valid AI endpoint is required")
 	}
 	if config.Timeout <= 0 {
-		config.Timeout = 5 * time.Second
+		config.Timeout = leimenv.Seconds("INTEGIN_AI_TIMEOUT_S", 5*time.Second, 1, 120)
 	}
 	if httpClient == nil {
 		httpClient = http.DefaultClient

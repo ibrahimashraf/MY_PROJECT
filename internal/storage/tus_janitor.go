@@ -9,7 +9,7 @@ import (
 
 // DefaultJanitorInterval is how often RunJanitor sweeps upload state when the
 // caller does not supply an explicit interval.
-const DefaultJanitorInterval = 10 * time.Minute
+const DefaultJanitorInterval = 10 * time.Minute // lean-ctx: exported const, callers override per-deployment; no env needed
 
 // JanitorReport is the outcome of one janitor sweep. It is the metrics surface
 // for upload hygiene: how many crashed sessions were resumed, how many

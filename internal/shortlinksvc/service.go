@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"integin/internal/domain/shortlink"
+	leimenv "integin/internal/shared/env"
 )
 
 var (
@@ -668,13 +669,13 @@ func lookupGeoIP(ip string) (country, region, city string) {
 
 func (s *Service) CreateAnomalyRule(ctx context.Context, req shortlink.CreateAnomalyRuleRequest) (*shortlink.AnomalyRule, error) {
 	if req.Config.Cooldown == 0 {
-		req.Config.Cooldown = 15 * time.Minute
+		req.Config.Cooldown = leimenv.Seconds("INTEGIN_WEBHOOK_COOLDOWN_S", 15*time.Minute, 60, 3600)
 	}
 	if req.Config.Threshold == 0 {
 		req.Config.Threshold = 100
 	}
 	if req.Config.Window == 0 {
-		req.Config.Window = 1 * time.Hour
+		req.Config.Window = leimenv.Seconds("INTEGIN_WEBHOOK_WINDOW_S", 1*time.Hour, 300, 86400)
 	}
 
 	rule := &shortlink.AnomalyRule{

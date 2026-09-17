@@ -32,6 +32,7 @@ import (
 	"integin/internal/identity"
 	"integin/internal/oidchttp"
 	"integin/internal/security"
+	leimenv "integin/internal/shared/env"
 	"integin/internal/shared/httpresponse"
 	"integin/internal/shared/types"
 	"integin/internal/syncstate"
@@ -102,15 +103,15 @@ type Handler struct {
 func NewHandler(cfg Config) (*Handler, error) {
 	ttl := cfg.AuthorityTTL
 	if ttl <= 0 {
-		ttl = defaultAuthorityTTL
+		ttl = leimenv.Seconds("INTEGIN_ENROLL_AUTHORITY_TTL_S", defaultAuthorityTTL, 300, 86400)
 	}
 	challengeTTL := cfg.ChallengeTTL
 	if challengeTTL <= 0 {
-		challengeTTL = defaultChallengeTTL
+		challengeTTL = leimenv.Seconds("INTEGIN_ENROLL_CHALLENGE_TTL_S", defaultChallengeTTL, 60, 1800)
 	}
 	approvalWindow := cfg.ApprovalWindow
 	if approvalWindow <= 0 {
-		approvalWindow = defaultApprovalWindow
+		approvalWindow = leimenv.Seconds("INTEGIN_ENROLL_APPROVAL_WINDOW_S", defaultApprovalWindow, 300, 259200)
 	}
 	now := cfg.Now
 	if now == nil {

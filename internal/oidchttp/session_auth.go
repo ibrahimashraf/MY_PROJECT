@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	leimenv "integin/internal/shared/env"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,7 +27,11 @@ var (
 
 // sessionStoreTimeout bounds each store round-trip so lifecycle checks never
 // hang behind an unresponsive database.
-const sessionStoreTimeout = 5 * time.Second
+const defaultSessionStoreTimeout = 5 * time.Second
+
+func sessionStoreTimeout() time.Duration {
+	return leimenv.Seconds("INTEGIN_SESSION_STORE_TIMEOUT_S", defaultSessionStoreTimeout, 1, 60)
+}
 
 // SessionRecord is the state of one active session.
 type SessionRecord struct {
@@ -106,7 +111,7 @@ func newSessionLifecycleManager(maxTTL time.Duration, store SessionStore) *Sessi
 }
 
 func (m *SessionLifecycleManager) sessionCtx() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), sessionStoreTimeout)
+	return context.WithTimeout(context.Background(), sessionStoreTimeout())
 }
 
 // Open records a freshly authenticated token as an active session bound to the

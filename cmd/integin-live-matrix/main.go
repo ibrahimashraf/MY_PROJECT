@@ -170,8 +170,8 @@ func seed() error {
 
 func explicitPilotServerURL(raw string) (string, error) {
 	serverURL := strings.TrimRight(strings.TrimSpace(raw), "/")
-	if serverURL != "http://127.0.0.1:18080" && serverURL != "http://127.0.0.1:8080" {
-		return "", errors.New("INTEGIN_SERVER_URL must explicitly target the isolated pilot origin http://127.0.0.1:18080 or http://127.0.0.1:8080")
+	if serverURL != "http://127.0.0.1:18080" {
+		return "", errors.New("INTEGIN_SERVER_URL must explicitly target the isolated pilot origin http://127.0.0.1:18080")
 	}
 	return serverURL, nil
 }

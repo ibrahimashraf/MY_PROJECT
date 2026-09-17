@@ -12,6 +12,7 @@ import (
 	"integin/internal/domain/device_trust"
 	"integin/internal/domain/workpackage"
 	"integin/internal/security"
+	leimenv "integin/internal/shared/env"
 )
 
 const (
@@ -22,6 +23,14 @@ const (
 	proofMaximumLifetime           = 5 * time.Minute
 	proofFutureSkew                = 30 * time.Second
 )
+
+func maxProofLifetime() time.Duration {
+	return leimenv.Seconds("INTEGIN_PROOF_LIFETIME_S", proofMaximumLifetime, 60, 3600)
+}
+
+func maxProofSkew() time.Duration {
+	return leimenv.Seconds("INTEGIN_PROOF_SKEW_S", proofFutureSkew, 0, 300)
+}
 
 // DeviceProof is a signed, short-lived request proof. Its device ID is a
 // lookup key only; verified server-side state supplies the trusted scope.
@@ -90,7 +99,7 @@ func (p *Processor) VerifyDeviceProof(
 	issuedAt := proof.IssuedAt.UTC()
 	expiresAt := proof.ExpiresAt.UTC()
 	now := at.UTC()
-	if issuedAt.After(now.Add(proofFutureSkew)) || !expiresAt.After(now) || !expiresAt.After(issuedAt) || expiresAt.Sub(issuedAt) > proofMaximumLifetime {
+	if issuedAt.After(now.Add(maxProofSkew())) || !expiresAt.After(now) || !expiresAt.After(issuedAt) || expiresAt.Sub(issuedAt) > maxProofLifetime() {
 		return VerifiedDeviceContext{}, proofFailure(DeviceProofFailureExpired, errors.New("device proof is outside its permitted lifetime"))
 	}
 	if proof.SignatureAlgorithm != workpackage.ManifestProofSignatureAlgorithm || strings.TrimSpace(proof.KeyID) == "" || strings.TrimSpace(proof.Signature) == "" {

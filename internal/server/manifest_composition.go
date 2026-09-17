@@ -8,11 +8,16 @@ import (
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/packagemanifest"
 	"integin/internal/packagemanifestapi"
+	leimenv "integin/internal/shared/env"
 	"integin/internal/syncapi"
 	"integin/internal/workpackagepg"
 )
 
-const pilotManifestMaxLifetime = 30 * time.Minute
+const defaultPilotManifestMaxLifetime = 30 * time.Minute
+
+func pilotManifestMaxLifetime() time.Duration {
+	return leimenv.Seconds("INTEGIN_MANIFEST_MAX_LIFETIME_S", defaultPilotManifestMaxLifetime, 300, 86400)
+}
 
 // NewPilotManifestHandler assembles the package-manifest boundary for an
 // explicitly controlled pilot composition. It is deliberately uncalled by all
@@ -33,7 +38,7 @@ func NewPilotManifestHandler(
 		repository,
 		signingKey,
 		keyID,
-		pilotManifestMaxLifetime,
+		pilotManifestMaxLifetime(),
 	)
 	if err != nil {
 		return nil

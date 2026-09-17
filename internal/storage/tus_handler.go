@@ -20,6 +20,7 @@ const DefaultTUSChunkSize = 2 << 20
 
 // DefaultTUStaleTTL is how long an untouched session lives before PurgeStale
 // reclaims it.
+// lean-ctx: exported const, callers override per-deployment; no env needed.
 const DefaultTUStaleTTL = 24 * time.Hour
 
 var (

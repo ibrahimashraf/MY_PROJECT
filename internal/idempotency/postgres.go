@@ -10,7 +10,7 @@ import (
 )
 
 // CacheTTL bounds how long a committed idempotent response may be replayed.
-const CacheTTL = 24 * time.Hour
+const CacheTTL = 24 * time.Hour // lean-ctx: exported const, callers override per-deployment; no env needed
 
 // maximalReplayableStatus is the highest HTTP status that is persisted for
 // replay. Server-side failures (5xx) are never cached so a retry can succeed.

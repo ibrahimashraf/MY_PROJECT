@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"integin/internal/domain/shortlink"
+	leimenv "integin/internal/shared/env"
 )
 
 type Repository struct {
@@ -1272,7 +1273,7 @@ func (r *Repository) DeliverAlertWebhook(ctx context.Context, req shortlink.Webh
 	// In production, you might want to track this in a separate table
 	client := &http.Client{Timeout: req.Timeout}
 	if req.Timeout == 0 {
-		client.Timeout = 10 * time.Second
+		client.Timeout = leimenv.Seconds("INTEGIN_SHORTLINK_HTTP_TIMEOUT_S", 10*time.Second, 1, 120) // lean-ctx: req.Timeout overrides per-request
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", req.URL, bytes.NewReader(req.Payload))
