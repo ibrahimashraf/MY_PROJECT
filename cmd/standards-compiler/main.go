@@ -132,7 +132,7 @@ func celList(cards []standardsync.StandardMetadataCard) string {
 		if card.LifecycleState != standardsync.LifecycleActive {
 			continue
 		}
-		expr := fmt.Sprintf(`standard_did == %q && lifecycle == "ACTIVE"`, card.StandardDID)
+		expr := fmt.Sprintf(`standard_did == %q && lifecycle == "ACTIVE"`, card.StandardDID) // lean-ctx: "ACTIVE" is CEL output DSL, must match equipment.EquipmentActive value
 		program, err := evaluator.Compile("standard-binding-"+card.StandardDID, expr, celVars())
 		if err != nil {
 			die(fmt.Errorf("CEL compile %s: %w", card.StandardDID, err))

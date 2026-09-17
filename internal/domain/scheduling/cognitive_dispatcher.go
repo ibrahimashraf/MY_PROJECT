@@ -75,6 +75,9 @@ func dispatchLocked(agent *cognitive.BDIAgent, order WorkOrderCandidate) (*cogni
 	if !order.Competency.IsCurrent(time.Now()) {
 		return nil, fmt.Errorf("%w: technician %s lacks current competency for skill %q", ErrDispatchIncompetent, agent.ID, order.Skill)
 	}
+	if order.Competency.EquipmentTypeID != order.Skill {
+		return nil, fmt.Errorf("%w: technician %s competency (%q) does not match required skill (%q)", ErrDispatchIncompetent, agent.ID, order.Competency.EquipmentTypeID, order.Skill)
+	}
 
 	agent.UpdateBelief(beliefCompetentPrefix+order.Skill, 1.0)
 	agent.UpdateBelief(beliefAssignedPrefix+order.ID, 1.0)
@@ -199,12 +202,14 @@ func SubscribeEnvironmentalTelemetry(bus *eventbus.Bus, agent *cognitive.BDIAgen
 		dispatchMu.Unlock()
 
 		if alert.Utilization > 0.90 && insertJob != nil {
-			// Trigger corrective work order generation, passing along ENU coordinates
-			_ = insertJob(context.Background(), CorrectiveWorkOrderArgs{
-				ComponentID: alert.ComponentID,
-				Utilization: alert.Utilization,
-				HazardKind:  "MOMENT_UTILIZATION_EXCEEDED",
-			})
+			// Trigger corrective work order generation async to prevent EventBus stall
+			go func() {
+				_ = insertJob(context.Background(), CorrectiveWorkOrderArgs{
+					ComponentID: alert.ComponentID,
+					Utilization: alert.Utilization,
+					HazardKind:  "MOMENT_UTILIZATION_EXCEEDED",
+				})
+			}()
 		}
 	}
 

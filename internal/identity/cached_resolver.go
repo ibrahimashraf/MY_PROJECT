@@ -2,6 +2,9 @@ package identity
 
 import (
 	"context"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -31,6 +34,11 @@ type CachedResolver struct {
 func NewCachedResolver(inner Resolver, ttl time.Duration) *CachedResolver {
 	if ttl <= 0 {
 		ttl = 60 * time.Second
+		if v := strings.TrimSpace(os.Getenv("INTEGIN_IDENTITY_CACHE_TTL_SECONDS")); v != "" {
+			if s, err := strconv.Atoi(v); err == nil && s >= 5 && s <= 600 {
+				ttl = time.Duration(s) * time.Second
+			}
+		}
 	}
 	return &CachedResolver{
 		inner:    inner,

@@ -12,29 +12,34 @@ import (
 
 type AgentRegistry interface {
 	GetAvailableAgents(ctx context.Context) ([]*cognitive.BDIAgent, error)
-	GetCompetency(ctx context.Context, agentID string) (TechnicianCompetency, error)
+	GetCompetencies(ctx context.Context, agentID string) ([]TechnicianCompetency, error)
 }
 
 // InMemoryAgentRegistry is a simple registry for pilot testing.
 type InMemoryAgentRegistry struct {
 	Agents       []*cognitive.BDIAgent
-	Competencies map[string]TechnicianCompetency
+	Competencies map[string][]TechnicianCompetency
 }
 
 func (r *InMemoryAgentRegistry) GetAvailableAgents(ctx context.Context) ([]*cognitive.BDIAgent, error) {
 	return r.Agents, nil
 }
 
-func (r *InMemoryAgentRegistry) GetCompetency(ctx context.Context, agentID string) (TechnicianCompetency, error) {
-	if c, ok := r.Competencies[agentID]; ok {
-		return c, nil
-	}
-	// Default to expired/missing if not found
-	return TechnicianCompetency{}, errors.New("competency not found")
+func (r *InMemoryAgentRegistry) GetCompetencies(ctx context.Context, agentID string) ([]TechnicianCompetency, error) {
+	return r.Competencies[agentID], nil
 }
 
-// CorrectiveWorkOrderWorker dequeues structural overload jobs and routes the
-// nearest qualified technician via WGS84 local ENU frames.
+// DefaultCorrectiveSkill is the fallback skill when the job carries no hazard kind.
+const DefaultCorrectiveSkill = "structural_remediation"
+
+func resolveSkill(args CorrectiveWorkOrderArgs) string {
+	switch args.HazardKind {
+	case "", "MOMENT_UTILIZATION_EXCEEDED":
+		return DefaultCorrectiveSkill
+	default:
+		return args.HazardKind
+	}
+}
 type CorrectiveWorkOrderWorker struct {
 	river.WorkerDefaults[CorrectiveWorkOrderArgs]
 	Registry AgentRegistry
@@ -49,11 +54,23 @@ func (w *CorrectiveWorkOrderWorker) Work(ctx context.Context, job *river.Job[Cor
 	var nearest *cognitive.BDIAgent
 	var minDst float64 = math.MaxFloat64
 	var bestComp TechnicianCompetency
+	reqSkill := resolveSkill(job.Args)
 
 	for _, a := range agents {
-		comp, err := w.Registry.GetCompetency(ctx, a.ID)
-		if err != nil || !comp.IsCurrent(time.Now()) {
+		comps, err := w.Registry.GetCompetencies(ctx, a.ID)
+		if err != nil {
 			continue
+		}
+
+		var validComp *TechnicianCompetency
+		for _, c := range comps {
+			if c.EquipmentTypeID == reqSkill && c.IsCurrent(time.Now()) {
+				validComp = &c
+				break
+			}
+		}
+		if validComp == nil {
+			continue // Lacks current competency for this specific skill
 		}
 
 		// Calculate Euclidean distance in the local ENU frame
@@ -65,7 +82,7 @@ func (w *CorrectiveWorkOrderWorker) Work(ctx context.Context, job *river.Job[Cor
 		if dst < minDst {
 			minDst = dst
 			nearest = a
-			bestComp = comp
+			bestComp = *validComp
 		}
 	}
 
@@ -75,7 +92,7 @@ func (w *CorrectiveWorkOrderWorker) Work(ctx context.Context, job *river.Job[Cor
 
 	order := WorkOrderCandidate{
 		ID:         "remedy-" + job.Args.ComponentID,
-		Skill:      "structural_remediation",
+		Skill:      reqSkill,
 		Priority:   0.95, // Statutorily overrides routine work
 		Target:     job.Args.Location,
 		Competency: bestComp,

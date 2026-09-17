@@ -14,6 +14,7 @@ import (
 	"integin/internal/domain/shortlink"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/internal/oidchttp"
 	"integin/internal/shortlinksvc"
 )
 
@@ -290,15 +291,20 @@ func (h *Handler) ResolveDLQHandler(c *gin.Context) {
 		return
 	}
 
-	// Get resolved_by from request body or use default
+	// Require authenticated actor — never fall back to a ghost "admin"
+	org, ok := oidchttp.OrganizationContextFrom(c.Request.Context())
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+
+	// Optional body override; if not present or empty, use authenticated actor
 	var req struct {
 		ResolvedBy string `json:"resolved_by"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		req.ResolvedBy = "admin"
-	}
+	_ = c.ShouldBindJSON(&req)
 	if req.ResolvedBy == "" {
-		req.ResolvedBy = "admin"
+		req.ResolvedBy = org.ActorID
 	}
 
 	err := h.svc.ResolveDLQEntry(c.Request.Context(), id, req.ResolvedBy)

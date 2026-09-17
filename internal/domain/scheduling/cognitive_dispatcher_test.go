@@ -27,7 +27,7 @@ func order(id string, priority float64) WorkOrderCandidate {
 		Skill:      "lifting.inspection",
 		Priority:   priority,
 		Target:     [3]float64{10, 20, 30},
-		Competency: competent(),
+		Competency: TechnicianCompetency{Status: CompetencyStatusCurrent, EquipmentTypeID: "lifting.inspection"},
 	}
 }
 
@@ -261,9 +261,9 @@ func TestSubscribeEnvironmentalTelemetry(t *testing.T) {
 	defer bus.Close()
 	agent := &cognitive.BDIAgent{ID: "tech-1"}
 
-	var jobArgs river.JobArgs
+	jobCh := make(chan river.JobArgs, 1)
 	inserter := func(ctx context.Context, args river.JobArgs) error {
-		jobArgs = args
+		jobCh <- args
 		return nil
 	}
 
@@ -295,9 +295,13 @@ func TestSubscribeEnvironmentalTelemetry(t *testing.T) {
 		t.Fatal("agent should believe structural alert")
 	}
 
-	if jobArgs == nil {
+	var jobArgs river.JobArgs
+	select {
+	case jobArgs = <-jobCh:
+	case <-time.After(2 * time.Second):
 		t.Fatal("expected corrective work order job to be inserted via river queue")
 	}
+
 	correctiveArgs, ok := jobArgs.(CorrectiveWorkOrderArgs)
 	if !ok || correctiveArgs.ComponentID != "crane-leg-A" {
 		t.Fatalf("expected CorrectiveWorkOrderArgs for crane-leg-A, got %v", jobArgs)

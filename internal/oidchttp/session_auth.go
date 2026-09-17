@@ -8,6 +8,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -88,6 +90,11 @@ func NewSessionLifecycleManagerWithStore(maxTTL time.Duration, store SessionStor
 func newSessionLifecycleManager(maxTTL time.Duration, store SessionStore) *SessionLifecycleManager {
 	if maxTTL <= 0 {
 		maxTTL = 8 * time.Hour
+		if v := strings.TrimSpace(os.Getenv("INTEGIN_SESSION_MAX_TTL_SECONDS")); v != "" {
+			if s, err := strconv.Atoi(v); err == nil && s >= 300 && s <= 86400 {
+				maxTTL = time.Duration(s) * time.Second
+			}
+		}
 	}
 	return &SessionLifecycleManager{
 		sessions: make(map[string]SessionRecord),
@@ -468,4 +475,3 @@ func (v *SessionAwareValidator) Validate(ctx context.Context, rawToken string) (
 	}
 	return principal, nil
 }
-

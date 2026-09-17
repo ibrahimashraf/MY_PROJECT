@@ -17,16 +17,27 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
+
+func tsaHTTPTimeoutFromEnv() time.Duration {
+	if v := strings.TrimSpace(os.Getenv("INTEGIN_TSA_TIMEOUT_SECONDS")); v != "" {
+		if s, err := strconv.Atoi(v); err == nil && s > 0 && s <= 120 {
+			return time.Duration(s) * time.Second
+		}
+	}
+	return 15 * time.Second
+}
+
+var tsaHTTPTimeout = tsaHTTPTimeoutFromEnv()
 
 // TSP wire constants.
 const (
 	contentTypeQuery = "application/timestamp-query"
 	contentTypeReply = "application/timestamp-reply"
 
-	tsaHTTPTimeout  = 15 * time.Second
 	tsaMaxBodyBytes = 1 << 20
 )
 

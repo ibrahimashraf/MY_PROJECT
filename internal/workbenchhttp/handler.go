@@ -24,7 +24,7 @@ var (
 )
 
 const (
-	statusActive   = "ACTIVE"
+	statusActive   = "ACTIVE" // lean-ctx: matches equipment.EquipmentActive; separate const avoids domain import cycle
 	statusReleased = "RELEASED"
 	statusApproved = "APPROVED"
 	statusRejected = "REJECTED"

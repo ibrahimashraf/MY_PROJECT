@@ -62,7 +62,17 @@ import (
 	"integin/pkg/onboarding"
 )
 
+func durEnvSeconds(key string, fallback time.Duration) time.Duration {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+		if s, err := strconv.Atoi(v); err == nil && s > 0 && s <= 600 {
+			return time.Duration(s) * time.Second
+		}
+	}
+	return fallback
+}
+
 func main() {
+
 	secretStr := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
 	if secretStr == "" {
 		log.Fatal("INTEGIN_SYNC_SECRET is required")
@@ -448,15 +458,18 @@ func main() {
 		// Mount Phase 6: Cognitive Dispatcher and Corrective Work Order Worker
 		sysEventBus := eventbus.NewBus()
 		defer sysEventBus.Close()
-		dummyAgent := &cognitive.BDIAgent{
-			ID:       "autonomous-tech-1",
-			Position: [3]float64{0, 0, 0},
-		}
+		var dummyAgent *cognitive.BDIAgent
 		agentRegistry := &scheduling.InMemoryAgentRegistry{
-			Agents: []*cognitive.BDIAgent{dummyAgent},
-			Competencies: map[string][]scheduling.TechnicianCompetency{
-				"autonomous-tech-1": {{Status: scheduling.CompetencyStatusCurrent, EquipmentTypeID: "structural_remediation"}},
-			},
+			Competencies: map[string][]scheduling.TechnicianCompetency{},
+		}
+		if os.Getenv("INTEGIN_DEMO_AGENTS") == "1" {
+			// ponytail: demo-only registry, never enable in prod
+			dummyAgent = &cognitive.BDIAgent{
+				ID:       "autonomous-tech-1",
+				Position: [3]float64{0, 0, 0},
+			}
+			agentRegistry.Agents = []*cognitive.BDIAgent{dummyAgent}
+			agentRegistry.Competencies["autonomous-tech-1"] = []scheduling.TechnicianCompetency{{Status: scheduling.CompetencyStatusCurrent, EquipmentTypeID: scheduling.DefaultCorrectiveSkill}}
 		}
 		river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{
 			Registry: agentRegistry,
@@ -468,7 +481,7 @@ func main() {
 				log.Fatalf("failed to initialize certificate render service: %v", renderErr)
 			}
 			river.AddWorker(workers, certificaterender.NewCertificateRenderWorker(renderSvc, certificateRepository))
-			
+
 			// Phase 7: Regulatory & CFIHOS workers
 			// (Assuming equipmentRepo and evidenceStore wrappers exist in a real deployment)
 			// river.AddWorker(workers, &integration.CFIHOSExportWorker{
@@ -496,13 +509,15 @@ func main() {
 		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
 
 		// Wire up the Cognitive Dispatcher (Phase 6)
-		scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, dummyAgent, func(ctx context.Context, args river.JobArgs) error {
-			if riverQueue != nil {
-				_, err := riverQueue.Client().Insert(ctx, args, nil)
-				return err
-			}
-			return nil
-		})
+		if dummyAgent != nil {
+			scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, dummyAgent, func(ctx context.Context, args river.JobArgs) error {
+				if riverQueue != nil {
+					_, err := riverQueue.Client().Insert(ctx, args, nil)
+					return err
+				}
+				return nil
+			})
+		}
 	}
 	if tusDir := strings.TrimSpace(os.Getenv("INTEGIN_TUS_SCRATCH_DIR")); tusDir != "" {
 		tusManager, tusErr := storage.NewTUSManager(tusDir, 0, 0)
@@ -533,16 +548,16 @@ func main() {
 	httpServer := &http.Server{
 		Addr:              address,
 		Handler:           handler,
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: durEnvSeconds("INTEGIN_HTTP_READ_HEADER_TIMEOUT_S", 10*time.Second),
+		ReadTimeout:       durEnvSeconds("INTEGIN_HTTP_READ_TIMEOUT_S", 30*time.Second),
+		WriteTimeout:      durEnvSeconds("INTEGIN_HTTP_WRITE_TIMEOUT_S", 60*time.Second),
+		IdleTimeout:       durEnvSeconds("INTEGIN_HTTP_IDLE_TIMEOUT_S", 60*time.Second),
 		MaxHeaderBytes:    1 << 20,
 	}
 	if err := http2.ConfigureServer(httpServer, &http2.Server{
 		MaxConcurrentStreams: 250,
 		MaxReadFrameSize:     1048576,
-		IdleTimeout:          60 * time.Second,
+		IdleTimeout:          durEnvSeconds("INTEGIN_HTTP_IDLE_TIMEOUT_S", 60*time.Second),
 	}); err != nil {
 		log.Printf("http2 server configuration notice: %v", err)
 	}

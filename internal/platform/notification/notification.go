@@ -3,6 +3,8 @@ package notification
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,12 +85,23 @@ type Engine struct {
 	deliveries    []EmailDelivery
 }
 
+const DefaultMaxAttempts = 5
+
+func defaultMaxAttempts() int {
+	if v := strings.TrimSpace(os.Getenv("INTEGIN_NOTIFY_MAX_ATTEMPTS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 1 && n <= 25 {
+			return n
+		}
+	}
+	return DefaultMaxAttempts
+}
+
 func NewEngine(now func() time.Time, maxAttempts int) *Engine {
 	if now == nil {
 		now = time.Now
 	}
 	if maxAttempts <= 0 {
-		maxAttempts = 5
+		maxAttempts = defaultMaxAttempts()
 	}
 	return &Engine{now: now, maxAttempts: maxAttempts}
 }

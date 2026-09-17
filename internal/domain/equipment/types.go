@@ -254,7 +254,7 @@ func (a Asset) Validate() error {
 	if strings.TrimSpace(a.AssetID) == "" || strings.TrimSpace(a.AssetType) == "" || strings.TrimSpace(a.SerialNumber) == "" || strings.TrimSpace(a.Description) == "" {
 		return fmt.Errorf("%w: asset_id, asset_type, serial_number, description required", ErrInvalidAssetIdentity)
 	}
-	if a.LifecycleState != "ACTIVE" && a.LifecycleState != "RETIRED" {
+	if a.LifecycleState != string(EquipmentActive) && a.LifecycleState != string(EquipmentRetired) {
 		return fmt.Errorf("%w: invalid lifecycle_state", ErrInvalidAssetIdentity)
 	}
 	return nil

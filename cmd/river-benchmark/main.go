@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -35,13 +36,20 @@ func main() {
 		asyncCommit bool
 	)
 
-	flag.StringVar(&dbURL, "db", "postgres://postgres:postgres_local_test_password@localhost:15432/integin_migration_test?sslmode=disable", "PostgreSQL connection string")
+	flag.StringVar(&dbURL, "db", "", "PostgreSQL connection string (required, e.g. postgres://user:pass@host:5432/db?sslmode=require)")
 	flag.IntVar(&totalJobs, "jobs", 50000, "Total number of jobs to enqueue")
 	flag.IntVar(&batchSize, "batch", 200, "Batch size per transaction")
 	flag.IntVar(&concurrency, "concurrency", 20, "Number of concurrent worker goroutines")
 	flag.BoolVar(&asyncCommit, "async-commit", false, "Use asynchronous commit for transactional enqueue")
 	flag.Parse()
-
+	if dbURL == "" {
+		fmt.Fprintf(os.Stderr, "error: --db flag is required\n")
+		os.Exit(1)
+	}
+	if strings.Contains(dbURL, "sslmode=disable") {
+		fmt.Fprintf(os.Stderr, "error: sslmode=disable is not allowed\n")
+		os.Exit(1)
+	}
 	fmt.Printf("============================================================\n")
 	fmt.Printf("RIVER 10K LOAD BENCHMARK HARNESS\n")
 	fmt.Printf("Target: %s\n", dbURL)

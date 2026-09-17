@@ -3,6 +3,7 @@ package server
 
 import (
 	"errors"
+	"os"
 	"strings"
 
 	"integin/internal/packagemanifestapi"
@@ -12,9 +13,16 @@ import (
 const (
 	// IsolatedPilotRuntime is the only runtime eligible for manifest retrieval review.
 	IsolatedPilotRuntime = "pilot"
-	// IsolatedPilotManifestAddress is deliberately distinct from protected acceptance.
-	IsolatedPilotManifestAddress = "127.0.0.1:18080"
 )
+
+// IsolatedPilotManifestAddress is the address used for the isolated pilot manifest gate.
+// Override with the INTEGIN_PILOT_MANIFEST_ADDR environment variable in production.
+var IsolatedPilotManifestAddress = func() string {
+	if v := os.Getenv("INTEGIN_PILOT_MANIFEST_ADDR"); v != "" {
+		return v
+	}
+	return "127.0.0.1:18080"
+}()
 
 // PilotManifestActivationConfig is an explicit preflight-only gate. It does not
 // register a route and cannot enable package enforcement.

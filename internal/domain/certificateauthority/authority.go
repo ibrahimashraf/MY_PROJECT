@@ -13,6 +13,7 @@ const (
 	Draft         Status = "DRAFT"
 	PendingReview Status = "PENDING_REVIEW"
 	Approved      Status = "APPROVED"
+	Finalized     Status = "FINALIZED"
 	Signed        Status = "SIGNED"
 	Issued        Status = "ISSUED"
 	Expired       Status = "EXPIRED"
@@ -77,7 +78,7 @@ func (i CanonicalInspection) eligible() error {
 	if strings.TrimSpace(i.ID) == "" || strings.TrimSpace(i.TenantID) == "" || strings.TrimSpace(i.OrganizationID) == "" || strings.TrimSpace(i.AssetID) == "" || strings.TrimSpace(i.InspectorID) == "" || i.Revision <= 0 {
 		return fmt.Errorf("canonical inspection identity is incomplete")
 	}
-	if i.LifecycleState != "APPROVED" || i.FinalizationState != "FINALIZED" {
+	if i.LifecycleState != string(Approved) || i.FinalizationState != string(Finalized) {
 		return fmt.Errorf("inspection is not certificate eligible")
 	}
 	return nil
@@ -94,7 +95,7 @@ type Policy struct {
 }
 
 func (p Policy) validateFor(templateCode string, templateVersion int64) error {
-	if strings.TrimSpace(p.ID) == "" || p.Status != "APPROVED" || p.ValidityDays <= 0 || p.ValidityDays > 3650 {
+	if strings.TrimSpace(p.ID) == "" || p.Status != string(Approved) || p.ValidityDays <= 0 || p.ValidityDays > 3650 {
 		return fmt.Errorf("certificate policy is not approved")
 	}
 	if p.TemplateCode != templateCode || p.TemplateVersion != templateVersion {
@@ -245,7 +246,7 @@ func (c *Certificate) Issue(actor ActorContext, policy Policy, now time.Time) er
 	if err := c.authorize(actor, "certificate.issue", true); err != nil {
 		return err
 	}
-	if policy.ID != c.policyID || policy.ValidityDays <= 0 || policy.ValidityDays > 3650 || policy.Status != "APPROVED" {
+	if policy.ID != c.policyID || policy.ValidityDays <= 0 || policy.ValidityDays > 3650 || policy.Status != string(Approved) {
 		return fmt.Errorf("certificate policy is not issuable")
 	}
 	c.status, c.issuedBy, c.issuedAt, c.expiresAt = Issued, actor.ActorID, now.UTC(), now.UTC().AddDate(0, 0, policy.ValidityDays)

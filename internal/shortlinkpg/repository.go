@@ -531,7 +531,7 @@ func (r *Repository) GetByIDs(ctx context.Context, ids []int64) ([]*shortlink.We
 func (r *Repository) CreateWebhookDelivery(ctx context.Context, req shortlink.CreateWebhookDeliveryRequest) (*shortlink.WebhookDelivery, error) {
 	maxAttempts := req.MaxAttempts
 	if maxAttempts <= 0 {
-		maxAttempts = 6 // default max retries
+		maxAttempts = shortlink.DefaultWebhookMaxAttempts // default max retries
 	}
 
 	var nextRetryAt *time.Time

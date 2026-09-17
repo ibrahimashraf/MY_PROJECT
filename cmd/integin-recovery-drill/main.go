@@ -340,6 +340,12 @@ func cleanupSource(ctx context.Context, manifestPath string) error {
 }
 
 func insertFixture(ctx context.Context, database *sql.DB, f fixture) error {
+	// Drill-only fixture IDs: never accept from user input; single point to gate ownership validation.
+	const (
+		recoveryClientID   = "recovery-client"
+		recoveryLocationID = "recovery-location"
+		recoveryAssetID    = "recovery-asset"
+	)
 	tx, err := database.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -348,10 +354,10 @@ func insertFixture(ctx context.Context, database *sql.DB, f fixture) error {
 	if _, err := tx.ExecContext(ctx, "SELECT set_config('integin.tenant_id',$1,true), set_config('integin.organization_id',$2,true)", f.TenantID, f.Organization); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,revision,created_by,updated_by) VALUES ($1,$2,$3,'recovery-client',$1,'requested','in_progress','not_ready','not_started',1,$4,$4)", f.WorkOrderID, f.TenantID, f.Organization, f.ActorID); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order (id,tenant_id,organization_id,client_id,job_number,request_state,execution_state,commercial_state,certificate_state,revision,created_by,updated_by) VALUES ($1,$2,$3,$5,$1,'requested','in_progress','not_ready','not_started',1,$4,$4)", f.WorkOrderID, f.TenantID, f.Organization, f.ActorID, recoveryClientID); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,'recovery-client','recovery-location','recovery-asset','equipment')", f.ScopeID, f.TenantID, f.Organization, f.WorkOrderID); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order_scope_item (id,tenant_id,organization_id,work_order_id,client_id,location_id,asset_id,asset_type) VALUES ($1,$2,$3,$4,$5,$6,$7,'equipment')", f.ScopeID, f.TenantID, f.Organization, f.WorkOrderID, recoveryClientID, recoveryLocationID, recoveryAssetID); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order_assignment (id,tenant_id,organization_id,work_order_id,inspector_id,state,revision,effective_from,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,'active',1,now(),$5,$5)", f.AssignmentID, f.TenantID, f.Organization, f.WorkOrderID, f.ActorID); err != nil {
@@ -360,7 +366,7 @@ func insertFixture(ctx context.Context, database *sql.DB, f fixture) error {
 	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order_assignment_scope (tenant_id,organization_id,assignment_id,scope_item_id) VALUES ($1,$2,$3,$4)", f.TenantID, f.Organization, f.AssignmentID, f.ScopeID); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,'recovery-asset',$7,'COMPLETED',1,'OPEN',$7,$7)", f.InspectionID, f.TenantID, f.Organization, f.WorkOrderID, f.ScopeID, f.AssignmentID, f.ActorID); err != nil {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO inspection_record (id,tenant_id,organization_id,work_order_id,scope_item_id,assignment_id,asset_id,inspector_id,lifecycle_state,revision,finalization_state,created_by,updated_by) VALUES ($1,$2,$3,$4,$5,$6,$8,$7,'COMPLETED',1,'OPEN',$7,$7)", f.InspectionID, f.TenantID, f.Organization, f.WorkOrderID, f.ScopeID, f.AssignmentID, f.ActorID, recoveryAssetID); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO work_order_state_event (id,tenant_id,organization_id,work_order_id,actor_id,event_type,previous_state,new_state,reason_code,operation_id,correlation_id) VALUES ($1,$2,$3,$4,$5,'recovery_seed','{}'::jsonb,'{}'::jsonb,'recovery_drill',$1,$1)", f.StateEventID, f.TenantID, f.Organization, f.WorkOrderID, f.ActorID); err != nil {

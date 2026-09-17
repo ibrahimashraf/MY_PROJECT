@@ -13,6 +13,9 @@ var (
 	ErrCodeCollision = errors.New("code collision")
 )
 
+// DefaultWebhookMaxAttempts is the default webhook delivery retry budget.
+const DefaultWebhookMaxAttempts = 6
+
 type AnomalyType string
 
 const (

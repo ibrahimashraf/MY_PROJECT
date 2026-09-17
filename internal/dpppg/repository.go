@@ -454,8 +454,8 @@ func (r *Repository) CreateComplianceAction(ctx context.Context, actor dpp.Actor
 	if strings.TrimSpace(a.ID) == "" || strings.TrimSpace(a.MonitorID) == "" || strings.TrimSpace(a.ActionType) == "" {
 		return dpp.ComplianceAction{}, errors.New("id, monitor_id, and action_type are required")
 	}
-	if a.Status == "" {
-		a.Status = "TODO"
+	if strings.TrimSpace(a.Status) == "" {
+		return dpp.ComplianceAction{}, errors.New("status is required")
 	}
 
 	tx, err := pgtx.BeginScope(ctx, r.db, actor.TenantID, actor.OrganizationID)

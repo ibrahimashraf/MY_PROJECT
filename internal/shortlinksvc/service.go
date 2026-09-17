@@ -374,7 +374,7 @@ func (s *Service) DeliverWebhook(ctx context.Context, code string, event shortli
 	deliveryReq := shortlink.CreateWebhookDeliveryRequest{
 		ShortLinkCode: code,
 		Payload:       payloadBytes,
-		MaxAttempts:   6,
+		MaxAttempts:   shortlink.DefaultWebhookMaxAttempts,
 	}
 	delivery, err := s.repo.CreateWebhookDelivery(ctx, deliveryReq)
 	if err != nil {
