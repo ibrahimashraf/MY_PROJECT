@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	leimenv "integin/internal/shared/env"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +21,6 @@ const DefaultTUSChunkSize = 2 << 20
 
 // DefaultTUStaleTTL is how long an untouched session lives before PurgeStale
 // reclaims it.
-// lean-ctx: exported const, callers override per-deployment; no env needed.
 const DefaultTUStaleTTL = 24 * time.Hour
 
 var (
@@ -79,7 +79,7 @@ func NewTUSManager(dir string, chunkSize int64, staleTTL time.Duration) (*TUSMan
 		chunkSize = DefaultTUSChunkSize
 	}
 	if staleTTL <= 0 {
-		staleTTL = DefaultTUStaleTTL
+		staleTTL = leimenv.Seconds("INTEGIN_TUS_STALE_TTL_S", DefaultTUStaleTTL, 3600, 604800)
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err

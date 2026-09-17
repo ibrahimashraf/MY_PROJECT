@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"errors"
+	leimenv "integin/internal/shared/env"
 	"log/slog"
 	"time"
 )
 
 // DefaultJanitorInterval is how often RunJanitor sweeps upload state when the
 // caller does not supply an explicit interval.
-const DefaultJanitorInterval = 10 * time.Minute // lean-ctx: exported const, callers override per-deployment; no env needed
+const DefaultJanitorInterval = 10 * time.Minute
 
 // JanitorReport is the outcome of one janitor sweep. It is the metrics surface
 // for upload hygiene: how many crashed sessions were resumed, how many
@@ -60,7 +61,7 @@ func (m *TUSManager) RunJanitor(ctx context.Context, interval time.Duration, log
 		return err
 	}
 	if interval <= 0 {
-		interval = DefaultJanitorInterval
+		interval = leimenv.Seconds("INTEGIN_TUS_JANITOR_INTERVAL_S", DefaultJanitorInterval, 60, 3600)
 	}
 	if _, err := m.Sweep(ctx, logger); err != nil {
 		return err
