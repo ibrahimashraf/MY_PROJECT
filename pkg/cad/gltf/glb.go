@@ -19,7 +19,7 @@ type MeshData struct {
 	Name      string
 	Positions [][3]float32
 	Normals   [][3]float32
-	Indices   []uint16
+	Indices   []uint32
 	Material  Material
 }
 
@@ -141,9 +141,16 @@ func PackGLB(meshes []MeshData) ([]byte, error) {
 		var indicesAccessorIdx *int
 		if len(m.Indices) > 0 {
 			idxOffset := binBuffer.Len()
+			useUint32 := len(m.Positions) >= 65535
 			for _, idx := range m.Indices {
-				if err := binary.Write(&binBuffer, binary.LittleEndian, idx); err != nil {
-					return nil, err
+				if useUint32 {
+					if err := binary.Write(&binBuffer, binary.LittleEndian, idx); err != nil {
+						return nil, err
+					}
+				} else {
+					if err := binary.Write(&binBuffer, binary.LittleEndian, uint16(idx)); err != nil {
+						return nil, err
+					}
 				}
 			}
 			idxLength := binBuffer.Len() - idxOffset
@@ -157,11 +164,16 @@ func PackGLB(meshes []MeshData) ([]byte, error) {
 				Target:     TargetElementArrayBuffer,
 			})
 
+			compType := ComponentTypeUnsignedShort
+			if useUint32 {
+				compType = ComponentTypeUnsignedInt
+			}
+
 			accIdx := len(doc.Accessors)
 			doc.Accessors = append(doc.Accessors, Accessor{
 				BufferView:    idxViewIdx,
 				ByteOffset:    0,
-				ComponentType: ComponentTypeUnsignedShort,
+				ComponentType: compType,
 				Count:         len(m.Indices),
 				Type:          "SCALAR",
 			})

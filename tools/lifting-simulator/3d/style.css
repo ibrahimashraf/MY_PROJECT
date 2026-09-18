@@ -211,3 +211,60 @@ button:hover {
 #btn-bind-manifest:hover {
     background-color: var(--accent-hover);
 }
+#systems-panel {
+    width: 230px;
+    flex-shrink: 0;
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+    padding: 16px;
+    overflow-y: auto;
+}
+#systems-panel h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+}
+#system-search {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 8px 0;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+}
+.system-group h3 { font-size: 12px; color: var(--text-muted); margin: 10px 0 4px; }
+.system-group .count { opacity: 0.6; font-weight: 400; }
+.comp-item {
+    display: block; width: 100%; text-align: left; margin: 2px 0; padding: 6px;
+    font-size: 12px; border-radius: 4px; border: 1px solid transparent;
+    background: transparent; color: var(--text-main); cursor: pointer;
+}
+.comp-item:hover { border-color: var(--border-color); }
+.comp-item.selected { border-color: var(--accent); background: rgba(56, 189, 248, 0.12); }
+#assembly-summary { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+#canvas-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#canvas-wrap #canvas-container { flex: 1; min-height: 380px; }
+#view-toolbar { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+#view-toolbar button {
+    background-color: var(--panel-bg); color: var(--text-main);
+    padding: 6px 12px; border-radius: 4px; font-size: 12px;
+    border: 1px solid var(--border-color); cursor: pointer;
+}
+#view-toolbar button.active { border-color: var(--accent); background: rgba(56, 189, 248, 0.16); }
+#breadcrumb { font-size: 12px; color: var(--text-muted); padding: 2px 0 6px; }
+#inspector .hint { color: var(--text-muted); font-size: 12px; }
+.insp-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.badge { border: 1px solid var(--accent); border-radius: 10px; padding: 1px 8px; font-size: 11px; }
+#inspector h3 { margin: 6px 0 2px; font-size: 16px; }
+.insp-id { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.insp-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.insp-tabs button { font-size: 11px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-main); cursor: pointer; }
+.insp-tabs button.active { border-color: var(--accent); }
+.insp-body { font-size: 13px; }
+.insp-body .kv { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted var(--border-color); }
+.insp-std { font-size: 11px; color: var(--text-muted); margin-top: 8px; }

@@ -316,3 +316,54 @@ func TestGroundBearingPressure(t *testing.T) {
 		t.Error("zero bearing area must be rejected")
 	}
 }
+
+func TestBRE470TrackPressure(t *testing.T) {
+	// 50 t crawler crane on 5.0m x 1.0m track, allowable 200 kPa
+	// Case 1: Centered load (moment = 0) -> uniform 98.07 kPa
+	res, err := BRE470TrackPressure(50, 5.0, 1.0, 0, 200)
+	if err != nil {
+		t.Fatalf("BRE470 uniform failed: %v", err)
+	}
+	if !res.Passed || res.IsTriangular {
+		t.Fatalf("uniform must pass and not be triangular: %+v", res)
+	}
+	if math.Abs(res.MaxPressureKPa-98.07) > 0.5 {
+		t.Errorf("max pressure got %.2f, want ~98.07", res.MaxPressureKPa)
+	}
+
+	// Case 2: Moderate eccentricity (e = 0.5m <= 5/6 = 0.833m) -> trapezoidal
+	resTrap, err := BRE470TrackPressure(50, 5.0, 1.0, 245.166, 200) // moment = 50*9.80665 * 0.5 = 245.166
+	if err != nil || resTrap.IsTriangular || !resTrap.Passed {
+		t.Fatalf("trapezoidal must pass: %+v err=%v", resTrap, err)
+	}
+
+	// Case 3: High eccentricity (e = 1.2m > 0.833m) -> triangular lift-off (lEff = 3.9m)
+	resTri, err := BRE470TrackPressure(50, 5.0, 1.0, 50*9.80665*1.2, 300)
+	if err != nil || !resTri.IsTriangular {
+		t.Fatalf("must be triangular lift-off: %+v err=%v", resTri, err)
+	}
+	if resTri.EffectiveLenM >= 5.0 {
+		t.Errorf("effective length must be reduced, got %.2f", resTri.EffectiveLenM)
+	}
+
+	// Case 4: Overturning boundary (e >= L/2 = 2.5m) -> hard refusal
+	if _, err := BRE470TrackPressure(50, 5.0, 1.0, 50*9.80665*2.6, 200); err == nil {
+		t.Fatal("overturning eccentricity must be rejected")
+	}
+}
+
+func TestBS5975MatStructuralCheck(t *testing.T) {
+	// 30 t outrigger load on 2.0m x 2.0m timber mat, pad size 0.6m, thickness 0.15m
+	// Allowable bending stress for tropical hardwood: 12.0 MPa
+	res, err := BS5975MatStructuralCheck(30, 2.0, 2.0, 0.6, 0.15, 12.0)
+	if err != nil {
+		t.Fatalf("BS5975 check failed: %v", err)
+	}
+	if res.BendingMomentKNmM <= 0 || res.ShearForceKNm <= 0 {
+		t.Fatalf("bending moment and shear must be positive: %+v", res)
+	}
+	// Pad size >= mat size must refuse
+	if _, err := BS5975MatStructuralCheck(30, 2.0, 2.0, 2.1, 0.15, 12.0); err == nil {
+		t.Fatal("pad >= mat size must refuse")
+	}
+}

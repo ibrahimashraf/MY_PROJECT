@@ -1,0 +1,1686 @@
+{
+  "catalog_version": "1.0.0",
+  "total_standards": 168,
+  "standards": [
+    {
+      "filename": "BS EN ISO 14001 2026 - TC scan.pdf",
+      "relative_path": "BS EN ISO 14001 2026 - TC scan.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS EN ISO 14001 2026 - TC scan",
+      "revision_year": 2026,
+      "page_count": 112,
+      "byte_size": 23380491,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN ISO IEC 17025-2017 (C2018).pdf",
+      "relative_path": "BS EN ISO IEC 17025-2017 (C2018).pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS EN ISO IEC 17025-2017 (C2018)",
+      "revision_year": 2017,
+      "page_count": 40,
+      "byte_size": 1203954,
+      "metadata_title": "BS EN ISO/IEC 17025:2017"
+    },
+    {
+      "filename": "BS ISO 45001-2018.pdf",
+      "relative_path": "BS ISO 45001-2018.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO 45001-2018",
+      "revision_year": 2018,
+      "page_count": 54,
+      "byte_size": 1337805,
+      "metadata_title": "BS ISO 45001:2018"
+    },
+    {
+      "filename": "BS ISO IEC 25010-2023.pdf",
+      "relative_path": "BS ISO IEC 25010-2023.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO IEC 25010-2023",
+      "revision_year": 2023,
+      "page_count": 34,
+      "byte_size": 2972573,
+      "metadata_title": "BS ISO/IEC 25010:2023"
+    },
+    {
+      "filename": "BS ISO IEC IEEE 29119-1-2022.pdf",
+      "relative_path": "BS ISO IEC IEEE 29119-1-2022.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO IEC IEEE 29119-1-2022",
+      "revision_year": 2022,
+      "page_count": 62,
+      "byte_size": 3147726,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO IEC IEEE 29119-2-2021.pdf",
+      "relative_path": "BS ISO IEC IEEE 29119-2-2021.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO IEC IEEE 29119-2-2021",
+      "revision_year": 2021,
+      "page_count": 68,
+      "byte_size": 2954186,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO IEC IEEE 29119-3-2021.pdf",
+      "relative_path": "BS ISO IEC IEEE 29119-3-2021.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO IEC IEEE 29119-3-2021",
+      "revision_year": 2021,
+      "page_count": 100,
+      "byte_size": 3812850,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO IEC IEEE 29119-4-2021.pdf",
+      "relative_path": "BS ISO IEC IEEE 29119-4-2021.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "BS ISO IEC IEEE 29119-4-2021",
+      "revision_year": 2021,
+      "page_count": 152,
+      "byte_size": 6248841,
+      "metadata_title": ""
+    },
+    {
+      "filename": "HSE L113.pdf",
+      "relative_path": "HSE L113.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "HSE L113",
+      "revision_year": null,
+      "page_count": 72,
+      "byte_size": 1003345,
+      "metadata_title": "L113: Safe use of lifting equipment"
+    },
+    {
+      "filename": "HSE L22.pdf",
+      "relative_path": "HSE L22.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "HSE L22",
+      "revision_year": null,
+      "page_count": 84,
+      "byte_size": 1540762,
+      "metadata_title": "Safe use of work equipment. Provision and Use of Work Equipment Regulations 1998. Approved Code of Practice and guidance L22"
+    },
+    {
+      "filename": "IEC_17024_2026_Conformity_assessment_General_requirements_for_bodies.pdf",
+      "relative_path": "IEC_17024_2026_Conformity_assessment_General_requirements_for_bodies.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "IEC_17024_2026_Conformity_assessment_General_requirements_for_bodies",
+      "revision_year": null,
+      "page_count": 32,
+      "byte_size": 19507375,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 14001 2015 Amd 1 2024 (en).pdf",
+      "relative_path": "ISO 14001 2015 Amd 1 2024 (en).pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO 14001 2015 Amd 1 2024 (en)",
+      "revision_year": 2024,
+      "page_count": 6,
+      "byte_size": 1127498,
+      "metadata_title": "ISO 14001:2015/Amd 1:2024"
+    },
+    {
+      "filename": "ISO 9001-2026.pdf",
+      "relative_path": "ISO 9001-2026.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO 9001-2026",
+      "revision_year": 2026,
+      "page_count": 48,
+      "byte_size": 8357726,
+      "metadata_title": "ISO 9001-2026"
+    },
+    {
+      "filename": "ISO IEC 17020 2026.pdf",
+      "relative_path": "ISO IEC 17020 2026.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO IEC 17020 2026",
+      "revision_year": 2026,
+      "page_count": 29,
+      "byte_size": 3649376,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC 17065-2012.pdf",
+      "relative_path": "ISO IEC 17065-2012.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO IEC 17065-2012",
+      "revision_year": 2012,
+      "page_count": 34,
+      "byte_size": 333497,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC 27001-2022 amd1-2024.pdf",
+      "relative_path": "ISO IEC 27001-2022 amd1-2024.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO IEC 27001-2022 amd1-2024",
+      "revision_year": 2024,
+      "page_count": 0,
+      "byte_size": 175629,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC IEEE 12207-2-2020.pdf",
+      "relative_path": "ISO IEC IEEE 12207-2-2020.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "ISO IEC IEEE 12207-2-2020",
+      "revision_year": 2020,
+      "page_count": 278,
+      "byte_size": 5694401,
+      "metadata_title": ""
+    },
+    {
+      "filename": "PD_ISO_IEC_TS_17021_15_2023_Conformity_assessment_requirements_for.pdf",
+      "relative_path": "PD_ISO_IEC_TS_17021_15_2023_Conformity_assessment_requirements_for.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "PD_ISO_IEC_TS_17021_15_2023_Conformity_assessment_requirements_for",
+      "revision_year": null,
+      "page_count": 14,
+      "byte_size": 1406717,
+      "metadata_title": "PD ISO/IEC TS 17021\u201115:2023"
+    },
+    {
+      "filename": "SAE IEEE-EIA-12207-0-2015.pdf",
+      "relative_path": "SAE IEEE-EIA-12207-0-2015.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "SAE IEEE-EIA-12207-0-2015",
+      "revision_year": 2015,
+      "page_count": 87,
+      "byte_size": 1637835,
+      "metadata_title": ""
+    },
+    {
+      "filename": "SAE IEEE-EIA-12207-1-2015.pdf",
+      "relative_path": "SAE IEEE-EIA-12207-1-2015.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "SAE IEEE-EIA-12207-1-2015",
+      "revision_year": 2015,
+      "page_count": 38,
+      "byte_size": 931937,
+      "metadata_title": ""
+    },
+    {
+      "filename": "bs en iso 5055-2021.pdf",
+      "relative_path": "bs en iso 5055-2021.pdf",
+      "domain": "CONFORMITY_AND_SOFTWARE_QUALITY",
+      "standard_code": "bs en iso 5055-2021",
+      "revision_year": 2021,
+      "page_count": 250,
+      "byte_size": 2501044,
+      "metadata_title": "BS ISO/IEC 5055:2021"
+    },
+    {
+      "filename": "01.BS 7121-1-2016.pdf",
+      "relative_path": "01.BS 7121-1-2016.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "01.BS 7121-1-2016",
+      "revision_year": 2016,
+      "page_count": 104,
+      "byte_size": 2135333,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BANKSMAN-Course-Material.pdf",
+      "relative_path": "BANKSMAN-Course-Material.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BANKSMAN-Course-Material",
+      "revision_year": null,
+      "page_count": 48,
+      "byte_size": 13352906,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BR 470.pdf",
+      "relative_path": "BR 470.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BR 470",
+      "revision_year": null,
+      "page_count": 7,
+      "byte_size": 6741966,
+      "metadata_title": "13th ANZ Conference on Geomechanics - Proceedings.pdf"
+    },
+    {
+      "filename": "BS 5975-1-2024.pdf",
+      "relative_path": "BS 5975-1-2024.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 5975-1-2024",
+      "revision_year": 2024,
+      "page_count": 0,
+      "byte_size": 2724599,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 5975-2-2024.pdf",
+      "relative_path": "BS 5975-2-2024.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 5975-2-2024",
+      "revision_year": 2024,
+      "page_count": 229,
+      "byte_size": 63394637,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 5975-2019.pdf",
+      "relative_path": "BS 5975-2019.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 5975-2019",
+      "revision_year": 2019,
+      "page_count": 250,
+      "byte_size": 23557325,
+      "metadata_title": "BS 5975:2019"
+    },
+    {
+      "filename": "BS 7121 - 2-3.pdf",
+      "relative_path": "BS 7121 - 2-3.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121 - 2-3",
+      "revision_year": null,
+      "page_count": 34,
+      "byte_size": 280847,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS 7121- 4.pdf",
+      "relative_path": "BS 7121- 4.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121- 4",
+      "revision_year": null,
+      "page_count": 102,
+      "byte_size": 859478,
+      "metadata_title": "30082940.pdf"
+    },
+    {
+      "filename": "BS 7121-1-2016.pdf",
+      "relative_path": "BS 7121-1-2016.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-1-2016",
+      "revision_year": 2016,
+      "page_count": 104,
+      "byte_size": 7544780,
+      "metadata_title": "BS 7121-1-2016"
+    },
+    {
+      "filename": "BS 7121-13-2009.pdf",
+      "relative_path": "BS 7121-13-2009.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-13-2009",
+      "revision_year": 2009,
+      "page_count": 70,
+      "byte_size": 1609498,
+      "metadata_title": "www.bzfxw.com"
+    },
+    {
+      "filename": "BS 7121-14-2005.pdf",
+      "relative_path": "BS 7121-14-2005.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-14-2005",
+      "revision_year": 2005,
+      "page_count": 28,
+      "byte_size": 442713,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 7121-2-1-2012.pdf",
+      "relative_path": "BS 7121-2-1-2012.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-2-1-2012",
+      "revision_year": 2012,
+      "page_count": 50,
+      "byte_size": 987424,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS 7121-2-4 2025.pdf",
+      "relative_path": "BS 7121-2-4 2025.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-2-4 2025",
+      "revision_year": 2025,
+      "page_count": 44,
+      "byte_size": 6026470,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 7121-2-5-2012.pdf",
+      "relative_path": "BS 7121-2-5-2012.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-2-5-2012",
+      "revision_year": 2012,
+      "page_count": 40,
+      "byte_size": 891302,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS 7121-2-7-2012 A2-2022.pdf",
+      "relative_path": "BS 7121-2-7-2012 A2-2022.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-2-7-2012 A2-2022",
+      "revision_year": 2022,
+      "page_count": 21,
+      "byte_size": 698233,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 7121-2-9-2013-09.pdf",
+      "relative_path": "BS 7121-2-9-2013-09.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-2-9-2013-09",
+      "revision_year": 2013,
+      "page_count": 40,
+      "byte_size": 785230,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS 7121-3-2017+A1-2019.pdf",
+      "relative_path": "BS 7121-3-2017+A1-2019.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-3-2017+A1-2019",
+      "revision_year": 2019,
+      "page_count": 74,
+      "byte_size": 2591330,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 7121-5-2019.pdf",
+      "relative_path": "BS 7121-5-2019.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121-5-2019",
+      "revision_year": 2019,
+      "page_count": 128,
+      "byte_size": 3860848,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS 7121\u20117-2019.pdf",
+      "relative_path": "BS 7121\u20117-2019.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS 7121\u20117-2019",
+      "revision_year": 2019,
+      "page_count": 46,
+      "byte_size": 863704,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13000-2010 + A1-2014.pdf",
+      "relative_path": "BS EN 13000-2010 + A1-2014.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13000-2010 + A1-2014",
+      "revision_year": 2014,
+      "page_count": 0,
+      "byte_size": 2264500,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13001-1-2015.pdf",
+      "relative_path": "BS EN 13001-1-2015.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-1-2015",
+      "revision_year": 2015,
+      "page_count": 0,
+      "byte_size": 1407999,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13001-2-2014.pdf",
+      "relative_path": "BS EN 13001-2-2014.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-2-2014",
+      "revision_year": 2014,
+      "page_count": 0,
+      "byte_size": 1828638,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13001-3-1-2012 + A2-2018.pdf",
+      "relative_path": "BS EN 13001-3-1-2012 + A2-2018.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-1-2012 + A2-2018",
+      "revision_year": 2018,
+      "page_count": 120,
+      "byte_size": 2173702,
+      "metadata_title": "BS EN 13001\u20113\u20111:2012+A2:2018"
+    },
+    {
+      "filename": "BS EN 13001-3-2-2014.pdf",
+      "relative_path": "BS EN 13001-3-2-2014.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-2-2014",
+      "revision_year": 2014,
+      "page_count": 0,
+      "byte_size": 1384714,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13001-3-3-2014.pdf",
+      "relative_path": "BS EN 13001-3-3-2014.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-3-2014",
+      "revision_year": 2014,
+      "page_count": 0,
+      "byte_size": 1201165,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 13001-3-4-2018.pdf",
+      "relative_path": "BS EN 13001-3-4-2018.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-4-2018",
+      "revision_year": 2018,
+      "page_count": 114,
+      "byte_size": 1647811,
+      "metadata_title": "BS EN 13001-3-4:2018"
+    },
+    {
+      "filename": "BS EN 13001-3-5-2016+A1-2021.pdf",
+      "relative_path": "BS EN 13001-3-5-2016+A1-2021.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-5-2016+A1-2021",
+      "revision_year": 2021,
+      "page_count": 98,
+      "byte_size": 1926994,
+      "metadata_title": "BS EN 13001\u20113\u20115:2016+A1:2021"
+    },
+    {
+      "filename": "BS EN 13001-3-6-2018.pdf",
+      "relative_path": "BS EN 13001-3-6-2018.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS EN 13001-3-6-2018",
+      "revision_year": 2018,
+      "page_count": 60,
+      "byte_size": 2545666,
+      "metadata_title": "\ufeffBS EN 13001\u20113\u20116:2018\ufeff"
+    },
+    {
+      "filename": "BS ISO 20474-1-2017 - Earth-moving machinery \u2014 Safety- General.pdf",
+      "relative_path": "BS ISO 20474-1-2017 - Earth-moving machinery \u2014 Safety- General.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-1-2017 - Earth-moving machinery \u2014 Safety- General",
+      "revision_year": 2017,
+      "page_count": 52,
+      "byte_size": 1302438,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-10-2017 - Earth-moving machinery \u2014 Safety - Trenchers.pdf",
+      "relative_path": "BS ISO 20474-10-2017 - Earth-moving machinery \u2014 Safety - Trenchers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-10-2017 - Earth-moving machinery \u2014 Safety - Trenchers",
+      "revision_year": 2017,
+      "page_count": 20,
+      "byte_size": 957040,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-11-2017 - Earth-moving machinery \u2014 Safety - Landfild Compactors.pdf",
+      "relative_path": "BS ISO 20474-11-2017 - Earth-moving machinery \u2014 Safety - Landfild Compactors.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-11-2017 - Earth-moving machinery \u2014 Safety - Landfild Compactors",
+      "revision_year": 2017,
+      "page_count": 16,
+      "byte_size": 885601,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-12-2017 - Earth-moving machinery \u2014 Safety - Cable Excavators.pdf",
+      "relative_path": "BS ISO 20474-12-2017 - Earth-moving machinery \u2014 Safety - Cable Excavators.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-12-2017 - Earth-moving machinery \u2014 Safety - Cable Excavators",
+      "revision_year": 2017,
+      "page_count": 26,
+      "byte_size": 1146812,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-13-2017 - Earth-moving machinery \u2014 Safety - Rollers.pdf",
+      "relative_path": "BS ISO 20474-13-2017 - Earth-moving machinery \u2014 Safety - Rollers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-13-2017 - Earth-moving machinery \u2014 Safety - Rollers",
+      "revision_year": 2017,
+      "page_count": 32,
+      "byte_size": 1745870,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-15-2019-Requirements for compact tool carriers.pdf",
+      "relative_path": "BS ISO 20474-15-2019-Requirements for compact tool carriers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-15-2019-Requirements for compact tool carriers",
+      "revision_year": 2019,
+      "page_count": 20,
+      "byte_size": 529188,
+      "metadata_title": "\ufeffBS ISO 20474\u201115:2019\ufeff"
+    },
+    {
+      "filename": "BS ISO 20474-2-2017 - Earth-moving machinery \u2014 Safety - Dozers.pdf",
+      "relative_path": "BS ISO 20474-2-2017 - Earth-moving machinery \u2014 Safety - Dozers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-2-2017 - Earth-moving machinery \u2014 Safety - Dozers",
+      "revision_year": 2017,
+      "page_count": 18,
+      "byte_size": 882582,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-3-2017 - Earth-moving machinery \u2014 Safety - Loaders.pdf",
+      "relative_path": "BS ISO 20474-3-2017 - Earth-moving machinery \u2014 Safety - Loaders.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-3-2017 - Earth-moving machinery \u2014 Safety - Loaders",
+      "revision_year": 2017,
+      "page_count": 20,
+      "byte_size": 901799,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-4-2017 - Earth-moving machinery \u2014 Safety - Backhoe Loader.pdf",
+      "relative_path": "BS ISO 20474-4-2017 - Earth-moving machinery \u2014 Safety - Backhoe Loader.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-4-2017 - Earth-moving machinery \u2014 Safety - Backhoe Loader",
+      "revision_year": 2017,
+      "page_count": 24,
+      "byte_size": 1024951,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-5-2017 - Earth-moving machinery \u2014 Safety - Hydraulic Excavators.pdf",
+      "relative_path": "BS ISO 20474-5-2017 - Earth-moving machinery \u2014 Safety - Hydraulic Excavators.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-5-2017 - Earth-moving machinery \u2014 Safety - Hydraulic Excavators",
+      "revision_year": 2017,
+      "page_count": 28,
+      "byte_size": 1347602,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-6-2017 - Earth-moving machinery \u2014 Safety - Dumpers.pdf",
+      "relative_path": "BS ISO 20474-6-2017 - Earth-moving machinery \u2014 Safety - Dumpers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-6-2017 - Earth-moving machinery \u2014 Safety - Dumpers",
+      "revision_year": 2017,
+      "page_count": 20,
+      "byte_size": 815006,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-7-2017 - Earth-moving machinery \u2014 Safety - Scrapers.pdf",
+      "relative_path": "BS ISO 20474-7-2017 - Earth-moving machinery \u2014 Safety - Scrapers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-7-2017 - Earth-moving machinery \u2014 Safety - Scrapers",
+      "revision_year": 2017,
+      "page_count": 18,
+      "byte_size": 1073733,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-8-2017 - Earth-moving machinery \u2014 Safety - Graders.pdf",
+      "relative_path": "BS ISO 20474-8-2017 - Earth-moving machinery \u2014 Safety - Graders.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-8-2017 - Earth-moving machinery \u2014 Safety - Graders",
+      "revision_year": 2017,
+      "page_count": 16,
+      "byte_size": 866431,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 20474-9-2017 - Earth-moving machinery \u2014 Safety - Pipelayers.pdf",
+      "relative_path": "BS ISO 20474-9-2017 - Earth-moving machinery \u2014 Safety - Pipelayers.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS ISO 20474-9-2017 - Earth-moving machinery \u2014 Safety - Pipelayers",
+      "revision_year": 2017,
+      "page_count": 20,
+      "byte_size": 824706,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS-7121-2-2003.pdf",
+      "relative_path": "BS-7121-2-2003.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "BS-7121-2-2003",
+      "revision_year": 2003,
+      "page_count": 68,
+      "byte_size": 17533616,
+      "metadata_title": ""
+    },
+    {
+      "filename": "CIRIA C703 Crane stability on site.pdf",
+      "relative_path": "CIRIA C703 Crane stability on site.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "CIRIA C703 Crane stability on site",
+      "revision_year": null,
+      "page_count": 129,
+      "byte_size": 1932899,
+      "metadata_title": "pp start to 23.p65"
+    },
+    {
+      "filename": "feismo.com-gi-0007028-2007-crane-lifts-types-and-procedures-pr_fb190db5c66d4db867d7e1132db5ec37.pdf",
+      "relative_path": "feismo.com-gi-0007028-2007-crane-lifts-types-and-procedures-pr_fb190db5c66d4db867d7e1132db5ec37.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "feismo.com-gi-0007028-2007-crane-lifts-types-and-procedures-pr_fb190db5c66d4db867d7e1132db5ec37",
+      "revision_year": 2007,
+      "page_count": 16,
+      "byte_size": 619559,
+      "metadata_title": ""
+    },
+    {
+      "filename": "feismo.com-ipts-crane-and-rigging-training-manual-pr_e67f377435090cbc561c51cdb2870c26.pdf",
+      "relative_path": "feismo.com-ipts-crane-and-rigging-training-manual-pr_e67f377435090cbc561c51cdb2870c26.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "feismo.com-ipts-crane-and-rigging-training-manual-pr_e67f377435090cbc561c51cdb2870c26",
+      "revision_year": null,
+      "page_count": 562,
+      "byte_size": 34555512,
+      "metadata_title": ""
+    },
+    {
+      "filename": "toaz.info-0007-027-crane-suspended-personnel-platform-manbasket-operations-pr_7fd5fd9487a48c2a1b16adb50754b38d.pdf",
+      "relative_path": "toaz.info-0007-027-crane-suspended-personnel-platform-manbasket-operations-pr_7fd5fd9487a48c2a1b16adb50754b38d.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "toaz.info-0007-027-crane-suspended-personnel-platform-manbasket-operations-pr_7fd5fd9487a48c2a1b16adb50754b38d",
+      "revision_year": null,
+      "page_count": 9,
+      "byte_size": 63106,
+      "metadata_title": "Microsoft Word - 7_027 07-2011.doc"
+    },
+    {
+      "filename": "toaz.info-rigging-amp-crane-handbook-pr_b37d248a727ea2b83e3884ae708f093a.pdf",
+      "relative_path": "toaz.info-rigging-amp-crane-handbook-pr_b37d248a727ea2b83e3884ae708f093a.pdf",
+      "domain": "CRANES_AND_STABILITY",
+      "standard_code": "toaz.info-rigging-amp-crane-handbook-pr_b37d248a727ea2b83e3884ae708f093a",
+      "revision_year": null,
+      "page_count": 274,
+      "byte_size": 10666946,
+      "metadata_title": ""
+    },
+    {
+      "filename": "34 - Safe Use of Lifting Eng.pdf",
+      "relative_path": "34 - Safe Use of Lifting Eng.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "34 - Safe Use of Lifting Eng",
+      "revision_year": null,
+      "page_count": 24,
+      "byte_size": 408355,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ASME BTH-1-2023.pdf",
+      "relative_path": "ASME BTH-1-2023.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ASME BTH-1-2023",
+      "revision_year": 2023,
+      "page_count": 89,
+      "byte_size": 6267424,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 12062-1998 (2004).pdf",
+      "relative_path": "BS EN 12062-1998 (2004).pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "BS EN 12062-1998 (2004)",
+      "revision_year": 2004,
+      "page_count": 18,
+      "byte_size": 463863,
+      "metadata_title": "30106105.fm"
+    },
+    {
+      "filename": "BS ISO IEC IEEE 24641-2023.pdf",
+      "relative_path": "BS ISO IEC IEEE 24641-2023.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "BS ISO IEC IEEE 24641-2023",
+      "revision_year": 2023,
+      "page_count": 100,
+      "byte_size": 7809075,
+      "metadata_title": "BS ISO/IEC/IEEE 24641:2023"
+    },
+    {
+      "filename": "EN 473_2008.pdf",
+      "relative_path": "EN 473_2008.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "EN 473_2008",
+      "revision_year": null,
+      "page_count": 33,
+      "byte_size": 286297,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 29110-1-2011.pdf",
+      "relative_path": "ISO 29110-1-2011.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO 29110-1-2011",
+      "revision_year": 2011,
+      "page_count": 24,
+      "byte_size": 290127,
+      "metadata_title": "ISO/IEC TR 29110-1 E"
+    },
+    {
+      "filename": "ISO 29110-2-2011.pdf",
+      "relative_path": "ISO 29110-2-2011.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO 29110-2-2011",
+      "revision_year": 2011,
+      "page_count": 30,
+      "byte_size": 204728,
+      "metadata_title": "Microsoft Word - C051151e.doc"
+    },
+    {
+      "filename": "ISO 29110-3-2011.pdf",
+      "relative_path": "ISO 29110-3-2011.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO 29110-3-2011",
+      "revision_year": 2011,
+      "page_count": 14,
+      "byte_size": 242676,
+      "metadata_title": "ISO/IEC TR 29110-3"
+    },
+    {
+      "filename": "ISO 29110-5-1-1-2012.pdf",
+      "relative_path": "ISO 29110-5-1-1-2012.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO 29110-5-1-1-2012",
+      "revision_year": 2012,
+      "page_count": 42,
+      "byte_size": 589214,
+      "metadata_title": "ISO/IEC JTC 1/SC 07 N"
+    },
+    {
+      "filename": "ISO IEC 25002-2024.pdf",
+      "relative_path": "ISO IEC 25002-2024.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC 25002-2024",
+      "revision_year": 2024,
+      "page_count": 26,
+      "byte_size": 1965397,
+      "metadata_title": "ISO/IEC 25002:2024"
+    },
+    {
+      "filename": "ISO IEC 26580-2021.pdf",
+      "relative_path": "ISO IEC 26580-2021.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC 26580-2021",
+      "revision_year": 2021,
+      "page_count": 0,
+      "byte_size": 12275895,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC 29110-3-2-2018.pdf",
+      "relative_path": "ISO IEC 29110-3-2-2018.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC 29110-3-2-2018",
+      "revision_year": 2018,
+      "page_count": 0,
+      "byte_size": 698845,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC 29110-3-3-2016.pdf",
+      "relative_path": "ISO IEC 29110-3-3-2016.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC 29110-3-3-2016",
+      "revision_year": 2016,
+      "page_count": 0,
+      "byte_size": 737372,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC 29110-4-2-2021.pdf",
+      "relative_path": "ISO IEC 29110-4-2-2021.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC 29110-4-2-2021",
+      "revision_year": 2021,
+      "page_count": 0,
+      "byte_size": 1343244,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC IEEE 14764-2022.pdf",
+      "relative_path": "ISO IEC IEEE 14764-2022.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC IEEE 14764-2022",
+      "revision_year": 2022,
+      "page_count": 46,
+      "byte_size": 7302096,
+      "metadata_title": "ISO IEC IEEE 14764-2022"
+    },
+    {
+      "filename": "ISO IEC IEEE 24765-2017 .pdf",
+      "relative_path": "ISO IEC IEEE 24765-2017 .pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC IEEE 24765-2017 ",
+      "revision_year": 2017,
+      "page_count": 536,
+      "byte_size": 6135087,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC IEEE 26514-2022.pdf",
+      "relative_path": "ISO IEC IEEE 26514-2022.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC IEEE 26514-2022",
+      "revision_year": 2022,
+      "page_count": 0,
+      "byte_size": 1618563,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC IEEE 90003-2018.pdf",
+      "relative_path": "ISO IEC IEEE 90003-2018.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC IEEE 90003-2018",
+      "revision_year": 2018,
+      "page_count": 86,
+      "byte_size": 1352321,
+      "metadata_title": "ISO/IEC/IEEE International Standard - Software engineering -- Guidelines for the application of ISO 9001:2015 to computer software"
+    },
+    {
+      "filename": "ISO IEC TR 17026-2015.pdf",
+      "relative_path": "ISO IEC TR 17026-2015.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC TR 17026-2015",
+      "revision_year": 2015,
+      "page_count": 34,
+      "byte_size": 741762,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO IEC TR 29110-5-6-3-2019.pdf",
+      "relative_path": "ISO IEC TR 29110-5-6-3-2019.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO IEC TR 29110-5-6-3-2019",
+      "revision_year": 2019,
+      "page_count": 0,
+      "byte_size": 4962225,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO ISO IEC 29110-4-1-2018.pdf",
+      "relative_path": "ISO ISO IEC 29110-4-1-2018.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "ISO ISO IEC 29110-4-1-2018",
+      "revision_year": 2018,
+      "page_count": 28,
+      "byte_size": 768712,
+      "metadata_title": ""
+    },
+    {
+      "filename": "PD ISO IEC TR 29110-3-1-2015.pdf",
+      "relative_path": "PD ISO IEC TR 29110-3-1-2015.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "PD ISO IEC TR 29110-3-1-2015",
+      "revision_year": 2015,
+      "page_count": 0,
+      "byte_size": 1836152,
+      "metadata_title": ""
+    },
+    {
+      "filename": "PD ISO IEC TR 29110-3-4-2015.pdf",
+      "relative_path": "PD ISO IEC TR 29110-3-4-2015.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "PD ISO IEC TR 29110-3-4-2015",
+      "revision_year": 2015,
+      "page_count": 0,
+      "byte_size": 3548964,
+      "metadata_title": ""
+    },
+    {
+      "filename": "PD ISO IEC TR 29110-5-1-3 2017.pdf",
+      "relative_path": "PD ISO IEC TR 29110-5-1-3 2017.pdf",
+      "domain": "GENERAL_ENGINEERING",
+      "standard_code": "PD ISO IEC TR 29110-5-1-3 2017",
+      "revision_year": 2017,
+      "page_count": 90,
+      "byte_size": 5784946,
+      "metadata_title": "YHT Cover.qxd"
+    },
+    {
+      "filename": "API SPEC 2C 8TH ED (E1) (R 2025).pdf",
+      "relative_path": "API SPEC 2C 8TH ED (E1) (R 2025).pdf",
+      "domain": "MARINE_AND_OFFSHORE",
+      "standard_code": "API SPEC 2C 8TH ED (E1) (R 2025)",
+      "revision_year": 2025,
+      "page_count": 145,
+      "byte_size": 3395619,
+      "metadata_title": "2012 API Word Template"
+    },
+    {
+      "filename": "DNV-ST-E271  March 2023.pdf",
+      "relative_path": "DNV-ST-E271  March 2023.pdf",
+      "domain": "MARINE_AND_OFFSHORE",
+      "standard_code": "DNV-ST-E271  March 2023",
+      "revision_year": 2023,
+      "page_count": 109,
+      "byte_size": 3636633,
+      "metadata_title": "DNV-ST-E271 2.7-1 Offshore containers"
+    },
+    {
+      "filename": "DNVGL-RP-N103.pdf",
+      "relative_path": "DNVGL-RP-N103.pdf",
+      "domain": "MARINE_AND_OFFSHORE",
+      "standard_code": "DNVGL-RP-N103",
+      "revision_year": null,
+      "page_count": 222,
+      "byte_size": 23912181,
+      "metadata_title": ""
+    },
+    {
+      "filename": "MW+2.+DNV-ST-N001+Marine+operations (1).pdf",
+      "relative_path": "MW+2.+DNV-ST-N001+Marine+operations (1).pdf",
+      "domain": "MARINE_AND_OFFSHORE",
+      "standard_code": "MW+2.+DNV-ST-N001+Marine+operations (1)",
+      "revision_year": null,
+      "page_count": 725,
+      "byte_size": 8098874,
+      "metadata_title": "DNV-ST-N001 Marine operations and marine warranty"
+    },
+    {
+      "filename": "ASME BPVC 2023 Section VIII Div. 2.pdf",
+      "relative_path": "ASME BPVC 2023 Section VIII Div. 2.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ASME BPVC 2023 Section VIII Div. 2",
+      "revision_year": 2023,
+      "page_count": 0,
+      "byte_size": 21427836,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ASME BPVC 2023 Section VIII Div. 3.pdf",
+      "relative_path": "ASME BPVC 2023 Section VIII Div. 3.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ASME BPVC 2023 Section VIII Div. 3",
+      "revision_year": 2023,
+      "page_count": 0,
+      "byte_size": 15698515,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ASME BPVC 2023 Section VIII div. 1.pdf",
+      "relative_path": "ASME BPVC 2023 Section VIII div. 1.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ASME BPVC 2023 Section VIII div. 1",
+      "revision_year": 2023,
+      "page_count": 0,
+      "byte_size": 23744564,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ASTM E1417_E1417M-21.pdf",
+      "relative_path": "ASTM E1417_E1417M-21.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ASTM E1417_E1417M-21",
+      "revision_year": null,
+      "page_count": 12,
+      "byte_size": 214658,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ASTM E1444_E1444M-26.pdf",
+      "relative_path": "ASTM E1444_E1444M-26.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ASTM E1444_E1444M-26",
+      "revision_year": null,
+      "page_count": 16,
+      "byte_size": 684489,
+      "metadata_title": "E1444_E1444M-26.pdf"
+    },
+    {
+      "filename": "BS EN ISO 17635-2025.PDF",
+      "relative_path": "BS EN ISO 17635-2025.PDF",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 17635-2025",
+      "revision_year": 2025,
+      "page_count": 24,
+      "byte_size": 1228692,
+      "metadata_title": "BS EN ISO 17635:2025"
+    },
+    {
+      "filename": "BS EN ISO 3452-1 2021.pdf",
+      "relative_path": "BS EN ISO 3452-1 2021.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 3452-1 2021",
+      "revision_year": 2021,
+      "page_count": 34,
+      "byte_size": 2373425,
+      "metadata_title": "BS EN ISO 3452\u20111:2021"
+    },
+    {
+      "filename": "BS EN ISO 3452-2 2021.pdf",
+      "relative_path": "BS EN ISO 3452-2 2021.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 3452-2 2021",
+      "revision_year": 2021,
+      "page_count": 34,
+      "byte_size": 1732213,
+      "metadata_title": "BS EN ISO 3452\u20112:2021"
+    },
+    {
+      "filename": "BS EN ISO 3452-3 2013.pdf",
+      "relative_path": "BS EN ISO 3452-3 2013.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 3452-3 2013",
+      "revision_year": 2013,
+      "page_count": 16,
+      "byte_size": 1201567,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN ISO 3452-5 2008.pdf",
+      "relative_path": "BS EN ISO 3452-5 2008.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 3452-5 2008",
+      "revision_year": 2008,
+      "page_count": 14,
+      "byte_size": 351852,
+      "metadata_title": "Unknown"
+    },
+    {
+      "filename": "BS EN ISO 3452-6 2008.pdf",
+      "relative_path": "BS EN ISO 3452-6 2008.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "BS EN ISO 3452-6 2008",
+      "revision_year": 2008,
+      "page_count": 12,
+      "byte_size": 338025,
+      "metadata_title": "Unknown"
+    },
+    {
+      "filename": "ISO 3452-4-1998 scan.pdf",
+      "relative_path": "ISO 3452-4-1998 scan.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 3452-4-1998 scan",
+      "revision_year": 1998,
+      "page_count": 11,
+      "byte_size": 347704,
+      "metadata_title": "Printing"
+    },
+    {
+      "filename": "ISO 5817-2023.pdf",
+      "relative_path": "ISO 5817-2023.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 5817-2023",
+      "revision_year": 2023,
+      "page_count": 31,
+      "byte_size": 1456065,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 9712-2021.pdf",
+      "relative_path": "ISO 9712-2021.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 9712-2021",
+      "revision_year": 2021,
+      "page_count": 52,
+      "byte_size": 589244,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 9934-1 2015.pdf",
+      "relative_path": "ISO 9934-1 2015.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 9934-1 2015",
+      "revision_year": 2015,
+      "page_count": 22,
+      "byte_size": 553303,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 9934-2 2015.pdf",
+      "relative_path": "ISO 9934-2 2015.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 9934-2 2015",
+      "revision_year": 2015,
+      "page_count": 26,
+      "byte_size": 548539,
+      "metadata_title": ""
+    },
+    {
+      "filename": "ISO 9934-3-2015.pdf",
+      "relative_path": "ISO 9934-3-2015.pdf",
+      "domain": "NDT_AND_PRESSURE_EQUIPMENT",
+      "standard_code": "ISO 9934-3-2015",
+      "revision_year": 2015,
+      "page_count": 18,
+      "byte_size": 326003,
+      "metadata_title": ""
+    },
+    {
+      "filename": "29 CFR 1926.251 (up to date as of 9-16-2026).pdf",
+      "relative_path": "29 CFR 1926.251 (up to date as of 9-16-2026).pdf",
+      "domain": "OSHA_STATUTORY_SAFETY",
+      "standard_code": "29 CFR 1926.251 (up to date as of 9-16-2026)",
+      "revision_year": 2026,
+      "page_count": 8,
+      "byte_size": 104035,
+      "metadata_title": ""
+    },
+    {
+      "filename": "29 CFR Part 1926 Subpart H (up to date as of 9-16-2026).pdf",
+      "relative_path": "29 CFR Part 1926 Subpart H (up to date as of 9-16-2026).pdf",
+      "domain": "OSHA_STATUTORY_SAFETY",
+      "standard_code": "29 CFR Part 1926 Subpart H (up to date as of 9-16-2026)",
+      "revision_year": 2026,
+      "page_count": 9,
+      "byte_size": 119189,
+      "metadata_title": ""
+    },
+    {
+      "filename": "29 CFR Part 1926 Subpart P (up to date as of 9-16-2026).pdf",
+      "relative_path": "29 CFR Part 1926 Subpart P (up to date as of 9-16-2026).pdf",
+      "domain": "OSHA_STATUTORY_SAFETY",
+      "standard_code": "29 CFR Part 1926 Subpart P (up to date as of 9-16-2026)",
+      "revision_year": 2026,
+      "page_count": 51,
+      "byte_size": 1457325,
+      "metadata_title": ""
+    },
+    {
+      "filename": "01-ASME B30.1-2026.pdf",
+      "relative_path": "ASME B30/ASME/01-ASME B30.1-2026.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "01-ASME B30.1-2026",
+      "revision_year": 2026,
+      "page_count": 62,
+      "byte_size": 45035086,
+      "metadata_title": ""
+    },
+    {
+      "filename": "02-ASME B30.2-2022.pdf",
+      "relative_path": "ASME B30/ASME/02-ASME B30.2-2022.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "02-ASME B30.2-2022",
+      "revision_year": 2022,
+      "page_count": 44,
+      "byte_size": 1382267,
+      "metadata_title": ""
+    },
+    {
+      "filename": "03-ASME B30.3-2025.pdf",
+      "relative_path": "ASME B30/ASME/03-ASME B30.3-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "03-ASME B30.3-2025",
+      "revision_year": 2025,
+      "page_count": 62,
+      "byte_size": 3757955,
+      "metadata_title": "Tower Cranes Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "04-ASME B30.4 2020.pdf",
+      "relative_path": "ASME B30/ASME/04-ASME B30.4 2020.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "04-ASME B30.4 2020",
+      "revision_year": 2020,
+      "page_count": 42,
+      "byte_size": 669319,
+      "metadata_title": "Portal and Pedestal Cranes Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "05-ASME B30.5-2025.pdf",
+      "relative_path": "ASME B30/ASME/05-ASME B30.5-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "05-ASME B30.5-2025",
+      "revision_year": 2025,
+      "page_count": 74,
+      "byte_size": 8503433,
+      "metadata_title": "Mobile and Locomotive Cranes Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "06-ASME B30.6 2020.pdf",
+      "relative_path": "ASME B30/ASME/06-ASME B30.6 2020.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "06-ASME B30.6 2020",
+      "revision_year": 2020,
+      "page_count": 43,
+      "byte_size": 2538515,
+      "metadata_title": "Derricks Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "07-ASME B30.7-2026.pdf",
+      "relative_path": "ASME B30/ASME/07-ASME B30.7-2026.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "07-ASME B30.7-2026",
+      "revision_year": 2026,
+      "page_count": 30,
+      "byte_size": 1346889,
+      "metadata_title": ""
+    },
+    {
+      "filename": "08-ASME B30.8 2020.pdf",
+      "relative_path": "ASME B30/ASME/08-ASME B30.8 2020.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "08-ASME B30.8 2020",
+      "revision_year": 2020,
+      "page_count": 45,
+      "byte_size": 738532,
+      "metadata_title": "Floating Cranes and Floating Derricks Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "09-ASME B30.9_2025.pdf",
+      "relative_path": "ASME B30/ASME/09-ASME B30.9_2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "09-ASME B30.9_2025",
+      "revision_year": null,
+      "page_count": 65,
+      "byte_size": 39795032,
+      "metadata_title": ""
+    },
+    {
+      "filename": "10-ASME B30.10-2024.pdf",
+      "relative_path": "ASME B30/ASME/10-ASME B30.10-2024.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "10-ASME B30.10-2024",
+      "revision_year": 2024,
+      "page_count": 29,
+      "byte_size": 16137911,
+      "metadata_title": ""
+    },
+    {
+      "filename": "11-ASME B30.11 2010.pdf",
+      "relative_path": "ASME B30/ASME/11-ASME B30.11 2010.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "11-ASME B30.11 2010",
+      "revision_year": 2010,
+      "page_count": 52,
+      "byte_size": 949577,
+      "metadata_title": "000920U001"
+    },
+    {
+      "filename": "12-ASME B30.12-2024.pdf",
+      "relative_path": "ASME B30/ASME/12-ASME B30.12-2024.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "12-ASME B30.12-2024",
+      "revision_year": 2024,
+      "page_count": 42,
+      "byte_size": 1234637,
+      "metadata_title": ""
+    },
+    {
+      "filename": "13-ASME B30.13 2022.pdf",
+      "relative_path": "ASME B30/ASME/13-ASME B30.13 2022.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "13-ASME B30.13 2022",
+      "revision_year": 2022,
+      "page_count": 33,
+      "byte_size": 1111901,
+      "metadata_title": ""
+    },
+    {
+      "filename": "14-ASME B30.14-2025.pdf",
+      "relative_path": "ASME B30/ASME/14-ASME B30.14-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "14-ASME B30.14-2025",
+      "revision_year": 2025,
+      "page_count": 39,
+      "byte_size": 9983394,
+      "metadata_title": "ASME B30.14-2025"
+    },
+    {
+      "filename": "15-ASME B30.15-1973.pdf",
+      "relative_path": "ASME B30/ASME/15-ASME B30.15-1973.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "15-ASME B30.15-1973",
+      "revision_year": 1973,
+      "page_count": 38,
+      "byte_size": 1670081,
+      "metadata_title": ""
+    },
+    {
+      "filename": "16-ASME B30.16-2022.pdf",
+      "relative_path": "ASME B30/ASME/16-ASME B30.16-2022.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "16-ASME B30.16-2022",
+      "revision_year": 2022,
+      "page_count": 46,
+      "byte_size": 1346005,
+      "metadata_title": "TKZQCY+UnifontMedium-Identity-H Adobe Identity 0"
+    },
+    {
+      "filename": "17-ASME B30.17-2020.pdf",
+      "relative_path": "ASME B30/ASME/17-ASME B30.17-2020.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "17-ASME B30.17-2020",
+      "revision_year": 2020,
+      "page_count": 0,
+      "byte_size": 2009581,
+      "metadata_title": ""
+    },
+    {
+      "filename": "18-ASME B30.18 2021.pdf",
+      "relative_path": "ASME B30/ASME/18-ASME B30.18 2021.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "18-ASME B30.18 2021",
+      "revision_year": 2021,
+      "page_count": 38,
+      "byte_size": 436038,
+      "metadata_title": "LNJFUR+UnifontMedium-Identity-H Adobe Identity 0"
+    },
+    {
+      "filename": "19-ASME B30.19 2016.pdf",
+      "relative_path": "ASME B30/ASME/19-ASME B30.19 2016.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "19-ASME B30.19 2016",
+      "revision_year": 2016,
+      "page_count": 38,
+      "byte_size": 987657,
+      "metadata_title": ""
+    },
+    {
+      "filename": "20-ASME B30.20-2025.pdf",
+      "relative_path": "ASME B30/ASME/20-ASME B30.20-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "20-ASME B30.20-2025",
+      "revision_year": 2025,
+      "page_count": 74,
+      "byte_size": 5978045,
+      "metadata_title": ""
+    },
+    {
+      "filename": "21-ASME B30.21-2025.pdf",
+      "relative_path": "ASME B30/ASME/21-ASME B30.21-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "21-ASME B30.21-2025",
+      "revision_year": 2025,
+      "page_count": 37,
+      "byte_size": 717736,
+      "metadata_title": "Lever Hoists Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "22-ASME B30.22-2023.pdf",
+      "relative_path": "ASME B30/ASME/22-ASME B30.22-2023.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "22-ASME B30.22-2023",
+      "revision_year": 2023,
+      "page_count": 54,
+      "byte_size": 3275927,
+      "metadata_title": ""
+    },
+    {
+      "filename": "23-ASME B30.23 2022.pdf",
+      "relative_path": "ASME B30/ASME/23-ASME B30.23 2022.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "23-ASME B30.23 2022",
+      "revision_year": 2022,
+      "page_count": 38,
+      "byte_size": 536915,
+      "metadata_title": "Personnel Lifting Systems Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "24-ASME B30.24-2018.pdf",
+      "relative_path": "ASME B30/ASME/24-ASME B30.24-2018.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "24-ASME B30.24-2018",
+      "revision_year": 2018,
+      "page_count": 0,
+      "byte_size": 1806808,
+      "metadata_title": ""
+    },
+    {
+      "filename": "25-ASME B30.25 2018.pdf",
+      "relative_path": "ASME B30/ASME/25-ASME B30.25 2018.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "25-ASME B30.25 2018",
+      "revision_year": 2018,
+      "page_count": 44,
+      "byte_size": 2196933,
+      "metadata_title": ""
+    },
+    {
+      "filename": "26-ASME B30.26-2026.pdf",
+      "relative_path": "ASME B30/ASME/26-ASME B30.26-2026.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "26-ASME B30.26-2026",
+      "revision_year": 2026,
+      "page_count": 50,
+      "byte_size": 1976188,
+      "metadata_title": ""
+    },
+    {
+      "filename": "27-ASME B30.27-2025.pdf",
+      "relative_path": "ASME B30/ASME/27-ASME B30.27-2025.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "27-ASME B30.27-2025",
+      "revision_year": 2025,
+      "page_count": 46,
+      "byte_size": 3767245,
+      "metadata_title": "Material Placement Systems Safety Standard for Cableways, Cranes, Derricks, Hoists, Hooks, Jacks, and Slings"
+    },
+    {
+      "filename": "29-ASME B30.29 2018.pdf",
+      "relative_path": "ASME B30/ASME/29-ASME B30.29 2018.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "29-ASME B30.29 2018",
+      "revision_year": 2018,
+      "page_count": 45,
+      "byte_size": 4452599,
+      "metadata_title": ""
+    },
+    {
+      "filename": "30-ASME B30.30 2023.pdf",
+      "relative_path": "ASME B30/ASME/30-ASME B30.30 2023.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "30-ASME B30.30 2023",
+      "revision_year": 2023,
+      "page_count": 53,
+      "byte_size": 6933631,
+      "metadata_title": ""
+    },
+    {
+      "filename": "3002001203_Rigger's Handbook.PDF",
+      "relative_path": "3002001203_Rigger's Handbook.PDF",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "3002001203_Rigger's Handbook",
+      "revision_year": null,
+      "page_count": 156,
+      "byte_size": 5465620,
+      "metadata_title": ""
+    },
+    {
+      "filename": "32-ASME B30.32-2021.pdf",
+      "relative_path": "ASME B30/ASME/32-ASME B30.32-2021.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "32-ASME B30.32-2021",
+      "revision_year": 2021,
+      "page_count": 25,
+      "byte_size": 1080482,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 1492-1 2000+A1-2008.pdf",
+      "relative_path": "BS EN 1492-1 2000+A1-2008.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 1492-1 2000+A1-2008",
+      "revision_year": 2008,
+      "page_count": 40,
+      "byte_size": 1137103,
+      "metadata_title": "/home/gencode/overflow/cen/w1492p1/149-1.22088"
+    },
+    {
+      "filename": "BS EN 1492-2 2000+A1 2008+C2-2012.pdf",
+      "relative_path": "BS EN 1492-2 2000+A1 2008+C2-2012.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 1492-2 2000+A1 2008+C2-2012",
+      "revision_year": 2012,
+      "page_count": 32,
+      "byte_size": 1033689,
+      "metadata_title": "30170991.pdf"
+    },
+    {
+      "filename": "BS EN 1492-4 2004+A1-2008.pdf",
+      "relative_path": "BS EN 1492-4 2004+A1-2008.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 1492-4 2004+A1-2008",
+      "revision_year": 2008,
+      "page_count": 46,
+      "byte_size": 1276159,
+      "metadata_title": "Unknown"
+    },
+    {
+      "filename": "BS EN 818-1- 1996  Short Link Chain G8-General.pdf",
+      "relative_path": "BS EN 818-1- 1996  Short Link Chain G8-General.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 818-1- 1996  Short Link Chain G8-General",
+      "revision_year": 1996,
+      "page_count": 14,
+      "byte_size": 130123,
+      "metadata_title": "/home/gencode/cen/bsen8181/en8181-1.20860"
+    },
+    {
+      "filename": "BS EN 818-2-1996+A1-2008-Medium tolerance chain for chain slings - Grade 8.pdf",
+      "relative_path": "BS EN 818-2-1996+A1-2008-Medium tolerance chain for chain slings - Grade 8.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 818-2-1996+A1-2008-Medium tolerance chain for chain slings - Grade 8",
+      "revision_year": 2008,
+      "page_count": 24,
+      "byte_size": 371490,
+      "metadata_title": "Instruction Sheet"
+    },
+    {
+      "filename": "BS EN 818-4 -1996 A1-2008-Chain slings \u2014 Grade 8.pdf",
+      "relative_path": "BS EN 818-4 -1996 A1-2008-Chain slings \u2014 Grade 8.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 818-4 -1996 A1-2008-Chain slings \u2014 Grade 8",
+      "revision_year": 2008,
+      "page_count": 32,
+      "byte_size": 1766067,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS EN 818-5-1999-A1-2008-Chain slings \u2014 Grade 4.pdf",
+      "relative_path": "BS EN 818-5-1999-A1-2008-Chain slings \u2014 Grade 4.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 818-5-1999-A1-2008-Chain slings \u2014 Grade 4",
+      "revision_year": 2008,
+      "page_count": 28,
+      "byte_size": 575014,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS EN 818-7-2002-A1-2008 Fine tolerance hoist chain.pdf",
+      "relative_path": "BS EN 818-7-2002-A1-2008 Fine tolerance hoist chain.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "BS EN 818-7-2002-A1-2008 Fine tolerance hoist chain",
+      "revision_year": 2008,
+      "page_count": 38,
+      "byte_size": 606842,
+      "metadata_title": "Untitled"
+    },
+    {
+      "filename": "copsule_en-GB_compressed.pdf",
+      "relative_path": "copsule_en-GB_compressed.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "copsule_en-GB_compressed",
+      "revision_year": null,
+      "page_count": 410,
+      "byte_size": 5380723,
+      "metadata_title": ""
+    },
+    {
+      "filename": "rr-c_271f.pdf",
+      "relative_path": "rr-c_271f.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "rr-c_271f",
+      "revision_year": null,
+      "page_count": 45,
+      "byte_size": 460341,
+      "metadata_title": "Microsoft Word - RR-C-271FDTD5JUL11.doc"
+    },
+    {
+      "filename": "toaz.info-slings-and-rigging-pr_704a136652cc943088361cadbdb4e0fa.pdf",
+      "relative_path": "toaz.info-slings-and-rigging-pr_704a136652cc943088361cadbdb4e0fa.pdf",
+      "domain": "TACKLE_AND_RIGGING",
+      "standard_code": "toaz.info-slings-and-rigging-pr_704a136652cc943088361cadbdb4e0fa",
+      "revision_year": null,
+      "page_count": 14,
+      "byte_size": 898327,
+      "metadata_title": "SAUDI ARAMCO CONSTRUCTION SAFETY MANUAL"
+    },
+    {
+      "filename": "BS EN 12385-1-2002 + A1-2008 - general requirements.pdf",
+      "relative_path": "BS EN 12385-1-2002 + A1-2008 - general requirements.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-1-2002 + A1-2008 - general requirements",
+      "revision_year": 2008,
+      "page_count": 24,
+      "byte_size": 671043,
+      "metadata_title": "Unknown"
+    },
+    {
+      "filename": "BS EN 12385-2-2002 + A1-2008 -Part 2  Definitions, designation and classification.pdf",
+      "relative_path": "BS EN 12385-2-2002 + A1-2008 -Part 2  Definitions, designation and classification.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-2-2002 + A1-2008 -Part 2  Definitions, designation and classification",
+      "revision_year": 2008,
+      "page_count": 56,
+      "byte_size": 1147263,
+      "metadata_title": "www.bzfxw.com"
+    },
+    {
+      "filename": "BS EN 12385-3-2020-Steel wire ropes \u2014 Safety.pdf",
+      "relative_path": "BS EN 12385-3-2020-Steel wire ropes \u2014 Safety.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-3-2020-Steel wire ropes \u2014 Safety",
+      "revision_year": 2020,
+      "page_count": 30,
+      "byte_size": 1438842,
+      "metadata_title": "BS EN 12385\u20113:2020"
+    },
+    {
+      "filename": "BS EN 12385-4-2002 + A1-2008 - Part 4  Stranded ropes for general Lifting applications.pdf",
+      "relative_path": "BS EN 12385-4-2002 + A1-2008 - Part 4  Stranded ropes for general Lifting applications.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-4-2002 + A1-2008 - Part 4  Stranded ropes for general Lifting applications",
+      "revision_year": 2008,
+      "page_count": 32,
+      "byte_size": 634059,
+      "metadata_title": "untitled"
+    },
+    {
+      "filename": "BS EN 12385-5-2021 - Part 5  Stranded ropes for lifts.pdf",
+      "relative_path": "BS EN 12385-5-2021 - Part 5  Stranded ropes for lifts.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-5-2021 - Part 5  Stranded ropes for lifts",
+      "revision_year": 2021,
+      "page_count": 30,
+      "byte_size": 1838180,
+      "metadata_title": "BS EN 12385\u20115:2021"
+    },
+    {
+      "filename": "BS EN 12385-6-2004 - Part 6  Stranded ropes for mine shafts.pdf",
+      "relative_path": "BS EN 12385-6-2004 - Part 6  Stranded ropes for mine shafts.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-6-2004 - Part 6  Stranded ropes for mine shafts",
+      "revision_year": 2004,
+      "page_count": 28,
+      "byte_size": 191058,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 12385-7-2002 Part 7  Locked coil ropes for mine shafts.pdf",
+      "relative_path": "BS EN 12385-7-2002 Part 7  Locked coil ropes for mine shafts.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-7-2002 Part 7  Locked coil ropes for mine shafts",
+      "revision_year": 2002,
+      "page_count": 18,
+      "byte_size": 133185,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS EN 12385-8-2002 - Part 8 Stranded hauling and carrying-hauling ropes for cableway installations designed to carry persons.pdf",
+      "relative_path": "BS EN 12385-8-2002 - Part 8 Stranded hauling and carrying-hauling ropes for cableway installations designed to carry persons.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS EN 12385-8-2002 - Part 8 Stranded hauling and carrying-hauling ropes for cableway installations designed to carry persons",
+      "revision_year": 2002,
+      "page_count": 22,
+      "byte_size": 161107,
+      "metadata_title": ""
+    },
+    {
+      "filename": "BS ISO 4309-2017 - Cranes \u2014 Wire ropes.pdf",
+      "relative_path": "BS ISO 4309-2017 - Cranes \u2014 Wire ropes.pdf",
+      "domain": "WIRE_ROPES",
+      "standard_code": "BS ISO 4309-2017 - Cranes \u2014 Wire ropes",
+      "revision_year": 2017,
+      "page_count": 68,
+      "byte_size": 5578367,
+      "metadata_title": ""
+    }
+  ]
+}

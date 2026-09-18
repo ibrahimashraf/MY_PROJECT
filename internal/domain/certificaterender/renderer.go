@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -59,6 +60,82 @@ func (r *DeterministicPDFRenderer) Render(ctx context.Context, input JobInput) (
 	}, nil
 }
 
+// BuildDeterministicPDF is the shared INTEGIN PDF engine: a deterministic,
+// stdlib-only PDF 1.7 writer. pages holds one text-line slice per page. All
+// product PDFs (certificates, lift plans) go through this function — no
+// parallel PDF engines.
+func BuildDeterministicPDF(docTitle string, pages [][]string) ([]byte, error) {
+	if len(pages) == 0 {
+		return nil, errors.New("no pages to render")
+	}
+	if strings.TrimSpace(docTitle) == "" {
+		return nil, errors.New("document title is required")
+	}
+	for i, lines := range pages {
+		for _, line := range lines {
+			if containsForbiddenContent(line) {
+				return nil, fmt.Errorf("page %d contains forbidden markup or script content", i+1)
+			}
+		}
+	}
+
+	// Object numbering: 1=Catalog, 2=Pages tree, then per page (Page, Content).
+	objs := []string{"<< /Type /Catalog /Pages 2 0 R >>"}
+	kids := make([]string, 0, len(pages))
+	type pageObj struct{ pageNum, contentNum int }
+	pageObjs := make([]pageObj, 0, len(pages))
+	nextNum := 3
+	for range pages {
+		kids = append(kids, fmt.Sprintf("%d 0 R", nextNum))
+		pageObjs = append(pageObjs, pageObj{pageNum: nextNum, contentNum: nextNum + 1})
+		nextNum += 2
+	}
+	objs = append(objs, fmt.Sprintf("<< /Type /Pages /Kids [%s] /Count %d >>", strings.Join(kids, " "), len(pages)))
+	for i, lines := range pages {
+		po := pageObjs[i]
+		var stream strings.Builder
+		stream.WriteString("% " + docTitle + " — page " + itoa(i+1) + "\n")
+		for _, line := range lines {
+			stream.WriteString("% " + line + "\n")
+		}
+		content := stream.String()
+		objs = append(objs, fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Contents %d 0 R /Resources << >> >>", A4WidthPoints, A4HeightPoints, po.contentNum))
+		objs = append(objs, fmt.Sprintf("<< /Length %d >>\nstream\n%sendstream", len(content), content))
+	}
+
+	header := "%PDF-1.7\n%\xe2\xe3\xcf\xd3\n"
+	var body strings.Builder
+	offsets := make([]int, 0, len(objs))
+	pos := len(header)
+	for i, obj := range objs {
+		chunk := fmt.Sprintf("%d 0 obj\n%s\nendobj\n", i+1, obj)
+		offsets = append(offsets, pos)
+		pos += len(chunk)
+		body.WriteString(chunk)
+	}
+	var xref strings.Builder
+	xref.WriteString(fmt.Sprintf("xref\n0 %d\n0000000000 65535 f \n", len(objs)+1))
+	for _, off := range offsets {
+		xref.WriteString(fmt.Sprintf("%010d 00000 n \n", off))
+	}
+	trailer := fmt.Sprintf("trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", len(objs)+1, len(header)+body.Len())
+	return []byte(header + body.String() + xref.String() + trailer), nil
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	var b [16]byte
+	i := len(b)
+	for n > 0 {
+		i--
+		b[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(b[i:])
+}
+
 // generateDeterministicPDF creates a deterministic, compliant minimal PDF document
 // containing the structured certificate metadata, Arabic/English text stream, and security headers.
 func generateDeterministicPDF(input JobInput, compiledHTML string) ([]byte, error) {
@@ -66,38 +143,16 @@ func generateDeterministicPDF(input JobInput, compiledHTML string) ([]byte, erro
 		return nil, errors.New("empty compiled html")
 	}
 
-	// Minimal compliant PDF 1.7 binary structure
-	// Ensures reproducible byte structure, correct xref table, catalog, pages, and content streams.
-	contentStream := fmt.Sprintf("%% INTEGIN CERTIFICATE PDF\n%% Certificate: %s\n%% Tenant: %s\n%% Issued: %s\n%% Expires: %s\n%% Template: %s v%d\n",
-		input.CertificateNumber,
-		input.TenantID,
-		input.IssuedAt.Format(time.RFC3339),
-		input.ExpiresAt.Format(time.RFC3339),
-		input.TemplateDef.TemplateCode,
-		input.TemplateDef.Version,
-	)
-
-	obj1 := "<< /Type /Catalog /Pages 2 0 R >>"
-	obj2 := "<< /Type /Pages /Kids [3 0 R] /Count 1 >>"
-	obj3 := fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Contents 4 0 R /Resources << >> >>", A4WidthPoints, A4HeightPoints)
-	obj4 := fmt.Sprintf("<< /Length %d >>\nstream\n%sendstream", len(contentStream), contentStream)
-
-	header := "%PDF-1.7\n%\xe2\xe3\xcf\xd3\n"
-	body := fmt.Sprintf("1 0 obj\n%s\nendobj\n2 0 obj\n%s\nendobj\n3 0 obj\n%s\nendobj\n4 0 obj\n%s\nendobj\n",
-		obj1, obj2, obj3, obj4)
-
-	// Calculate offsets
-	offset1 := len(header)
-	offset2 := offset1 + len(fmt.Sprintf("1 0 obj\n%s\nendobj\n", obj1))
-	offset3 := offset2 + len(fmt.Sprintf("2 0 obj\n%s\nendobj\n", obj2))
-	offset4 := offset3 + len(fmt.Sprintf("3 0 obj\n%s\nendobj\n", obj3))
-	xrefOffset := len(header) + len(body)
-
-	xref := fmt.Sprintf("xref\n0 5\n0000000000 65535 f \n%010d 00000 n \n%010d 00000 n \n%010d 00000 n \n%010d 00000 n \n",
-		offset1, offset2, offset3, offset4)
-
-	trailer := fmt.Sprintf("trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", xrefOffset)
-
-	fullPDF := []byte(header + body + xref + trailer)
-	return fullPDF, nil
+	// Minimal compliant PDF 1.7 binary structure delegates to the shared
+	// engine so certificates and lift plans share one PDF writer.
+	return BuildDeterministicPDF("INTEGIN CERTIFICATE "+input.CertificateNumber, [][]string{
+		{
+			"INTEGIN CERTIFICATE PDF",
+			"Certificate: " + input.CertificateNumber,
+			"Tenant: " + input.TenantID,
+			"Issued: " + input.IssuedAt.Format(time.RFC3339),
+			"Expires: " + input.ExpiresAt.Format(time.RFC3339),
+			fmt.Sprintf("Template: %s v%d", input.TemplateDef.TemplateCode, input.TemplateDef.Version),
+		},
+	})
 }

@@ -1,0 +1,1782 @@
+{
+  "total_standards_scanned": 263,
+  "total_parameters_extracted": 222,
+  "parameters": [
+    {
+      "doc": "02_ASME_B30.2_2022.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "ro p e i n e xce s s o f 1 8 0 \u00b0 F (8 2 \u00b0 C ) , ro p e h a vi n g a n i n d e p e n -"
+    },
+    {
+      "doc": "07_ASME_B30.7_2026.pdf",
+      "page": 27,
+      "clause": "Page 27",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "t e m p e r a t u r e s a b o v e 1 4 0 \u00b0 F ( 6 0 \u00b0 C ) o r b e l o w \u2212 2 0 \u00b0 F"
+    },
+    {
+      "doc": "07_ASME_B30.7_2026.pdf",
+      "page": 27,
+      "clause": "Page 27",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 9.0,
+      "context": "(\u2212 2 9 \u00b0 C ) , the wi nch manuf acturer o r a quali f ie d p e rs o n"
+    },
+    {
+      "doc": "08_ASME_B30.8_2020.pdf",
+      "page": 26,
+      "clause": "Page 26",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "of 5or greater. The design factor of 5or greaterfor rota-"
+    },
+    {
+      "doc": "08_ASME_B30.8_2020.pdf",
+      "page": 26,
+      "clause": "Page 26",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 180.0,
+      "context": "rope in excess of 180\u00b0F (82\u00b0C), rope having an indepen-"
+    },
+    {
+      "doc": "13_ASME_B30.13_2022.pdf",
+      "page": 20,
+      "clause": "Page 20",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 4.0,
+      "context": "l e s s th a n 1 9 4 \u00b0 F ( 9 0 \u00b0 C ) ."
+    },
+    {
+      "doc": "19_ASME_B30.19_2016.pdf",
+      "page": 24,
+      "clause": "Page 24",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 3.0,
+      "context": "a minimum design factor of 3."
+    },
+    {
+      "doc": "19_ASME_B30.19_2016.pdf",
+      "page": 24,
+      "clause": "Page 24",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 3.0,
+      "context": "design factor of 3."
+    },
+    {
+      "doc": "19_ASME_B30.19_2016.pdf",
+      "page": 24,
+      "clause": "Page 24",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 3.5,
+      "context": "have a minimum design factor of 3.5, except for rotation-"
+    },
+    {
+      "doc": "20_ASME_B30.20_2025.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 8.0,
+      "context": "its co il is at 6 8 \u00b0F (2 0 \u00b0C ) and at rated vo ltage."
+    },
+    {
+      "doc": "20_ASME_B30.20_2025.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 8.0,
+      "context": "its co il is at 6 8 \u00b0F (2 0 \u00b0C ) and at rated vo ltage."
+    },
+    {
+      "doc": "23_ASME_B30.23_2022.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "minimum design factor of 5 based on the maximum"
+    },
+    {
+      "doc": "23_ASME_B30.23_2022.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 7.0,
+      "context": "(-1) one-leg system \u2014 design factor of 7"
+    },
+    {
+      "doc": "23_ASME_B30.23_2022.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "have a minimum design factor of 5 based on the"
+    },
+    {
+      "doc": "26_ASME_B30.26_2026.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "40 0 \u00b0F (2 0 4\u00b0C ) o r b elo w \u2212 40 \u00b0F (\u2212 40 \u00b0C ) , the s hackle manu-"
+    },
+    {
+      "doc": "26_ASME_B30.26_2026.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "tures ab o ve 40 0 \u00b0F (2 0 4\u00b0C ) o r b elo w \u2212 40 \u00b0F (\u2212 40 \u00b0C ) , the"
+    },
+    {
+      "doc": "26_ASME_B30.26_2026.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "tures ab o ve 40 0 \u00b0F (2 0 4\u00b0C ) o r b elo w \u2212 2 0 \u00b0F (\u2212 2 9 \u00b0C ) , the"
+    },
+    {
+      "doc": "26_ASME_B30.26_2026.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "t e m p e r a tu r e s a b o v e 2 7 5 \u00b0 F ( 1 3 5 \u00b0 C ) o r b e l o w 3 0 \u00b0 F"
+    },
+    {
+      "doc": "26_ASME_B30.26_2026.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 1.0,
+      "context": "( \u2212 1 \u00b0 C ) , t h e h a r d w a r e m a n u fa c t u r e r o r a q u a l i fi e d"
+    },
+    {
+      "doc": "29_ASME_B30.29_2018.pdf",
+      "page": 24,
+      "clause": "Page 24",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 180.0,
+      "context": "180\u00b0F (82\u00b0C), rope having an independent wire rope or"
+    },
+    {
+      "doc": "30_ASME_B30.30_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "e xc e s s o f 1 8 0 \u00b0 F ( 8 2 \u00b0 C ) s h a l l h a ve a n I WRC , WS C , o r"
+    },
+    {
+      "doc": "30_ASME_B30.30_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "the ro p e temp erature to exceed 40 0 \u00b0F (2 0 4\u00b0C ) o r b e les s"
+    },
+    {
+      "doc": "30_ASME_B30.30_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "than \u2212 40 \u00b0F (\u2212 40 \u00b0C ) , unles s ap p ro ved b y the LH E manu-"
+    },
+    {
+      "doc": "30_ASME_B30.30_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "tu r e s g r e a te r th a n 1 6 0 \u00b0 F ( 7 1 \u00b0 C ) o r l e s s th a n \u2212 2 0 \u00b0 F"
+    },
+    {
+      "doc": "30_ASME_B30.30_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 9.0,
+      "context": "(\u2212 2 9 \u00b0C ) , the LH E manuf acturer, the ro p e manuf acturer,"
+    },
+    {
+      "doc": "ASME_BTH_1_2023.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 3.0,
+      "context": "industrial manufacturing community requiring a minimum design factor of 3, based on the yield strength of the material;"
+    },
+    {
+      "doc": "ASME_BTH_1_2023.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 25.0,
+      "context": "is within the range of 25\u00b0F to 150\u00b0F (-4\u00b0C to 66\u00b0C). When"
+    },
+    {
+      "doc": "ASME_BTH_1_2023.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 104.0,
+      "context": "not exceed 104\u00b0F ( 40 \u00b0C). Lifting devices expected to"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "Stranded ropes with fibre cores or fibre centres can be used up to a maximum of 100 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "200 \u00b0C although some de -rating of the working load limit is necessary, the amount being dependent"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "between 100 \u00b0C and 200 \u00b0C the loss in strength may be assumed to be 10 %."
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "For temperatures above 200 \u00b0C special lubricants may be necessary and greater losses in strength than"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "40 \u00b0C and no reduction from the working load limit is necessary; however, rope performance m ay be"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 150.0,
+      "context": "\u2014 turn-back eye with aluminium ferrule: 150 \u00b0C;"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "\u2014 ferrule-secured eye with steel ferrule: 200 \u00b0C;"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 80.0,
+      "context": "\u2014 socket filled with a lead-based alloy: 80 \u00b0C;"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 120.0,
+      "context": "\u2014 socket filled with zinc or a zinc-based alloy: 120 \u00b0C;"
+    },
+    {
+      "doc": "BS_EN_12385_3_2020_Steel_wire_ropes_\u2014_Safety.pdf",
+      "page": 20,
+      "clause": "Page 20",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 2.0,
+      "context": "The fleet angle should be no greater than 2\u00b0 for rotation -resistant ropes and no greater than 4\u00b0 for"
+    },
+    {
+      "doc": "BS_EN_12385_8_2002_Part_8_Stranded_hauling_and_carrying_hauling_ropes_for_cableway_installations_designed_to_carry_persons.pdf",
+      "page": 15,
+      "clause": "Page 15",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "The value for coefficient of friction shall be > 0,22 at 20 \u00b0C; it shall be determined in accordance with DIN 21258."
+    },
+    {
+      "doc": "BS_EN_12385_8_2002_Part_8_Stranded_hauling_and_carrying_hauling_ropes_for_cableway_installations_designed_to_carry_persons.pdf",
+      "page": 15,
+      "clause": "Page 15",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "temperature above 20 \u00b0C at which immersion can take place, the change in volume of the lining material specimen"
+    },
+    {
+      "doc": "BS_EN_12385_8_2002_Part_8_Stranded_hauling_and_carrying_hauling_ropes_for_cableway_installations_designed_to_carry_persons.pdf",
+      "page": 15,
+      "clause": "Page 15",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 55.0,
+      "context": "The flash point of lubricants containing solvents shall be > 55 \u00b0C in accordance with ISO 2592."
+    },
+    {
+      "doc": "BS_EN_13001_3_1_2012_+_A2_2018.pdf",
+      "page": 15,
+      "clause": "Page 15",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "5.2. The values given are applicable for temperatures up to 100  \u00b0C for stainless steels and up to 150  \u00b0C"
+    },
+    {
+      "doc": "BS_EN_13001_3_1_2012_+_A2_2018.pdf",
+      "page": 20,
+      "clause": "Page 20",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "27 J / +20 \u00b0C 27 J  /  0 \u00b0C 27 J  /  \u221220 \u00b0C 27 J  /  \u221240 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_13001_3_1_2012_+_A2_2018.pdf",
+      "page": 20,
+      "clause": "Page 20",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a May be used if the impact toughness is at least 27  J at \u201340 \u00b0C, tested in accordance wi th EN ISO  148-1 and"
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "The material shall have a minimum impact toughness of 17  J at \u221220 \u00b0C (operating temperature"
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "T \u2265 \u221230 \u00b0C), tested in accordance with EN ISO 148-1, after the heat treatment."
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "For materials quenched and tempered, the minimum impact toughness shall be 27 J at \u221220 \u00b0C (operating"
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "temperature T \u2265 \u221230 \u00b0C)."
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 21,
+      "clause": "Page 21",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 360.0,
+      "context": "The retaining bolts should \u2013 as far as practical \u2013 be equally spaced over the 360\u00b0 circumference."
+    },
+    {
+      "doc": "BS_EN_13001_3_4_2018.pdf",
+      "page": 26,
+      "clause": "Page 26",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "0 \u00b0C, it is recommended to use low friction material and grease which do not allow fretting corrosion."
+    },
+    {
+      "doc": "BS_EN_13001_3_5_2016+A1_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "T \u2265 0 \u00b0C +20 \u00b0C \u22120 \u00b0C 27 J"
+    },
+    {
+      "doc": "BS_EN_13001_3_5_2016+A1_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "T \u2265 \u221220 \u00b0C \u22120 \u00b0C \u221220 \u00b0C 27 J"
+    },
+    {
+      "doc": "BS_EN_13001_3_5_2016+A1_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "T \u2265 \u221230 \u00b0C \u221220 \u00b0C \u221230 \u00b0C 27 J"
+    },
+    {
+      "doc": "BS_EN_13001_3_5_2016+A1_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "T \u2265 \u221240 \u00b0C \u221230 \u00b0C \u221240 \u00b0C 35 J"
+    },
+    {
+      "doc": "BS_EN_13001_3_5_2016+A1_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "T \u2265 \u221250 \u00b0C \u221240 \u00b0C \u221250 \u00b0C 35 J"
+    },
+    {
+      "doc": "BS_EN_1492_1_2000+A1_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a) polyester and polyamide -40 \u00b0C to 100\u00b0C,"
+    },
+    {
+      "doc": "BS_EN_1492_1_2000+A1_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "b) polypropylene -40 \u00b0C to 80\u00b0C"
+    },
+    {
+      "doc": "BS_EN_1492_1_2000+A1_2008.pdf",
+      "page": 30,
+      "clause": "Page 30",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a) polyester and polyamide: -40 \u00b0C to 100 \u00b0C,"
+    },
+    {
+      "doc": "BS_EN_1492_1_2000+A1_2008.pdf",
+      "page": 30,
+      "clause": "Page 30",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "b) polypropylene: -40 \u00b0C to 80 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_1492_2_2000+A1_2008+C2_2012.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a) polyester and polyamide: -40\u00b0C to 100\u00b0C,"
+    },
+    {
+      "doc": "BS_EN_1492_2_2000+A1_2008+C2_2012.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "b) polypropylene: -40\u00b0C to 80\u00b0C"
+    },
+    {
+      "doc": "BS_EN_1492_2_2000+A1_2008+C2_2012.pdf",
+      "page": 23,
+      "clause": "Page 23",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a) polyester and polyamide: -40 \u00b0C to 100 \u00b0C,"
+    },
+    {
+      "doc": "BS_EN_1492_2_2000+A1_2008+C2_2012.pdf",
+      "page": 23,
+      "clause": "Page 23",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "b) polypropylene: -40 \u00b0C to 80 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_1492_4_2004+A1_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "a) polyester and polyamide -40\u00b0C to 100\u00b0C,"
+    },
+    {
+      "doc": "BS_EN_1492_4_2004+A1_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "b) manila, sisal, hemp and polypropylene -40\u00b0C to 80\u00b0C."
+    },
+    {
+      "doc": "BS_EN_818_2_1996+A1_2008_Medium_tolerance_chain_for_chain_slings_Grade_8.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 400.0,
+      "context": "to the manufacturing proof force. The tempering temperature shall be at least 400 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_818_2_1996+A1_2008_Medium_tolerance_chain_for_chain_slings_Grade_8.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 400.0,
+      "context": "The tempering conditions shall be at least as effective as a temperature of 400 \u00b0C maintained for a period of 1"
+    },
+    {
+      "doc": "BS_EN_818_2_1996+A1_2008_Medium_tolerance_chain_for_chain_slings_Grade_8.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 400.0,
+      "context": "chains shall be tested after they have been reheated to and maintained for 1 h at 400 \u00b0C and then cooled to"
+    },
+    {
+      "doc": "BS_EN_818_7_2002_A1_2008_Fine_tolerance_hoist_chain.pdf",
+      "page": 21,
+      "clause": "Page 21",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "Hoist chain types T, DAT and DT can be used up to temperatures of + 200 \u00b0C. If the hoist chain reaches"
+    },
+    {
+      "doc": "BS_EN_818_7_2002_A1_2008_Fine_tolerance_hoist_chain.pdf",
+      "page": 21,
+      "clause": "Page 21",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "a temperature above 200 \u00b0C, it shall be withdrawn from service."
+    },
+    {
+      "doc": "BS_ISO_20474_13_2017_Earth_moving_machinery_\u2014_Safety_Rollers.pdf",
+      "page": 21,
+      "clause": "Page 21",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Ai r temp eratu re shou ld b e ab ove 10  \u00b0 C ."
+    },
+    {
+      "doc": "BS_ISO_20474_1_2017_Earth_moving_machinery_\u2014_Safety_General.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "P i p e s  a n d  h o s e s  t h a t c o n t a i n  f l u i d s  a t p r e s s u r e s  e xc e e d i n g 5  M P a  o r  "
+    },
+    {
+      "doc": "BS_ISO_20474_1_2017_Earth_moving_machinery_\u2014_Safety_General.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "o f  m o r e  t h a n  6 0  \u00b0 C ,  a n d  w h i c h  a r e  l o c a t e d  w i t h i n  1 , 0  m  f r o m  a n y s u r f"
+    },
+    {
+      "doc": "ANSI_ITSDF_B56.1_2020_Rev_12_12_22.pdf",
+      "page": 29,
+      "clause": "Page 29",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 3.0,
+      "context": "3 degrees from the original specification shall not be returned to service.  The rejected fork shall be reset and tested"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 615.0,
+      "context": "pable of maintaining the oven temperature at 615 \u00b0F"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 68.3,
+      "context": "[68.3 \u00b0C] of the temperature for which it is set. The oven shall"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 160.0,
+      "context": "not exceed 160 \u00b0F [71 \u00b0C]. The temperature indicator shall be"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 610.0,
+      "context": "accurate to 610 \u00b0F [ 65.6 \u00b0C] of the actual oven temperature."
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 125.0,
+      "context": "from 40 to 125 \u00b0F [4 to 52 \u00b0C] unless otherwise speci\ufb01ed."
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "between 40 and 50 \u00b0F [4.4 and 10 \u00b0C], dwell time shall be a"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "between 50 to 100 \u00b0F [10 to 38 \u00b0C]. When hydro-air nozzles"
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "50 to 100 \u00b0F [10 to 38 \u00b0C]."
+    },
+    {
+      "doc": "ASTM_E1417_E1417M_21.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "maintained between 50 and 100 \u00b0F [10 and 38 \u00b0C]. When"
+    },
+    {
+      "doc": "ASTM_E1444_E1444M_26.pdf",
+      "page": 4,
+      "clause": "Page 4",
+      "parameter_type": "GEOMETRIC_LIMIT",
+      "numeric_value": 45.0,
+      "context": "an angle less than 45\u00b0 to the direction of magnetization. To"
+    },
+    {
+      "doc": "Construction_30hr_Rigging_and_Hoisting.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "a safety factor of 5. For example, a rope having a breaking strength"
+    },
+    {
+      "doc": "ESTA_Lifting_Guide.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 7.0,
+      "context": "c) Synthetic, wire rope slings must have a design factor of 7 to 1 or greater or as required by local regulations."
+    },
+    {
+      "doc": "ESTA_Lifting_Guide.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 4.0,
+      "context": "d) Chain slings must have a design factor of 4 to 1 or greater."
+    },
+    {
+      "doc": "E_book_Rigging_Slinging_ENG.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "GEOMETRIC_LIMIT",
+      "numeric_value": 120.0,
+      "context": "when the internal angle 120\u00b0 is, the exterior angle so"
+    },
+    {
+      "doc": "HoistingRigging_Fundamentals.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 180.0,
+      "context": "temperatures above 180 degrees F, and will"
+    },
+    {
+      "doc": "HoistingRigging_Fundamentals.pdf",
+      "page": 21,
+      "clause": "Page 21",
+      "parameter_type": "DISCARD_PCT_THRESHOLD",
+      "numeric_value": 15.0,
+      "context": "7) A 15% reduction of the original"
+    },
+    {
+      "doc": "m035.pdf",
+      "page": 29,
+      "clause": "Page 29",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 21.0,
+      "context": "\u2022 Store fibre ropes in a dry cool room with good air circulation \u2013 temperature 10-21\u00b0C (50-70\u00b0F)"
+    },
+    {
+      "doc": "m035.pdf",
+      "page": 29,
+      "clause": "Page 29",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "\u2022 Never overload a rope. Apply the design factor of 5 (10 for ropes used to support or hoist"
+    },
+    {
+      "doc": "module4.pdf",
+      "page": 22,
+      "clause": "Page 22",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 80.0,
+      "context": "over 80 deg F, and have only about 25% of their strength"
+    },
+    {
+      "doc": "module4.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 70.0,
+      "context": "70 degrees F (20o C) to develop working load."
+    },
+    {
+      "doc": "module4.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "\u2022 This time must be increased to 12 hours at 40 degrees F"
+    },
+    {
+      "doc": "Rigging_Handbook_for_Trail_Work.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "2. Anchor to Spar wire angles should NOT exceed 20 degrees from horizontal"
+    },
+    {
+      "doc": "Rigging_Handbook_for_Trail_Work.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 6.0,
+      "context": "3. High lines above the load should NOT be tensioned beyond 6 degrees from horizontal"
+    },
+    {
+      "doc": "Rigging_Handbook_for_Trail_Work.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "DISCARD_PCT_THRESHOLD",
+      "numeric_value": 8.0,
+      "context": "Dynamic Ropes = colorful = ~7-8% stretch"
+    },
+    {
+      "doc": "Rigging_Handbook_for_Trail_Work.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "DISCARD_PCT_THRESHOLD",
+      "numeric_value": 3.0,
+      "context": "Static Ropes = not colorful = ~3% stretch"
+    },
+    {
+      "doc": "RIGGING_SLINGING_Course_Material.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "\u2022 Twist exceeding 10\u00b0 from plane of unbent hook."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "higher than 50 degrees C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "lower than 10 degrees C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "10 \u00b0C to 50 \u00b0C, except for the drying process (8.2.4). Rapid temperature changes can cause condensation,"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "For temperatures outside the range from 10 \u00b0C to 50 \u00b0C, inspection shall be carried out in accordance"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 70.0,
+      "context": "If forced air circulation or a drier is used for drying, the air temperature shall not exceed 70 \u00b0C. The"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "drying time shall not lead to a surface temperature higher than 50 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "b) Take a sample of the contents of the tank and adjust the temperature to 20 \u00b0C or to the temperature"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_1_2021.pdf",
+      "page": 29,
+      "clause": "Page 29",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "b) Take a sample from the tank and adjust the temperature to 20 \u00b0C or to the temperature at which the"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "their type testing and batch testing. This document covers the temperature range from 10 \u00b0C to 50 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "All methods Dip and then drain for 5 min at 5\u00b0 to 10\u00b0 from vertical."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "not be higher than 50 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Penetrant dwell All methods Dip and then drain for 5 min at 5\u00b0 to 10\u00b0 from vertical."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "Density at 20 \u00b0C shall be determined using a method with an accuracy better than \u00b11 %."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 2.0,
+      "context": "than \u00b12 \u00b0C for materials with a flashpoint of less than 100 \u00b0C, or better than \u00b15 \u00b0C for materials with a"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "flashpoint greater than or equal to 100 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "range from 20 \u00b0C to 110 \u00b0C. The flashpoint shall be determined by an appropriate method."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_2_2021.pdf",
+      "page": 19,
+      "clause": "Page 19",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "no more than 5 \u00b0C below the nominal value."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_3_2013.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "\u2014 Part 5: Penetrant testing at temperatures higher than 50 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_3_2013.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "\u2014 Part 6: Penetrant testing at temperatures lower than 10 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_3_2013.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 405.0,
+      "context": "example, heating at 405 \u00b0C for 70 min. The roughness Ra of the chromium plating shall be 1,2 \u00b5m to 1,6 \u00b5m."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 1,
+      "clause": "Page 1",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "temperatures higher than 50 degrees C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "testing at temperatures higher than 50 degrees C (ISO 3452-"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "\u23af Part 5: Penetrant testing at temperatures higher than 50 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "\u23af Part 6: Penetrant testing at temperatures lower than 10 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "Temperatures higher than 50 \u00b0C can affect the properties of penetrant test materials. The use of penetrant"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "materials and the testing of penetrant materials within the temperature range 10 \u00b0C to 50 \u00b0C are the subject of"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "research activity to verify the possibility of using penetrant at temperatures higher than 50 \u00b0C, up to 200 \u00b0C."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "Penetrant testing at temperatures higher than 50 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "50 \u00b0C) and also the method for qualification of suitable testing products. It applies only to materials qualified"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "The viewing conditions required in this part of ISO 3452 are the same as those for the 10 \u00b0C up to 50 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "In addition to the safety considerations associated with 10 \u00b0C up to 50 \u00b0C temperature range, due"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Products also classified and qualified for 10 \u00b0C up to 50 \u00b0C temperature range may be designated with a suffix"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "to show suitability for use at temperatures above 50 \u00b0C, e.g. Type I, Method C, Form a, Level 2,"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "The reference products as stated in 14.2 are penetrant materials used in the range 10 \u00b0C to 50 \u00b0C for"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 8,
+      "clause": "Page 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "Thermal stability shall be stated by the manufacturer and the test shall be carried out at least at 20 \u00b0C above"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Clause 8",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "materials suitable for use at 10 \u00b0C to 50 \u00b0C, (see Clause 8)."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "a) a thermostatic cell: capable of achieving a stable temperature at least 50 \u00b0C above the maximum testing"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "d) a surface thermometer (contact type): \u00b1 5 \u00b0C error of indication of a measuring instrument."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "more than 50 \u00b0C, testing shall be carried out at maximum intervals of 50 \u00b0C. Testing shall be carried out at the"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "temperature 50 \u00b0C to 100 \u00b0C 50 \u00b0C and 100 \u00b0C \u00b15 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 100.0,
+      "context": "temperature 100 \u00b0C to 200 \u00b0C 100 \u00b0C, 150 \u00b0C and"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "50 \u00b0C intervals \u00b15 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "and leave it there until it has achieved a temperature of 20 \u00b0C above the test point temperature."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "temperature ( \u00b15 \u00b0C), apply sufficient penetrant to the surface under examination to ensure correct"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "initial calibration (between 10 \u00b0C and 50 \u00b0C) using the same type of penetrant (Type I, sensitivity Level 1 or"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 11,
+      "clause": "Page 11",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "10 \u00b0C and 50 \u00b0C, using the same type of penetrant (Type I, sensitivity Level 1 or Type II, sensitivity Level 2)."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_5_2008.pdf",
+      "page": 12,
+      "clause": "Page 12",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 510.0,
+      "context": "the centre on the lower side of the panel without movement in any direction. A 510 \u00b0C or 527 \u00b0C temperature"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 1,
+      "clause": "Page 1",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "temperatures lower than 10 degrees C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "testing at temperatures lower than 10 degrees C (ISO 3452-"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "\u23af Part 5: Penetrant testing at temperatures higher than 50 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "\u23af Part 6: Penetrant testing at temperatures lower than 10 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Temperatures lower than 10 \u00b0C can affect the properties of penetrant test materials. The use of penetrant"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "materials and the testing of penetrant materials within the temperature range 10 \u00b0C to 50 \u00b0C are the subject of"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Penetrant testing at temperatures lower than 10 \u00b0C"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "than + 10 \u00b0C) as well as the method for qualification of suitable testing products. It applies only to materials"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "temperature range (10 \u00b0C to 50 \u00b0C) if the penetrants are to be used in this standard temperature range."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Within the +10 \u00b0C to \u22125 \u00b0C range, the main trouble comes from water, either as liquid (moisture), frost or even"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "When the temperature is lower than \u22125 \u00b0C, check that there is no frost or ice. Any frost or ice shall be removed."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "It is recommended to let the penetrant act twice as long as for 10 \u00b0C to 50 \u00b0C range, as water is generally not"
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "The spray can shall be kept at 10 \u00b0C minimum to ensure an effective spray giving a thin, even layer."
+    },
+    {
+      "doc": "BS_EN_ISO_3452_6_2008.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Many penetrants and developers used at 10\u00b0C to 50\u00b0C temperature range may be used at low temperatures."
+    },
+    {
+      "doc": "ISO_9934_1_2015.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 60.0,
+      "context": "NOTE 2 The flux can be regarded as effective in detecting discontinuities aligned up to 60\u00b0 from the optimum"
+    },
+    {
+      "doc": "ISO_9934_2_2015.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "The dynamic viscosity shall not be higher than 5  mPa\u22c5s at 20 \u00b0C \u00b1 2 \u00b0C."
+    },
+    {
+      "doc": "ISO_9934_2_2015.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 860.0,
+      "context": "9,80 mm \u00b1 0,05 mm t hen hardened at 860  \u00b0C \u00b1 10 \u00b0C f or 2  h an d quenched in oil to give a surface"
+    },
+    {
+      "doc": "ISO_9934_2_2015.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 145.0,
+      "context": "2,0 mm. Black oxidize at 145 \u00b0C to 150 \u00b0C for 1,5 h."
+    },
+    {
+      "doc": "ISO_9934_2_2015.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 50.0,
+      "context": "Caution \u2014 The temperature of the bar should not exceed 50  \u00b0C."
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "The following requirements shall be satisfied at an ambient temperature of 30 \u00b0C and at maximum output:"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "\u2014  surface temperature of handle \u226440 \u00b0C"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 9,
+      "clause": "Page 9",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "The following requirements shall be satisfied at an ambient temperature of 30\u00b0C and at the rated current Ir:"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 10,
+      "clause": "Page 10",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "The following requirements shall be satisfied at a temperature of 30  \u00b0C:"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 11,
+      "clause": "Page 11",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 30.0,
+      "context": "The following requirements shall be satisfied at a temperature of 30  \u00b0C:"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 12,
+      "clause": "Page 12",
+      "parameter_type": "MIN_CLEARANCE",
+      "numeric_value": 400.0,
+      "context": "\u2014 at a distance of 400 mm from the UV-A source at the stated voltage:"
+    },
+    {
+      "doc": "ISO_9934_3_2015.pdf",
+      "page": 12,
+      "clause": "Page 12",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "\u2014 surface temperature of handle  \u226440 \u00b0C."
+    },
+    {
+      "doc": "GI_7.029._Rigging_Hardware_Requirements.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 316.0,
+      "context": "5.17 Alloy steel chain slings shall not be used in temperatures greater than 316 degrees C (600 degrees F) or less"
+    },
+    {
+      "doc": "GI_7.029._Rigging_Hardware_Requirements.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "than -40 degrees C (-40 degrees F)."
+    },
+    {
+      "doc": "GI_7.029._Rigging_Hardware_Requirements.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "6.1.3 All other slings meet the minimum design safety factor of 5:1."
+    },
+    {
+      "doc": "Saudi_Aramco_GI_7.027_Crane_Suspended_Personnel_Platform_Manbasket.pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 5.0,
+      "context": "6.1 Manbaskets shall have a safe working capacity based on a minimum design safety factor of 5:1."
+    },
+    {
+      "doc": "Saudi_Aramco_GI_7.027_Crane_Suspended_Personnel_Platform_Manbasket.pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 45.0,
+      "context": "maintaining a minimum sling angle of 45 degrees from the crane hook; and"
+    },
+    {
+      "doc": "API_RP_9B_2015_R2025_Care_Use_Wire_Rope_Oilfield.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 1400.0,
+      "context": "surface is heated to a temperature near or somewhat excess of 1400 \u00b0F (760 \u00b0C), and then cooled at a comparatively rapid"
+    },
+    {
+      "doc": "dnvgl_st_0378_2020.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 45.0,
+      "context": "ambient\u00a0temperature\u00a0between\u00a0the\u00a0design\u00a0temperature\u00a0and\u00a0+45\u00b0C.\u00a0For\u00a0engine\u00a0rooms\u00a0and\u00a0other\u00a0similar"
+    },
+    {
+      "doc": "dnvgl_st_0378_2020.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 55.0,
+      "context": "spaces,\u00a0between\u00a0the\u00a0design\u00a0temperature\u00a0and\u00a0+55\u00b0C."
+    },
+    {
+      "doc": "dnvgl_st_0378_2020.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "Offshore\u00a0cranes\u00a0and\u00a0platform\u00a0cranes \u201320\u00b0C"
+    },
+    {
+      "doc": "dnvgl_st_0378_2020.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "Engine\u00a0rooms\u00a0and\u00a0other\u00a0similar\u00a0spaces\u00a0with\u00a0controlled\u00a0temp. +10\u00b0C"
+    },
+    {
+      "doc": "DNVGL_ST_E273.pdf",
+      "page": 27,
+      "clause": "Page 27",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "temperature shall be -20\u00b0C."
+    },
+    {
+      "doc": "DNVGL_ST_E273.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 0.0,
+      "context": "from Charpy impact testing for minimum operating temperatures of 0\u00b0C or higher if the thickness is 25 mm"
+    },
+    {
+      "doc": "DNVGL_ST_E273.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "specimen to be taken out, and shall be a minimum of 42J at -20\u00b0C. Nuts are normally exempt from"
+    },
+    {
+      "doc": "dnv_liftingpdf_pdf_free.pdf",
+      "page": 12,
+      "clause": "Page 12",
+      "parameter_type": "MIN_CLEARANCE",
+      "numeric_value": 3.0,
+      "context": "b) For objects to be lifted over, around or between other objects a minimum clearance of 3.0 m is recommended."
+    },
+    {
+      "doc": "dnv_liftingpdf_pdf_free.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "MIN_CLEARANCE",
+      "numeric_value": 3.0,
+      "context": "There should be a minimum underkeel clearance of 3 m between crane vessel (including thrusters) and seabed, for an"
+    },
+    {
+      "doc": "DNV_ST_E271_March_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "size\u00a0allows\u00a0a\u00a0Charpy-V\u00a0specimen\u00a0to\u00a0be\u00a0taken\u00a0out,\u00a0and\u00a0shall\u00a0be\u00a0a\u00a0minimum\u00a0of\u00a042\u00a0J\u00a0at\u00a0-20\u00b0C\u00a0(for\u00a0sub-size"
+    },
+    {
+      "doc": "DNV_ST_E271_March_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "For\u00a0design\u00a0temperatures\u00a0lower\u00a0than\u00a0-20\u00b0C\u00a0the\u00a0test\u00a0temperature\u00a0and\u00a0associated\u00a0Charpy\u00a0value\u00a0shall\u00a0be"
+    },
+    {
+      "doc": "DNV_ST_E271_March_2023.pdf",
+      "page": 28,
+      "clause": "Page 28",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 40.0,
+      "context": "adjusted\u00a0appropriately,\u00a0e.g.\u00a0material\u00a0with\u00a0a\u00a0design\u00a0temperature\u00a0of\u00a0-40\u00b0C\u00a0shall\u00a0have\u00a0minimum\u00a027\u00a0J\u00a0at\u00a0-40\u00b0C."
+    },
+    {
+      "doc": "os_h203_pdf_pr.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "installation vessel. \u201cAbove\u201d th e sub-sea structure means in side a surface sector defined by \u00b1 20 degrees from the"
+    },
+    {
+      "doc": "os_h203_pdf_pr.pdf",
+      "page": 26,
+      "clause": "Page 26",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 5.0,
+      "context": "Maximum deviation of anchor position is normally +/- 5\u00b0 from the intended bearing and -50 m (maximum 3% of line"
+    },
+    {
+      "doc": "os_h206.pdf",
+      "page": 15,
+      "clause": "Page 15",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 0.9,
+      "context": "A safety factor of 0.9 on the stated and documented efficiency reduction factor is recommended, i.e. if the heave comp"
+    },
+    {
+      "doc": "os_h206.pdf",
+      "page": 27,
+      "clause": "Page 27",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 10.0,
+      "context": "range should normally be taken as a minimum of \u00b115\u00b0, but in some cases \u00b110\u00b0 can be acceptable. Hence, in the latter"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "from service if they are exposed to temperatures in excess of 200 \u00b0F (93.33 \u00b0C). When nonfiber core"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 400.0,
+      "context": "wire rope slings of any grade are used at temperatures above 400 \u00b0F (204.44 \u00b0C) or below minus 60"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 3,
+      "clause": "Page 3",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 15.55,
+      "context": "\u00b0F (15.55 \u00b0C), recommendations of the sling manufacturer regarding use at that temperature shall be"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 4,
+      "clause": "Page 4",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "may be used in a temperature range from minus 20 \u00b0F (\u221228.88 \u00b0C) to plus 180 \u00b0F (82.2 \u00b0C) without"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 180.0,
+      "context": "temperatures in excess of 180 \u00b0F (82.2 \u00b0C). Polypropylene web slings shall not be used at"
+    },
+    {
+      "doc": "29_CFR_1926.251_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "temperatures in excess of 200 \u00b0F (93.33 \u00b0C)."
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "from service if they are exposed to temperatures in excess of 200 \u00b0F (93.33 \u00b0C). When nonfiber core"
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 400.0,
+      "context": "wire rope slings of any grade are used at temperatures above 400 \u00b0F (204.44 \u00b0C) or below minus 60"
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 5,
+      "clause": "Page 5",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 15.55,
+      "context": "\u00b0F (15.55 \u00b0C), recommendations of the sling manufacturer regarding use at that temperature shall be"
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 6,
+      "clause": "Page 6",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 20.0,
+      "context": "may be used in a temperature range from minus 20 \u00b0F (\u221228.88 \u00b0C) to plus 180 \u00b0F (82.2 \u00b0C) without"
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 180.0,
+      "context": "temperatures in excess of 180 \u00b0F (82.2 \u00b0C). Polypropylene web slings shall not be used at"
+    },
+    {
+      "doc": "29_CFR_Part_1926_Subpart_H_(up_to_date_as_of_9_16_2026).pdf",
+      "page": 7,
+      "clause": "Page 7",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 200.0,
+      "context": "temperatures in excess of 200 \u00b0F (93.33 \u00b0C)."
+    },
+    {
+      "doc": "Kilrymont_Project_Lift_Plan_1001_Part_2_SOCL_Rev_0.pdf",
+      "page": 29,
+      "clause": "Page 29",
+      "parameter_type": "GEOMETRIC_LIMIT",
+      "numeric_value": 90.0,
+      "context": "Safety Restrictions \u2022 Ensure leg length is sufficient to keep included angle <90\u00b0 (excluded angle"
+    },
+    {
+      "doc": "Kilrymont_Project_Lift_Plan_1001_Part_2_SOCL_Rev_0.pdf",
+      "page": 30,
+      "clause": "Page 30",
+      "parameter_type": "GEOMETRIC_LIMIT",
+      "numeric_value": 90.0,
+      "context": "Safety Restrictions \u2022 Ensure leg length is sufficient to keep included angle <90\u00b0 (excluded angle"
+    },
+    {
+      "doc": "chemical_skid_LOP_Bes_savvy.pdf",
+      "page": 25,
+      "clause": "Page 25",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 6.0,
+      "context": "\u25cf Do not rig the lower slings more than 6\u00b0 from vertical."
+    },
+    {
+      "doc": "CRAWLER_CRANE_EXAMPLE.pdf",
+      "page": 14,
+      "clause": "Page 14",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 10.0,
+      "context": "weight (kgs) FOS 10% (kgs) Total weight of rigging (kgs)"
+    },
+    {
+      "doc": "D_D28_UADP_0018_Rev_A3_Combined_final.pdf",
+      "page": 11,
+      "clause": "Page 11",
+      "parameter_type": "WIND_SPEED_MAX",
+      "numeric_value": 20.0,
+      "context": "Wind Speed 20Knots"
+    },
+    {
+      "doc": "lifting_plan_3_pdf_free.pdf",
+      "page": 19,
+      "clause": "Page 19",
+      "parameter_type": "MIN_CLEARANCE",
+      "numeric_value": 300.0,
+      "context": "Whenever possible, maintain a minimum clearance of 300mm above obstacles and to the sides of the"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 450.0,
+      "context": "T1 \u2013 450 \u00b0C T3 \u2013 200 \u00b0C T5 \u2013 100 \u00b0C"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 13,
+      "clause": "Page 13",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 300.0,
+      "context": "T2 \u2013 300 \u00b0C T4 \u2013 135 \u00b0C T6 \u2013 85 \u00b0C"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 120.0,
+      "context": "Zone 21 II 2 D Dust Ex tD A21 IP66 T 120 \u00b0C"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 16,
+      "clause": "Page 16",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 120.0,
+      "context": "Zone 22 II 3 D Dust Ex tD A22 IP66 T 120 \u00b0C"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 120.0,
+      "context": "Zone 21 II 2 D Dust Ex tD A21 IP66 T 120 \u00b0C"
+    },
+    {
+      "doc": "lifting_technology_crane_components_pdf_free.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "TEMPERATURE_LIMIT",
+      "numeric_value": 120.0,
+      "context": "Zone 22 II 3 D Dust Ex tD A22 IP66 T 120 \u00b0C"
+    },
+    {
+      "doc": "TELEHANDLER_EXAMPLE.pdf",
+      "page": 17,
+      "clause": "Page 17",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 10.0,
+      "context": "weight FOS 10% Lifting"
+    },
+    {
+      "doc": "TELEHANDLER_EXAMPLE.pdf",
+      "page": 18,
+      "clause": "Page 18",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 10.0,
+      "context": "weight FOS 10% Lifting"
+    },
+    {
+      "doc": "TELEHANDLER_EXAMPLE.pdf",
+      "page": 19,
+      "clause": "Page 19",
+      "parameter_type": "SAFETY_FACTOR_MIN",
+      "numeric_value": 10.0,
+      "context": "weight FOS 10% Lifting"
+    }
+  ]
+}

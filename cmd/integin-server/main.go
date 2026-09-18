@@ -364,6 +364,7 @@ func main() {
 	auditLogHandler, _ := server.NewAuditLogHandler(database)
 	analyticsHandler, _ := server.NewAnalyticsHandler(database)
 	reportsHandler, _ := server.NewReportsHandler(database)
+	liftViewExportHandler, _ := server.NewLiftViewExportHandler()
 
 	var shortLinkHandler http.Handler
 	var riverQueue *queue.Queue
@@ -539,7 +540,7 @@ func main() {
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
+		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})

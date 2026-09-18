@@ -24,6 +24,9 @@ func TestDartSimulatorRoundTripEnrollsClaimed(t *testing.T) {
 	if err != nil {
 		t.Skip("dart not on PATH: skipping live round-trip")
 	}
+	if err := exec.Command(dartBin, "--version").Run(); err != nil {
+		t.Skipf("dart not functional (%v): skipping live round-trip", err)
+	}
 
 	const tenantID = "ten_roundtrip"
 	const inspectorID = "insp_roundtrip"

@@ -63,6 +63,7 @@ type Dependencies struct {
 	AuditLogHandler                http.Handler
 	AnalyticsHandler               http.Handler
 	ReportsHandler                 http.Handler
+	LiftViewExportHandler          http.Handler
 	AdvisoryHandler                http.Handler
 	ContextGroundHandler           http.Handler
 	ShortLinkHandler               http.Handler

@@ -25,6 +25,10 @@
                     <span id="time-display" class="val">t = 0.0s</span>
                 </div>
                 <div class="metric">
+                    <span class="label">Lift Phase:</span>
+                    <span id="phase-display" class="val warn">Stage 0: Rigging Pre-tension</span>
+                </div>
+                <div class="metric">
                     <span class="label">Spatial Clearance:</span>
                     <span id="clearance-display" class="val safe">CLEAR (3.42m)</span>
                 </div>
@@ -40,13 +44,31 @@
         </header>
 
         <div id="main-view">
+            <aside id="systems-panel">
+                <h2>Systems</h2>
+                <input type="text" id="system-search" placeholder="Search equipment, alias or ID…">
+                <div id="systems-list"></div>
+                <div id="assembly-summary"></div>
+            </aside>
+
+            <div id="canvas-wrap">
             <div id="canvas-container"></div>
+                <div id="view-toolbar">
+                <button data-mode="focus">Focus</button>
+                <button data-mode="isolate">Isolate</button>
+                <button data-mode="fade" class="active">Fade others</button>
+                <button data-mode="hide">Hide</button>
+                <button data-mode="xray">X-ray</button>
+                <button data-mode="reset">Reset</button>
+            </div>
+            <div id="breadcrumb"></div>
+            </div>
 
             <aside id="controls-panel">
                 <h2>4D Lift Sequence Control</h2>
                 
                 <div class="control-group">
-                    <label for="time-slider">Timeline ($t_0 \rightarrow t_{\text{final}}$):</label>
+                    <label for="time-slider">Timeline (t₀ → t_final):</label>
                     <input type="range" id="time-slider" min="0" max="60" value="0" step="0.5">
                     <div class="playback-actions">
                         <button id="btn-play">▶ Play</button>
@@ -73,15 +95,54 @@
                     <input type="range" id="crane2-slew" min="-90" max="90" value="-20">
                 </div>
 
+                <h2>Plan Inputs (user data)</h2>
+                <div class="control-group" id="plan-inputs">
+                    <label>Load mass (t)<input type="number" id="in-load" value="45" min="0.1" step="0.5"></label>
+                    <label>Chart cap Alpha (t)<input type="number" id="in-cap1" value="40" min="1" step="1"></label>
+                    <label>Chart cap Beta (t)<input type="number" id="in-cap2" value="40" min="1" step="1"></label>
+                    <label>Counterweight ea (t)<input type="number" id="in-cw" value="20" min="0" step="1"></label>
+                    <label>Machine weight Alpha (t)<input type="number" id="in-chassis1" value="60" min="1" step="1"></label>
+                    <label>Machine weight Beta (t)<input type="number" id="in-chassis2" value="60" min="1" step="1"></label>
+                    <label>Outrigger spread (m)<input type="number" id="in-spread" value="8.5" min="1" step="0.5"></label>
+                    <label>Sling angle (°)<input type="number" id="in-sling-angle" value="60" min="30" max="90" step="1"></label>
+                    <label>Sling MBL (t)<input type="number" id="in-sling-mbl" value="30" min="1" step="1"></label>
+                    <label>Rigging weight (t)<input type="number" id="in-rigging" value="2" min="0.1" step="0.1"></label>
+                    <label>Mat area / pad (m²)<input type="number" id="in-mat" value="3" min="0.25" step="0.25"></label>
+                    <label>Allowable (kPa)<input type="number" id="in-allow" value="220" min="10" step="10"></label>
+                    <label>CoG offset from A (m, -1 = mid)<input type="number" id="in-cog" value="-1" step="0.5"></label>
+                </div>
+
+                <h2>Geometry Inputs (user data)</h2>
+                <div class="control-group" id="geom-inputs">
+                    <label>Boom Alpha (m)<input type="number" id="in-boom1" value="30" min="5" step="1"></label>
+                    <label>Boom Beta (m)<input type="number" id="in-boom2" value="28" min="5" step="1"></label>
+                    <label>Base X Alpha (m)<input type="number" id="in-x1" value="-15" step="1"></label>
+                    <label>Base X Beta (m)<input type="number" id="in-x2" value="15" step="1"></label>
+                    <label>Load length (m)<input type="number" id="in-llen" value="12" min="1" step="0.5"></label>
+                    <label>Load radius (m)<input type="number" id="in-lrad" value="1.5" min="0.2" step="0.1"></label>
+                    <label>Timeline window (s)<input type="number" id="in-T" value="60" min="10" step="5"></label>
+                </div>
+
                 <h2>Manifest Binding</h2>
                 <div class="binding-card">
                     <p>Status: <strong class="badge-bound">1-Click Execution Ready</strong></p>
                     <p class="crypto-hash">Digest: <code id="manifest-digest">sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code></p>
                     <button id="btn-bind-manifest">Bind to Work Order</button>
                 </div>
+
+                <h2>Engine Export</h2>
+                <div class="binding-card">
+                    <p>Solved server-side: tandem equilibrium, gates, DXF views. Returns a sealed zip.</p>
+                    <p>Status: <strong id="export-status">idle</strong></p>
+                    <button id="btn-export">Export solved pack (.zip)</button>
+                </div>
+
+                <h2>Inspector</h2>
+                <div id="inspector"><p class="hint">Select a system or click an object in 3D.</p></div>
             </aside>
         </div>
     </div>
+    <script src="hierarchy.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -128,6 +128,9 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	if d.ReportsHandler != nil {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
 	}
+	if d.LiftViewExportHandler != nil {
+		mux.Handle("/api/v1/liftviews/export", d.LiftViewExportHandler)
+	}
 	if d.ShortLinkHandler != nil {
 		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
 		mux.Handle("/api/v1/admin/shortlinks/", d.ShortLinkHandler)
