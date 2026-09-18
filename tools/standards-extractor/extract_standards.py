@@ -36,12 +36,8 @@ from collections import Counter
 
 # Suppress harmless pypdf optional fontTools recommendation notice & stream recovery warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="pypdf")
-logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 # Set up logging paths
-
-
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(SCRIPT_DIR, "extraction.log")
 ERROR_FILE = os.path.join(SCRIPT_DIR, "extraction_errors.log")
@@ -55,6 +51,11 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("StandardExtractor")
+
+# Explicitly silence noisy pypdf internal warnings after basicConfig initialization
+for logger_name in ["pypdf", "pypdf._reader", "pypdf.generic"]:
+    logging.getLogger(logger_name).setLevel(logging.ERROR)
+    logging.getLogger(logger_name).propagate = False
 
 STANDARDS_DIR = r"c:\MY_PROJECT\standards"
 OUTPUT_MANIFEST = r"c:\MY_PROJECT\integin-pilot-source\pkg\standardsync\catalog\standards_manifest.json"
