@@ -34,9 +34,6 @@ import traceback
 import warnings
 from collections import Counter
 
-# Suppress harmless pypdf optional fontTools recommendation notice & stream recovery warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="pypdf")
-
 # Set up logging paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(SCRIPT_DIR, "extraction.log")
@@ -51,11 +48,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("StandardExtractor")
-
-# Explicitly silence noisy pypdf internal warnings after basicConfig initialization
-for logger_name in ["pypdf", "pypdf._reader", "pypdf.generic"]:
-    logging.getLogger(logger_name).setLevel(logging.ERROR)
-    logging.getLogger(logger_name).propagate = False
 
 STANDARDS_DIR = r"c:\MY_PROJECT\standards"
 OUTPUT_MANIFEST = r"c:\MY_PROJECT\integin-pilot-source\pkg\standardsync\catalog\standards_manifest.json"
@@ -104,66 +96,33 @@ def classify_domain(filename):
     return 'GENERAL_ENGINEERING'
 
 def extract_pdf_pages(path, max_pages=None):
-    """Extracts text pages using pypdfium2 (C-based Google PDFium engine) with pypdf fallback.
-    Immune to EOF trailer corruptions and encrypted AES streams."""
-    # 1. Primary engine: pypdfium2
+    """Extracts text pages using Google PDFium (pypdfium2 C engine).
+    Natively immune to trailer offset errors, missing EOF markers, and AES encryption issues."""
+    import pypdfium2 as pdfium
     try:
-        import pypdfium2 as pdfium
         pdf = pdfium.PdfDocument(path)
-        total = len(pdf)
-        limit = total if max_pages is None else min(total, max_pages)
-        digital_pages = []
-        scanned_pages = []
-        for i in range(limit):
-            try:
-                page = pdf[i]
-                txt = (page.get_textpage().get_text_range() or "").strip()
-                if len(txt) < 60:
-                    scanned_pages.append(i + 1)
-                else:
-                    digital_pages.append((i + 1, txt))
-            except Exception:
-                scanned_pages.append(i + 1)
-        pdf.close()
-        return total, digital_pages, scanned_pages
-    except Exception as pdfium_err:
-        pass
-
-    # 2. Fallback engine: pypdf
-    import pypdf
-    import io
-    reader = None
-    try:
-        reader = pypdf.PdfReader(path, strict=False)
-        total = len(reader.pages)
     except Exception as e:
-        try:
-            with open(path, "rb") as fp:
-                raw_bytes = fp.read()
-            if b"startxref" in raw_bytes and b"%%EOF" in raw_bytes:
-                repaired = re.sub(rb"startxref\s*(\d+)%%EOF", rb"startxref\n\1\n%%EOF", raw_bytes)
-                reader = pypdf.PdfReader(io.BytesIO(repaired), strict=False)
-                total = len(reader.pages)
-        except Exception:
-            pass
-
-    if reader is None:
-        logger.warning(f"Could not initialize reader for {os.path.basename(path)}")
+        logger.error(f"Could not open document {os.path.basename(path)}: {e}")
         return 0, [], []
 
+    total = len(pdf)
     limit = total if max_pages is None else min(total, max_pages)
     digital_pages = []
     scanned_pages = []
+
     for i in range(limit):
         try:
-            page = reader.pages[i]
-            txt = (page.extract_text() or "").strip()
+            page = pdf[i]
+            textpage = page.get_textpage()
+            txt = (textpage.get_text_range() or "").strip()
             if len(txt) < 60:
                 scanned_pages.append(i + 1)
             else:
                 digital_pages.append((i + 1, txt))
         except Exception:
             scanned_pages.append(i + 1)
+    
+    pdf.close()
     return total, digital_pages, scanned_pages
 
 
