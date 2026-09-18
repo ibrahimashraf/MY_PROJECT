@@ -598,15 +598,34 @@ The following 17 items represent the remaining identified blind spots across Spr
 
 ---
 
-## 17. 🧭 Next Session Plan: Universal Parametric CAD & Rigging Workbench
+## 17. 🧭 Next Session Plan: Universal Sovereign CAD/CAE Modeling & Rigging Workbench
 
-1. **WebGPU CAD Interactive Workbench Canvas (`tools/cad-workbench`):**
-   - Wire 2-point scale calibration into interactive WebGPU/WebGL canvas.
-   - Drawing layer imports (PDF vector, DWG/DXF background underlay).
-   - O-Snap visual markers (square for endpoint, triangle for midpoint, circle for center).
-2. **Kinematic Dynamic Blocks & Rigging Visualizer:**
-   - Link parametric grips (boom extend, slew angle, hook radius) to `pkg/cad/engine/dynamic_block.go`.
-   - Real-time duty chart capacity interpolation & outrigger ground bearing heatmaps.
+The master roadmap for INTEGIN to surpass traditional legacy suites (AutoCAD, SolidWorks, Blender, MATLAB, Navisworks) by uniting precision geometry, parametric dynamic blocks, and real-time TIC statutory compliance:
+
+### Phase 6.1: WebGPU 2D/3D Precision CAD & Calibration Workbench (`tools/cad-workbench`)
+- [ ] **Interactive Viewport**: Hardware-accelerated WebGPU/WGSL canvas with fallback (Web, Desktop, Field Tablet).
+- [ ] **2-Point Scale Calibration**: Click 2 known drawing points, input real-world meters $\rightarrow$ computes scale ratio via `pkg/cad/engine/calibration.go`.
+- [ ] **Precision Drafting & Measuring**: Ruler, tape measure, linear dimensions, area/perimeter calculator.
+- [ ] **Smart O-Snap System**: Real-time geometric inference engine (`SnapEndpoint`, `SnapMidpoint`, `SnapCenter`, intersection, tangent, perpendicular).
+- [ ] **Multi-Format Vector Layer Import**: Native DWG, DXF, SVG, and vector PDF background underlay with opacity & layer toggles.
+
+### Phase 6.2: Parametric Dynamic Blocks & Kinematic Solver
+- [ ] **Interactive Grips**: Telescoping boom extension, boom angle pivot, fly jib articulation, 360° slew radius circle.
+- [ ] **Bi-directional Kinematics**: Live forward and inverse solver ($R \leftrightarrow \theta \leftrightarrow H$) connected to `pkg/cad/engine/dynamic_block.go`.
+- [ ] **Factory Model Library**: Parametric dimension blocks for mobile, crawler, tower, and pick-and-carry cranes (Valla, Liebherr, Tadano, Manitowoc).
+- [ ] **Dynamic Load Chart Interpolation**: Live duty rating lookups with color-coded safety margins (Safe <75%, Caution 75-90%, Warning >90%).
+
+### Phase 6.3: Advanced Rigging Engineering & Multi-Physics (MATLAB/Cranimax Grade)
+- [ ] **3D Multi-Leg Bridle Solver**: Analytical tension vectors for 2-leg, 3-leg, and 4-leg slings with horizontal angle derating.
+- [ ] **CoG 3D Spatial Resolver**: Multi-component center of gravity calculation and pick-point balancing.
+- [ ] **Outrigger GBP & Soil FEA**: Dynamic ground bearing pressure ($P_{\text{max}}$) per outrigger pad vs. allowable soil bearing capacity (`pkg/cad/structural`).
+- [ ] **Headroom & Rigging Clearance**: Live checks for sling headroom, hook elevation, spreader bar clearance, and facade collision.
+
+### Phase 6.4: 4D Temporal Clash & Statutory Lift Plan Export
+- [ ] **4D Timeline Simulation**: Scrub $t_0 \to t_{\text{final}}$ for travel path, obstacle clearances, and pick-and-carry transit.
+- [ ] **Statutory Compliance Dossier**: 1-click generation of LOLER Method Statements, Lift Plan CAD drawings, and risk assessments.
+- [ ] **Cryptographic Seal**: Bind drawing geometry, calibration scale, and rigging results to W3C Asset DIDs with Ed25519 signatures.
+
 
 
 
