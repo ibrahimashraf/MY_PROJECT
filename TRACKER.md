@@ -42,9 +42,9 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | Tier | Tier Classification & Name | Implementation Status | Active Go Internal Packages | Database Migrations Covered (0001–0070+) |
 | :---: | :--- | :---: | :--- | :--- |
 | **L0** | **Global Root PKI Authority & Asymmetric Licensing Engine** | **COMPLETE ✅** | `pkg/domain`, `pkg/licensing`, `licensehttp`, `licensepg`, `flaghttp`, `flagpg`, `platform`, `deployconfig` | `0034_license_entitlement`, `0035_feature_flag_overrides`, `0062_harden_all_remaining_rls`, `0066_wal_suppression_and_xid_freeze_safeties` |
-| **L1** | **Hybrid Standards Discovery & Dynamic AST Calculation Engine** | **COMPLETE ✅** | `pkg/standardsync`, `pkg/rulesengine`, `inspectionhttp`, `advisorview`, `advisory`, `aiintegration` | `0023_comments_traffic_light`, `0048_anomaly_detection` |
+| **L1** | **Hybrid Standards Discovery & Dynamic AST Calculation Engine** | **COMPLETE ✅** | `pkg/standardsync`, `pkg/rulesengine`, `pkg/rulesengine/parameters` (BS 7121 Suite 1/2/3/4/5/13/14, ASME B30.10, ISO 5817, OSHA 1926.251), `inspectionhttp`, `advisorview`, `advisory` | `0023_comments_traffic_light`, `0048_anomaly_detection`, `BRE 470 track pressure`, `BS 5975 mat bending`, `DNV-RP-N103 DAF`, `standards_codex.json` |
 | **L2** | **Tenant Legal Entity, Multi-Currency & Dynamic Jurisdiction Adapters** | **COMPLETE ✅** | `pkg/jurisdictions`, `internal/idempotency`, `identity`, `tenant`, `settingshttp`, `settingspg`, `middleware` | `0003_event_log_tenant_rls`, `0004_identity_subject_membership`, `0008_identity_actor_alignment`, `0033_configurable_settings_audit_export`, `0062_harden_all_remaining_rls`, `0067_async_tenant_purge_tombstones`, `0071_sync_idempotency_cache`, `0072_river_poison_quarantine` |
-| **L3** | **Dynamic Discipline & Inspection Package Scoping Engine** | **COMPLETE ✅** | `traininghttp`, `trainingpg`, `equipment` | `0018_timesheets_courses`, `0032_full_dpp_regulatory_monitor` |
+| **L3** | **Dynamic Discipline & Inspection Package Scoping Engine** | **COMPLETE ✅** | `traininghttp`, `trainingpg`, `equipment`, `internal/domain/training` (ISO 9712 L1/L2/L3 gating) | `0018_timesheets_courses`, `0032_full_dpp_regulatory_monitor` |
 | **L4** | **Global Enterprise Hierarchy & Operational Work Orders** | **COMPLETE ✅** | `workorderhttp`, `workorderpg`, `workorderauth`, `domain/workorder`, `riverqueue` | `0005_work_order_foundation`, `0009_work_order_persistence`, `0010_work_order_rls`, `0012_work_order_handover`, `0019_hierarchical_register`, `0029_parts_charges_timesheet_auto`, `0050`–`0060` (River queue scale), `0063_fix_unindexed_foreign_keys`, `0064_river_hot_updates`, `0065_river_canonical_v047`, `0069_state_machine_and_sequence_bounds` |
 | **L5** | **Dynamic Certificate Governance & Configurable 4-Eyes QA** | **COMPLETE ✅** | `certificatehttp`, `certificatepg`, `certificaterender`, `certtemplatepg` | `0012_certificate_template_binding_registry`, `0013_certificate_authority_lifecycle`, `0015_certificate_artifact_metadata`, `0024_escalation_overdue`, `0026_custom_docx_templates`, `0070_add_certificate_performance_indexes` |
 | **L6** | **Dynamic Inspector Credentialing & Skill Matrix Verification** | **COMPLETE ✅** | `internal/domain/scheduling`, `internal/identity`, `pkg/onboarding` | `0021_scheduling_calendar` |
@@ -546,4 +546,67 @@ The following 17 items represent the remaining identified blind spots across Spr
 * **Rollback posture**: `automatically_reversible: true`; manual steps: revert migrations in reverse order → restart services.
 * **Record file**: [`release_record_v3.3.0.json`](./release_record_v3.3.0.json) (committed to `integin-pilot-source`).
 * **All 4 Phases COMPLETE ✅, all DR & appliance drills PASS — v3.3.0 release sealed.**
+
+---
+
+## 15. 🚀 Sprint 5: Sovereign Edge Evidence & Guarded BDI Dispatch (2026-09-17)
+
+* **Hardware-Attested Edge Capture (Phase 5 Blueprint)**:
+  * Integrated Flutter image_picker into ield_app.
+  * Implemented ImagePickerPhotoService for non-repudiable native photo capture.
+  * Wired captured bytes through the TusClient for 2 MiB chunk-resumable upload direct to integin-server over the authenticated /uploads endpoint.
+* **Autonomous Cognitive Dispatch (Phase 6 System Shape)**:
+  * Wired eventbus.TopicWindUpdate and eventbus.TopicStructuralAlert into the BDIAgent (Belief-Desire-Intention) engine.
+  * Triggered autonomous CorrectiveWorkOrder River jobs automatically when environmental hazards (e.g. moment utilization > 90%) breach statutory bounds.
+* **Outcome**: Edge evidence capture and automated cognitive response loops are fully bridged and committed.
+
+---
+
+## 16. 🚀 Sprint 5 (Phase 5): WebGPU Planetary Viewport (COMPLETE ✅)
+
+**Plan:** [implementation_plan.md v3](file:///C:/Users/hima3/.gemini/antigravity/brain/ca32953e-5b19-4628-a5db-aa442bddab27/implementation_plan.md) — Full consolidated gap/blind/backdoor audit (3 rounds: plan review + source review + live repo forensics).
+
+### 🚨 Security Backdoors Identified & Mitigated
+
+* **Backdoor 1 — GLB Reader OOM Attack:** Unconstrained `.glb` `byteLength` could exhaust RAM on edge appliance. Mitigation: hard limits (128MB file / 500k vertices / 1.5M indices) + `ErrOversizedAsset` — no panic.
+* **Backdoor 2 — Fake SHA-256 in `app.js`:** `btn-bind-manifest` emits `sha256:e3b0c442...` (SHA-256 of empty string) — a fraudulent attestation. Mitigation: remove button; Go engine calls `pkg/packagemanifest` for real digest.
+* **Backdoor 3 — `galloc.AllocateAligned` panic:** Non-power-of-two alignment crashes edge appliance. Mitigation: `pkg/cad/cadalloc` shim validates alignment + converts panic to error.
+* **Backdoor 4 — `galloc.Free` double-free panic:** LOD eviction race can double-free and crash. Mitigation: `cadalloc` shim tracks freed state with `atomic.Bool`.
+
+### ⚠️ Architectural Blind Spots Identified & Mitigated
+
+* **Blind Spot 1 — WASM Concurrency Trap:** Go goroutine pool blocks browser RAF on single-threaded WASM. Mitigation: `runtime.Gosched()` yield loop on WASM (`//go:build js`), goroutine pool on native.
+* **Blind Spot 2 — Wrong RTC Approach:** Per-vertex CPU float64 translation = 30M ops/sec at 60fps. Mitigation: RTC Uniform — one `float32(PatchOrigin - CamECEF)` per patch; WGSL shader adds it.
+* **Blind Spot 3 — `uint16` Index Limit:** `pkg/cad/gltf/glb.go` uses `ComponentTypeUnsignedShort` — silent corruption above 65,535 vertices. Mitigation: auto-select `uint16` vs `uint32`.
+* **Blind Spot 4 — WASM Double-Buffered Memory:** Go heap + GPU buffer simultaneously ≈ 240MB peak per 10-patch terrain — risks WASM 4GB ceiling. Mitigation: nil slice + `runtime.GC()` after upload; `galloc` shared buffer pool.
+* **Blind Spot 5 — `g3d.Renderer` Not Thread-Safe:** All scene mutations and render calls must be confined to a single goroutine. Quadtree workers push patch data via channels only.
+
+### 🆕 New Gaps From Live Repo Source Code
+
+* **Gap 1 — `g3d` Geometry Pointer-Identity Cache Leak:** `geomVertBufs map[Geometry]*wgpu.Buffer` leaks GPU buffers when new `Geometry` objects are created per LOD update. Mitigation: reuse `Geometry` objects; call `renderer.Release()` explicitly on patch eviction.
+* **Gap 2 — `gogpu` Issue #469 Fixed Upstream:** `app_run_browser.go` is complete (143 lines, full RAF). Plan correction: use `gogpu.NewApp()` in WASM — no direct canvas binding workaround needed.
+* **Gap 3 — `g3d` Only Draws Opaque Bucket:** Transparent/Transmissive buckets defined but not wired in `renderer.go`. Heatmap overlays and sling alpha are silently invisible. Mitigation: vendor + wire remaining buckets, or use compute shader fullscreen texture for heatmap (preferred).
+* **Gap 4 — No Instanced Drawing in `g3d`:** Instance count hardcoded to 1. 100 sling segments = 100 draw calls. Mitigation: vendor `g3d` to add instanced draw, or batch geometry before upload.
+
+### Implementation Phases
+
+* [x] **Phase 5.1:** `pkg/cad/planetary` — RTC ECEF kernel, 64-bit camera, quadtree (build-tag scheduler)
+* [x] **Phase 5.2:** `pkg/cad/cadalloc` (galloc shim) + `pkg/cad/gltf/reader.go` (bounds-validated) + GLB writer `uint32` index fix
+* [x] **Phase 5.3:** Vendor `g3d` (PR #39 + bucket wiring + instanced draw) + WGSL shaders (atmosphere, terrain, heatmap compute)
+* [x] **Phase 5.4:** Go lifting simulator (desktop + WASM) — remove fake SHA-256, wire `pkg/rulesengine`, keep `math_parity_test.go` green
+* [x] **Phase 5.5 (CAD Calibration & Geometric O-Snap Core):** `pkg/cad/engine/calibration.go` — 2-point drawing scale calibration ($P_1, P_2 \to \text{scale}$), precision distance & delta resolver, and geometric object-snap (O-Snap: endpoints, midpoints, circle centers) across Line, Circle, Arc, and Polyline entities. Unit tests verified (`calibration_test.go`), race detector clean.
+
+---
+
+## 17. 🧭 Next Session Plan: Universal Parametric CAD & Rigging Workbench
+
+1. **WebGPU CAD Interactive Workbench Canvas (`tools/cad-workbench`):**
+   - Wire 2-point scale calibration into interactive WebGPU/WebGL canvas.
+   - Drawing layer imports (PDF vector, DWG/DXF background underlay).
+   - O-Snap visual markers (square for endpoint, triangle for midpoint, circle for center).
+2. **Kinematic Dynamic Blocks & Rigging Visualizer:**
+   - Link parametric grips (boom extend, slew angle, hook radius) to `pkg/cad/engine/dynamic_block.go`.
+   - Real-time duty chart capacity interpolation & outrigger ground bearing heatmaps.
+
+
 
