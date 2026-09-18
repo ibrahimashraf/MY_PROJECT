@@ -1,9 +1,10 @@
-#[INTEGIN Casdoor Pilot] Start the disposable Casdoor IdP against its isolated PostgreSQL container; drop-in 127.0.0.1:18180 replacement for Keycloak.
+#[INTEGIN Casdoor Pilot] Start the Casdoor IdP against its isolated PostgreSQL container; drop-in 127.0.0.1:18180 replacement for Keycloak.
+# Data persists across restarts; pass -Fresh for a factory reset (wipes Casdoor users/apps).
 # Pinned images (NOT :latest):
 #   postgres:16-alpine  digest sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
 #   casbin/casdoor:latest@sha256:1b479655bf51b1c630f2a3ea93ec1ef58388e1d5861173377269266ea321537e  (= v4.3.0, 2026-09-09; versioned v4.x tags do not resolve from all daemons, digest pin keeps it immutable)
 [CmdletBinding()]
-param()
+param([switch]$Fresh)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -92,11 +93,13 @@ if (-not (Test-DockerResourceExists -Kind 'network' -Name $networkName)) { Invok
 if (Test-DockerResourceExists -Kind 'container' -Name $postgresContainer) {
   Invoke-DockerQuietly -Arguments @('rm', '-f', $postgresContainer)
 }
-if (Test-DockerResourceExists -Kind 'volume' -Name $postgresVolume) {
+if ($Fresh -and (Test-DockerResourceExists -Kind 'volume' -Name $postgresVolume)) {
   Invoke-DockerQuietly -Arguments @('volume', 'rm', $postgresVolume)
 }
-Invoke-DockerQuietly -Arguments @('volume', 'create', $postgresVolume)
-Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $postgresContainer, '--network', $networkName, '--env-file', $postgresEnvironmentPath, '--volume', ("${postgresVolume}:/var/lib/postgresql"), $postgresImage)
+if (-not (Test-DockerResourceExists -Kind 'volume' -Name $postgresVolume)) {
+  Invoke-DockerQuietly -Arguments @('volume', 'create', $postgresVolume)
+}
+Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $postgresContainer, '--network', $networkName, '--env-file', $postgresEnvironmentPath, '--volume', ("${postgresVolume}:/var/lib/postgresql/data"), $postgresImage)
 Wait-PostgresReady
 
 if (Test-DockerResourceExists -Kind 'container' -Name $casdoorContainer) {
