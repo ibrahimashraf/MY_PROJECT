@@ -95,68 +95,99 @@ def classify_domain(filename):
         return 'OSHA_STATUTORY_SAFETY'
     return 'GENERAL_ENGINEERING'
 
+def extract_document_toc(pdf):
+    """Extracts hierarchical Table of Contents (bookmarks) mapped to page numbers."""
+    toc_map = {}
+    try:
+        toc = list(pdf.get_toc())
+        for b in toc:
+            dest = b.get_dest()
+            if dest:
+                p_idx = dest.get_index()
+                if p_idx is not None:
+                    title = b.get_title().strip()
+                    if title:
+                        # Map 1-based page number to deepest bookmark title
+                        page_num = p_idx + 1
+                        if page_num not in toc_map or b.level > toc_map[page_num][0]:
+                            toc_map[page_num] = (b.level, title)
+    except Exception:
+        pass
+    return {p: title for p, (lvl, title) in toc_map.items()}
+
 def extract_pdf_pages(path, max_pages=None, reconstruct_columns=True):
     """Extracts text pages using Google PDFium (pypdfium2 C engine).
     - Reconstructs natural two-column reading order via bounding-box rect sorting
     - In-memory high-res rasterization for scanned pages without temp file I/O
+    - Native Table & Vector stroke path density detection
+    - Hierarchical TOC Bookmark clause resolution
     - Natively immune to trailer offset errors, missing EOF markers, and AES encryption issues."""
     import pypdfium2 as pdfium
+    from pypdfium2.raw import FPDF_PAGEOBJ_PATH
     try:
         pdf = pdfium.PdfDocument(path)
     except Exception as e:
         logger.error(f"Could not open document {os.path.basename(path)}: {e}")
-        return 0, [], []
+        return 0, [], [], {}
 
     total = len(pdf)
     limit = total if max_pages is None else min(total, max_pages)
     digital_pages = []
     scanned_pages = []
+    toc_lookup = extract_document_toc(pdf)
+
+    # Propagate latest TOC clause forward across pages
+    current_clause_title = "General Scope"
+    page_clauses = {}
 
     for i in range(limit):
+        page_num = i + 1
+        if page_num in toc_lookup:
+            current_clause_title = toc_lookup[page_num]
+        page_clauses[page_num] = current_clause_title
+
         try:
             page = pdf[i]
             textpage = page.get_textpage()
             
-            # 1. Spatial text reconstruction for multi-column documents
-            rect_count = textpage.count_rects()
-            if reconstruct_columns and rect_count > 10:
-                rects = []
-                for r_idx in range(rect_count):
-                    r = textpage.get_rect(r_idx)
-                    # r is (left, bottom, right, top)
-                    t = textpage.get_text_bounded(*r)
-                    if t:
-                        rects.append((r[0], -r[3], t)) # sort by column (left x) then top-to-bottom (-top y)
-                # Sort: primary by column horizontal band (within 150pt), secondary by top-down
-                rects.sort(key=lambda item: (round(item[0] / 150.0), item[1]))
-                txt = "".join(item[2] for item in rects).strip()
-            else:
-                txt = (textpage.get_text_range() or "").strip()
+            # Detect table grids via vector stroke density
+            path_objs = [o for o in page.get_objects() if getattr(o, 'type', None) == FPDF_PAGEOBJ_PATH]
+            has_table_grid = len(path_objs) >= 8
+            # Native text extraction preserves natural line breaks, hyphens, and paragraphs
+            txt = (textpage.get_text_range() or "").strip()
 
             if len(txt) < 60:
-                scanned_pages.append(i + 1)
+                scanned_pages.append(page_num)
             else:
-                digital_pages.append((i + 1, txt))
+                digital_pages.append((page_num, txt, has_table_grid, current_clause_title))
         except Exception:
-            scanned_pages.append(i + 1)
+            scanned_pages.append(page_num)
     
     pdf.close()
-    return total, digital_pages, scanned_pages
+    return total, digital_pages, scanned_pages, page_clauses
 
 
 def mine_parameters(doc_id, text_blocks):
-    """Mines engineering thresholds, safety factors, and discard criteria."""
+    """Mines engineering thresholds, safety factors, discard criteria, and stability limits with TOC clause metadata."""
     patterns = [
-        (r"(?:safety\s+factor|design\s+factor|factor\s+of\s+safety|fos)\s*(?:of|is|shall\s+be|>=|:)?\s*([0-9]+(?:\.[0-9]+)?)", "SAFETY_FACTOR_MIN"),
-        (r"([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:wear|reduction|stretch|elongation|nominal)", "DISCARD_PCT_THRESHOLD"),
+        (r"(?:safety\s+factor|design\s+factor|factor\s+of\s+safety|fos)\s*(?:of|is|shall\s+be|>=|:|not\s+less\s+than)?\s*([0-9]+(?:\.[0-9]+)?)", "SAFETY_FACTOR_MIN"),
+        (r"(?:crawler|wheel\s+mounted|truck\s+mounted|outrigger)[^0-9\n]{1,40}?([0-9]{2}(?:\.[0-9]+)?)\s*%", "STABILITY_TIPPING_PERCENT_MAX"),
+        (r"([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:of\s+tipping|tipping\s+load|tipping\s+capacity|rated\s+capacity|tipping)", "STABILITY_TIPPING_PERCENT_MAX"),
+        (r"([0-9]+(?:\.[0-9]+)?)\s*%\s*(?:wear|reduction|stretch|elongation|nominal|reduction\s+in\s+diameter|loss)", "DISCARD_PCT_THRESHOLD"),
         (r"([0-9]+(?:\.[0-9]+)?)\s*(?:°\s*[CF]|deg\s*[CF]|degrees\s*[CF]|fahrenheit|celsius)", "TEMPERATURE_LIMIT"),
-        (r"(?:wind\s+speed|gust)\s*(?:exceeds?|limit|cutoff|max|of)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m/s|mph|knots)", "WIND_SPEED_MAX"),
-        (r"(?:clearance|distance)\s*(?:of|shall\s+be|at\s+least|>=)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|mm|meters)", "MIN_CLEARANCE"),
-        (r"(?:angle|tilt|slope)\s*(?:less\s+than|<|exceeds?|>)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:degrees|°|%)", "GEOMETRIC_LIMIT")
+        (r"(?:wind\s+speed|gust|wind\s+velocity)\s*(?:exceeds?|limit|cutoff|max|of|shall\s+not\s+exceed)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m/s|mph|knots|km/h)", "WIND_SPEED_MAX"),
+        (r"(?:clearance|distance)\s*(?:of|shall\s+be|at\s+least|>=)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|mm|meters|feet|ft)", "MIN_CLEARANCE"),
+        (r"(?:angle|tilt|slope|out-of-level)\s*(?:less\s+than|<|exceeds?|>)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:degrees|°|%)", "GEOMETRIC_LIMIT"),
+        (r"(?:proof\s+test|proof\s+load)\s*(?:of|shall\s+be|at\s+least)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:times|x|%)\s*(?:rated|swl|wll)", "PROOF_LOAD_FACTOR")
     ]
     
     extracted = []
-    for page_num, text in text_blocks:
+    for item in text_blocks:
+        page_num = item[0]
+        text = item[1]
+        has_table = item[2] if len(item) > 2 else False
+        toc_clause = item[3] if len(item) > 3 else f"Page {page_num}"
+
         for line in text.splitlines():
             line_str = line.strip()
             if len(line_str) < 15:
@@ -170,15 +201,17 @@ def mine_parameters(doc_id, text_blocks):
                         continue
                     
                     clause_m = re.search(r"(?:clause|section|table|paragraph|para\.?)\s*([0-9]+(?:\.[0-9]+)*)", line_str, re.IGNORECASE)
-                    clause = clause_m.group(0) if clause_m else f"Page {page_num}"
+                    clause = clause_m.group(0) if clause_m else toc_clause
                     
                     extracted.append({
                         "doc": doc_id,
                         "page": page_num,
                         "clause": clause,
+                        "section_title": toc_clause,
+                        "has_table_grid": has_table,
                         "parameter_type": p_type,
                         "numeric_value": val,
-                        "context": line_str[:120]
+                        "context": line_str[:140]
                     })
     return extracted
 
@@ -208,7 +241,7 @@ def run_test(filename="29 CFR 1926.251 (up to date as of 9-16-2026).pdf"):
 
         
     try:
-        total, digital, scanned = extract_pdf_pages(pdf_path, max_pages=15)
+        total, digital, scanned, page_clauses = extract_pdf_pages(pdf_path, max_pages=15)
         logger.info(f"Total Pages: {total}")
         logger.info(f"Digital Pages Extracted: {len(digital)}")
         logger.info(f"Scanned / Low-text Pages: {len(scanned)}")
@@ -270,7 +303,7 @@ def run_all():
         logger.info(f"[{idx}/{total_files}] Processing: {fname} ...")
 
         try:
-            total_p, digital_p, scanned_p = extract_pdf_pages(path, max_pages=30)
+            total_p, digital_p, scanned_p, page_clauses = extract_pdf_pages(path, max_pages=30)
             if scanned_p and len(digital_p) == 0:
                 scanned_count += 1
             else:
