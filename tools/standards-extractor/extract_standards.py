@@ -188,12 +188,19 @@ def mine_parameters(doc_id, text_blocks):
         (r"(?:clearance|distance)\s*(?:of|shall\s+be|at\s+least|>=)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|mm|meters|feet|ft)", "MIN_CLEARANCE"),
         (r"(?:angle|tilt|slope|out-of-level)\s*(?:less\s+than|<|exceeds?|>)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:degrees|°|%)", "GEOMETRIC_LIMIT"),
         (r"(?:proof\s+test|proof\s+load)\s*(?:of|shall\s+be|at\s+least)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:times|x|%)\s*(?:rated|swl|wll)", "PROOF_LOAD_FACTOR"),
-        # Lift Plan Specific Parameters
-        (r"(?:safe\s+working\s+load|swl|wll|rated\s+capacity|maximum\s+capacity)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg|lbs?)", "LIFT_PLAN_SWL"),
+        # Comprehensive Lift Plan Parameters
+        (r"(?:safe\s+working\s+load|swl|wll|rated\s+capacity|maximum\s+capacity|crane[’']?s\s+capacity)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg|lbs?)", "LIFT_PLAN_SWL"),
         (r"(?:maximum\s+radius|working\s+radius|radius)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|meters?|ft|feet)", "LIFT_PLAN_RADIUS"),
         (r"(?:counterweight|ballast)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_COUNTERWEIGHT"),
-        (r"(?:outrigger\s+load|ground\s+bearing\s+pressure|gbp)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|kn/m2|kpa|t/m2)", "LIFT_PLAN_OUTRIGGER_LOAD"),
-        (r"(?:gross\s+load|total\s+weight|lifted\s+weight)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_GROSS_WEIGHT")
+        (r"(?:outrigger\s+load|ground\s+bearing\s+pressure|gbp|bearing\s+pressure)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|kn/m2|kpa|t/m2|psi)", "LIFT_PLAN_OUTRIGGER_LOAD"),
+        (r"(?:gross\s+weight|gross\s+load|total\s+weight|lifted\s+weight|lifting\s+weight)\s*(?:of\s+load)?\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg|lbs?)", "LIFT_PLAN_GROSS_WEIGHT"),
+        (r"(?:net\s+weight|dry\s+weight|empty\s+tank|weight\s+of\s+load|weight\s+of\s+chemical)\s*(?:of\s+load)?\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_NET_WEIGHT"),
+        (r"(?:rigging\s+weight|rigging\s+gear\s+weight|weight\s+of\s+rigging)\s*(?:approx\.?)?\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_RIGGING_WEIGHT"),
+        (r"(?:contingency\s+factor|weight\s+contingency)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "LIFT_PLAN_CONTINGENCY_PCT"),
+        (r"(?:cog\s+shift\s+factor|cog\s+factor|cog\s+shift)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "LIFT_PLAN_COG_SHIFT_PCT"),
+        (r"(?:resulting\s+sling\s+load|sling\s+tension|sling\s+load)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kn)", "LIFT_PLAN_SLING_TENSION"),
+        (r"(?:bow\s+shackle|safety\s+anchor\s+shackle|shackle)[^0-9\n]{0,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?)", "LIFT_PLAN_SHACKLE_RATING"),
+        (r"(?:wire\s+rope\s+sling|webbing\s+sling|chain\s+sling)[^0-9\n]{0,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?)", "LIFT_PLAN_SLING_RATING")
     ]
     
     extracted = []
