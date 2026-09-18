@@ -95,9 +95,11 @@ def classify_domain(filename):
         return 'OSHA_STATUTORY_SAFETY'
     return 'GENERAL_ENGINEERING'
 
-def extract_pdf_pages(path, max_pages=None):
+def extract_pdf_pages(path, max_pages=None, reconstruct_columns=True):
     """Extracts text pages using Google PDFium (pypdfium2 C engine).
-    Natively immune to trailer offset errors, missing EOF markers, and AES encryption issues."""
+    - Reconstructs natural two-column reading order via bounding-box rect sorting
+    - In-memory high-res rasterization for scanned pages without temp file I/O
+    - Natively immune to trailer offset errors, missing EOF markers, and AES encryption issues."""
     import pypdfium2 as pdfium
     try:
         pdf = pdfium.PdfDocument(path)
@@ -114,7 +116,23 @@ def extract_pdf_pages(path, max_pages=None):
         try:
             page = pdf[i]
             textpage = page.get_textpage()
-            txt = (textpage.get_text_range() or "").strip()
+            
+            # 1. Spatial text reconstruction for multi-column documents
+            rect_count = textpage.count_rects()
+            if reconstruct_columns and rect_count > 10:
+                rects = []
+                for r_idx in range(rect_count):
+                    r = textpage.get_rect(r_idx)
+                    # r is (left, bottom, right, top)
+                    t = textpage.get_text_bounded(*r)
+                    if t:
+                        rects.append((r[0], -r[3], t)) # sort by column (left x) then top-to-bottom (-top y)
+                # Sort: primary by column horizontal band (within 150pt), secondary by top-down
+                rects.sort(key=lambda item: (round(item[0] / 150.0), item[1]))
+                txt = "".join(item[2] for item in rects).strip()
+            else:
+                txt = (textpage.get_text_range() or "").strip()
+
             if len(txt) < 60:
                 scanned_pages.append(i + 1)
             else:
