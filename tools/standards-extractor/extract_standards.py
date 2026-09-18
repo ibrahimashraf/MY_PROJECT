@@ -156,6 +156,15 @@ def extract_pdf_pages(path, max_pages=None, reconstruct_columns=True):
             # Native text extraction preserves natural line breaks, hyphens, and paragraphs
             txt = (textpage.get_text_range() or "").strip()
 
+            # Dynamic in-text section header recovery if PDF lacks TOC outline
+            if current_clause_title == "General Scope" or not toc_lookup:
+                for line in txt.splitlines()[:10]:
+                    l_str = line.strip()
+                    if re.match(r"^(?:chapter|section|clause|part)\s+[0-9A-Z\.\-]+", l_str, re.IGNORECASE):
+                        current_clause_title = l_str
+                        page_clauses[page_num] = current_clause_title
+                        break
+
             if len(txt) < 60:
                 scanned_pages.append(page_num)
             else:
