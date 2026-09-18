@@ -206,9 +206,14 @@ def mine_parameters(doc_id, text_blocks):
         # Offshore & Marine Dynamic Amplification / Crane Derating (DNV-ST-N001 / API RP 2D / EN 13852)
         (r"(?:dynamic\s+amplification\s+factor|daf)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)", "DYNAMIC_AMPLIFICATION_FACTOR"),
         (r"(?:significant\s+wave\s+height|hs)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|meters?)", "OFFSHORE_SIGNIFICANT_WAVE_HEIGHT_MAX"),
-        # NDT & Weld Quality Discard Limits (ISO 5817 / ISO 9712 / ASME BPVC)
-        (r"(?:depth\s+of\s+undercut|undercut)[^0-9\n]{1,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:mm|%)", "NDT_MAX_UNDERCUT_DEPTH"),
-        (r"(?:crack|linear\s+indication|lack\s+of\s+fusion)[^0-9\n]{1,40}?(not\s+permitted|0(?:\.0)?)", "NDT_PERMITTED_DEFECT_LIMIT")
+        # Training, Certification & Competency Validity (NSL / CPCS / NPORS / Banksman)
+        (r"(?:certification|qualification|training|card)\s*(?:validity|valid\s+for|expires?\s+after)\s*[:=]?\s*([0-9]+)\s*(?:years?|months?)", "COMPETENCY_VALIDITY_PERIOD"),
+        (r"(?:passing\s+score|pass\s+mark|minimum\s+score)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "EXAM_PASS_PERCENT_MIN"),
+        # Rigging Hitch Efficiencies & D/d Ratios (Rigging Handbooks & Manuals)
+        (r"(?:choker\s+hitch\s+reduction|choke\s+reduction|basket\s+efficiency|hitch\s+efficiency)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "HITCH_EFFICIENCY_PCT"),
+        (r"(?:d/d\s+ratio|ratio\s+of\s+d/d)\s*(?:of|is|at\s+least)?\s*([0-9]+(?:\.[0-9]+)?)", "RIGGING_DD_RATIO_MIN"),
+        # Equipment Maintenance & Service Operating Hours (Liebherr / Demag / Tadano Manuals)
+        (r"(?:service\s+interval|maintenance\s+every|lubricat\w+\s+every)\s*([0-9]+)\s*(?:hours?|hrs|operating\s+hours)", "EQUIPMENT_MAINTENANCE_INTERVAL_HOURS")
     ]
     
     extracted = []
