@@ -197,10 +197,18 @@ def mine_parameters(doc_id, text_blocks):
         (r"(?:net\s+weight|dry\s+weight|empty\s+tank|weight\s+of\s+load|weight\s+of\s+chemical)\s*(?:of\s+load)?\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_NET_WEIGHT"),
         (r"(?:rigging\s+weight|rigging\s+gear\s+weight|weight\s+of\s+rigging)\s*(?:approx\.?)?\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_RIGGING_WEIGHT"),
         (r"(?:contingency\s+factor|weight\s+contingency)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "LIFT_PLAN_CONTINGENCY_PCT"),
-        (r"(?:cog\s+shift\s+factor|cog\s+factor|cog\s+shift)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*%", "LIFT_PLAN_COG_SHIFT_PCT"),
-        (r"(?:resulting\s+sling\s+load|sling\s+tension|sling\s+load)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kn)", "LIFT_PLAN_SLING_TENSION"),
-        (r"(?:bow\s+shackle|safety\s+anchor\s+shackle|shackle)[^0-9\n]{0,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?)", "LIFT_PLAN_SHACKLE_RATING"),
-        (r"(?:wire\s+rope\s+sling|webbing\s+sling|chain\s+sling)[^0-9\n]{0,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?)", "LIFT_PLAN_SLING_RATING")
+        # Statutory Legislation & Inspection Frequency (LOLER / OSHA / Aramco GI / LEEA)
+        (r"(?:within\s+an\s+interval\s+of|every|at\s+least\s+every|not\s+exceeding|intervals?\s+of)\s*([0-9]+)\s*months?", "STATUTORY_INSPECTION_INTERVAL_MONTHS"),
+        (r"(?:inspected\s+by\s+a\s+competent\s+person\s+every)\s*([0-9]+)?\s*(?:working\s+day|day|shift|week)", "STATUTORY_INSPECTION_INTERVAL_DAYS"),
+        # Wire Rope Discard & Broken Wires (ISO 4309 / ASME B30.30 / BS EN 12385)
+        (r"([0-9]+)\s*(?:randomly\s+distributed\s+broken\s+wires|broken\s+wires\s+in\s+one\s+lay|broken\s+wires\s+in\s+any\s+one\s+strand)", "WIRE_ROPE_BROKEN_WIRES_MAX"),
+        (r"(?:reduction\s+of|reduction\s+in)\s*(?:rope\s+diameter|nominal\s+diameter)[^0-9\n]{1,30}?([0-9]+(?:\.[0-9]+)?)\s*%", "WIRE_ROPE_DIAMETER_REDUCTION_MAX"),
+        # Offshore & Marine Dynamic Amplification / Crane Derating (DNV-ST-N001 / API RP 2D / EN 13852)
+        (r"(?:dynamic\s+amplification\s+factor|daf)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)", "DYNAMIC_AMPLIFICATION_FACTOR"),
+        (r"(?:significant\s+wave\s+height|hs)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|meters?)", "OFFSHORE_SIGNIFICANT_WAVE_HEIGHT_MAX"),
+        # NDT & Weld Quality Discard Limits (ISO 5817 / ISO 9712 / ASME BPVC)
+        (r"(?:depth\s+of\s+undercut|undercut)[^0-9\n]{1,30}?([0-9]+(?:\.[0-9]+)?)\s*(?:mm|%)", "NDT_MAX_UNDERCUT_DEPTH"),
+        (r"(?:crack|linear\s+indication|lack\s+of\s+fusion)[^0-9\n]{1,40}?(not\s+permitted|0(?:\.0)?)", "NDT_PERMITTED_DEFECT_LIMIT")
     ]
     
     extracted = []
@@ -217,10 +225,16 @@ def mine_parameters(doc_id, text_blocks):
             for regex, p_type in patterns:
                 m = re.search(regex, line_str, re.IGNORECASE)
                 if m:
-                    try:
-                        val = float(m.group(1))
-                    except ValueError:
-                        continue
+                    raw_val = m.group(1)
+                    if raw_val is None:
+                        val = 1.0
+                    elif raw_val.lower() == "not permitted":
+                        val = 0.0
+                    else:
+                        try:
+                            val = float(raw_val)
+                        except ValueError:
+                            continue
                     
                     clause_m = re.search(r"(?:clause|section|table|paragraph|para\.?)\s*([0-9]+(?:\.[0-9]+)*)", line_str, re.IGNORECASE)
                     clause = clause_m.group(0) if clause_m else toc_clause
