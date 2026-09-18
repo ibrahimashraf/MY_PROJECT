@@ -177,7 +177,7 @@ def extract_pdf_pages(path, max_pages=None, reconstruct_columns=True):
 
 
 def mine_parameters(doc_id, text_blocks):
-    """Mines engineering thresholds, safety factors, discard criteria, and stability limits with TOC clause metadata."""
+    """Mines engineering thresholds, safety factors, discard criteria, stability limits, and lift plan parameters."""
     patterns = [
         (r"(?:safety\s+factor|design\s+factor|factor\s+of\s+safety|fos)\s*(?:of|is|shall\s+be|>=|:|not\s+less\s+than)?\s*([0-9]+(?:\.[0-9]+)?)", "SAFETY_FACTOR_MIN"),
         (r"(?:crawler|wheel\s+mounted|truck\s+mounted|outrigger)[^0-9\n]{1,40}?([0-9]{2}(?:\.[0-9]+)?)\s*%", "STABILITY_TIPPING_PERCENT_MAX"),
@@ -187,7 +187,13 @@ def mine_parameters(doc_id, text_blocks):
         (r"(?:wind\s+speed|gust|wind\s+velocity)\s*(?:exceeds?|limit|cutoff|max|of|shall\s+not\s+exceed)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m/s|mph|knots|km/h)", "WIND_SPEED_MAX"),
         (r"(?:clearance|distance)\s*(?:of|shall\s+be|at\s+least|>=)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|mm|meters|feet|ft)", "MIN_CLEARANCE"),
         (r"(?:angle|tilt|slope|out-of-level)\s*(?:less\s+than|<|exceeds?|>)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:degrees|°|%)", "GEOMETRIC_LIMIT"),
-        (r"(?:proof\s+test|proof\s+load)\s*(?:of|shall\s+be|at\s+least)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:times|x|%)\s*(?:rated|swl|wll)", "PROOF_LOAD_FACTOR")
+        (r"(?:proof\s+test|proof\s+load)\s*(?:of|shall\s+be|at\s+least)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:times|x|%)\s*(?:rated|swl|wll)", "PROOF_LOAD_FACTOR"),
+        # Lift Plan Specific Parameters
+        (r"(?:safe\s+working\s+load|swl|wll|rated\s+capacity|maximum\s+capacity)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg|lbs?)", "LIFT_PLAN_SWL"),
+        (r"(?:maximum\s+radius|working\s+radius|radius)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|meters?|ft|feet)", "LIFT_PLAN_RADIUS"),
+        (r"(?:counterweight|ballast)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_COUNTERWEIGHT"),
+        (r"(?:outrigger\s+load|ground\s+bearing\s+pressure|gbp)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|kn/m2|kpa|t/m2)", "LIFT_PLAN_OUTRIGGER_LOAD"),
+        (r"(?:gross\s+load|total\s+weight|lifted\s+weight)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:t|te|tonnes?|tons?|kg)", "LIFT_PLAN_GROSS_WEIGHT")
     ]
     
     extracted = []
