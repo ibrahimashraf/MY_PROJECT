@@ -91,3 +91,39 @@ func TestCodexGateVars(t *testing.T) {
 	assert.Contains(t, sfVars, "safety_factor")
 	assert.Contains(t, sfVars, "safety_factor_min")
 }
+
+func TestCodexOverrides(t *testing.T) {
+	// Case 1: Overridden Stability Tipping (e.g. Special Engineered Lift Approval)
+	overrideInput := parameters.StabilityInput{
+		LoadPercent:       88.0,
+		TippingPercentMax: 85.0,
+		Override: parameters.OverrideToggle{
+			AllowOverride: true,
+			Reason:        "Engineered heavy lift with outrigger load monitoring and calm wind window",
+			AuthorizedBy:  "Eng. Ibrahim (Lead Technical Authority)",
+		},
+	}
+	verdict, err := parameters.EvaluateStability(overrideInput)
+	require.NoError(t, err)
+	assert.True(t, verdict.Passed)
+	assert.True(t, verdict.OverrideApplied)
+	assert.NotEmpty(t, verdict.Violations) // Violation is retained for transparent audit trail
+	assert.Contains(t, verdict.AuditNote, "OVERRIDE APPLIED")
+	assert.Contains(t, verdict.AuditNote, "Eng. Ibrahim")
+
+	// Case 2: Wind Speed Override
+	windOverride := parameters.WindSpeedInput{
+		WindSpeedMPH: 43.0,
+		WindSpeedMax: 40.0,
+		Override: parameters.OverrideToggle{
+			AllowOverride: true,
+			Reason:        "Low-profile concrete block lift at ground level; no sail area",
+			AuthorizedBy:  "Appointed Person Site Sign-off",
+		},
+	}
+	verdict, err = parameters.EvaluateWindSpeed(windOverride)
+	require.NoError(t, err)
+	assert.True(t, verdict.Passed)
+	assert.True(t, verdict.OverrideApplied)
+	assert.Contains(t, verdict.AuditNote, "wind speed cutoff")
+}

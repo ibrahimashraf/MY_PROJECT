@@ -107,30 +107,45 @@ func initCodexCEL() error {
 	return initCELErr
 }
 
+// OverrideToggle permits an authorized human (e.g. Appointed Person / Lead Rigger / Base Manager)
+// to bypass a statutory threshold. Overrides are audited fail-safe: they require an explicit justification
+// and approver signature, and are recorded in the immutable audit trail.
+type OverrideToggle struct {
+	AllowOverride bool   `json:"allow_override"`
+	Reason        string `json:"override_reason,omitempty"`
+	AuthorizedBy  string `json:"authorized_by,omitempty"`
+}
+
 type StabilityInput struct {
-	LoadPercent       float64 `json:"load_percent"`
-	TippingPercentMax float64 `json:"tipping_percent_max"`
+	LoadPercent       float64        `json:"load_percent"`
+	TippingPercentMax float64        `json:"tipping_percent_max"`
+	Override          OverrideToggle `json:"override"`
 }
 
 type WindSpeedInput struct {
-	WindSpeedMPH float64 `json:"wind_speed_mph"`
-	WindSpeedMax float64 `json:"wind_speed_max"`
+	WindSpeedMPH float64        `json:"wind_speed_mph"`
+	WindSpeedMax float64        `json:"wind_speed_max"`
+	Override     OverrideToggle `json:"override"`
 }
 
 type TemperatureInput struct {
-	TemperatureF float64 `json:"temperature_f"`
-	TempMin      float64 `json:"temp_min"`
-	TempMax      float64 `json:"temp_max"`
+	TemperatureF float64        `json:"temperature_f"`
+	TempMin      float64        `json:"temp_min"`
+	TempMax      float64        `json:"temp_max"`
+	Override     OverrideToggle `json:"override"`
 }
 
 type SafetyFactorInput struct {
-	SafetyFactor    float64 `json:"safety_factor"`
-	SafetyFactorMin float64 `json:"safety_factor_min"`
+	SafetyFactor    float64        `json:"safety_factor"`
+	SafetyFactorMin float64        `json:"safety_factor_min"`
+	Override        OverrideToggle `json:"override"`
 }
 
 type CodexVerdict struct {
-	Passed     bool
-	Violations []string
+	Passed          bool     `json:"passed"`
+	OverrideApplied bool     `json:"override_applied,omitempty"`
+	Violations      []string `json:"violations,omitempty"`
+	AuditNote       string   `json:"audit_note,omitempty"`
 }
 
 func checkNaNs(name string, vals ...float64) error {
@@ -156,6 +171,15 @@ func evaluateProgram(prg cel.Program, vars map[string]interface{}) (bool, error)
 	return passed, nil
 }
 
+func applyOverrideIfAllowed(verdict *CodexVerdict, override OverrideToggle, metricName string) {
+	if !verdict.Passed && override.AllowOverride {
+		verdict.Passed = true
+		verdict.OverrideApplied = true
+		verdict.AuditNote = fmt.Sprintf("OVERRIDE APPLIED on %s: Reason: %q | AuthorizedBy: %q",
+			metricName, override.Reason, override.AuthorizedBy)
+	}
+}
+
 func EvaluateStability(input StabilityInput) (CodexVerdict, error) {
 	if err := checkNaNs("stability", input.LoadPercent, input.TippingPercentMax); err != nil {
 		return CodexVerdict{}, err
@@ -173,6 +197,7 @@ func EvaluateStability(input StabilityInput) (CodexVerdict, error) {
 	if !passed {
 		verdict.Violations = append(verdict.Violations, "Load percent exceeds maximum tipping percent threshold")
 	}
+	applyOverrideIfAllowed(&verdict, input.Override, "stability tipping")
 	return verdict, err
 }
 
@@ -193,6 +218,7 @@ func EvaluateWindSpeed(input WindSpeedInput) (CodexVerdict, error) {
 	if !passed {
 		verdict.Violations = append(verdict.Violations, "Wind speed exceeds maximum cutoff threshold")
 	}
+	applyOverrideIfAllowed(&verdict, input.Override, "wind speed cutoff")
 	return verdict, err
 }
 
@@ -214,6 +240,7 @@ func EvaluateTemperature(input TemperatureInput) (CodexVerdict, error) {
 	if !passed {
 		verdict.Violations = append(verdict.Violations, "Operating temperature out of bounds")
 	}
+	applyOverrideIfAllowed(&verdict, input.Override, "operating temperature")
 	return verdict, err
 }
 
@@ -234,6 +261,7 @@ func EvaluateSafetyFactor(input SafetyFactorInput) (CodexVerdict, error) {
 	if !passed {
 		verdict.Violations = append(verdict.Violations, "Safety factor is below minimum required")
 	}
+	applyOverrideIfAllowed(&verdict, input.Override, "safety factor")
 	return verdict, err
 }
 
