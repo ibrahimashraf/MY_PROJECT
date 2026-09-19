@@ -65,6 +65,27 @@
             </div>
 
             <aside id="controls-panel">
+                <h2>Environment & Lift Setup</h2>
+                <div class="control-group">
+                    <label for="scene-select">Operational Environment:</label>
+                    <select id="scene-select" class="config-select">
+                        <option value="factory">🏭 Industrial Factory / Plant (Default)</option>
+                        <option value="offshore_marine">🌊 Offshore Marine / Heavy Barge</option>
+                        <option value="drillship">🚢 Offshore Drillship Rig Deck</option>
+                        <option value="jackup">🏗️ Offshore Jack-Up Rig Deck</option>
+                        <option value="desert">🏜️ Desert / Remote Oilfield</option>
+                        <option value="gas_plant">🔥 LNG / Gas Processing Plant</option>
+                        <option value="port">⚓ Commercial Deepwater Port Quay</option>
+                    </select>
+
+                    <label for="lift-mode-select" style="margin-top: 10px;">Lift Execution Mode:</label>
+                    <select id="lift-mode-select" class="config-select">
+                        <option value="tandem">👥 Dual Crane Tandem Lift</option>
+                        <option value="single">👤 Single Crane Lift (Alpha Only)</option>
+                        <option value="tailing">🔄 Vessel Tailing & Upending (0° → 90°)</option>
+                    </select>
+                </div>
+
                 <h2>4D Lift Sequence Control</h2>
                 
                 <div class="control-group">
