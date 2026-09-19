@@ -6,8 +6,10 @@
 
     // State Variables
     let scene, camera, renderer, controls, envGroup;
-    let crane1Group, crane2Group, boom1, boom2, suspendedLoad;
-    let hook1Mesh, hook2Mesh, slingLines, hoistLines;
+    let crane1Group, crane2Group, crane3Group, crane4Group;
+    let boom1, boom2, boom3, boom4, suspendedLoad;
+    let hook1Mesh, hook2Mesh, hook3Mesh, hook4Mesh;
+    let slingLines, hoistLines;
     let isPlaying = false;
     let playInterval = null;
     let selectedId = null;
@@ -15,15 +17,17 @@
     let inspectorTab = 'Overview';
     let verdictTimer = null;
     let verdictOnline = false;
-    const live = { radius1: 0, radius2: 0, share1: 52, clearance: '', fos: 0, fosText: '' };
+    const live = { radius1: 0, radius2: 0, radius3: 0, radius4: 0, share1: 52, share2: 48, share3: 0, share4: 0, clearance: '', fos: 0, fosText: '' };
 
     const state = {
         time: 0.0,
         window: 60.0,
         environment: 'factory',
-        liftMode: 'tandem', // 'tandem', 'single', 'tailing'
+        liftMode: 'tandem', // 'tandem', 'triple', 'quad', 'single', 'tailing'
         crane1: { x: -15, z: 0, boomAngle: 65, slewAngle: 15, boomLength: 30 },
         crane2: { x: 15, z: 0, boomAngle: 60, slewAngle: -20, boomLength: 28 },
+        crane3: { x: 0, z: 18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
+        crane4: { x: 0, z: -18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
         load: { massTonnes: 45.0, length: 12.0, radius: 1.5 },
         allowableGbpKPa: 220.0,
         // User-supplied plan data. Defaults mirror the demo scenario; the
@@ -513,7 +517,10 @@
         const craneMat1 = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
         const craneMat2 = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
         const boomMat1 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
-        const boomMat2 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const craneMat3 = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
+        const craneMat4 = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.4 });
+        const boomMat3 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const boomMat4 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
         const loadMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.3, roughness: 0.5 });
 
         // Crane 1 (Alpha)
@@ -548,6 +555,40 @@
         addMatRow(crane2Group);
         scene.add(crane2Group);
 
+        // Crane 3 (Gamma)
+        crane3Group = new THREE.Group();
+        crane3Group.position.set(state.crane3.x, 0, state.crane3.z);
+        crane3Group.userData.nodeId = 'CRN-GAMMA';
+        const base3 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat3);
+        base3.position.y = 1.25;
+        base3.userData.nodeId = 'CRN-GAMMA';
+        crane3Group.add(base3);
+
+        boom3 = makeBoomMesh(state.crane3.boomLength, boomMat3);
+        boom3.position.set(0, 2.5, 0);
+        boom3.userData.nodeId = 'CRN-GAMMA';
+        crane3Group.add(boom3);
+        addMatRow(crane3Group);
+        crane3Group.visible = false;
+        scene.add(crane3Group);
+
+        // Crane 4 (Delta)
+        crane4Group = new THREE.Group();
+        crane4Group.position.set(state.crane4.x, 0, state.crane4.z);
+        crane4Group.userData.nodeId = 'CRN-DELTA';
+        const base4 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat4);
+        base4.position.y = 1.25;
+        base4.userData.nodeId = 'CRN-DELTA';
+        crane4Group.add(base4);
+
+        boom4 = makeBoomMesh(state.crane4.boomLength, boomMat4);
+        boom4.position.set(0, 2.5, 0);
+        boom4.userData.nodeId = 'CRN-DELTA';
+        crane4Group.add(boom4);
+        addMatRow(crane4Group);
+        crane4Group.visible = false;
+        scene.add(crane4Group);
+
         // Suspended Vessel Load (Cylinder)
         const loadGeo = new THREE.CylinderGeometry(state.load.radius, state.load.radius, state.load.length, 16);
         loadGeo.rotateZ(Math.PI / 2);
@@ -561,27 +602,39 @@
         hook1Mesh.userData.nodeId = 'HOOK-ALPHA';
         hook2Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
         hook2Mesh.userData.nodeId = 'HOOK-BETA';
+        hook3Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
+        hook3Mesh.userData.nodeId = 'HOOK-GAMMA';
+        hook3Mesh.visible = false;
+        hook4Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
+        hook4Mesh.userData.nodeId = 'HOOK-DELTA';
+        hook4Mesh.visible = false;
+
         scene.add(hook1Mesh);
         scene.add(hook2Mesh);
+        scene.add(hook3Mesh);
+        scene.add(hook4Mesh);
 
-        // Hoist pendant wire lines: boom tip -> hook block
+        // Hoist pendant wire lines: boom tip -> hook block (up to 4 cranes)
         const hoistWireMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
         hoistLines = [];
-        for (let i = 0; i < 2; i++) {
+        const hookIds = ['HOOK-ALPHA', 'HOOK-BETA', 'HOOK-GAMMA', 'HOOK-DELTA'];
+        for (let i = 0; i < 4; i++) {
             const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
             const line = new THREE.Line(g, hoistWireMat);
-            line.userData.nodeId = i === 0 ? 'HOOK-ALPHA' : 'HOOK-BETA';
+            line.userData.nodeId = hookIds[i];
+            if (i >= 2) line.visible = false;
             hoistLines.push(line);
             scene.add(line);
         }
 
-        // Sling legs: hook blocks to load trunnions
+        // Sling legs: hook blocks to load trunnions (up to 8 legs for 4-crane lift)
         const slingMat = new THREE.LineBasicMaterial({ color: 0xe2e8f0 });
         slingLines = [];
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 8; i++) {
             const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
             const line = new THREE.Line(g, slingMat);
-            line.userData.nodeId = i < 2 ? 'SLING-SET' : 'SHACKLE-SET';
+            line.userData.nodeId = i < 4 ? 'SLING-SET' : 'SHACKLE-SET';
+            if (i >= 4) line.visible = false;
             slingLines.push(line);
             scene.add(line);
         }
@@ -628,19 +681,29 @@
     }
 
     function updateKinematics() {
-        // Update Crane 1 Rotations (pitch boom towards center)
+        // Update Crane Rotations
         crane1Group.rotation.y = state.crane1.slewAngle * (Math.PI / 180);
         boom1.rotation.z = -(90 - state.crane1.boomAngle) * (Math.PI / 180);
 
-        // Update Crane 2 Rotations (pitch boom inwards towards crane 1)
         crane2Group.rotation.y = (180 + state.crane2.slewAngle) * (Math.PI / 180);
         boom2.rotation.z = -(90 - state.crane2.boomAngle) * (Math.PI / 180);
 
-        // Update world matrices so tip vectors match the exact mesh orientation
+        if (crane3Group) {
+            crane3Group.rotation.y = (-90 + state.crane3.slewAngle) * (Math.PI / 180);
+            boom3.rotation.z = -(90 - state.crane3.boomAngle) * (Math.PI / 180);
+            crane3Group.updateMatrixWorld(true);
+        }
+
+        if (crane4Group) {
+            crane4Group.rotation.y = (90 + state.crane4.slewAngle) * (Math.PI / 180);
+            boom4.rotation.z = -(90 - state.crane4.boomAngle) * (Math.PI / 180);
+            crane4Group.updateMatrixWorld(true);
+        }
+
         crane1Group.updateMatrixWorld(true);
         crane2Group.updateMatrixWorld(true);
 
-        // Calculate Boom Tips directly from the local boom mesh top (0, len, 0)
+        // Calculate Boom Tips directly from mesh
         const tip1Vec = new THREE.Vector3(0, state.crane1.boomLength, 0);
         boom1.localToWorld(tip1Vec);
         const tip2Vec = new THREE.Vector3(0, state.crane2.boomLength, 0);
@@ -649,32 +712,40 @@
         const tip1 = { x: tip1Vec.x, y: tip1Vec.y, z: tip1Vec.z };
         const tip2 = { x: tip2Vec.x, y: tip2Vec.y, z: tip2Vec.z };
 
-        // Lift Mode Branching: Single Crane, Tandem, or Tailing/Upending
+        const tip3Vec = new THREE.Vector3(0, state.crane3.boomLength, 0);
+        boom3.localToWorld(tip3Vec);
+        const tip3 = { x: tip3Vec.x, y: tip3Vec.y, z: tip3Vec.z };
+
+        const tip4Vec = new THREE.Vector3(0, state.crane4.boomLength, 0);
+        boom4.localToWorld(tip4Vec);
+        const tip4 = { x: tip4Vec.x, y: tip4Vec.y, z: tip4Vec.z };
+
+        // Lift Mode Branching: Single Crane, Tandem (2), Triple (3), Quad (4), or Tailing
         const mode = state.liftMode || 'tandem';
 
         if (mode === 'single') {
-            // Beta crane hidden & inactive in single crane mode
             crane2Group.visible = false;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
             hook2Mesh.visible = false;
-            hoistLines[1].visible = false;
-            slingLines[2].visible = false;
-            slingLines[3].visible = false;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines.slice(1).forEach(l => l.visible = false);
+            slingLines.slice(2).forEach(l => l.visible = false);
 
-            // Load directly suspended below Crane 1 tip
             const hookY = Math.max(tip1.y - currentHoistDrop, 4.0);
             const loadY = Math.max(hookY - 2.5, 2.1);
             suspendedLoad.position.set(tip1.x, loadY, tip1.z);
-            suspendedLoad.rotation.set(0, 0, 0); // horizontal neutral
+            suspendedLoad.rotation.set(0, 0, 0);
 
             hook1Mesh.position.set(tip1.x, hookY, tip1.z);
 
-            // Hoist 1 line
             const p1 = hoistLines[0].geometry.attributes.position;
             p1.setXYZ(0, tip1.x, tip1.y, tip1.z);
             p1.setXYZ(1, hook1Mesh.position.x, hook1Mesh.position.y, hook1Mesh.position.z);
             p1.needsUpdate = true;
+            hoistLines[0].visible = true;
 
-            // Slings 0 and 1 connect hook1 to vessel trunnions
             const sEnds = [
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: tip1.x - state.load.length / 3, y: loadY + state.load.radius, z: tip1.z }],
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: tip1.x + state.load.length / 3, y: loadY + state.load.radius, z: tip1.z }]
@@ -684,32 +755,36 @@
                 sp.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
                 sp.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
                 sp.needsUpdate = true;
+                slingLines[i].visible = true;
             });
 
             live.share1 = 100;
+            live.share2 = 0;
+            live.share3 = 0;
+            live.share4 = 0;
         } else if (mode === 'tailing') {
-            // Crane 1 (Alpha) acts as Main Lead / Hoist Crane holding top trunnion
-            // Crane 2 (Beta) acts as Tailing Crane holding bottom tail skirt
             crane2Group.visible = true;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
             hook2Mesh.visible = true;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
             hoistLines[1].visible = true;
-            slingLines[2].visible = true;
-            slingLines[3].visible = true;
+            hoistLines.slice(2).forEach(l => l.visible = false);
+            slingLines.slice(0, 4).forEach(l => l.visible = true);
+            slingLines.slice(4).forEach(l => l.visible = false);
 
-            // Upending progression: tilt angle 0 deg (horizontal at t=0) to 90 deg (fully vertical at t=60)
             const upendProgress = Math.min(Math.max(state.time / (state.window || 60), 0), 1);
-            const tiltAngle = upendProgress * (Math.PI / 2); // 0 -> pi/2
+            const tiltAngle = upendProgress * (Math.PI / 2);
 
-            // Lead Crane hook position (top trunnion)
             const hook1Y = Math.max(tip1.y - currentHoistDrop, 4.0);
             hook1Mesh.position.set(tip1.x, hook1Y, tip1.z);
 
-            // Tail Crane hook position (bottom skirt)
-            const tailHoistDrop = 16.5 - upendProgress * 6.0; // tail crane walks/follows up slightly
+            const tailHoistDrop = 16.5 - upendProgress * 6.0;
             const hook2Y = Math.max(tip2.y - tailHoistDrop, 2.8);
             hook2Mesh.position.set(tip2.x, hook2Y, tip2.z);
 
-            // Hoist lines
             [
                 [hoistLines[0], tip1, hook1Mesh.position],
                 [hoistLines[1], tip2, hook2Mesh.position]
@@ -720,41 +795,152 @@
                 p.needsUpdate = true;
             });
 
-            // Vessel center and orientation: top at hook1, base towards hook2
             const midX = (hook1Mesh.position.x + hook2Mesh.position.x) / 2;
             const midY = (hook1Mesh.position.y + hook2Mesh.position.y) / 2 - 1.2;
             const midZ = (hook1Mesh.position.z + hook2Mesh.position.z) / 2;
             suspendedLoad.position.set(midX, Math.max(midY, 2.0), midZ);
 
-            // Orient cylinder axis along vector from hook2 to hook1
             const upendDir = new THREE.Vector3().subVectors(hook1Mesh.position, hook2Mesh.position).normalize();
             suspendedLoad.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), upendDir);
 
-            // Slings connect to top trunnion and bottom skirt
             const sEnds = [
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: hook1Mesh.position.x - 0.5, y: hook1Mesh.position.y - 1.8, z: hook1Mesh.position.z }],
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: hook1Mesh.position.x + 0.5, y: hook1Mesh.position.y - 1.8, z: hook1Mesh.position.z }],
                 [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: hook2Mesh.position.x - 0.5, y: hook2Mesh.position.y - 1.8, z: hook2Mesh.position.z }],
                 [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: hook2Mesh.position.x + 0.5, y: hook2Mesh.position.y - 1.8, z: hook2Mesh.position.z }]
             ];
-            slingLines.forEach(function (line, i) {
-                const p = line.geometry.attributes.position;
+            for (let i = 0; i < 4; i++) {
+                const p = slingLines[i].geometry.attributes.position;
                 p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
                 p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
                 p.needsUpdate = true;
+            }
+
+            live.share1 = Math.round(50 + 50 * Math.sin(tiltAngle));
+            live.share2 = 100 - live.share1;
+            live.share3 = 0;
+            live.share4 = 0;
+        } else if (mode === 'triple') {
+            // Triple Crane Tandem Lift (Alpha, Beta, Gamma)
+            crane2Group.visible = true;
+            crane3Group.visible = true;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = true;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
+            hoistLines[1].visible = true;
+            hoistLines[2].visible = true;
+            hoistLines[3].visible = false;
+
+            const hookY = Math.max((tip1.y + tip2.y + tip3.y) / 3 - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            const loadX = (tip1.x + tip2.x + tip3.x) / 3;
+            const loadZ = (tip1.z + tip2.z + tip3.z) / 3;
+
+            suspendedLoad.position.set(loadX, loadY, loadZ);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+            hook2Mesh.position.set(tip2.x, hookY, tip2.z);
+            hook3Mesh.position.set(tip3.x, hookY, tip3.z);
+
+            [[hoistLines[0], tip1, hook1Mesh], [hoistLines[1], tip2, hook2Mesh], [hoistLines[2], tip3, hook3Mesh]].forEach(([line, tip, hk]) => {
+                const p = line.geometry.attributes.position;
+                p.setXYZ(0, tip.x, tip.y, tip.z);
+                p.setXYZ(1, hk.position.x, hk.position.y, hk.position.z);
+                p.needsUpdate = true;
             });
 
-            // Tailing load share shifts: Lead crane takes 50% at horizontal -> 100% at vertical
-            live.share1 = Math.round(50 + 50 * Math.sin(tiltAngle));
-        } else {
-            // Tandem Lift Mode (Default)
-            crane2Group.visible = true;
-            hook2Mesh.visible = true;
-            hoistLines[1].visible = true;
-            slingLines[2].visible = true;
-            slingLines[3].visible = true;
+            // Rigging: 2 slings each to trunnions
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 6, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 6, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX, y: loadY + state.load.radius, z: loadZ - 0.8 }]
+            ];
+            for (let i = 0; i < 6; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                p.needsUpdate = true;
+                slingLines[i].visible = true;
+            }
+            slingLines.slice(6).forEach(l => l.visible = false);
 
-            // Position Load midway between hoist points, driven by hoist wire payout
+            live.share1 = 35;
+            live.share2 = 35;
+            live.share3 = 30;
+            live.share4 = 0;
+        } else if (mode === 'quad') {
+            // Quad Crane Tandem Lift (Alpha, Beta, Gamma, Delta)
+            crane2Group.visible = true;
+            crane3Group.visible = true;
+            crane4Group.visible = true;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = true;
+            hook4Mesh.visible = true;
+            hoistLines.forEach(l => l.visible = true);
+            slingLines.forEach(l => l.visible = true);
+
+            const hookY = Math.max((tip1.y + tip2.y + tip3.y + tip4.y) / 4 - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            const loadX = (tip1.x + tip2.x + tip3.x + tip4.x) / 4;
+            const loadZ = (tip1.z + tip2.z + tip3.z + tip4.z) / 4;
+
+            suspendedLoad.position.set(loadX, loadY, loadZ);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+            hook2Mesh.position.set(tip2.x, hookY, tip2.z);
+            hook3Mesh.position.set(tip3.x, hookY, tip3.z);
+            hook4Mesh.position.set(tip4.x, hookY, tip4.z);
+
+            [[hoistLines[0], tip1, hook1Mesh], [hoistLines[1], tip2, hook2Mesh], [hoistLines[2], tip3, hook3Mesh], [hoistLines[3], tip4, hook4Mesh]].forEach(([line, tip, hk]) => {
+                const p = line.geometry.attributes.position;
+                p.setXYZ(0, tip.x, tip.y, tip.z);
+                p.setXYZ(1, hk.position.x, hk.position.y, hk.position.z);
+                p.needsUpdate = true;
+            });
+
+            // 8 Slings (2 per crane)
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 5, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 5, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX - 1.5, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX + 1.5, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook4Mesh.position.x, y: hookY - 0.8, z: hook4Mesh.position.z }, { x: loadX - 1.5, y: loadY + state.load.radius, z: loadZ - 0.8 }],
+                [{ x: hook4Mesh.position.x, y: hookY - 0.8, z: hook4Mesh.position.z }, { x: loadX + 1.5, y: loadY + state.load.radius, z: loadZ - 0.8 }]
+            ];
+            for (let i = 0; i < 8; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                p.needsUpdate = true;
+            }
+
+            live.share1 = 26;
+            live.share2 = 26;
+            live.share3 = 24;
+            live.share4 = 24;
+        } else {
+            // Dual Crane Tandem Lift (Default)
+            crane2Group.visible = true;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
+            hoistLines[1].visible = true;
+            hoistLines.slice(2).forEach(l => l.visible = false);
+            slingLines.slice(0, 4).forEach(l => l.visible = true);
+            slingLines.slice(4).forEach(l => l.visible = false);
+
             const loadX = (tip1.x + tip2.x) / 2;
             const avgTipY = (tip1.y + tip2.y) / 2;
             const hookY = Math.max(avgTipY - currentHoistDrop, 4.0);
@@ -763,53 +949,63 @@
             suspendedLoad.position.set(loadX, loadY, loadZ);
             suspendedLoad.rotation.set(0, 0, 0);
 
-            // Hooks ride below tips on hoist cables
             hook1Mesh.position.set(tip1.x, hookY, tip1.z);
             hook2Mesh.position.set(tip2.x, hookY, tip2.z);
 
-            // Hoist pendant lines: boom tips down to hooks
-            if (hoistLines && hoistLines.length === 2) {
-                const hEnds = [
-                    [tip1, hook1Mesh.position],
-                    [tip2, hook2Mesh.position]
-                ];
-                hoistLines.forEach(function (line, i) {
-                    const p = line.geometry.attributes.position;
-                    p.setXYZ(0, hEnds[i][0].x, hEnds[i][0].y, hEnds[i][0].z);
-                    p.setXYZ(1, hEnds[i][1].x, hEnds[i][1].y, hEnds[i][1].z);
-                    p.needsUpdate = true;
-                });
-            }
+            const hEnds = [
+                [tip1, hook1Mesh.position],
+                [tip2, hook2Mesh.position]
+            ];
+            [0, 1].forEach(function (i) {
+                const p = hoistLines[i].geometry.attributes.position;
+                p.setXYZ(0, hEnds[i][0].x, hEnds[i][0].y, hEnds[i][0].z);
+                p.setXYZ(1, hEnds[i][1].x, hEnds[i][1].y, hEnds[i][1].z);
+                p.needsUpdate = true;
+            });
 
-            // Slings connect from hook blocks to load lifting trunnions/shackles
             const ends = [
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 2 + 1, y: loadY + state.load.radius, z: loadZ }],
                 [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 4, y: loadY + state.load.radius, z: loadZ }],
                 [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 4, y: loadY + state.load.radius, z: loadZ }],
                 [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 2 - 1, y: loadY + state.load.radius, z: loadZ }]
             ];
-            slingLines.forEach(function (line, i) {
-                const p = line.geometry.attributes.position;
+            for (let i = 0; i < 4; i++) {
+                const p = slingLines[i].geometry.attributes.position;
                 p.setXYZ(0, ends[i][0].x, ends[i][0].y, ends[i][0].z);
                 p.setXYZ(1, ends[i][1].x, ends[i][1].y, ends[i][1].z);
                 p.needsUpdate = true;
-            });
+            }
 
             live.share1 = 52;
+            live.share2 = 48;
+            live.share3 = 0;
+            live.share4 = 0;
         }
 
         live.radius1 = Math.hypot(tip1.x - state.crane1.x, tip1.z - state.crane1.z);
         live.radius2 = Math.hypot(tip2.x - state.crane2.x, tip2.z - state.crane2.z);
+        live.radius3 = Math.hypot(tip3.x - state.crane3.x, tip3.z - state.crane3.z);
+        live.radius4 = Math.hypot(tip4.x - state.crane4.x, tip4.z - state.crane4.z);
 
         // Evaluate Spatial Distance & Collision
-        const dx = tip1.x - tip2.x;
-        const dy = tip1.y - tip2.y;
-        const dz = tip1.z - tip2.z;
-        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-        const clearance = dist - state.load.length;
+        let clearance = 0;
+        if (mode === 'quad') {
+            const d12 = Math.hypot(tip1.x - tip2.x, tip1.y - tip2.y, tip1.z - tip2.z);
+            const d34 = Math.hypot(tip3.x - tip4.x, tip3.y - tip4.y, tip3.z - tip4.z);
+            clearance = Math.min(d12 - state.load.length, d34 - 10);
+        } else if (mode === 'triple') {
+            const d12 = Math.hypot(tip1.x - tip2.x, tip1.y - tip2.y, tip1.z - tip2.z);
+            const d13 = Math.hypot(tip1.x - tip3.x, tip1.y - tip3.y, tip1.z - tip3.z);
+            clearance = Math.min(d12 - state.load.length, d13 - 10);
+        } else {
+            const dx = tip1.x - tip2.x;
+            const dy = tip1.y - tip2.y;
+            const dz = tip1.z - tip2.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            clearance = dist - state.load.length;
+        }
 
-        // Offline mirror of the bearing check (display estimation only):
-        // per-crane share + user machine weight over 4 pads.
+        // Bearing check
         const shareFrac1 = live.share1 / 100.0;
         const padLoad1 = (state.load.massTonnes * shareFrac1 + state.plan.chassis1) / 4;
         const actualKPa = (padLoad1 * 9.80665) / 2.25;
@@ -837,8 +1033,12 @@
         if (shareEl) {
             if (mode === 'single') {
                 shareEl.textContent = '100% / 0%';
+            } else if (mode === 'triple') {
+                shareEl.textContent = `${live.share1}% / ${live.share2}% / ${live.share3}%`;
+            } else if (mode === 'quad') {
+                shareEl.textContent = `${live.share1}% / ${live.share2}% / ${live.share3}% / ${live.share4}%`;
             } else {
-                shareEl.textContent = `${live.share1}% / ${100 - live.share1}%`;
+                shareEl.textContent = `${live.share1}% / ${live.share2}%`;
             }
         }
 
@@ -1012,12 +1212,18 @@
         [['crane1-angle', 'crane1', 'boomAngle', 'crane1-angle-val', '°'],
          ['crane1-slew', 'crane1', 'slewAngle', 'crane1-slew-val', '°'],
          ['crane2-angle', 'crane2', 'boomAngle', 'crane2-angle-val', '°'],
-         ['crane2-slew', 'crane2', 'slewAngle', 'crane2-slew-val', '°']
+         ['crane2-slew', 'crane2', 'slewAngle', 'crane2-slew-val', '°'],
+         ['crane3-angle', 'crane3', 'boomAngle', 'crane3-angle-val', '°'],
+         ['crane3-slew', 'crane3', 'slewAngle', 'crane3-slew-val', '°'],
+         ['crane4-angle', 'crane4', 'boomAngle', 'crane4-angle-val', '°'],
+         ['crane4-slew', 'crane4', 'slewAngle', 'crane4-slew-val', '°']
         ].forEach(([id, crane, key, label, unit]) => {
             const el = document.getElementById(id);
+            if (!el) return;
             el.addEventListener('input', (e) => {
                 state[crane][key] = parseFloat(e.target.value);
-                document.getElementById(label).textContent = e.target.value + unit;
+                const valEl = document.getElementById(label);
+                if (valEl) valEl.textContent = e.target.value + unit;
                 updateKinematics();
             });
         });
@@ -1131,8 +1337,16 @@
         const liftModeSelect = document.getElementById('lift-mode-select');
         if (liftModeSelect) {
             liftModeSelect.value = state.liftMode;
+            const updateCranePanels = (m) => {
+                const c3Ctrl = document.getElementById('crane3-ctrl-group');
+                const c4Ctrl = document.getElementById('crane4-ctrl-group');
+                if (c3Ctrl) c3Ctrl.style.display = (m === 'triple' || m === 'quad') ? 'block' : 'none';
+                if (c4Ctrl) c4Ctrl.style.display = (m === 'quad') ? 'block' : 'none';
+            };
+            updateCranePanels(state.liftMode);
             liftModeSelect.addEventListener('change', (e) => {
                 state.liftMode = e.target.value;
+                updateCranePanels(state.liftMode);
                 updateKinematics();
             });
         }
@@ -1266,10 +1480,14 @@
 
     function liveSpecs(id) {
         switch (id) {
-            case 'CRN-ALPHA': return [['Working radius', live.radius1.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis1 + ' t'], ['Load share', live.share1 + ' / ' + (100 - live.share1)]];
-            case 'CRN-BETA': return [['Working radius', live.radius2.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis2 + ' t'], ['Load share', (100 - live.share1) + ' / ' + live.share1]];
-            case 'HOOK-ALPHA': return [['Hook share', (45 * live.share1 / 100).toFixed(1) + ' t']];
-            case 'HOOK-BETA': return [['Hook share', (45 * (100 - live.share1) / 100).toFixed(1) + ' t']];
+            case 'CRN-ALPHA': return [['Working radius', live.radius1.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis1 + ' t'], ['Load share', live.share1 + '%']];
+            case 'CRN-BETA': return [['Working radius', live.radius2.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis2 + ' t'], ['Load share', live.share2 + '%']];
+            case 'CRN-GAMMA': return [['Working radius', live.radius3.toFixed(2) + ' m'], ['Machine weight', '60 t'], ['Load share', live.share3 + '%']];
+            case 'CRN-DELTA': return [['Working radius', live.radius4.toFixed(2) + ' m'], ['Machine weight', '60 t'], ['Load share', live.share4 + '%']];
+            case 'HOOK-ALPHA': return [['Hook share', (state.load.massTonnes * live.share1 / 100).toFixed(1) + ' t']];
+            case 'HOOK-BETA': return [['Hook share', (state.load.massTonnes * live.share2 / 100).toFixed(1) + ' t']];
+            case 'HOOK-GAMMA': return [['Hook share', (state.load.massTonnes * live.share3 / 100).toFixed(1) + ' t']];
+            case 'HOOK-DELTA': return [['Hook share', (state.load.massTonnes * live.share4 / 100).toFixed(1) + ' t']];
             case 'SLING-SET': return [['Clearance verdict', live.clearance]];
             case 'SHACKLE-SET': return [['Lateral allowance', (45 * 0.03).toFixed(2) + ' t min']];
             case 'VESSEL-45T': return [['DHL share', live.clearance]];

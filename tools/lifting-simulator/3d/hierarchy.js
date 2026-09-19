@@ -40,6 +40,38 @@
                         standards: [['DNV-ST-N001 §5.3', 'SKL ≥ 1.25 on multi-sling legs'], ['rulesengine/liftplan.go', 'DHL = W + Wrig']],
                         safety: 'Hook latch verified before lift-off. 3% lateral allowance in shackle bow.',
                         evidence: 'Hook cert + WLL marking photograph.'
+                    },
+                    {
+                        id: 'CRN-GAMMA', level: 'Level 2 · assembly', name: 'Crane Gamma (GMK 7550)',
+                        status: 'Active', desc: 'Tertiary crane in 3-crane and 4-crane tandem lifts. Participates in load share equilibrium.',
+                        specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
+                        standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
+                        safety: 'Anti-two-block monitored. Stop-work on LMI trigger.',
+                        evidence: 'OEM load chart (owner-supplied, bound at plan build).'
+                    },
+                    {
+                        id: 'HOOK-GAMMA', level: 'Level 3 · component', name: 'Hook Block Gamma',
+                        status: 'Proposed', desc: 'Hook block and falls for Crane Gamma.',
+                        specs: [['Self-weight', '0.6 t (ledger)'], ['Falls', '2'], ['Hook share', 'live']],
+                        standards: [['DNV-ST-N001 §5.3', 'SKL ≥ 1.25 on multi-sling legs'], ['rulesengine/liftplan.go', 'DHL = W + Wrig']],
+                        safety: 'Hook latch verified before lift-off.',
+                        evidence: 'Hook cert + WLL marking photograph.'
+                    },
+                    {
+                        id: 'CRN-DELTA', level: 'Level 2 · assembly', name: 'Crane Delta (AC 500)',
+                        status: 'Active', desc: 'Quaternary crane in 4-crane complex tandem lifts. Quad-rigging stabilization.',
+                        specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
+                        standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
+                        safety: 'Anti-two-block monitored. Stop-work on LMI trigger.',
+                        evidence: 'OEM load chart (owner-supplied, bound at plan build).'
+                    },
+                    {
+                        id: 'HOOK-DELTA', level: 'Level 3 · component', name: 'Hook Block Delta',
+                        status: 'Proposed', desc: 'Hook block and falls for Crane Delta.',
+                        specs: [['Self-weight', '0.6 t (ledger)'], ['Falls', '2'], ['Hook share', 'live']],
+                        standards: [['DNV-ST-N001 §5.3', 'SKL ≥ 1.25 on multi-sling legs'], ['rulesengine/liftplan.go', 'DHL = W + Wrig']],
+                        safety: 'Hook latch verified before lift-off.',
+                        evidence: 'Hook cert + WLL marking photograph.'
                     }
                 ]
             },

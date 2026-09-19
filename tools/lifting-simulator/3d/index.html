@@ -81,7 +81,9 @@
 
                     <label for="lift-mode-select" style="margin-top: 10px;">Lift Execution Mode:</label>
                     <select id="lift-mode-select" class="config-select">
-                        <option value="tandem">👥 Dual Crane Tandem Lift</option>
+                        <option value="tandem">👥 Dual Crane Tandem Lift (2 Cranes)</option>
+                        <option value="triple">🏗️ Triple Crane Tandem Lift (3 Cranes)</option>
+                        <option value="quad">🏢 Quad Crane Tandem Lift (4 Cranes)</option>
                         <option value="single">👤 Single Crane Lift (Alpha Only)</option>
                         <option value="tailing">🔄 Vessel Tailing & Upending (0° → 90°)</option>
                     </select>
@@ -98,7 +100,7 @@
                     </div>
                 </div>
 
-                <h2>Dual Crane Kinematics</h2>
+                <h2>Crane Fleet Kinematics</h2>
                 <div class="control-group">
                     <h3>Crane Alpha (Liebherr LTM 1500)</h3>
                     <label>Boom Angle: <span id="crane1-angle-val">65°</span></label>
@@ -115,6 +117,24 @@
 
                     <label>Slew Angle: <span id="crane2-slew-val">-20°</span></label>
                     <input type="range" id="crane2-slew" min="-90" max="90" value="-20">
+                </div>
+
+                <div class="control-group" id="crane3-ctrl-group" style="display: none;">
+                    <h3>Crane Gamma (Grove GMK 7550)</h3>
+                    <label>Boom Angle: <span id="crane3-angle-val">62°</span></label>
+                    <input type="range" id="crane3-angle" min="30" max="80" value="62">
+
+                    <label>Slew Angle: <span id="crane3-slew-val">0°</span></label>
+                    <input type="range" id="crane3-slew" min="-90" max="90" value="0">
+                </div>
+
+                <div class="control-group" id="crane4-ctrl-group" style="display: none;">
+                    <h3>Crane Delta (Demag AC 500)</h3>
+                    <label>Boom Angle: <span id="crane4-angle-val">62°</span></label>
+                    <input type="range" id="crane4-angle" min="30" max="80" value="62">
+
+                    <label>Slew Angle: <span id="crane4-slew-val">0°</span></label>
+                    <input type="range" id="crane4-slew" min="-90" max="90" value="0">
                 </div>
 
                 <h2>Plan Inputs (user data)</h2>
