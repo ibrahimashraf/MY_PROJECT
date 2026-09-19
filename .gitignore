@@ -60,3 +60,5 @@ docs/evidence/pilot-backups/
 Thumbs.db
 graphify-out/
 graphify-out/
+# Added by code-review-graph
+.code-review-graph/
