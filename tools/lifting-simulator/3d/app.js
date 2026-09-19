@@ -394,6 +394,70 @@
                 break;
             }
 
+            case 'construction': {
+                scene.background = new THREE.Color(0x1a2332);
+                if (amb) amb.color.setHex(0xe2e8f0);
+                if (dir) { dir.color.setHex(0xfef08a); dir.position.set(30, 65, 25); }
+
+                // Graded Dirt / Hardcore Aggregate Ground Plane
+                const groundGeo = new THREE.PlaneGeometry(300, 300, 32, 32);
+                const groundMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.95 });
+                const ground = new THREE.Mesh(groundGeo, groundMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.05;
+                envGroup.add(ground);
+
+                // Concrete Substructure Foundation Pad with starter rebar
+                const padMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+                const fPad = new THREE.Mesh(new THREE.BoxGeometry(40, 0.8, 30), padMat);
+                fPad.position.set(0, 0.4, -10);
+                envGroup.add(fPad);
+
+                // Reinforced Concrete Building Columns / Pylons Under Construction
+                const colMat = new THREE.MeshStandardMaterial({ color: 0xa8a29e, roughness: 0.85 });
+                const rebarMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.7, roughness: 0.4 });
+                [[-14, -20], [-14, 0], [14, -20], [14, 0]].forEach(([cx, cz]) => {
+                    const col = new THREE.Mesh(new THREE.BoxGeometry(2.2, 10, 2.2), colMat);
+                    col.position.set(cx, 5.0, cz);
+                    envGroup.add(col);
+
+                    // Rebar cage cages protruding from top
+                    for (let r = 0; r < 4; r++) {
+                        const rx = (r % 2 === 0 ? -0.8 : 0.8);
+                        const rz = (r < 2 ? -0.8 : 0.8);
+                        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.5, 6), rebarMat);
+                        bar.position.set(cx + rx, 11.5, cz + rz);
+                        envGroup.add(bar);
+                    }
+                });
+
+                // Heavy Modular Scaffolding Lattice Tower
+                const scaffMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true });
+                const scaff = new THREE.Mesh(new THREE.BoxGeometry(6, 18, 6), scaffMat);
+                scaff.position.set(-22, 9, 8);
+                envGroup.add(scaff);
+
+                // Site Safety Perimeter Fencing & Traffic Jersey Barriers
+                const jerseyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.7 });
+                for (let x = -35; x <= 35; x += 10) {
+                    const barrier = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.8), jerseyMat);
+                    barrier.position.set(x, 0.6, 22);
+                    envGroup.add(barrier);
+                }
+
+                // Construction Site Office / Welfare Portable Cabin Container
+                const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+                const cabin = new THREE.Mesh(new THREE.BoxGeometry(10, 3.2, 4.5), cabinMat);
+                cabin.position.set(28, 1.6, 15);
+                envGroup.add(cabin);
+
+                // Site trench excavation hole
+                const trench = new THREE.Mesh(new THREE.BoxGeometry(16, 0.4, 6), new THREE.MeshBasicMaterial({ color: 0x1c1917 }));
+                trench.position.set(0, 0.05, -28);
+                envGroup.add(trench);
+                break;
+            }
+
             case 'factory':
             default: {
                 scene.background = new THREE.Color(0x0a1120);
