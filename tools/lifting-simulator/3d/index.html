@@ -45,10 +45,28 @@
 
         <div id="main-view">
             <aside id="systems-panel">
-                <h2>Systems</h2>
-                <input type="text" id="system-search" placeholder="Search equipment, alias or ID…">
-                <div id="systems-list"></div>
-                <div id="assembly-summary"></div>
+                <div class="sidebar-tabs">
+                    <button id="tab-systems" class="sidebar-tab active">Systems</button>
+                    <button id="tab-blocks" class="sidebar-tab">Blocks Library</button>
+                </div>
+
+                <div id="systems-view-container">
+                    <input type="text" id="system-search" placeholder="Search equipment, alias or ID…">
+                    <div id="systems-list"></div>
+                    <div id="assembly-summary"></div>
+                </div>
+
+                <div id="blocks-view-container" style="display: none;">
+                    <div class="blocks-filter-bar">
+                        <select id="blocks-cat-select" class="config-select">
+                            <option value="all">📦 All Block Categories</option>
+                            <option value="loads">🛢️ Lifted Loads & Vessels</option>
+                            <option value="rigging">🔗 Below-the-Hook Rigging Tackle</option>
+                            <option value="support">🏗️ Support, Mats & Staging</option>
+                        </select>
+                    </div>
+                    <div id="blocks-list"></div>
+                </div>
             </aside>
 
             <div id="canvas-wrap">
@@ -86,6 +104,15 @@
                         <option value="quad">🏢 Quad Crane Tandem Lift (4 Cranes)</option>
                         <option value="single">👤 Single Crane Lift (Alpha Only)</option>
                         <option value="tailing">🔄 Vessel Tailing & Upending (0° → 90°)</option>
+                    </select>
+
+                    <label for="load-preset-select" style="margin-top: 10px;">Load Block Preset (ASME B30.20):</label>
+                    <select id="load-preset-select" class="config-select">
+                        <option value="BLOCK_LOAD_VESSEL">🛢️ Horizontal Pressure Vessel (45 t)</option>
+                        <option value="BLOCK_LOAD_COLUMN">🗼 Fractionation Column / Demethanizer (65 t)</option>
+                        <option value="BLOCK_LOAD_GIRDER">🌉 Precast Concrete Bridge Girder (38 t)</option>
+                        <option value="BLOCK_LOAD_MODULE">🏢 Modular Substation / E-House Skid (52 t)</option>
+                        <option value="BLOCK_LOAD_TRANSFORMER">⚡ Heavy Power Transformer Skid (78 t)</option>
                     </select>
                 </div>
 
@@ -185,6 +212,7 @@
         </div>
     </div>
     <script src="hierarchy.js"></script>
+    <script src="blocks.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

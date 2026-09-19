@@ -29,6 +29,7 @@
         crane3: { x: 0, z: 18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
         crane4: { x: 0, z: -18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
         load: { massTonnes: 45.0, length: 12.0, radius: 1.5 },
+        loadBlockId: 'BLOCK_LOAD_VESSEL',
         allowableGbpKPa: 220.0,
         // User-supplied plan data. Defaults mirror the demo scenario; the
         // engine treats every value as untrusted input and gates it.
@@ -100,6 +101,8 @@
         buildSceneObjects();
         setupEventListeners();
         buildSystemsList();
+        buildBlocksList();
+        setupBlocksTabs();
         
         // Initialize timeline to stage 0
         const sliderTime = document.getElementById('time-slider');
@@ -506,10 +509,32 @@
     }
 
     function rebuildLoad() {
-        suspendedLoad.geometry.dispose();
-        const g = new THREE.CylinderGeometry(state.load.radius, state.load.radius, state.load.length, 16);
-        g.rotateZ(Math.PI / 2);
-        suspendedLoad.geometry = g;
+        if (suspendedLoad) {
+            scene.remove(suspendedLoad);
+        }
+        suspendedLoad = createLoadMesh(state.loadBlockId);
+        scene.add(suspendedLoad);
+    }
+
+    function createLoadMesh(blockId) {
+        let blockDef = null;
+        if (window.INTEGIN_BLOCKS && typeof window.INTEGIN_BLOCKS.getBlockById === 'function') {
+            blockDef = window.INTEGIN_BLOCKS.getBlockById(blockId);
+        }
+
+        let loadObj;
+        if (blockDef && typeof blockDef.build3D === 'function') {
+            loadObj = blockDef.build3D(state.load);
+        } else {
+            // Fallback cylindrical vessel
+            const loadGeo = new THREE.CylinderGeometry(state.load.radius, state.load.radius, state.load.length, 16);
+            loadGeo.rotateZ(Math.PI / 2);
+            const loadMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.3, roughness: 0.5 });
+            loadObj = new THREE.Mesh(loadGeo, loadMat);
+        }
+
+        loadObj.userData.nodeId = 'VESSEL-45T';
+        return loadObj;
     }
 
     function buildSceneObjects() {
@@ -589,11 +614,8 @@
         crane4Group.visible = false;
         scene.add(crane4Group);
 
-        // Suspended Vessel Load (Cylinder)
-        const loadGeo = new THREE.CylinderGeometry(state.load.radius, state.load.radius, state.load.length, 16);
-        loadGeo.rotateZ(Math.PI / 2);
-        suspendedLoad = new THREE.Mesh(loadGeo, loadMat);
-        suspendedLoad.userData.nodeId = 'VESSEL-45T';
+        // Suspended Load from Blocks Library
+        suspendedLoad = createLoadMesh(state.loadBlockId);
         scene.add(suspendedLoad);
 
         // Hook blocks ride below tips on hoist lines
@@ -1351,6 +1373,14 @@
             });
         }
 
+        const loadPresetSelect = document.getElementById('load-preset-select');
+        if (loadPresetSelect) {
+            loadPresetSelect.value = state.loadBlockId;
+            loadPresetSelect.addEventListener('change', (e) => {
+                applyLoadBlock(e.target.value);
+            });
+        }
+
         document.getElementById('system-search').addEventListener('input', (e) => {
             buildSystemsList(e.target.value.toLowerCase());
         });
@@ -1468,6 +1498,193 @@
         });
         document.getElementById('assembly-summary').textContent =
             `${H.systems.length} systems · ${total} components shown`;
+    }
+
+    function setupBlocksTabs() {
+        const tabSystems = document.getElementById('tab-systems');
+        const tabBlocks = document.getElementById('tab-blocks');
+        const viewSystems = document.getElementById('systems-view-container');
+        const viewBlocks = document.getElementById('blocks-view-container');
+        const catSelect = document.getElementById('blocks-cat-select');
+
+        if (!tabSystems || !tabBlocks || !viewSystems || !viewBlocks) return;
+
+        tabSystems.addEventListener('click', () => {
+            tabSystems.classList.add('active');
+            tabBlocks.classList.remove('active');
+            viewSystems.style.display = 'block';
+            viewBlocks.style.display = 'none';
+        });
+
+        tabBlocks.addEventListener('click', () => {
+            tabBlocks.classList.add('active');
+            tabSystems.classList.remove('active');
+            viewSystems.style.display = 'none';
+            viewBlocks.style.display = 'block';
+            buildBlocksList();
+        });
+
+        if (catSelect) {
+            catSelect.addEventListener('change', () => {
+                buildBlocksList();
+            });
+        }
+    }
+
+    function buildBlocksList() {
+        const host = document.getElementById('blocks-list');
+        if (!host || !window.INTEGIN_BLOCKS) return;
+        host.innerHTML = '';
+
+        const catFilter = document.getElementById('blocks-cat-select') ? document.getElementById('blocks-cat-select').value : 'all';
+        const catalog = window.INTEGIN_BLOCKS.getCatalog();
+
+        const categories = catFilter === 'all' ? ['loads', 'rigging', 'support'] : [catFilter];
+        const categoryHeaders = {
+            loads: { title: '🛢️ Lifted Loads & Vessels', desc: 'Parametric vessels, columns, girders & skids' },
+            rigging: { title: '🔗 Rigging & Spreader Beams', desc: 'ASME B30.20 below-the-hook hardware' },
+            support: { title: '🏗️ Support & Staging', desc: 'Mats, transport beds, foundation saddles' }
+        };
+
+        categories.forEach(cat => {
+            const items = catalog[cat] || [];
+            if (!items.length) return;
+
+            const header = document.createElement('div');
+            header.style.cssText = 'font-size: 11px; text-transform: uppercase; color: var(--accent); margin: 10px 0 6px; font-weight: 600;';
+            header.textContent = categoryHeaders[cat].title;
+            host.appendChild(header);
+
+            items.forEach(block => {
+                const card = document.createElement('div');
+                card.className = 'block-card';
+
+                const isCurrentLoad = block.id === state.loadBlockId;
+                if (isCurrentLoad) {
+                    card.style.borderColor = 'var(--accent)';
+                    card.style.background = 'rgba(56, 189, 248, 0.08)';
+                }
+
+                card.innerHTML = `
+                    <div class="block-header">
+                        <span class="block-title">${block.name}</span>
+                        <span class="block-badge">${block.code}</span>
+                    </div>
+                    <div class="block-desc">${block.desc}</div>
+                    <div class="block-spec-tag">${block.standards}</div>
+                    <div class="block-actions">
+                        <button class="btn-block-apply btn-inspect-block" data-id="${block.id}">Details / Specs</button>
+                        ${block.category === 'loads' ? `<button class="btn-block-apply btn-load-block" data-id="${block.id}" style="${isCurrentLoad ? 'background:var(--accent);color:#0f172a;' : ''}">${isCurrentLoad ? '✓ Active in 3D' : 'Insert Load'}</button>` : ''}
+                    </div>
+                `;
+
+                card.querySelector('.btn-inspect-block').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renderBlockInspector(block);
+                });
+
+                const loadBtn = card.querySelector('.btn-load-block');
+                if (loadBtn) {
+                    loadBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        applyLoadBlock(block.id);
+                    });
+                }
+
+                card.addEventListener('click', () => {
+                    renderBlockInspector(block);
+                });
+
+                host.appendChild(card);
+            });
+        });
+    }
+
+    function applyLoadBlock(blockId) {
+        if (!window.INTEGIN_BLOCKS) return;
+        const block = window.INTEGIN_BLOCKS.getBlockById(blockId);
+        if (!block) return;
+
+        state.loadBlockId = block.id;
+
+        // Apply block specs to state.load
+        if (block.defaultProps) {
+            if (block.defaultProps.massTonnes) {
+                state.load.massTonnes = block.defaultProps.massTonnes;
+                const inLoad = document.getElementById('in-load');
+                if (inLoad) inLoad.value = block.defaultProps.massTonnes;
+            }
+            if (block.defaultProps.length) {
+                state.load.length = block.defaultProps.length;
+                const inLen = document.getElementById('in-llen');
+                if (inLen) inLen.value = block.defaultProps.length;
+            }
+            if (block.defaultProps.radius) {
+                state.load.radius = block.defaultProps.radius;
+                const inRad = document.getElementById('in-lrad');
+                if (inRad) inRad.value = block.defaultProps.radius;
+            }
+            if (block.defaultProps.cogOffset !== undefined) {
+                state.plan.cogOffset = block.defaultProps.cogOffset;
+                const inCog = document.getElementById('in-cog');
+                if (inCog) inCog.value = block.defaultProps.cogOffset;
+            }
+        }
+
+        // Sync load preset dropdown
+        const loadPresetSelect = document.getElementById('load-preset-select');
+        if (loadPresetSelect && loadPresetSelect.value !== block.id) {
+            loadPresetSelect.value = block.id;
+        }
+
+        // Update 3D visual mesh
+        rebuildLoad();
+        updateKinematics();
+        buildBlocksList();
+        renderBlockInspector(block);
+    }
+
+    function renderBlockInspector(block) {
+        const host = document.getElementById('inspector');
+        if (!host) return;
+
+        const p = block.defaultProps || {};
+        let specsHtml = '';
+        Object.keys(p).forEach(k => {
+            specsHtml += `<div class="kv"><span>${k}</span><b>${p[k]}</b></div>`;
+        });
+
+        host.innerHTML = `
+            <div class="insp-head">
+                <span class="crumb-sys">BLOCK LIBRARY · ${block.category.toUpperCase()}</span>
+                <span class="badge">PARAMETRIC</span>
+            </div>
+            <h3>${block.name}</h3>
+            <div class="insp-id">${block.id} · CAD Ref: ${block.cadBlock || 'N/A'}</div>
+            <div class="insp-body">
+                <p style="margin-bottom: 10px;">${block.desc}</p>
+                <div style="margin-bottom: 8px;"><strong>Engineering Specs & Parameters:</strong></div>
+                ${specsHtml}
+            </div>
+            <div class="insp-std">
+                <div>§ <b>Standards</b> — ${block.standards}</div>
+                <div>§ <b>CAD Dynamic Block</b> — ${block.cadBlock}</div>
+            </div>
+            ${block.category === 'loads' ? `
+                <div style="margin-top: 12px;">
+                    <button class="btn-block-apply" id="btn-insp-insert" style="width: 100%; padding: 8px;">
+                        ${block.id === state.loadBlockId ? '✓ Currently Active in 3D Simulation' : '🚀 Load this Block into Simulator'}
+                    </button>
+                </div>
+            ` : ''}
+        `;
+
+        const insertBtn = document.getElementById('btn-insp-insert');
+        if (insertBtn && block.id !== state.loadBlockId) {
+            insertBtn.addEventListener('click', () => {
+                applyLoadBlock(block.id);
+            });
+        }
     }
 
     function selectNode(id) {

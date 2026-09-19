@@ -215,3 +215,69 @@ func containsInt(slice []int, val int) bool {
 	}
 	return false
 }
+
+// PredefinedBlockDefs returns the standard library of engineering lift blocks.
+func PredefinedBlockDefs() map[string]*DynamicBlockDef {
+	return map[string]*DynamicBlockDef{
+		"VESSEL_HORIZ_DYN": {
+			Name: "VESSEL_HORIZ_DYN",
+			BaseEntities: []dxf.Entity{
+				&dxf.Line{Start: dxf.Point3D{X: -6.0, Y: -1.5}, End: dxf.Point3D{X: 6.0, Y: -1.5}},
+				&dxf.Line{Start: dxf.Point3D{X: -6.0, Y: 1.5}, End: dxf.Point3D{X: 6.0, Y: 1.5}},
+				&dxf.Circle{Center: dxf.Point3D{X: -4.0, Y: 0.0}, Radius: 0.3},
+				&dxf.Circle{Center: dxf.Point3D{X: 4.0, Y: 0.0}, Radius: 0.3},
+			},
+			Parameters: []Parameter{
+				{Name: "LENGTH", Type: ParamLinear, DefaultValue: 12.0, MinValue: 4.0, MaxValue: 50.0},
+				{Name: "RADIUS", Type: ParamLinear, DefaultValue: 1.5, MinValue: 0.5, MaxValue: 6.0},
+			},
+			Actions: []Action{
+				{Name: "STRETCH_SHELL", Type: ActionStretch, ParameterName: "LENGTH", TargetIndices: []int{0, 1}},
+			},
+		},
+		"COLUMN_VERT_DYN": {
+			Name: "COLUMN_VERT_DYN",
+			BaseEntities: []dxf.Entity{
+				&dxf.Line{Start: dxf.Point3D{X: -11.0, Y: -1.2}, End: dxf.Point3D{X: 11.0, Y: -1.2}},
+				&dxf.Line{Start: dxf.Point3D{X: -11.0, Y: 1.2}, End: dxf.Point3D{X: 11.0, Y: 1.2}},
+				&dxf.Circle{Center: dxf.Point3D{X: 9.5, Y: 0.0}, Radius: 0.35},
+			},
+			Parameters: []Parameter{
+				{Name: "LENGTH", Type: ParamLinear, DefaultValue: 22.0, MinValue: 8.0, MaxValue: 80.0},
+			},
+			Actions: []Action{
+				{Name: "STRETCH_COL", Type: ActionStretch, ParameterName: "LENGTH", TargetIndices: []int{0, 1}},
+			},
+		},
+		"GIRDER_PRECAST_DYN": {
+			Name: "GIRDER_PRECAST_DYN",
+			BaseEntities: []dxf.Entity{
+				&dxf.Line{Start: dxf.Point3D{X: -9.0, Y: -0.9}, End: dxf.Point3D{X: 9.0, Y: -0.9}},
+				&dxf.Line{Start: dxf.Point3D{X: -9.0, Y: 0.9}, End: dxf.Point3D{X: 9.0, Y: 0.9}},
+				&dxf.Circle{Center: dxf.Point3D{X: -7.5, Y: 1.0}, Radius: 0.25},
+				&dxf.Circle{Center: dxf.Point3D{X: 7.5, Y: 1.0}, Radius: 0.25},
+			},
+			Parameters: []Parameter{
+				{Name: "LENGTH", Type: ParamLinear, DefaultValue: 18.0, MinValue: 6.0, MaxValue: 45.0},
+			},
+			Actions: []Action{
+				{Name: "STRETCH_GIRDER", Type: ActionStretch, ParameterName: "LENGTH", TargetIndices: []int{0, 1}},
+			},
+		},
+		"SPREADER_BEAM_DYN": {
+			Name: "SPREADER_BEAM_DYN",
+			BaseEntities: []dxf.Entity{
+				&dxf.Line{Start: dxf.Point3D{X: -5.0, Y: 0.0}, End: dxf.Point3D{X: 5.0, Y: 0.0}},
+				&dxf.Circle{Center: dxf.Point3D{X: -5.0, Y: 0.0}, Radius: 0.2},
+				&dxf.Circle{Center: dxf.Point3D{X: 5.0, Y: 0.0}, Radius: 0.2},
+			},
+			Parameters: []Parameter{
+				{Name: "SPAN", Type: ParamLinear, DefaultValue: 10.0, MinValue: 2.0, MaxValue: 30.0},
+			},
+			Actions: []Action{
+				{Name: "STRETCH_SPAN", Type: ActionStretch, ParameterName: "SPAN", TargetIndices: []int{0}},
+			},
+		},
+	}
+}
+
