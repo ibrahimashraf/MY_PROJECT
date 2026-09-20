@@ -76,6 +76,17 @@ foreach ($line in Get-Content -LiteralPath $secretsPath) {
     $values[$matches[1].Trim()] = $matches[2]
   }
 }
+
+# INTEGIN_ rename: forward-fill new keys from pre-rename INTEGIN_ keys so
+# existing private env files keep working untouched.
+foreach ($entry in @($values.GetEnumerator())) {
+  if ($entry.Key -is [string] -and $entry.Key.StartsWith('INTEGIN_')) {
+    $newKey = 'INTEGIN_' + $entry.Key.Substring(6)
+    if ([string]::IsNullOrWhiteSpace([string]$values[$newKey])) {
+      $values[$newKey] = $entry.Value
+    }
+  }
+}
 foreach ($required in @('INTEGIN_TENANT_ID', 'INTEGIN_DB_URL', 'PILOT_SYNC_SECRET')) {
   if ([string]::IsNullOrWhiteSpace($values[$required])) {
     throw 'Required controlled-pilot configuration is unavailable.'

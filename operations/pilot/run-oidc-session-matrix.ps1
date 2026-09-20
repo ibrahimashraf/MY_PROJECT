@@ -57,6 +57,16 @@ function Read-PrivateEnvironment {
         }
         $values[$trimmed.Substring(0, $separator)] = $trimmed.Substring($separator + 1)
     }
+    # INTEGIN_ rename: forward-fill new keys from pre-rename INTEGIN_ keys so
+    # existing private env files keep working untouched.
+    foreach ($entry in @($values.GetEnumerator())) {
+        if ($entry.Key -is [string] -and $entry.Key.StartsWith('INTEGIN_')) {
+            $newKey = 'INTEGIN_' + $entry.Key.Substring(6)
+            if ([string]::IsNullOrWhiteSpace([string]$values[$newKey])) {
+                $values[$newKey] = $entry.Value
+            }
+        }
+    }
     return $values
 }
 

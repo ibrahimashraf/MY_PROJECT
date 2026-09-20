@@ -626,6 +626,66 @@ The master roadmap for INTEGIN to surpass traditional legacy suites (AutoCAD, So
 - [ ] **Statutory Compliance Dossier**: 1-click generation of LOLER Method Statements, Lift Plan CAD drawings, and risk assessments.
 - [ ] **Cryptographic Seal**: Bind drawing geometry, calibration scale, and rigging results to W3C Asset DIDs with Ed25519 signatures.
 
+---
+
+## 18. 🎯 Master Implementation Plan: The Field Supremacy Wedge vs. Competitors
+
+**Governing Strategy Documents:**  
+- Strategic Blueprint & Roadmap: [`docs/INTEGIN_STRATEGY_AND_PLAN.md`](./docs/INTEGIN_STRATEGY_AND_PLAN.md)  
+- Global Competitor Intelligence (35+ Platforms): [`docs/COMPETITOR_BENCHMARK_ANALYSIS.md`](./docs/COMPETITOR_BENCHMARK_ANALYSIS.md)
+
+### Target Competitors Displaced:
+- **Offshore & Heavy Enterprise:** Onix Work, Axess Group (Bridge), Velosi AIMS, beXel, OES Group (Arcus)
+- **Dedicated Lifting & Rigging Pureplays:** Core Inspection, CheckedOK, ValiSpect (SPA), Motion (Kinetic), C3RTA, AgileNDT
+- **Generic Checklists & Budget Challengers:** SafetyCulture (iAuditor), Daarsoft (UAE), GoAudits, Lumiform
+
+---
+
+### Implementation Tracks & Deliverables
+
+#### Track 1: 100% Offline-First Field Engine & Local Persistence
+- [ ] **Dexie.js / SQLite WASM Local Store** (`client/src/storage/db.ts`): Offline persistence for jobs, equipment registers, checklists, and calibration credentials.
+- [ ] **Transactional Sync Manager** (`client/src/sync/syncManager.ts`): Replay queue with exponential backoff, delta compression, and idempotent UUIDv7 event logs. Zero data loss in ship hulls, basements, or desert yards.
+- [ ] **In-App Defect Photo Markup**: Canvas drawing tools (circles, arrows) + EXIF GPS and timestamp burning.
+- [ ] **Dual Digital Signatures**: On-glass touch signature canvas for Site Representative + Field Inspector.
+
+#### Track 2: Rapid Multi-Inspect Rigging Engine
+- [ ] **High-Speed Batch Mode** (`client/src/components/inspection/MultiInspectRack.tsx`): Optimized one-handed flow for 50+ shackles and chain slings.
+- [ ] **Hardware Scanner Integrations**: Native camera barcode/QR scanner (`WebCodecs`/`html5-qrcode`) and Bluetooth ATEX RFID/NFC wand driver pairing.
+- [ ] **3-Second Verdict Loop**: Scan tag $\rightarrow$ tap `[Pass/Fail/Missing]` $\rightarrow$ auto-advance in $<3$ seconds. Single consolidated bulk signature on completion.
+
+#### Track 3: Mechanical Engineering Math & Multi-Jurisdiction Engine
+- [ ] **Pure Mathematical Calculation Engine** (`shared/src/engineering/calculations.ts`):
+  - Proof load overload ratio tables ($1.25 \times \text{SWL}$ for cranes, $2.0 \times \text{SWL}$ for loose gear $\le 25\text{t}$, $(1.22 \times \text{SWL}) + 20$ for $> 25\text{t}$).
+  - ISO 4309 wire rope discard algorithm (broken wire count thresholds over $6d/30d$, $>7\%$ nominal diameter drop mandatory discard).
+  - ASME B30.10 hook opening deformation ($>5\%$ throat opening or $>10^\circ$ twist lockout).
+- [ ] **Universal Regulatory Switcher** (`shared/src/types/regulatory.ts`): Dynamic toggle across LEEA, LOLER 1998, ASME B30, EIAC (UAE), and Saudi Aramco GI 7.025/7.030.
+
+#### Track 4: ISO/IEC 17020 Governance Gates & Defect Quarantine
+- [ ] **Competency Dispatch Gate** (`server/src/governance/competencyGate.ts`): Hard-blocks scheduling technicians whose LEEA tickets, NDT Level II, or medical credentials have expired.
+- [ ] **Calibration Tool Gate** (`server/src/governance/calibrationGate.ts`): Enforces master load cell and test gauge calibration validity on certificate issuance.
+- [ ] **Automated NCR & Quarantine Workflow** (`server/src/governance/quarantineWorkflow.ts`): Failed check suppresses certificate release, issues immediate Safety Prohibition Notice, and freezes asset across the portal.
+
+#### Track 5: Single-Dossier Compiler & Field-to-Cash Invoicing
+- [ ] **Consolidated Job Dossier Engine** (`server/src/reports/dossierCompiler.ts`): Compiles Executive Summary Register + Serialized Certificates + Photographic Defect Annex into ONE branded PDF book per dispatch.
+- [ ] **Automated Localized Tax Invoicing** (`server/src/billing/eInvoiceGenerator.ts`): Auto-generates UAE FTA 5% VAT Tax Invoices and Saudi ZATCA Phase 2 QR-code e-invoices with two-way sync to Xero, QuickBooks Online, and Zoho Books.
+
+---
+
+## 5. 🗃️ Deferred Decisions — Never Closed, Triggers Defined (2026-09-19)
+
+Nothing below is rejected; each names the tomorrow that reopens it.
+
+| # | Deferred option | Reopen trigger |
+|---|---|---|
+| D1 | `integin-server` exec shim → shared `internal/serverboot.Run()` refactor | One restart/supervision incident traced to the launcher, or systemd rollout blocked by two-process shape |
+| D2 | R2 doc-only reversal (drop `cmd/integin-server`, name `integin-server` canonical in plan v5.1) | External caller of `integin-server --mode` disappears, or shim causes its first real bug |
+| D3 | Airgap loopback-bind mandate (refused: breaks compose proxy + tablet direct sync) | Proxy moves into server network namespace, or direct tablet sync retired — then scoped variant (loopback OR explicit allow-LAN flag) |
+| D4 | 195-jurisdiction hand-seeding | Switch to generated registry (ISO dataset + `go:generate`, 8 rich profiles hand-kept) instead of hand-typing when R1 starts |
+| D5 | Mimo/opencode delegate lane | PATH fixed to opencode ≥1.18.0 (stale beta shadowed it → 426 free-tier refusal); retry one small brief before trusting the lane |
+| D6 | Live infra cutover (NOT done in tree) | Permanent keeps: DB role `integin_runtime`, DB `integin_dev`, volumes, `integin-pilot-rustfs` container, `integin-c14n-1`, fixture IDs. Cutover needs a maintenance window: `ALTER ROLE integin_runtime RENAME TO integin_runtime` + fresh DB `integin_dev` via pg_dump reload + container recreate. Code already dual-sets GUCs and mirrors env, so either side boots. Do NOT rename live objects without backup + verify. |
+
+
 
 
 

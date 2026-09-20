@@ -24,7 +24,7 @@ Each fixture carries `vector_set_version: 1`, a stable `vector_id`, a `canonical
 | Identifiers | Exact opaque UTF-8 strings after validation; no case folding, trimming, or Unicode normalization during verification. |
 | Digests | Lowercase hexadecimal SHA-256 where represented as text. |
 | Public keys/signatures | Unpadded base64url for wire fixtures; raw Ed25519 bytes are the verification input after decoding. |
-| Domain separation | Every signed byte string begins with a fixed INTEGIN context label and canonicalization version. |
+| Domain separation | Every signed byte string begins with a fixed context label (`integin-c14n-1`, frozen v1 identifier) and canonicalization version. |
 
 ## Required fixture families
 
