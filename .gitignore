@@ -58,7 +58,5 @@ docs/evidence/pilot-backups/
 .idea/
 .DS_Store
 Thumbs.db
-graphify-out/
-graphify-out/
 # Added by code-review-graph
 .code-review-graph/

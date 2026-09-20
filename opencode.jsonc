@@ -1,15 +1,43 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "code-review-graph": {
       "type": "local",
       "command": [
         "uv",
         "run",
+        "--project",
+        "tools/code-review-graph",
         "code-review-graph",
         "serve",
         "--repo",
         "C:\\MY_PROJECT"
       ]
+    },
+    "postgres": {
+      "type": "local",
+      "command": [
+        "node",
+        "C:/Users/hima3/AppData/Roaming/npm/node_modules/@modelcontextprotocol/server-postgres/dist/index.js",
+        "postgresql://integin_runtime:integin_live_run_2026@127.0.0.1:15432/integin_dev?sslmode=disable"
+      ]
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "node",
+        "C:/Users/hima3/AppData/Roaming/npm/node_modules/@executeautomation/playwright-mcp-server/dist/index.js"
+      ]
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "node",
+        "C:/Users/hima3/AppData/Roaming/npm/node_modules/@modelcontextprotocol/server-github/dist/index.js"
+      ],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+      }
     }
   }
 }
