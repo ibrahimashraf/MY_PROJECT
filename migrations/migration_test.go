@@ -632,3 +632,50 @@ func TestTenantGUCRenameMigrationContract(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentityResolverRenameMigrationContract(t *testing.T) {
+
+	sql, err := os.ReadFile("0086_rename_identity_resolver_to_integin.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	for _, fragment := range []string{
+		"ALTER FUNCTION",
+		"integin_resolve_identity_membership",
+		"integin_resolve_identity_membership",
+		"GRANT EXECUTE",
+		"integin_runtime",
+		"RAISE EXCEPTION",
+	} {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	down, err := os.ReadFile("0086_rename_identity_resolver_to_integin.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{"ALTER FUNCTION", "integin_resolve_identity_membership", "GRANT EXECUTE"} {
+		if !strings.Contains(string(down), fragment) {
+			t.Fatalf("down migration missing %q", fragment)
+		}
+	}
+}
+
+func TestLegacyRoleAnchorMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0000_legacy_role_anchor.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	for _, fragment := range []string{
+		"CREATE ROLE",
+		"integin_runtime",
+		"NOLOGIN",
+	} {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+}

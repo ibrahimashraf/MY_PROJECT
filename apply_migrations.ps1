@@ -14,15 +14,15 @@ Write-Host "============================================================" -Foreg
 # 1. Fresh database reset if explicitly requested
 if ($Fresh) {
     Write-Host "[*] Resetting database '$Database' to fresh state..." -ForegroundColor Yellow
-    docker exec -i integin-dev-postgres psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS $Database;" | Out-Null
-    docker exec -i integin-dev-postgres psql -U postgres -d postgres -c "CREATE DATABASE $Database;" | Out-Null
+    docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -c "DROP DATABASE IF EXISTS $Database;" | Out-Null
+    docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -c "CREATE DATABASE $Database;" | Out-Null
     Write-Host "[+] Fresh database '$Database' created." -ForegroundColor Green
 } else {
     # Ensure database exists
-    $dbExists = docker exec -i integin-dev-postgres psql -U postgres -d postgres -t -c "SELECT 1 FROM pg_database WHERE datname = '$Database';"
+    $dbExists = docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -t -c "SELECT 1 FROM pg_database WHERE datname = '$Database';"
     if ($dbExists -notmatch '1') {
         Write-Host "[*] Database '$Database' does not exist. Creating..." -ForegroundColor Yellow
-        docker exec -i integin-dev-postgres psql -U postgres -d postgres -c "CREATE DATABASE $Database;" | Out-Null
+        docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -c "CREATE DATABASE $Database;" | Out-Null
     }
 }
 
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 $dockerPreviousPreference = $ErrorActionPreference
 try {
     $ErrorActionPreference = 'Continue'
-    $initLedgerSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U postgres -d $Database 2>&1 | Out-Null
+    $initLedgerSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U integin_runtime -d $Database 2>&1 | Out-Null
 } finally { $ErrorActionPreference = $dockerPreviousPreference }
 
 # 3. Retrieve already applied migration names
@@ -45,7 +45,7 @@ $appliedRaw = $null
 $dockerPreviousPreference = $ErrorActionPreference
 try {
     $ErrorActionPreference = 'Continue'
-    $appliedRaw = docker exec -i integin-dev-postgres psql -U postgres -d $Database -t -A -c "SELECT name FROM schema_migrations ORDER BY name;"
+    $appliedRaw = docker exec -i integin-dev-postgres psql -U integin_runtime -d $Database -t -A -c "SELECT name FROM schema_migrations ORDER BY name;"
 } finally { $ErrorActionPreference = $dockerPreviousPreference }
 $appliedMigrations = @{}
 if ($appliedRaw) {
@@ -102,7 +102,7 @@ foreach ($p in $pending) {
     $dockerPreviousPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $combinedSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U postgres -d $Database 2>&1 | Out-Null
+        $combinedSql | docker exec -i integin-dev-postgres psql -v ON_ERROR_STOP=1 -U integin_runtime -d $Database 2>&1 | Out-Null
     } finally { $ErrorActionPreference = $dockerPreviousPreference }
     if ($LASTEXITCODE -ne 0) {
         Write-Host " [FAILED]" -ForegroundColor Red
