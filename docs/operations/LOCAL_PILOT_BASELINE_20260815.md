@@ -23,4 +23,4 @@
 
 ## Pilot isolation contract
 
-The pilot uses `C:\INTEGIN-PILOT`, Docker network `integin-pilot-net`, pilot-only named volumes, host loopback ports `15432`, `19000`, and `19001`, and a separate private secrets file `C:\INTEGIN-SECRETS\integin-pilot.env`. This control record is the comparison point for all subsequent pilot changes.
+The pilot uses `C:\INTEGIN-PILOT`, Docker network `integin-pilot-net`, pilot-only named volumes, host loopback ports `15432`, `19000`, and `19001`, and a separate private secrets file `C:\integin-secrets\integin-pilot.env`. This control record is the comparison point for all subsequent pilot changes.

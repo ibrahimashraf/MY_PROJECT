@@ -14,17 +14,6 @@ Get-Content -LiteralPath $secretsPath | ForEach-Object {
   if ($_ -match '^([^#=][^=]*)=(.*)$') { $values[$matches[1]] = $matches[2] }
 }
 
-# INTEGIN_ rename: forward-fill new keys from pre-rename INTEGIN_ keys so
-# existing private env files keep working untouched.
-foreach ($entry in @($values.GetEnumerator())) {
-  if ($entry.Key -is [string] -and $entry.Key.StartsWith('INTEGIN_')) {
-    $newKey = 'INTEGIN_' + $entry.Key.Substring(6)
-    if ([string]::IsNullOrWhiteSpace([string]$values[$newKey])) {
-      $values[$newKey] = $entry.Value
-    }
-  }
-}
-
 foreach ($required in @('INTEGIN_TENANT_ID', 'INTEGIN_DB_URL', 'INTEGIN_S3_ENDPOINT', 'INTEGIN_S3_BUCKET', 'INTEGIN_S3_ACCESS_KEY', 'INTEGIN_S3_SECRET_KEY', 'INTEGIN_S3_REGION', 'PILOT_SYNC_SECRET')) {
   if ([string]::IsNullOrWhiteSpace($values[$required])) { throw "Required pilot setting is missing: $required" }
 }

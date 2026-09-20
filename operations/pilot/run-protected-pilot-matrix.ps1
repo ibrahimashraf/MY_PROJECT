@@ -36,16 +36,8 @@ foreach ($line in Get-Content -LiteralPath $secretsPath) {
   }
 }
 
-# INTEGIN_ rename: prefer new keys, fall back to pre-rename INTEGIN_ keys so
-# existing private env files keep working untouched.
-function Get-EnvValue([string]$NewKey, [string]$OldKey) {
-  $v = $values[$NewKey]
-  if ([string]::IsNullOrWhiteSpace($v)) { $v = $values[$OldKey] }
-  return $v
-}
-
 foreach ($required in @('TENANT_ID', 'DB_URL')) {
-  if ([string]::IsNullOrWhiteSpace((Get-EnvValue "INTEGIN_$required" "INTEGIN_$required")) -or [string]::IsNullOrWhiteSpace($values['PILOT_SYNC_SECRET'])) {
+  if ([string]::IsNullOrWhiteSpace($values["INTEGIN_$required"]) -or [string]::IsNullOrWhiteSpace($values['PILOT_SYNC_SECRET'])) {
     throw 'Required controlled-pilot configuration is unavailable.'
   }
 }
@@ -53,8 +45,8 @@ foreach ($required in @('TENANT_ID', 'DB_URL')) {
 New-Item -ItemType Directory -Force -Path $fixtureDirectory | Out-Null
 $fixturePath = Join-Path $fixtureDirectory ('pilot-matrix-' + [Guid]::NewGuid().ToString('N') + '.json')
 $runnerEnvironment = @{
-  INTEGIN_TENANT_ID = Get-EnvValue 'INTEGIN_TENANT_ID' 'INTEGIN_TENANT_ID'
-  INTEGIN_DB_URL = Get-EnvValue 'INTEGIN_DB_URL' 'INTEGIN_DB_URL'
+  INTEGIN_TENANT_ID = $values['INTEGIN_TENANT_ID']
+  INTEGIN_DB_URL = $values['INTEGIN_DB_URL']
   INTEGIN_SYNC_SECRET = $values['PILOT_SYNC_SECRET']
   INTEGIN_SERVER_URL = $pilotURL
   INTEGIN_LIVE_FIXTURE_FILE = $fixturePath

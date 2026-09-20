@@ -16,11 +16,7 @@ Get-Content -LiteralPath $environmentPath | ForEach-Object {
   if ($_ -match '^([^#=][^=]*)=(.*)$') { $values[$matches[1]] = $matches[2] }
 }
 
-# INTEGIN_ rename: accept the pre-rename INTEGIN_ key from existing private env
-# files (which stay untouched).
-$bindAddr = $values['INTEGIN_HTTP_ADDR']
-if ([string]::IsNullOrWhiteSpace($bindAddr)) { $bindAddr = $values['INTEGIN_HTTP_ADDR'] }
-if ($bindAddr -ne '127.0.0.1:8080') {
+if ($values['INTEGIN_HTTP_ADDR'] -ne '127.0.0.1:8080') {
   throw 'Acceptance environment must explicitly bind INTEGIN_HTTP_ADDR=127.0.0.1:8080.'
 }
 
