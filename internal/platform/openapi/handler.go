@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"integin/pkg/httputil"
 	"integin/internal/platform/featureflag"
 	"integin/internal/shared/featureflags"
+	"integin/pkg/httputil"
 )
 
 // TokenStore maps opaque token -> tenant scope. No GRANT change; every handler

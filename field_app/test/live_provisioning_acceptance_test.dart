@@ -15,16 +15,16 @@ import 'package:integin_field_app/sync/http_sync_transport.dart';
 import 'package:integin_field_app/sync/sync_client.dart';
 
 const _provisionEndpoint =
-    String.fromEnvironment('INTEGIN_LIVE_PROVISIONING_ENDPOINT');
-const _syncEndpoint = String.fromEnvironment('INTEGIN_LIVE_SYNC_ENDPOINT');
+    String.fromEnvironment('INTEGIN_LIVE_PROVISIONING_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_LIVE_PROVISIONING_ENDPOINT'));
+const _syncEndpoint = String.fromEnvironment('INTEGIN_LIVE_SYNC_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_LIVE_SYNC_ENDPOINT'));
 const _evidenceEndpoint =
-    String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT');
-const _receiptPath = String.fromEnvironment('INTEGIN_LIVE_RECEIPT_PATH');
-const _tenantID = String.fromEnvironment('INTEGIN_LIVE_TENANT_ID');
-const _organizationID = String.fromEnvironment('INTEGIN_LIVE_ORGANIZATION_ID');
+    String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_LIVE_EVIDENCE_ENDPOINT'));
+const _receiptPath = String.fromEnvironment('INTEGIN_LIVE_RECEIPT_PATH', defaultValue: String.fromEnvironment('INTEGIN_LIVE_RECEIPT_PATH'));
+const _tenantID = String.fromEnvironment('INTEGIN_LIVE_TENANT_ID', defaultValue: String.fromEnvironment('INTEGIN_LIVE_TENANT_ID'));
+const _organizationID = String.fromEnvironment('INTEGIN_LIVE_ORGANIZATION_ID', defaultValue: String.fromEnvironment('INTEGIN_LIVE_ORGANIZATION_ID'));
 // Bearer token for the OIDC-gated evidence route (D-02). Empty outside a
 // provisioned drill harness; the test skips instead of failing unauthenticated.
-const _idToken = String.fromEnvironment('INTEGIN_LIVE_ID_TOKEN');
+const _idToken = String.fromEnvironment('INTEGIN_LIVE_ID_TOKEN', defaultValue: String.fromEnvironment('INTEGIN_LIVE_ID_TOKEN'));
 
 InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
       inspectionId: inspectionID,

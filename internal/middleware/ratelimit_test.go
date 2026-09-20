@@ -327,5 +327,3 @@ func TestEarlyDataMiddleware_AllowsSafeMethodsAndWithoutHeader(t *testing.T) {
 		t.Fatalf("POST with Early-Data: 0 expected 200 OK, got %d", wInvalid.Code)
 	}
 }
-
-

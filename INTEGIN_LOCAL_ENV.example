@@ -38,3 +38,21 @@ INTEGIN_S3_REGION=us-east-1
 # the field_app simulator submission through ProcessDeviceEnrollment over HTTP.
 # Requires INTEGIN_HTTP_ADDR to bind to localhost. Off by default.
 # INTEGIN_PILOT_ENROLL_ENABLED=true
+
+# RFC 3161 trusted timestamps (internal/timestamp, boot-time provisioning).
+# All-or-nothing: set both or neither, otherwise the server aborts at boot.
+# Without these, certificates issue WITHOUT trusted timestamps (boot warning).
+# Pilot: run operations/pilot/start-tsa-pilot.ps1 (keypair via
+# `go run ./cmd/integin-cli gen-tsa`, responder on 127.0.0.1:18280), then:
+# INTEGIN_TSA_URL=http://127.0.0.1:18280
+# INTEGIN_TSA_ROOTS_FILE=C:\MY_PROJECT\private\integin-secrets\tsa-pilot-roots.pem
+# INTEGIN_TSA_TIMEOUT_SECONDS=15
+# The responder also needs INTEGIN_TSA_SIGNER_KEY_FILE plus ADDR/ROOTS; see
+# cmd/pilot-tsa/main.go. Production must use a real TSA operator, never the
+# pilot signer.
+
+# Chunked media uploads (TUS, /uploads). Needs a persistent writable scratch
+# dir. Only enable alongside OIDC (INTEGIN_OIDC_ENABLED=true with a reachable
+# issuer): TUS without the OIDC validator boots a second warning and leaves
+# uploads unauthenticated.
+# INTEGIN_TUS_SCRATCH_DIR=C:\integin\tus-scratch

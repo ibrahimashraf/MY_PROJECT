@@ -16,6 +16,7 @@ func Error(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	_ = json.MarshalWrite(w, map[string]string{"error": message}, json.Deterministic(true))
 }
+
 // ReadJSON decodes request JSON directly with strict unknown-field rejection and deterministic validation.
 func ReadJSON(r *http.Request, v interface{}) error {
 	return json.UnmarshalRead(r.Body, v, json.RejectUnknownMembers(true))

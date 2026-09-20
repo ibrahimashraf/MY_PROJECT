@@ -1,4 +1,4 @@
-﻿package schedulinghttp
+package schedulinghttp
 
 import (
 	"bytes"

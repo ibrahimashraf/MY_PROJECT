@@ -7,10 +7,10 @@ import (
 
 // WGS84 Ellipsoid Constants (GPS & Google Earth standard)
 const (
-	WGS84_A = 6378137.0         // Semi-major axis a (meters)
-	WGS84_F = 1.0 / 298.257223563 // Flattening f
-	WGS84_B = WGS84_A * (1.0 - WGS84_F) // Semi-minor axis b ≈ 6356752.314245m
-	WGS84_E2 = (WGS84_A*WGS84_A - WGS84_B*WGS84_B) / (WGS84_A * WGS84_A) // First eccentricity squared e^2
+	WGS84_A       = 6378137.0                                                 // Semi-major axis a (meters)
+	WGS84_F       = 1.0 / 298.257223563                                       // Flattening f
+	WGS84_B       = WGS84_A * (1.0 - WGS84_F)                                 // Semi-minor axis b ≈ 6356752.314245m
+	WGS84_E2      = (WGS84_A*WGS84_A - WGS84_B*WGS84_B) / (WGS84_A * WGS84_A) // First eccentricity squared e^2
 	WGS84_EPrime2 = (WGS84_A*WGS84_A - WGS84_B*WGS84_B) / (WGS84_B * WGS84_B) // Second eccentricity squared e'^2
 )
 

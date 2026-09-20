@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -219,13 +220,38 @@ func ProvisionFromEnv() (*TSA, error) {
 // faithful off-line stand-in for a trusted authority — but it is only a test
 // and simulation helper, never a substitute for a real TSA operator.
 func BuildTestResponse(signer *x509.Certificate, signerKey any, imprint []byte, genTime time.Time) ([]byte, error) {
+	return buildResponse(signer, signerKey, imprint, genTime, big.NewInt(1))
+}
+
+// BuildResponse assembles a granted TimeStampResp for a real TSA responder:
+// like BuildTestResponse but with a caller-supplied serial number, which must
+// be positive and unique per token (RFC 3161 section 2.4.2). The signer
+// certificate must chain to the roots provisioned alongside the TSA URL for
+// Verify to accept the token.
+func BuildResponse(signer *x509.Certificate, signerKey any, imprint []byte, genTime time.Time, serial *big.Int) ([]byte, error) {
+	if serial == nil || serial.Sign() <= 0 {
+		return nil, errors.New("timestamp serial must be a positive number")
+	}
+	return buildResponse(signer, signerKey, imprint, genTime, serial)
+}
+
+// RandomSerial returns a 128-bit positive serial number for BuildResponse.
+func RandomSerial() (*big.Int, error) {
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, fmt.Errorf("timestamp serial: %w", err)
+	}
+	return serial.Add(serial, big.NewInt(1)), nil
+}
+
+func buildResponse(signer *x509.Certificate, signerKey any, imprint []byte, genTime time.Time, serial *big.Int) ([]byte, error) {
 	if signer == nil {
 		return nil, errors.New("signer certificate is required")
 	}
 	if signerKey == nil {
 		return nil, errors.New("signer private key is required")
 	}
-	infoDER, err := buildTSTInfoDER(imprint, genTime)
+	infoDER, err := buildTSTInfoDERWithSerial(imprint, genTime, serial)
 	if err != nil {
 		return nil, err
 	}

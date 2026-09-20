@@ -218,4 +218,3 @@ func TestSessionRevocationHandlerSingleAndAll(t *testing.T) {
 		t.Fatalf("revoked subjects: %v", revoker.revokedSubjects)
 	}
 }
-

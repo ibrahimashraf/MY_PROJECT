@@ -386,6 +386,3 @@ func TestNewMux_EarlyDataRejectionOnMutatingRoutes(t *testing.T) {
 		t.Fatalf("GET /healthz with Early-Data: 1 status = %d, want %d", getRec.Code, http.StatusOK)
 	}
 }
-
-
-

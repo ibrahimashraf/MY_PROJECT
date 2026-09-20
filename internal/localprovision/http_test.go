@@ -134,4 +134,3 @@ func TestHandlerRejectsUnknownFieldsAndMalformedJSON(t *testing.T) {
 		t.Fatalf("trailing json status=%d want 400", rec.Code)
 	}
 }
-

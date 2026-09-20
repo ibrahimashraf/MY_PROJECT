@@ -52,4 +52,3 @@ func TestCircuitBreaker_TrippingAndRecovery(t *testing.T) {
 		t.Fatalf("expected closed after success, got %v", err)
 	}
 }
-

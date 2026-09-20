@@ -44,8 +44,8 @@ const (
 	BS7121ThoroughExamIntervalPersonLiftMonths = 6
 	BS7121ThoroughExamIntervalAccessoryMonths  = 6
 	BS7121ThoroughExamIntervalGoodsCraneMonths = 12
-	BS7121MajorReviewIntervalNormalYears      = 10
-	BS7121MajorReviewIntervalIntensiveYears   = 5
+	BS7121MajorReviewIntervalNormalYears       = 10
+	BS7121MajorReviewIntervalIntensiveYears    = 5
 )
 
 // BS 7121-2-3:2012 Mobile Cranes
@@ -71,34 +71,34 @@ const (
 const (
 	BS7121ContainerTwistlockMaxCycles      = 250000 // Discard twistlock after 250k cycles
 	BS7121ContainerTwistlockMaxWearMM      = 2.0    // Discard twistlock if neck wear > 2.0 mm
-	BS7121ContainerGaleClampWindSpeedMS   = 20.0   // Engage storm rail clamps at >= 20 m/s
+	BS7121ContainerGaleClampWindSpeedMS    = 20.0   // Engage storm rail clamps at >= 20 m/s
 	BS7121ContainerMaxGroovedFleetAngleDeg = 1.5    // Max 1.5° fleet angle on grooved drums
 )
 
 // BS 7121-3:2017+A1:2019 Mobile Cranes
 const (
-	BS7121MobileCornerReactionFraction   = 0.85 // 85% of total mass on single outrigger during slew
-	BS7121PickAndCarryMaxSpeedMS         = 0.40 // 0.4 m/s max travel speed during pick-and-carry
-	BS7121PickAndCarryMaxGroundSlopeDeg  = 1.0  // 1.0° max travel ground slope
+	BS7121MobileCornerReactionFraction  = 0.85 // 85% of total mass on single outrigger during slew
+	BS7121PickAndCarryMaxSpeedMS        = 0.40 // 0.4 m/s max travel speed during pick-and-carry
+	BS7121PickAndCarryMaxGroundSlopeDeg = 1.0  // 1.0° max travel ground slope
 )
 
 // BS 7121-5:2019 Tower Cranes
 const (
-	BS7121TowerCraneClimbingMaxWindMS      = 10.0 // Max wind speed for climbing/jacking (22 mph)
-	BS7121TowerCraneInServiceMaxWindMS     = 15.0 // Standard in-service cutoff (unless OEM chart higher)
+	BS7121TowerCraneClimbingMaxWindMS       = 10.0 // Max wind speed for climbing/jacking (22 mph)
+	BS7121TowerCraneInServiceMaxWindMS      = 15.0 // Standard in-service cutoff (unless OEM chart higher)
 	BS7121TowerAntiCollisionHorizClearanceM = 3.0  // Min 3.0 m horizontal clearance between overlapping cranes
 	BS7121TowerAntiCollisionVertClearanceM  = 2.0  // Min 2.0 m vertical clearance between overlapping cranes
-	BS7121AerodromeConsultationRadiusKM    = 6.0  // 6 km aerodrome notification radius
-	BS7121AerodromeConsultationHeightM     = 10.0 // 10 m height threshold
+	BS7121AerodromeConsultationRadiusKM     = 6.0  // 6 km aerodrome notification radius
+	BS7121AerodromeConsultationHeightM      = 10.0 // 10 m height threshold
 )
 
 // BS 7121-13:2009 Hydraulic Gantry Lifting Systems
 const (
-	BS7121GantryMaxDifferentialHeightMM   = 25.0   // Max 25 mm differential height between gantries
-	BS7121GantryMaxDifferentialSpanRatio  = 0.0025 // 0.25% of span max differential height
-	BS7121GantryMaxTrackSlopePct          = 0.5    // Max 0.5% (1:200) longitudinal slope
-	BS7121GantryMaxTrackDeflectionRatio   = 1.0 / 600.0 // Span / 600 max track deflection under load
-	BS7121GantryMaxSideShiftLateralRatio  = 0.03   // 3% max vertical SWL as lateral load
+	BS7121GantryMaxDifferentialHeightMM  = 25.0        // Max 25 mm differential height between gantries
+	BS7121GantryMaxDifferentialSpanRatio = 0.0025      // 0.25% of span max differential height
+	BS7121GantryMaxTrackSlopePct         = 0.5         // Max 0.5% (1:200) longitudinal slope
+	BS7121GantryMaxTrackDeflectionRatio  = 1.0 / 600.0 // Span / 600 max track deflection under load
+	BS7121GantryMaxSideShiftLateralRatio = 0.03        // 3% max vertical SWL as lateral load
 )
 
 // BS 7121-14:2005 Side-Boom Pipelayers

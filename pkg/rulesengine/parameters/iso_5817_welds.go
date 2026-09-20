@@ -25,24 +25,24 @@ const (
 // WeldInspectionInput holds visual and dimensional inspection data for an ISO 5817 weld seam.
 type WeldInspectionInput struct {
 	Level               WeldQualityLevel `json:"level"`
-	NominalThicknessMM  float64          `json:"nominal_thickness_mm"` // t (parent metal)
-	WeldWidthMM         float64          `json:"weld_width_mm"`        // b
-	MeasuredUndercutMM  float64          `json:"measured_undercut_mm"` // h (imperfection 5011/5012)
-	ExcessWeldHeightMM  float64          `json:"excess_weld_height_mm"`// h (imperfection 502)
-	PorosityAreaPct     float64          `json:"porosity_area_pct"`    // projected pore area %
-	HasCracks           bool             `json:"has_cracks"`           // imperfection 100 (crack)
-	HasLackOfFusion     bool             `json:"has_lack_of_fusion"`   // imperfection 401 (lack of fusion)
-	HasIncompletePenetr bool             `json:"has_incomplete_penetr"`// imperfection 402 (incomplete root penetration)
+	NominalThicknessMM  float64          `json:"nominal_thickness_mm"`  // t (parent metal)
+	WeldWidthMM         float64          `json:"weld_width_mm"`         // b
+	MeasuredUndercutMM  float64          `json:"measured_undercut_mm"`  // h (imperfection 5011/5012)
+	ExcessWeldHeightMM  float64          `json:"excess_weld_height_mm"` // h (imperfection 502)
+	PorosityAreaPct     float64          `json:"porosity_area_pct"`     // projected pore area %
+	HasCracks           bool             `json:"has_cracks"`            // imperfection 100 (crack)
+	HasLackOfFusion     bool             `json:"has_lack_of_fusion"`    // imperfection 401 (lack of fusion)
+	HasIncompletePenetr bool             `json:"has_incomplete_penetr"` // imperfection 402 (incomplete root penetration)
 }
 
 // WeldVerdict represents the ISO 5817 compliance verdict.
 type WeldVerdict struct {
-	Level             WeldQualityLevel `json:"level"`
-	MaxAllowUndercut  float64          `json:"max_allow_undercut_mm"`
-	MaxAllowExcess    float64          `json:"max_allow_excess_mm"`
-	MaxAllowPorosity  float64          `json:"max_allow_porosity_pct"`
-	Passed            bool             `json:"passed"`
-	Violations        []string         `json:"violations,omitempty"`
+	Level            WeldQualityLevel `json:"level"`
+	MaxAllowUndercut float64          `json:"max_allow_undercut_mm"`
+	MaxAllowExcess   float64          `json:"max_allow_excess_mm"`
+	MaxAllowPorosity float64          `json:"max_allow_porosity_pct"`
+	Passed           bool             `json:"passed"`
+	Violations       []string         `json:"violations,omitempty"`
 }
 
 // UndercutLimit calculates the ISO 5817 maximum allowable undercut depth h.

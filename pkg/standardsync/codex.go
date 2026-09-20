@@ -11,20 +11,20 @@ import (
 )
 
 type ExtractedParameter struct {
-	Doc            string  `json:"doc"`
-	Page           int     `json:"page"`
-	Clause         string  `json:"clause"`
-	SectionTitle   string  `json:"section_title"`
-	HasTableGrid   bool    `json:"has_table_grid"`
-	ParameterType  string  `json:"parameter_type"`
-	NumericValue   float64 `json:"numeric_value"`
-	Context        string  `json:"context"`
+	Doc           string  `json:"doc"`
+	Page          int     `json:"page"`
+	Clause        string  `json:"clause"`
+	SectionTitle  string  `json:"section_title"`
+	HasTableGrid  bool    `json:"has_table_grid"`
+	ParameterType string  `json:"parameter_type"`
+	NumericValue  float64 `json:"numeric_value"`
+	Context       string  `json:"context"`
 }
 
 type ExtractedCodex struct {
-	TotalStandardsScanned    int                   `json:"total_standards_scanned"`
-	TotalParametersExtracted int                   `json:"total_parameters_extracted"`
-	Parameters               []ExtractedParameter  `json:"parameters"`
+	TotalStandardsScanned    int                  `json:"total_standards_scanned"`
+	TotalParametersExtracted int                  `json:"total_parameters_extracted"`
+	Parameters               []ExtractedParameter `json:"parameters"`
 }
 
 type CodexIndex struct {

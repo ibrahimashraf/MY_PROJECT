@@ -231,8 +231,9 @@ func ValidateReconcileProvisionalCommand(command ReconcileProvisionalCommand) er
 	}
 	return nil
 }
+
 const (
-	InspectionLifecycleCompleted = "COMPLETED"
+	InspectionLifecycleCompleted    = "COMPLETED"
 	InspectionFinalizationSubmitted = "SUBMITTED"
 )
 

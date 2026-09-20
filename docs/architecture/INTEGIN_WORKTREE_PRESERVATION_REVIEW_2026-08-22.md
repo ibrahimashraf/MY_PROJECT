@@ -1,4 +1,4 @@
-﻿# INTEGIN Worktree Preservation Review — 2026-08-22
+# INTEGIN Worktree Preservation Review — 2026-08-22
 
 > Non-destructive review only. No files were staged, committed, reset, migrated, or deployed.
 

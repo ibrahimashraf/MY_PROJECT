@@ -12,10 +12,10 @@ type SimVec3 struct {
 	X, Y, Z float64
 }
 
-func (v SimVec3) Add(o SimVec3) SimVec3 { return SimVec3{v.X + o.X, v.Y + o.Y, v.Z + o.Z} }
-func (v SimVec3) Sub(o SimVec3) SimVec3 { return SimVec3{v.X - o.X, v.Y - o.Y, v.Z - o.Z} }
+func (v SimVec3) Add(o SimVec3) SimVec3   { return SimVec3{v.X + o.X, v.Y + o.Y, v.Z + o.Z} }
+func (v SimVec3) Sub(o SimVec3) SimVec3   { return SimVec3{v.X - o.X, v.Y - o.Y, v.Z - o.Z} }
 func (v SimVec3) Scale(s float64) SimVec3 { return SimVec3{v.X * s, v.Y * s, v.Z * s} }
-func (v SimVec3) Length() float64 { return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z) }
+func (v SimVec3) Length() float64         { return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z) }
 
 // AgentRole defines autonomous agent task identity in the procedural universe.
 type AgentRole string

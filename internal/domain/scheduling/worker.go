@@ -40,6 +40,7 @@ func resolveSkill(args CorrectiveWorkOrderArgs) string {
 		return args.HazardKind
 	}
 }
+
 type CorrectiveWorkOrderWorker struct {
 	river.WorkerDefaults[CorrectiveWorkOrderArgs]
 	Registry AgentRegistry

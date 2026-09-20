@@ -35,22 +35,22 @@ const (
 )
 
 const (
-	OSHAMinDesignFactorWireRope = 5.0
-	OSHAMinDesignFactorChain    = 4.0
-	OSHAMinDesignFactorSynthetic= 5.0
+	OSHAMinDesignFactorWireRope  = 5.0
+	OSHAMinDesignFactorChain     = 4.0
+	OSHAMinDesignFactorSynthetic = 5.0
 
-	OSHACriticalSlingAngleDeg   = 30.0 // Minimum allowable horizontal sling angle
-	OSHAMaxTempSyntheticWebF    = 180.0
-	OSHAMaxTempFiberCoreWireF   = 180.0
-	OSHAMaxTempIWRCWireF        = 400.0
-	OSHAMaxTempAlloyChainF      = 1000.0
+	OSHACriticalSlingAngleDeg = 30.0 // Minimum allowable horizontal sling angle
+	OSHAMaxTempSyntheticWebF  = 180.0
+	OSHAMaxTempFiberCoreWireF = 180.0
+	OSHAMaxTempIWRCWireF      = 400.0
+	OSHAMaxTempAlloyChainF    = 1000.0
 )
 
 // CEL expressions for OSHA 1926.251
 const (
 	OSHASlingAngleExpression = `horizontal_angle_deg >= 30.0`
 	OSHAChainTempExpression  = `temp_f <= 1000.0`
-	OSHASynthTempExpression = `temp_f <= 180.0`
+	OSHASynthTempExpression  = `temp_f <= 180.0`
 )
 
 // RequiredDesignFactor returns the mandatory OSHA safety factor for the sling type.

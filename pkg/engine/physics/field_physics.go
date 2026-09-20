@@ -6,15 +6,15 @@ import (
 
 // Universal Physical Constants (CODATA standard)
 const (
-	SpeedOfLightMs        = 299792458.0        // c (m/s)
-	StefanBoltzmannConst  = 5.670374419e-8     // sigma (W / (m^2 * K^4))
-	AirMolarMassKgMol     = 0.0289644          // M (kg/mol)
-	UniversalGasConst     = 8.3144598          // R (J / (mol * K))
-	StandardGravity       = 9.80665            // g (m/s^2)
-	SeaLevelAirDensity    = 1.225              // rho_0 (kg/m^3)
-	SeaLevelPressurePa    = 101325.0           // P_0 (Pa)
-	SeaLevelTemperatureK  = 288.15             // T_0 (K) (15°C)
-	AdiabaticIndexAir     = 1.4                // gamma (cp/cv)
+	SpeedOfLightMs       = 299792458.0    // c (m/s)
+	StefanBoltzmannConst = 5.670374419e-8 // sigma (W / (m^2 * K^4))
+	AirMolarMassKgMol    = 0.0289644      // M (kg/mol)
+	UniversalGasConst    = 8.3144598      // R (J / (mol * K))
+	StandardGravity      = 9.80665        // g (m/s^2)
+	SeaLevelAirDensity   = 1.225          // rho_0 (kg/m^3)
+	SeaLevelPressurePa   = 101325.0       // P_0 (Pa)
+	SeaLevelTemperatureK = 288.15         // T_0 (K) (15°C)
+	AdiabaticIndexAir    = 1.4            // gamma (cp/cv)
 )
 
 // AtmosphereState captures thermodynamic state at planetary altitude h.

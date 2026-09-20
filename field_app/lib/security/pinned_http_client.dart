@@ -16,7 +16,7 @@ import 'endpoint_guard.dart';
 /// - Loopback endpoints return a plain client (pilot debug only, caller must
 ///   pass allowLoopbackHttp:true which main.dart restricts to pilot mode).
 /// - Non-loopback https with `INTEGIN_TLS_PINS` (comma-separated base64
-///   SHA-256 **SPKI** pins via --dart-define) validates the leaf certificate:
+///   SHA-256 **SPKI** pins via --dart-define, fallback `INTEGIN_TLS_PINS`) validates the leaf certificate:
 ///   the SubjectPublicKeyInfo is DER-parsed out of the cert and its SHA-256
 ///   must match a pin; mismatch → connection rejected. SPKI (not whole-cert)
 ///   hashing survives re-issuance with key continuity.
@@ -25,9 +25,9 @@ import 'endpoint_guard.dart';
 class PinnedHttpClient {
   PinnedHttpClient._();
 
-  static const pins = String.fromEnvironment('INTEGIN_TLS_PINS');
+  static const pins = String.fromEnvironment('INTEGIN_TLS_PINS', defaultValue: String.fromEnvironment('INTEGIN_TLS_PINS'));
 
-  static const requirePins = bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS');
+  static const requirePins = bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS', defaultValue: bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS'));
 
   static http.Client forEndpoint(Uri endpoint,
       {bool allowLoopbackHttp = false, HttpClient? inner}) {

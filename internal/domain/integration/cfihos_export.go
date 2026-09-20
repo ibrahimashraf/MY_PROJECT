@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"github.com/riverqueue/river"
-	
-	"integin/pkg/cfihos"
+
 	"integin/internal/domain/equipment"
+	"integin/pkg/cfihos"
 )
 
 // CFIHOSExportArgs defines the arguments for a River job to generate a CFIHOS export.
@@ -56,7 +56,7 @@ func (w *CFIHOSExportWorker) Work(ctx context.Context, job *river.Job[CFIHOSExpo
 	var tags []cfihos.Tag
 	var equip []cfihos.Equipment
 
-	// 2. Map Assets to CFIHOS 
+	// 2. Map Assets to CFIHOS
 	for _, a := range assets {
 		tags = append(tags, cfihos.Tag{
 			ID:             a.AssetID,
@@ -70,7 +70,7 @@ func (w *CFIHOSExportWorker) Work(ctx context.Context, job *river.Job[CFIHOSExpo
 			ID:           a.ID,
 			TagID:        a.AssetID,
 			SerialNumber: a.SerialNumber,
-			Manufacturer: "", 
+			Manufacturer: "",
 			Model:        a.Description,
 			Status:       a.LifecycleState,
 		})

@@ -56,6 +56,7 @@ type Dependencies struct {
 	AuthorityRegistry              *syncapi.AuthorityRegistry
 	LicenseHandler                 http.Handler
 	FlagAdminHandler               http.Handler
+	IdentityGrantHandler           http.Handler
 	TrainingHandler                http.Handler
 	SettingsHandler                http.Handler
 	InspectionHandler              http.Handler
@@ -271,11 +272,17 @@ func metricService() string {
 	if value := strings.TrimSpace(os.Getenv("INTEGIN_SERVICE_NAME")); value != "" {
 		return value
 	}
+	if value := strings.TrimSpace(os.Getenv("integin_SERVICE_NAME")); value != "" {
+		return value
+	}
 	return "integin"
 }
 
 func metricEnvironment() string {
 	if value := strings.TrimSpace(os.Getenv("INTEGIN_ENVIRONMENT")); value != "" {
+		return value
+	}
+	if value := strings.TrimSpace(os.Getenv("integin_ENVIRONMENT")); value != "" {
 		return value
 	}
 	return "dev"

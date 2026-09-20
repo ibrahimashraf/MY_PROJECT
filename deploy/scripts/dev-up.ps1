@@ -55,6 +55,19 @@ if ($dockerOk) {
     }
 }
 
+# 1b. Legacy database fallback (INTEGIN_ → INTEGIN_ rename): if the caller took
+# the new default but only the pre-rename database exists, keep using it
+# instead of provisioning a second empty database.
+if ($dockerOk -and $DbName -eq "integin_dev") {
+    $hasNew = docker exec -i integin-dev-postgres psql -U $DbUser -d postgres -t -A -c "SELECT 1 FROM pg_database WHERE datname = 'integin_dev';"
+    $hasLegacy = docker exec -i integin-dev-postgres psql -U $DbUser -d postgres -t -A -c "SELECT 1 FROM pg_database WHERE datname = 'integin_dev';"
+    if ($hasNew -notmatch '1' -and $hasLegacy -match '1') {
+        $DbName = "integin_dev"
+        Write-Host "[*] Using pre-rename database 'integin_dev' (no 'integin_dev' present)." -ForegroundColor Yellow
+        Write-Host "    Migrate with: pg_dump integin_dev | psql integin_dev (then verify before dropping the old one)." -ForegroundColor Yellow
+    }
+}
+
 # 2. Verify and Apply Core Migrations Directory
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $migrationsDir = Join-Path $projectRoot "migrations"

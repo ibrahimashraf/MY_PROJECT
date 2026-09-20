@@ -1,5 +1,5 @@
 package planetary
- 
+
 import (
 	"math"
 )

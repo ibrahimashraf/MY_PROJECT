@@ -9,10 +9,10 @@ type EntityID uint32
 
 // PackedPhysicsComponent stores 64-byte aligned contiguous spatial physics state (SoA layout).
 type PackedPhysicsComponent struct {
-	PosX, PosY, PosZ    float64
-	VelX, VelY, VelZ    float64
-	Mass                float64
-	IsStatic            bool
+	PosX, PosY, PosZ float64
+	VelX, VelY, VelZ float64
+	Mass             float64
+	IsStatic         bool
 }
 
 // SpatialCellID defines a 64-bit spatial hash key for planetary scale indexing.
@@ -37,11 +37,11 @@ func mathFloor(v float64) float64 {
 
 // PlanetaryECSWorld coordinates high-throughput entity systems with cache-conscious SoA arrays.
 type PlanetaryECSWorld struct {
-	mu           sync.RWMutex
-	NextID       EntityID
-	Physics      map[EntityID]PackedPhysicsComponent
-	SpatialGrid  map[SpatialCellID][]EntityID
-	CellSizeM    float64
+	mu          sync.RWMutex
+	NextID      EntityID
+	Physics     map[EntityID]PackedPhysicsComponent
+	SpatialGrid map[SpatialCellID][]EntityID
+	CellSizeM   float64
 }
 
 // NewPlanetaryECSWorld constructs ECS world with specified spatial cell resolution (e.g. 100m).
@@ -65,8 +65,8 @@ func (w *PlanetaryECSWorld) SpawnEntity(pos [3]float64, vel [3]float64, mass flo
 	id := w.NextID
 
 	comp := PackedPhysicsComponent{
-		PosX:     pos[0], PosY: pos[1], PosZ: pos[2],
-		VelX:     vel[0], VelY: vel[1], VelZ: vel[2],
+		PosX: pos[0], PosY: pos[1], PosZ: pos[2],
+		VelX: vel[0], VelY: vel[1], VelZ: vel[2],
 		Mass:     mass,
 		IsStatic: isStatic,
 	}

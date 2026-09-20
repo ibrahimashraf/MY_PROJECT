@@ -43,7 +43,7 @@ func Tokenize(input string) []Token {
 			}
 			tokens = append(tokens, Token{Type: TokenNumber, Literal: input[i:j]})
 			i = j
-		case ch == '(' :
+		case ch == '(':
 			tokens = append(tokens, Token{Type: TokenLParen, Literal: "("})
 			i++
 		case ch == ')':
@@ -60,10 +60,10 @@ func Tokenize(input string) []Token {
 
 // ProofWitness represents a formal verification certificate for a claim.
 type ProofWitness struct {
-	Claim     string
-	Proof     string
-	IsValid   bool
-	Residual  float64 // Numeric proof residual (0 = exact)
+	Claim    string
+	Proof    string
+	IsValid  bool
+	Residual float64 // Numeric proof residual (0 = exact)
 }
 
 // VerifyClaim checks an engineering specification claim against a numeric witness bound.

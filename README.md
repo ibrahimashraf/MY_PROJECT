@@ -1,6 +1,6 @@
 # INTEGIN
 
-**Lifting Equipment Inspection Management System** is evolving into a broader industrial-assurance platform. It records evidence-led field work while preserving a strict principle: **the server remains authoritative and AI is advisory only**.
+**Integrated Inspection & Assurance Platform** (evolved from the Lifting Equipment Inspection Management System). It records evidence-led field work while preserving a strict principle: **the server remains authoritative and AI is advisory only**.
 
 ## Authority model
 

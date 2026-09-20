@@ -107,4 +107,3 @@ func TestBusDeadLetterAndMultiHandlerResilience(t *testing.T) {
 		t.Fatal("dead letter handler must be invoked on subscriber failure")
 	}
 }
-

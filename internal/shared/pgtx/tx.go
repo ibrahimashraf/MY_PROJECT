@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 var (
 	ErrNilDB        = errors.New("database handle is required")
 	ErrInvalidScope = errors.New("tenant and organization scope are required")
@@ -80,6 +79,9 @@ func (cb *CircuitBreaker) RecordFailure() {
 
 // BeginScope begins a new transaction on db and configures the PostgreSQL session
 // variables 'integin.tenant_id' and 'integin.organization_id' with local transaction scope (is_local = true).
+// The legacy 'integin.*' names are set to the same values in the same statement
+// so databases migrated before 0085_rename_tenant_gucs_to_integin keep enforcing
+// RLS during rollout. New code must use the integin.* names only.
 // If any step fails, the transaction is safely rolled back and the error is returned.
 func BeginScope(ctx context.Context, db *sql.DB, tenantID, organizationID string) (*sql.Tx, error) {
 	if err := defaultBreaker.Allow(); err != nil {
@@ -97,7 +99,8 @@ func BeginScope(ctx context.Context, db *sql.DB, tenantID, organizationID string
 		return nil, err
 	}
 	if _, err := tx.ExecContext(ctx,
-		`SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`,
+		`SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true),
+		        set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`,
 		tenantID, organizationID,
 	); err != nil {
 		_ = tx.Rollback()
@@ -107,4 +110,3 @@ func BeginScope(ctx context.Context, db *sql.DB, tenantID, organizationID string
 	defaultBreaker.RecordSuccess()
 	return tx, nil
 }
-

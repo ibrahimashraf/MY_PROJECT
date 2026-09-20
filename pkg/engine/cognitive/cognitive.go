@@ -91,7 +91,7 @@ func (q *QLearningAgent) getQ(state [2]int) []float64 {
 // SelectAction returns action index using epsilon-greedy policy.
 func (q *QLearningAgent) SelectAction(state [2]int, randFloat float64) int {
 	if randFloat < q.Epsilon {
-		return int(randFloat * float64(q.Actions)) % q.Actions
+		return int(randFloat*float64(q.Actions)) % q.Actions
 	}
 	qs := q.getQ(state)
 	best := 0

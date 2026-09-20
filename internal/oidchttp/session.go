@@ -158,4 +158,3 @@ func (h *sessionRevocationHandler) ServeHTTP(writer http.ResponseWriter, request
 	writer.WriteHeader(http.StatusOK)
 	_, _ = writer.Write([]byte(`{"status":"revoked"}`))
 }
-

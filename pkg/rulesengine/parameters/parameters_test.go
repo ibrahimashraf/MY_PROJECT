@@ -16,8 +16,8 @@ func TestASMEB30HookEvaluation(t *testing.T) {
 		NominalThroatMM:  100.0,
 		MeasuredThroatMM: 102.0, // 2% stretch <= 5%
 		NominalSaddleMM:  50.0,
-		MeasuredSaddleMM: 48.0,  // 4% wear <= 10%
-		TwistDeg:         3.0,   // 3° <= 10°
+		MeasuredSaddleMM: 48.0, // 4% wear <= 10%
+		TwistDeg:         3.0,  // 3° <= 10°
 		HasCracks:        false,
 		LatchOperational: true,
 	}

@@ -44,7 +44,7 @@ deploy/k8s/cells/
 ├── base/
 │   ├── cell-namespace.yaml       # Restricted Pod Security Standard namespace
 │   ├── network-policy.yaml       # Default-deny egress & cell boundary enforcement
-│   ├── integin-deployment.yaml     # INTEGIN Server monolith deployment & service
+│   ├── integin-deployment.yaml   # INTEGIN Server monolith deployment & service
 │   └── kustomization.yaml        # Base kustomization
 └── regions/
     ├── sa-central-01/            # Kingdom of Saudi Arabia sovereign cell (SDAIA / PDPL)

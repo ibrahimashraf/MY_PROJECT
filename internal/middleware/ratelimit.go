@@ -11,9 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/time/rate"
 	"integin/internal/oidchttp"
 	"integin/pkg/httputil"
-	"golang.org/x/time/rate"
 )
 
 const numShards = 32

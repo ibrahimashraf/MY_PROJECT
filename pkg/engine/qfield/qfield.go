@@ -4,11 +4,11 @@ import "math"
 
 // Planck and related quantum constants
 const (
-	HBar              = 1.054571817e-34 // ℏ (J·s)
-	ElectronMassKg    = 9.1093837015e-31
-	ElementaryCharge  = 1.602176634e-19  // C
-	VacuumPermittivity = 8.8541878e-12   // ε₀ (F/m)
-	BohrRadius        = 5.29177210903e-11 // a₀ (m)
+	HBar               = 1.054571817e-34 // ℏ (J·s)
+	ElectronMassKg     = 9.1093837015e-31
+	ElementaryCharge   = 1.602176634e-19   // C
+	VacuumPermittivity = 8.8541878e-12     // ε₀ (F/m)
+	BohrRadius         = 5.29177210903e-11 // a₀ (m)
 )
 
 // CasimirForce computes attractive force per unit area between two parallel conducting plates:

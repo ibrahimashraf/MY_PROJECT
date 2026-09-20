@@ -27,15 +27,22 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/security"
 	"integin/internal/shared/types"
 	"integin/internal/syncstate"
+	"integin/internal/workorderauth"
 )
 
 const (
 	integrationOrganization = "integin-integration-org"
 	integrationUser         = "integin-integration-user"
+	// integrationActorID is the stable actor behind the matrix OIDC service
+	// account. ActorFromMembership rejects capability-less actors, so the
+	// seed grants CapabilityAddEvidenceReference below — same pattern as the
+	// repo's OIDC integration tests.
+	integrationActorID = "svc-live-matrix"
 )
 
 type fixture struct {
@@ -165,6 +172,9 @@ func seed() error {
 		return err
 	}
 	fmt.Printf("seeded tenant=%s device=%s authority=%s fixture=%s\n", tenantID, deviceID, authorityID, fixturePath)
+	if err := seedServiceAccountIdentity(db, tenantID); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -412,6 +422,75 @@ func postJSON(client *http.Client, endpoint string, value any, idempotencyKey st
 func digest(value []byte) string {
 	hash := sha256.Sum256(value)
 	return hex.EncodeToString(hash[:])
+}
+
+// seedServiceAccountIdentity maps the matrix OIDC service account to the
+// integration tenant so the exercise /evidence stage passes authorization.
+// The issuer/subject are read from a freshly minted token (same env contract
+// as exercise), so this works against any RS256 provider. OIDC env is
+// mandatory: exercise cannot pass /evidence without it, so seed fails fast
+// instead of leaving a guaranteed-later failure.
+func seedServiceAccountIdentity(db *sql.DB, tenantID string) error {
+	tokenEndpoint := strings.TrimSpace(os.Getenv("INTEGIN_OIDC_TOKEN_ENDPOINT"))
+	if tokenEndpoint == "" {
+		if issuer := strings.TrimSpace(os.Getenv("INTEGIN_OIDC_ISSUER")); issuer != "" {
+			tokenEndpoint = strings.TrimSuffix(issuer, "/") + "/protocol/openid-connect/token"
+		}
+	}
+	clientID := strings.TrimSpace(os.Getenv("INTEGIN_OIDC_CLIENT_ID"))
+	clientSecret := strings.TrimSpace(os.Getenv("INTEGIN_OIDC_CLIENT_SECRET"))
+	if tokenEndpoint == "" || clientID == "" || clientSecret == "" {
+		return errors.New("seed identity requires INTEGIN_OIDC_TOKEN_ENDPOINT (or INTEGIN_OIDC_ISSUER) + INTEGIN_OIDC_CLIENT_ID + INTEGIN_OIDC_CLIENT_SECRET")
+	}
+	form := url.Values{"grant_type": {"client_credentials"}, "client_id": {clientID}, "client_secret": {clientSecret}}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenEndpoint, strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
+	if err != nil {
+		return fmt.Errorf("seed identity token request: %w", err)
+	}
+	defer resp.Body.Close()
+	var tokenDoc struct {
+		AccessToken string `json:"access_token"`
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || json.Unmarshal(body, &tokenDoc) != nil || tokenDoc.AccessToken == "" {
+		return fmt.Errorf("seed identity token request: status %d", resp.StatusCode)
+	}
+	parts := strings.Split(tokenDoc.AccessToken, ".")
+	if len(parts) != 3 {
+		return errors.New("seed identity: token is not a JWT")
+	}
+	claimsRaw, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return fmt.Errorf("seed identity: decode claims: %w", err)
+	}
+	var claims struct {
+		Issuer  string `json:"iss"`
+		Subject string `json:"sub"`
+	}
+	if err := json.Unmarshal(claimsRaw, &claims); err != nil || claims.Issuer == "" || claims.Subject == "" {
+		return errors.New("seed identity: token has no iss/sub")
+	}
+	// The actor is scoped per tenant: actor_id is globally unique while the
+	// FK binds (actor_id, tenant_id, organization_id), so reusing one actor
+	// across tenants would rebind it and strand other memberships.
+	actorID := integrationActorID + "-" + tenantID
+	if _, err := identity.GrantMembership(ctx, db, identity.GrantInput{
+		Issuer: claims.Issuer, Subject: claims.Subject,
+		TenantID: tenantID, OrganizationID: integrationOrganization,
+		ActorID: actorID, Role: "administrator",
+		Capabilities: []string{workorderauth.CapabilityAddEvidenceReference},
+	}); err != nil {
+		return fmt.Errorf("seed identity grant: %w", err)
+	}
+	fmt.Printf("seeded identity iss=%s sub=%s actor=%s\n", claims.Issuer, claims.Subject, actorID)
+	return nil
 }
 
 func localConfig() (databaseURL, tenantID, secret, fixturePath string, err error) {

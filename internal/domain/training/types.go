@@ -68,11 +68,11 @@ const (
 )
 
 var (
-	ErrQualificationExpired     = errors.New("iso9712: qualification expired")
-	ErrInsufficientNDTLevel     = errors.New("iso9712: Level 1 personnel are not authorized to interpret results or sign certificates")
-	ErrLevel3Required           = errors.New("iso9712: Level 3 qualification required for procedure approval")
-	ErrInvalidMethod            = errors.New("iso9712: invalid or empty NDT method")
-	ErrMissingCertRef           = errors.New("iso9712: missing accreditation certificate reference")
+	ErrQualificationExpired = errors.New("iso9712: qualification expired")
+	ErrInsufficientNDTLevel = errors.New("iso9712: Level 1 personnel are not authorized to interpret results or sign certificates")
+	ErrLevel3Required       = errors.New("iso9712: Level 3 qualification required for procedure approval")
+	ErrInvalidMethod        = errors.New("iso9712: invalid or empty NDT method")
+	ErrMissingCertRef       = errors.New("iso9712: missing accreditation certificate reference")
 )
 
 type NDTQualification struct {

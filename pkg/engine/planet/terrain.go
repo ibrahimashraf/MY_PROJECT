@@ -8,20 +8,20 @@ import (
 // TerrainVertex represents a packed 32-byte GPU-ready vertex buffer element.
 // 12 bytes Pos, 12 bytes Normal, 8 bytes UV.
 type TerrainVertex struct {
-	PosX, PosY, PosZ       float32
-	NormX, NormY, NormZ    float32
-	U, V                   float32
+	PosX, PosY, PosZ    float32
+	NormX, NormY, NormZ float32
+	U, V                float32
 }
 
 // TerrainChunk represents an evaluated mesh patch ready for WebGPU rendering.
 type TerrainChunk struct {
-	Face      CubeFace
-	Level     int
-	Indices   []uint32
-	Vertices  []TerrainVertex
+	Face       CubeFace
+	Level      int
+	Indices    []uint32
+	Vertices   []TerrainVertex
 	CenterECEF Vec3d
-	MinBounds [3]float32
-	MaxBounds [3]float32
+	MinBounds  [3]float32
+	MaxBounds  [3]float32
 }
 
 // SimplexNoise2D generates deterministic procedural coherent noise for heightmaps.

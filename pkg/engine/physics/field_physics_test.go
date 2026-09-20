@@ -32,7 +32,7 @@ func TestEvaluateAtmosphere(t *testing.T) {
 }
 
 func TestAcousticDopplerAndAttenuation(t *testing.T) {
-	c := 343.0 // speed of sound
+	c := 343.0   // speed of sound
 	f0 := 1000.0 // 1 kHz siren
 
 	// Source approaching at 34.3 m/s (~Mach 0.1)

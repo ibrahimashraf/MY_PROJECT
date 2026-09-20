@@ -413,4 +413,3 @@ func TestSessionAwareValidatorEnforcesRevocation(t *testing.T) {
 		t.Fatalf("expected ErrSessionRevoked, got %v", err)
 	}
 }
-

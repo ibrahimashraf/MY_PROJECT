@@ -49,4 +49,3 @@ func TestJSONSnapshotRoundTrip(t *testing.T) {
 		t.Fatalf("JSON snapshot payload mismatch: %+v", snap)
 	}
 }
-

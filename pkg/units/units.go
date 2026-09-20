@@ -14,7 +14,7 @@ func (k Kilometers) ToMeters() Meters     { return Meters(k * 1000.0) }
 type Kilograms float64
 type Tonnes float64
 
-func (kg Kilograms) ToTonnes() Tonnes { return Tonnes(kg / 1000.0) }
+func (kg Kilograms) ToTonnes() Tonnes   { return Tonnes(kg / 1000.0) }
 func (t Tonnes) ToKilograms() Kilograms { return Kilograms(t * 1000.0) }
 
 // --- Force ---
@@ -29,17 +29,17 @@ type Pascals float64
 type Megapascals float64
 type Gigapascals float64
 
-func (p Pascals) ToMegapascals() Megapascals     { return Megapascals(p / 1e6) }
-func (p Pascals) ToGigapascals() Gigapascals     { return Gigapascals(p / 1e9) }
-func (mp Megapascals) ToPascals() Pascals        { return Pascals(mp * 1e6) }
-func (gp Gigapascals) ToPascals() Pascals        { return Pascals(gp * 1e9) }
+func (p Pascals) ToMegapascals() Megapascals { return Megapascals(p / 1e6) }
+func (p Pascals) ToGigapascals() Gigapascals { return Gigapascals(p / 1e9) }
+func (mp Megapascals) ToPascals() Pascals    { return Pascals(mp * 1e6) }
+func (gp Gigapascals) ToPascals() Pascals    { return Pascals(gp * 1e9) }
 
 // --- Temperature ---
 type Kelvin float64
 type Celsius float64
 
-func (k Kelvin) ToCelsius() Celsius  { return Celsius(k - 273.15) }
-func (c Celsius) ToKelvin() Kelvin   { return Kelvin(c + 273.15) }
+func (k Kelvin) ToCelsius() Celsius { return Celsius(k - 273.15) }
+func (c Celsius) ToKelvin() Kelvin  { return Kelvin(c + 273.15) }
 
 // --- Angles ---
 type Radians float64
@@ -68,8 +68,8 @@ func (ms Milliseconds) ToSeconds() Seconds     { return Seconds(ms / 1000.0) }
 type Hertz float64
 type Kilohertz float64
 
-func (hz Hertz) ToKilohertz() Kilohertz  { return Kilohertz(hz / 1000.0) }
-func (khz Kilohertz) ToHertz() Hertz     { return Hertz(khz * 1000.0) }
+func (hz Hertz) ToKilohertz() Kilohertz { return Kilohertz(hz / 1000.0) }
+func (khz Kilohertz) ToHertz() Hertz    { return Hertz(khz * 1000.0) }
 
 // --- Velocity ---
 type MetersPerSecond float64

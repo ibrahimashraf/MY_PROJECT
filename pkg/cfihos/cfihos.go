@@ -32,21 +32,21 @@ func WriteCSV(w io.Writer, tags []Tag, equipment []Equipment) error {
 	if err := cw.Write([]string{"Entity", "ID", "TagID", "Facility", "System", "Class", "SerialNumber", "Manufacturer", "Model", "Status"}); err != nil {
 		return err
 	}
-	
+
 	// Write Tags
 	for _, t := range tags {
 		if err := cw.Write([]string{"Tag", t.ID, "", t.Facility, t.System, t.EquipmentClass, "", "", "", t.Status}); err != nil {
 			return err
 		}
 	}
-	
+
 	// Write Equipment
 	for _, e := range equipment {
 		if err := cw.Write([]string{"Equipment", e.ID, e.TagID, "", "", "", e.SerialNumber, e.Manufacturer, e.Model, e.Status}); err != nil {
 			return err
 		}
 	}
-	
+
 	cw.Flush()
 	return cw.Error()
 }

@@ -601,3 +601,34 @@ func TestSignedAuditCheckpointsMigrationContract(t *testing.T) {
 		}
 	}
 }
+
+func TestTenantGUCRenameMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0085_rename_tenant_gucs_to_integin.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	for _, fragment := range []string{
+		"pg_policy",
+		"integin.tenant_id",
+		"integin.organization_id",
+		"integin.tenant_id",
+		"integin.organization_id",
+		"DROP POLICY",
+		"CREATE POLICY",
+		"RAISE EXCEPTION",
+	} {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	down, err := os.ReadFile("0085_rename_tenant_gucs_to_integin.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{"pg_policy", "DROP POLICY", "CREATE POLICY"} {
+		if !strings.Contains(string(down), fragment) {
+			t.Fatalf("down migration missing %q", fragment)
+		}
+	}
+}

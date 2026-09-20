@@ -1,19 +1,29 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
+	"math/big"
 	"os"
 	"strings"
 	"time"
 
+	"integin/internal/envcompat"
 	"integin/pkg/domain"
 	"integin/pkg/licensing"
 )
 
 func main() {
+	envcompat.Mirror()
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
@@ -24,6 +34,8 @@ func main() {
 	switch command {
 	case "gen-key":
 		handleGenKey()
+	case "gen-tsa":
+		handleGenTSA(os.Args[2:])
 	case "issue-license":
 		handleIssueLicense(os.Args[2:])
 	case "verify-license":
@@ -42,6 +54,7 @@ func printUsage() {
 	fmt.Println("Usage: integin-cli <command> [flags]")
 	fmt.Println("\nCommands:")
 	fmt.Println("  gen-key            Generate a fresh Ed25519 root master authority keypair")
+	fmt.Println("  gen-tsa              Generate a pilot RFC 3161 TSA signer keypair + self-signed roots PEM")
 	fmt.Println("  issue-license      Mint a cryptographically signed license token")
 	fmt.Println("  verify-license     Verify a signed license token locally against a public key")
 	fmt.Println("  asset-did          Generate a deterministic W3C Asset DID")
@@ -58,6 +71,83 @@ func handleGenKey() {
 	fmt.Printf("Public Key  (Hex): %s\n", hex.EncodeToString(pub))
 	fmt.Printf("Private Key (Hex): %s\n", hex.EncodeToString(priv))
 	fmt.Println("\nCAUTION: Store the Private Key in an HSM or sealed vault. Distribute the Public Key to nodes.")
+}
+
+func handleGenTSA(args []string) {
+	fs := flag.NewFlagSet("gen-tsa", flag.ExitOnError)
+	keyOut := fs.String("key-out", `C:\MY_PROJECT\private\integin-secrets\tsa-pilot-signer.key`, "Signer private key output path (PKCS#8 PEM, mode 0600)")
+	rootsOut := fs.String("roots-out", `C:\MY_PROJECT\private\integin-secrets\tsa-pilot-roots.pem`, "Self-signed TSA roots output path (PEM, mode 0600)")
+	commonName := fs.String("cn", "INTEGIN Pilot TSA", "Signer certificate common name")
+	years := fs.Int("years", 10, "Certificate validity in years")
+	force := fs.Bool("force", false, "Overwrite existing output files")
+
+	_ = fs.Parse(args)
+
+	if *keyOut == "" || *rootsOut == "" {
+		fmt.Fprintln(os.Stderr, "Error: -key-out and -roots-out are required")
+		os.Exit(1)
+	}
+	if !*force {
+		for _, path := range []string{*keyOut, *rootsOut} {
+			if _, err := os.Stat(path); err == nil {
+				fmt.Fprintf(os.Stderr, "Error: %s exists (pass -force to overwrite)\n", path)
+				os.Exit(1)
+			}
+		}
+	}
+	if *years <= 0 || *years > 30 {
+		fmt.Fprintln(os.Stderr, "Error: -years must be between 1 and 30")
+		os.Exit(1)
+	}
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating key: %v\n", err)
+		os.Exit(1)
+	}
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating serial: %v\n", err)
+		os.Exit(1)
+	}
+	now := time.Now().UTC()
+	tmpl := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: *commonName},
+		NotBefore:             now.Add(-5 * time.Minute),
+		NotAfter:              now.AddDate(*years, 0, 0),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageTimeStamping},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating certificate: %v\n", err)
+		os.Exit(1)
+	}
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error encoding key: %v\n", err)
+		os.Exit(1)
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})
+	rootsPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	if err := os.WriteFile(*keyOut, keyPEM, 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to write key: %v\n", err)
+		os.Exit(1)
+	}
+	if err := os.WriteFile(*rootsOut, rootsPEM, 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to write roots: %v\n", err)
+		os.Exit(1)
+	}
+	fingerprint := sha256.Sum256(der)
+	fmt.Println("Pilot TSA signer generated (pilot trust anchor only — never use for production timestamps)")
+	fmt.Printf("   Key:         %s\n", *keyOut)
+	fmt.Printf("   Roots:       %s\n", *rootsOut)
+	fmt.Printf("   Fingerprint: %s\n", hex.EncodeToString(fingerprint[:]))
+	fmt.Printf("   Valid:       %s to %s\n", tmpl.NotBefore.Format(time.RFC3339), tmpl.NotAfter.Format(time.RFC3339))
+	fmt.Println("Provision the server with INTEGIN_TSA_URL + INTEGIN_TSA_ROOTS_FILE=<roots> and the responder with INTEGIN_TSA_SIGNER_KEY_FILE=<key> + INTEGIN_TSA_ROOTS_FILE=<roots>.")
 }
 
 func handleIssueLicense(args []string) {

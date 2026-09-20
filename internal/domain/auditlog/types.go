@@ -12,6 +12,7 @@ const (
 	EntityWorkOrder   EntityType = "work_order"
 	EntityCertificate EntityType = "certificate"
 	EntityAsset       EntityType = "asset"
+	EntityIdentity    EntityType = "identity"
 )
 
 type Action string

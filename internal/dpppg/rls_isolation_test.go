@@ -26,7 +26,7 @@ func TestMultiTenantRLSIsolationDrill(t *testing.T) {
 		t.Fatalf("failed to connect to database: %v", err)
 	}
 	defer db.Close()
-	
+
 	db.SetMaxOpenConns(50)
 	db.SetMaxIdleConns(50)
 
@@ -46,29 +46,29 @@ func TestMultiTenantRLSIsolationDrill(t *testing.T) {
 		wg.Add(1)
 		go func(tenantIndex int) {
 			defer wg.Done()
-			
+
 			tenantID := fmt.Sprintf("tenant-%04d", tenantIndex)
 			actor := dpp.ActorContext{
 				TenantID:       tenantID,
 				OrganizationID: "org-1",
 				ActorID:        "actor-1",
 			}
-			
+
 			repo, err := NewRepository(db)
 			if err != nil {
 				results <- fmt.Errorf("failed to create repo: %w", err)
 				return
 			}
-			
+
 			for q := 0; q < queriesPerTenant; q++ {
 				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-				
+
 				// We run it concurrently to ensure the pool resets properly.
 				_, listErr := repo.ListRegulatoryMonitors(ctx, actor, "", "")
 				if listErr != nil {
 					results <- fmt.Errorf("RLS Drill SELECT failed for %s: %w", tenantID, listErr)
 				}
-				
+
 				// Mutation is critical: RLS connection pool bleed is most catastrophic during INSERT.
 				// We create a dummy compliance action to verify write isolation.
 				_, writeErr := repo.CreateComplianceAction(ctx, actor, dpp.ComplianceAction{
@@ -84,7 +84,7 @@ func TestMultiTenantRLSIsolationDrill(t *testing.T) {
 					// right tenant context and does NOT bleed into a neighboring tenant's data.
 					_ = writeErr
 				}
-				
+
 				cancel()
 			}
 		}(i)

@@ -1,4 +1,4 @@
-package main
+package serverboot
 
 import (
 	"log"
@@ -25,7 +25,7 @@ func captureLogOutput(fn func()) string {
 
 func TestWarnIfUnconfigured_TSANotProvisioned(t *testing.T) {
 	out := captureLogOutput(func() {
-		warnIfUnconfigured(false, true, true)
+		warnIfUnconfigured(false, true, true, true)
 	})
 	if !strings.Contains(out, "TSA roots not provisioned") {
 		t.Fatalf("expected TSA warning, got %q", out)
@@ -37,7 +37,7 @@ func TestWarnIfUnconfigured_TSANotProvisioned(t *testing.T) {
 
 func TestWarnIfUnconfigured_TUSDisabled(t *testing.T) {
 	out := captureLogOutput(func() {
-		warnIfUnconfigured(true, false, true)
+		warnIfUnconfigured(true, false, true, true)
 	})
 	if !strings.Contains(out, "TUS") || !strings.Contains(out, "disabled") {
 		t.Fatalf("expected TUS disabled warning, got %q", out)
@@ -49,7 +49,7 @@ func TestWarnIfUnconfigured_TUSDisabled(t *testing.T) {
 
 func TestWarnIfUnconfigured_TUSWithoutOIDC(t *testing.T) {
 	out := captureLogOutput(func() {
-		warnIfUnconfigured(true, true, false)
+		warnIfUnconfigured(true, true, false, true)
 	})
 	if !strings.Contains(out, "OIDC validator") {
 		t.Fatalf("expected OIDC warning, got %q", out)
@@ -61,7 +61,7 @@ func TestWarnIfUnconfigured_TUSWithoutOIDC(t *testing.T) {
 
 func TestWarnIfUnconfigured_AllConfiguredSilent(t *testing.T) {
 	out := captureLogOutput(func() {
-		warnIfUnconfigured(true, true, true)
+		warnIfUnconfigured(true, true, true, true)
 	})
 	if out != "" {
 		t.Fatalf("expected no warnings when fully configured, got %q", out)
@@ -70,12 +70,24 @@ func TestWarnIfUnconfigured_AllConfiguredSilent(t *testing.T) {
 
 func TestWarnIfUnconfigured_TSAAndTUSBothUnconfigured(t *testing.T) {
 	out := captureLogOutput(func() {
-		warnIfUnconfigured(false, false, false)
+		warnIfUnconfigured(false, false, false, true)
 	})
 	if !strings.Contains(out, "TSA roots not provisioned") {
 		t.Fatalf("expected TSA warning, got %q", out)
 	}
 	if !strings.Contains(out, "TUS") {
 		t.Fatalf("expected TUS warning, got %q", out)
+	}
+}
+
+func TestWarnIfUnconfigured_EvidenceUnmounted(t *testing.T) {
+	out := captureLogOutput(func() {
+		warnIfUnconfigured(true, true, true, false)
+	})
+	if !strings.Contains(out, "/evidence") || !strings.Contains(out, "INTEGIN_EVIDENCE_STORE") {
+		t.Fatalf("expected /evidence warning, got %q", out)
+	}
+	if strings.Contains(out, "TSA") || strings.Contains(out, "TUS") {
+		t.Fatalf("unexpected TSA/TUS warning: %q", out)
 	}
 }

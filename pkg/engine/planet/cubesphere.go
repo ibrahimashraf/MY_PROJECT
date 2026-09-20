@@ -127,13 +127,13 @@ func NewQuadNode(face CubeFace, u0, v0, size float64, level int, planetRadius fl
 	boundRadius := centerPos.Sub(cornerPos).Length() * 1.15
 
 	return &QuadNode{
-		Face:     face,
-		U0:       u0,
-		V0:       v0,
-		Size:     size,
-		Level:    level,
-		Center:   centerPos,
-		Radius:   boundRadius,
+		Face:   face,
+		U0:     u0,
+		V0:     v0,
+		Size:   size,
+		Level:  level,
+		Center: centerPos,
+		Radius: boundRadius,
 	}
 }
 
@@ -163,5 +163,5 @@ func (n *QuadNode) IsHorizonCulled(camPos Vec3d, planetRadius float64) bool {
 
 	// Minimum visible cos angle: cos(alpha) = R / camDist
 	minCos := planetRadius / camDist
-	return dot < (minCos - n.Radius/planetRadius) && nodeDistSq > horizonDistSq
+	return dot < (minCos-n.Radius/planetRadius) && nodeDistSq > horizonDistSq
 }

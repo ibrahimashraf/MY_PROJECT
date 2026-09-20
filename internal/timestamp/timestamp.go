@@ -381,6 +381,10 @@ func verifySignerChain(tokenDER, tstInfoDER []byte, roots *x509.CertPool, now ti
 		Roots:         roots,
 		Intermediates: intermediates,
 		CurrentTime:   now,
+		// Purpose-built: accept TSA certs constrained to timeStamping as
+		// well as legacy unconstrained roots. Without this, Go defaults to
+		// serverAuth and rejects proper RFC 3161 TSA certificates.
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageTimeStamping},
 	})
 	if err != nil {
 		return fmt.Errorf("timestamp signer chain does not verify against provisioned tsa roots: %w", err)
@@ -729,11 +733,21 @@ func splitTLV(b []byte) (tag byte, content, rest []byte, err error) {
 // builder). ----
 
 func buildTSTInfoDER(imprint []byte, genTime time.Time) ([]byte, error) {
+	return buildTSTInfoDERWithSerial(imprint, genTime, big.NewInt(1))
+}
+
+// buildTSTInfoDERWithSerial assembles TSTInfo with a caller-supplied serial
+// number. RFC 3161 requires a unique serial per token from a TSA; the fixed
+// serial-1 form above stays for deterministic test vectors only.
+func buildTSTInfoDERWithSerial(imprint []byte, genTime time.Time, serial *big.Int) ([]byte, error) {
 	if len(imprint) != sha256.Size {
 		return nil, errors.New("imprint must be 32 bytes")
 	}
 	if genTime.IsZero() {
 		return nil, errors.New("genTime is required")
+	}
+	if serial == nil || serial.Sign() <= 0 {
+		return nil, errors.New("serial must be a positive number")
 	}
 	info := tstInfo{
 		Version: 1,
@@ -742,7 +756,7 @@ func buildTSTInfoDER(imprint []byte, genTime time.Time) ([]byte, error) {
 			HashAlgorithm: algorithmIdentifier{Algorithm: oidSHA256},
 			HashedMessage: append([]byte(nil), imprint...),
 		},
-		SerialNumber: big.NewInt(1),
+		SerialNumber: new(big.Int).Set(serial),
 		GenTime:      genTime.UTC(),
 		Accuracy:     accuracy{Seconds: 1},
 	}

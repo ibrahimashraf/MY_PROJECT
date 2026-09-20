@@ -19,7 +19,7 @@ func TestShadersCompile(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Shader %s not found: %v", shader, err)
 			}
-            
+
 			// If naga is installed, compile it
 			nagaPath, err := exec.LookPath("naga")
 			if err == nil {
@@ -28,8 +28,8 @@ func TestShadersCompile(t *testing.T) {
 					t.Fatalf("Naga compilation failed for %s: %v\nOutput: %s", shader, err, output)
 				}
 			} else {
-                t.Logf("naga not found, skipping strict compilation check for %s", shader)
-            }
+				t.Logf("naga not found, skipping strict compilation check for %s", shader)
+			}
 		})
 	}
 }

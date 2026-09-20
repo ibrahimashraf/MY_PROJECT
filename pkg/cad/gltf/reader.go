@@ -77,7 +77,7 @@ func ReadGLB(data []byte) (*Document, []byte, error) {
 		} else if acc.Type == "SCALAR" {
 			totalIndices += acc.Count
 		}
-		
+
 		if totalVertices > MaxVertices || totalIndices > MaxIndices {
 			return nil, nil, ErrOversizedAsset
 		}
@@ -86,7 +86,7 @@ func ReadGLB(data []byte) (*Document, []byte, error) {
 			return nil, nil, ErrMalformedAccessor
 		}
 		bv := doc.BufferViews[acc.BufferView]
-		
+
 		accTotal := acc.ByteOffset
 		if acc.Type == "VEC3" {
 			accTotal += acc.Count * 12
@@ -97,7 +97,7 @@ func ReadGLB(data []byte) (*Document, []byte, error) {
 		} else if acc.Type == "SCALAR" && acc.ComponentType == ComponentTypeFloat {
 			accTotal += acc.Count * 4
 		}
-		
+
 		if accTotal > bv.ByteLength {
 			return nil, nil, ErrMalformedAccessor
 		}

@@ -34,7 +34,7 @@ func (a *Allocation) Free() error {
 	if !a.freed.CompareAndSwap(false, true) {
 		return ErrDoubleFree
 	}
-	
+
 	galloc.Free(a.Data)
 	return nil
 }

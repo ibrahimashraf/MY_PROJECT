@@ -143,12 +143,12 @@ func ASMEB30HookGateVars() map[string]*cel.Type {
 // ASME B30.5-2025 Mobile Crane & ASME B30.26-2026 Rigging Hardware Parameters
 
 const (
-	ASMEB30_5StabilityLimitMobilePct  = 85.0 // Mobile crane tipping margin (<= 85% of tipping load on outriggers)
-	ASMEB30_5StabilityLimitCrawlerPct = 75.0 // Crawler crane tipping margin (<= 75% of tipping load on tracks)
-	ASMEB30_5MaxOperationalWindMS     = 14.0 // Standard operational wind cutoff (approx 31 mph)
-	ASMEB30_26ShacklePinWearDiscardPct  = 10.0 // 10% max reduction in pin diameter (Clause 26-1.9.4)
-	ASMEB30_26ShackleBowWearDiscardPct  = 10.0 // 10% max reduction in bow sectional dimension
-	ASMEB30_26ShackleSpreadDiscardPct   = 5.0  // 5% or 1/4 in max throat opening stretch
+	ASMEB30_5StabilityLimitMobilePct   = 85.0 // Mobile crane tipping margin (<= 85% of tipping load on outriggers)
+	ASMEB30_5StabilityLimitCrawlerPct  = 75.0 // Crawler crane tipping margin (<= 75% of tipping load on tracks)
+	ASMEB30_5MaxOperationalWindMS      = 14.0 // Standard operational wind cutoff (approx 31 mph)
+	ASMEB30_26ShacklePinWearDiscardPct = 10.0 // 10% max reduction in pin diameter (Clause 26-1.9.4)
+	ASMEB30_26ShackleBowWearDiscardPct = 10.0 // 10% max reduction in bow sectional dimension
+	ASMEB30_26ShackleSpreadDiscardPct  = 5.0  // 5% or 1/4 in max throat opening stretch
 )
 
 // ASMEB30_5CraneStabilityInput evaluates tipping stability and operating wind.
@@ -283,4 +283,3 @@ func ASMEB30GateVars() map[string]*cel.Type {
 		"operating_wind_ms": cel.DoubleType,
 	}
 }
-

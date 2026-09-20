@@ -10,20 +10,20 @@ import (
 
 // WorldSnapshotHeader identifies the snapshot binary format version.
 type WorldSnapshotHeader struct {
-	Magic   [4]byte  // "INTG"
-	Version uint32   // Schema version (currently 1)
-	Tick    uint64   // World simulation tick
-	TimeS   float64  // World time in seconds
-	Count   uint32   // Number of entity records
+	Magic   [4]byte // "INTG"
+	Version uint32  // Schema version (currently 1)
+	Tick    uint64  // World simulation tick
+	TimeS   float64 // World time in seconds
+	Count   uint32  // Number of entity records
 }
 
 // EntityRecord stores compact binary state of one physics entity.
 type EntityRecord struct {
-	ID              uint32
+	ID               uint32
 	PosX, PosY, PosZ float64
 	VelX, VelY, VelZ float64
-	Mass            float64
-	IsStatic        uint8  // 0 = dynamic, 1 = static
+	Mass             float64
+	IsStatic         uint8 // 0 = dynamic, 1 = static
 }
 
 var magic = [4]byte{'I', 'N', 'T', 'G'}
@@ -107,4 +107,3 @@ func DeserializeJSON(r io.Reader) (WorldJSONSnapshot, error) {
 	err := json.UnmarshalRead(r, &snap, json.RejectUnknownMembers(true))
 	return snap, err
 }
-

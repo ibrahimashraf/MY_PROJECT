@@ -6,8 +6,8 @@ import (
 
 const (
 	// WGS84 Constants
-	WGS84a = 6378137.0         // Semi-major axis (meters)
-	WGS84b = 6356752.31424518  // Semi-minor axis (meters)
+	WGS84a   = 6378137.0        // Semi-major axis (meters)
+	WGS84b   = 6356752.31424518 // Semi-minor axis (meters)
 	WGS84eSq = 0.00669437999014 // e^2 = 1 - (b^2 / a^2)
 )
 

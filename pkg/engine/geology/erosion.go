@@ -7,11 +7,11 @@ import (
 
 // HydraulicDroplet simulates an individual rain particle transporting sediment across heightmap.
 type HydraulicDroplet struct {
-	PosX, PosY   float64
-	DirX, DirY   float64
-	Speed        float64
-	Water        float64
-	Sediment     float64
+	PosX, PosY float64
+	DirX, DirY float64
+	Speed      float64
+	Water      float64
+	Sediment   float64
 }
 
 // HydraulicErosionConfig controls deposition and erosion dynamics.

@@ -97,6 +97,9 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/admin/feature-flags", d.FlagAdminHandler)
 		mux.Handle("/api/v1/admin/feature-flags/", d.FlagAdminHandler)
 	}
+	if d.IdentityGrantHandler != nil {
+		mux.Handle("/api/v1/admin/identity-grants", d.IdentityGrantHandler)
+	}
 	if d.TrainingHandler != nil {
 		mux.Handle("/api/v1/training/", d.TrainingHandler)
 	}

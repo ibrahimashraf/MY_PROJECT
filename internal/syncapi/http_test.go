@@ -227,5 +227,3 @@ func TestHandlerEnforcesBoundOrganizationContext(t *testing.T) {
 		t.Fatalf("expected 200 OK for matched context, got %d: %s", rec3.Code, rec3.Body.String())
 	}
 }
-
-
