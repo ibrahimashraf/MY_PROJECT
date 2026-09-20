@@ -69,7 +69,7 @@ function Assert-IssuerMutable {
 function Wait-PostgresReady {
   $deadline = [DateTime]::UtcNow.AddSeconds(90)
   while ([DateTime]::UtcNow -lt $deadline) {
-    if ((Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'integin_casdoor_owner', '-d', 'casdoor_pilot')) -eq 0) { return }
+    if ((Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'integin_casdoor_owner', '-d', 'integin_casdoor_pilot')) -eq 0) { return }
     Start-Sleep -Seconds 2
   }
   throw 'Isolated Casdoor PostgreSQL container did not become ready.'
@@ -84,7 +84,7 @@ $postgres = Read-EnvironmentFile -Path $postgresEnvironmentPath
 $casdoor = Read-EnvironmentFile -Path $casdoorEnvironmentPath
 foreach ($required in @('POSTGRES_USER','POSTGRES_PASSWORD','POSTGRES_DB')) { if (-not $postgres.ContainsKey($required)) { throw "Private Casdoor PostgreSQL environment is missing $required" } }
 foreach ($required in @('CASDOOR_PG_USER','CASDOOR_PG_PASSWORD','CASDOOR_PG_DB','CASDOOR_PG_HOST','CASDOOR_PG_PORT')) { if (-not $casdoor.ContainsKey($required)) { throw "Private Casdoor runtime environment is missing $required" } }
-if ($casdoor['CASDOOR_PG_HOST'] -ne 'integin-pilot-casdoor-postgres' -or $casdoor['CASDOOR_PG_PORT'] -ne '5432' -or $casdoor['CASDOOR_PG_DB'] -ne 'casdoor_pilot') { throw 'Private Casdoor runtime environment violates the documented isolated topology.' }
+if ($casdoor['CASDOOR_PG_HOST'] -ne 'integin-pilot-casdoor-postgres' -or $casdoor['CASDOOR_PG_PORT'] -ne '5432' -or $casdoor['CASDOOR_PG_DB'] -ne 'integin_casdoor_pilot') { throw 'Private Casdoor runtime environment violates the documented isolated topology.' }
 
 if ((Get-DockerExitCode -Arguments @('image', 'inspect', $postgresImage)) -ne 0) { Invoke-DockerQuietly -Arguments @('pull', $postgresImage) }
 if ((Get-DockerExitCode -Arguments @('image', 'inspect', $casdoorImage)) -ne 0) { Invoke-DockerQuietly -Arguments @('pull', $casdoorImage) }

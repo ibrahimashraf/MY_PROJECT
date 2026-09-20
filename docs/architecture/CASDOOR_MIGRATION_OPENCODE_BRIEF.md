@@ -18,7 +18,7 @@ Replace the heavy Java Keycloak container (`integin-pilot-keycloak`, 520 MB RAM,
 ### Slice 1: Configuration & Launch Scripts
 Create in `operations/pilot/`:
 - `casdoor/app.conf`:
-  - Casdoor application configuration pointing to the isolated Postgres container (`casdoor_pilot` database).
+  - Casdoor application configuration pointing to the isolated Postgres container (`integin_casdoor_pilot` database).
   - Port `8000` internally, telemetry disabled (`isDemoMode = false`).
 - `start-casdoor-pilot.ps1`:
   - Creates network `integin-casdoor-pilot-net`.
