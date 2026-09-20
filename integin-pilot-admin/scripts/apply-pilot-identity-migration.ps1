@@ -1,5 +1,5 @@
 $sourceRoot = 'C:\INTEGIN-PILOT\source'
-$secretsPath = 'C:\INTEGIN-SECRETS\integin-pilot.env'
+$secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $container = 'integin-pilot-postgres'
 $migrationName = '0004_identity_subject_membership.sql'
 $migrationPath = Join-Path $sourceRoot (Join-Path 'migrations' $migrationName)

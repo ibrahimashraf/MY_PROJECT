@@ -1,5 +1,5 @@
 $sourceRoot = 'C:\INTEGIN-PILOT\source'
-$secretsPath = 'C:\INTEGIN-SECRETS\integin-pilot.env'
+$secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $runtimeRoot = 'C:\INTEGIN-PILOT\runtime'
 $binaryPath = Join-Path $runtimeRoot 'integin-server-pilot.exe'
 $stdoutPath = Join-Path $runtimeRoot 'server.stdout.log'

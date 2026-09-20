@@ -22,7 +22,7 @@ The pilot uses an explicit non-development configuration with persistent file st
 | Persistent data | `integin-pilot-openbao-data` → `/openbao/file` | A new named volume, never an acceptance/pilot application volume. |
 | Audit output | `integin-pilot-openbao-logs` → `/openbao/logs` | New named volume, separate from INTEGIN application logs. |
 | Configuration | `C:\INTEGIN-PILOT\openbao\config` → `/bao/config:ro` | No secret values appear in the configuration directory. |
-| Initialization artifact | `C:\INTEGIN-SECRETS\openbao-pilot-recovery.json` | Private pilot-only file; excluded from source control and backups shared outside the operator recovery process. |
+| Initialization artifact | `C:\integin-secrets\openbao-pilot-recovery.json` | Private pilot-only file; excluded from source control and backups shared outside the operator recovery process. |
 | Seal | Shamir, **3 shares / threshold 2** | Two deliberate recovery holders are required; no application process can unseal itself. |
 
 ## 3. Required configuration baseline

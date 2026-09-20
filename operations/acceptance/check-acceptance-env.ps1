@@ -27,3 +27,8 @@ $required | ForEach-Object {
     Status = if ($present.ContainsKey($_)) { 'PRESENT' } else { 'MISSING' }
   }
 } | Format-Table -AutoSize
+
+# Migration replay gate (checked-in enforcement, offline static mode).
+# Full fresh-replay proof (-Replay, needs docker + scratch DB) runs before sign-off, not here.
+& 'C:\MY_PROJECT\integin-pilot-source\verify-migrations.ps1'
+if ($LASTEXITCODE -ne 0) { throw "Acceptance blocked: migration gate failed (see output above)" }

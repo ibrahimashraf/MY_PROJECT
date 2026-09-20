@@ -1,4 +1,4 @@
-﻿# INTEGIN Post-Manifest and Stage 0 Reconciliation Matrix — 2026-08-22
+# INTEGIN Post-Manifest and Stage 0 Reconciliation Matrix — 2026-08-22
 
 > **Read-only findings record.** This matrix makes no correction, implementation, migration, commit, runtime, deployment, tracker, or security-state change.
 

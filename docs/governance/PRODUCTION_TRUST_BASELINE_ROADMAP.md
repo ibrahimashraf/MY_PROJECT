@@ -78,7 +78,7 @@ flowchart LR
 |---|---|---|
 | Deploy OpenBao in an isolated operator boundary | TLS, distinct operator identities, encrypted storage, restricted network access, audit device, recovery/unseal runbook | A new runtime can retrieve only its assigned non-production fixture secret; unauthorized role and network paths fail. |
 | Define policies and paths | Separate paths for Keycloak, INTEGIN Go runtime, PostgreSQL migration, RustFS, SMTP, signing-key references, and CI | One workload cannot read another workload's secret path; policy review is version controlled. |
-| Move production credentials by reference | No secret values committed to source; local `C:\INTEGIN-SECRETS` remains development-only | Credential rotation changes a running service through the defined safe restart/reload procedure and leaves no value in logs. |
+| Move production credentials by reference | No secret values committed to source; local `C:\integin-secrets` remains development-only | Credential rotation changes a running service through the defined safe restart/reload procedure and leaves no value in logs. |
 | Prove recovery | Encrypted backup, dual-control recovery material, tested restoration procedure | Restore into isolated environment and confirm access policies/audit configuration are intact. |
 
 **Stop conditions:** Do not rely on a single human-held unseal/recovery value, do not store Flutter private keys, and do not block an accepted field transaction solely because a nonessential secret-refresh call is temporarily unavailable.

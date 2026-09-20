@@ -7,7 +7,7 @@ $image = 'openbao/openbao:2.6.0'
 $pilotRoot = 'C:\INTEGIN-PILOT\openbao'
 $configDirectory = Join-Path $pilotRoot 'config'
 $configPath = Join-Path $configDirectory 'openbao.hcl'
-$recoveryPath = 'C:\INTEGIN-SECRETS\openbao-pilot-recovery.json'
+$recoveryPath = 'C:\integin-secrets\openbao-pilot-recovery.json'
 
 if (Get-Process -Name 'integin-server-provision','integin-server-pilot' -ErrorAction SilentlyContinue) {
   # A presence check only: existing INTEGIN processes are expected and are never stopped or reconfigured here.

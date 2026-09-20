@@ -1,4 +1,4 @@
-$secretsPath = 'C:\INTEGIN-SECRETS\integin-pilot.env'
+$secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $container = 'integin-pilot-postgres'
 
 if (-not (Test-Path -LiteralPath $secretsPath)) { throw "Pilot secrets file is missing: $secretsPath" }

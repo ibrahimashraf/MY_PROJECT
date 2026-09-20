@@ -1,4 +1,4 @@
-$outputPath = 'C:\INTEGIN-SECRETS\integin-pilot.env'
+$outputPath = 'C:\integin-secrets\integin-pilot.env'
 
 if (Test-Path -LiteralPath $outputPath) {
   throw 'Pilot secret file already exists and will not be overwritten.'

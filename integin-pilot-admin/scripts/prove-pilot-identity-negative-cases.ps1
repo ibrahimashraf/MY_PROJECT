@@ -1,5 +1,5 @@
 $sourceRoot = 'C:\INTEGIN-PILOT\source'
-$secretsPath = 'C:\INTEGIN-SECRETS\integin-pilot.env'
+$secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $container = 'integin-pilot-postgres'
 $issuer = 'https://identity-pilot.invalid/realms/integin-pilot-negative-test'
 $subject = 'negative-subject-001'

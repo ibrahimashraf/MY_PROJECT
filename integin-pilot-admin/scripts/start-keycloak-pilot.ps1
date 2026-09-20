@@ -10,8 +10,8 @@ $keycloakContainer = 'integin-pilot-keycloak'
 $postgresVolume = 'integin-pilot-keycloak-postgres-data'
 $postgresImage = 'postgres:18'
 $keycloakImage = 'quay.io/keycloak/keycloak:26.7.1'
-$postgresEnvironmentPath = 'C:\INTEGIN-SECRETS\keycloak-pilot-postgres.env'
-$runtimeEnvironmentPath = 'C:\INTEGIN-SECRETS\keycloak-pilot-runtime.env'
+$postgresEnvironmentPath = 'C:\integin-secrets\keycloak-pilot-postgres.env'
+$runtimeEnvironmentPath = 'C:\integin-secrets\keycloak-pilot-runtime.env'
 $metadataPath = 'C:\INTEGIN-PILOT\runtime\keycloak-pilot-metadata.json'
 
 function Invoke-DockerQuietly {
