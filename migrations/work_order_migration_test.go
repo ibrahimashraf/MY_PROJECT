@@ -7,7 +7,7 @@ import (
 )
 
 func TestWorkOrderPersistenceMigrationContract(t *testing.T) {
-	sql, err := os.ReadFile("0009_work_order_persistence.sql")
+	sql, err := os.ReadFile("0009b_work_order_persistence.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,13 +39,13 @@ func TestWorkOrderPersistenceMigrationContract(t *testing.T) {
 			t.Fatalf("work-order migration missing %q", fragment)
 		}
 	}
-	if _, err := os.Stat("0009_work_order_persistence.down.sql"); err != nil {
+	if _, err := os.Stat("0009b_work_order_persistence.down.sql"); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestWorkOrderPersistenceMigrationStatesAndRelationsContract(t *testing.T) {
-	sql, err := os.ReadFile("0009_work_order_persistence.sql")
+	sql, err := os.ReadFile("0009b_work_order_persistence.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestWorkOrderPersistenceMigrationStatesAndRelationsContract(t *testing.T) {
 }
 
 func TestWorkOrderPersistenceMigrationRollbackContract(t *testing.T) {
-	sql, err := os.ReadFile("0009_work_order_persistence.down.sql")
+	sql, err := os.ReadFile("0009b_work_order_persistence.down.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,11 +11,23 @@ Write-Host "INTEGIN SCHEMA MIGRATION ENGINE (Ledger-Tracked)" -ForegroundColor C
 Write-Host "Target Database: $Database" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 
-# 1. Fresh database reset if explicitly requested
+# 1. Fresh database reset if explicitly requested.
+# NOTE: docker NOTICE output (e.g. DROP DATABASE IF EXISTS on a missing DB)
+# surfaces as an error record; keep native calls under 'Continue' like §2/§7
+# so notices never abort the run under $ErrorActionPreference='Stop'.
+function Invoke-DockerPsqlexec([string[]]$DockerArgs) {
+    $prev = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $null = docker @DockerArgs
+        return $LASTEXITCODE
+    } finally { $ErrorActionPreference = $prev }
+}
 if ($Fresh) {
     Write-Host "[*] Resetting database '$Database' to fresh state..." -ForegroundColor Yellow
-    docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -c "DROP DATABASE IF EXISTS $Database;" | Out-Null
-    docker exec -i integin-dev-postgres psql -U integin_runtime -d postgres -c "CREATE DATABASE $Database;" | Out-Null
+    $null = Invoke-DockerPsqlexec @('exec','-i','integin-dev-postgres','psql','-U','integin_runtime','-d','postgres','-c',"DROP DATABASE IF EXISTS $Database;")
+    $code = Invoke-DockerPsqlexec @('exec','-i','integin-dev-postgres','psql','-U','integin_runtime','-d','postgres','-c',"CREATE DATABASE $Database;")
+    if ($code -ne 0) { Write-Error "CREATE DATABASE $Database failed"; exit 1 }
     Write-Host "[+] Fresh database '$Database' created." -ForegroundColor Green
 } else {
     # Ensure database exists

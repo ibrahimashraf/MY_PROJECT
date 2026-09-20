@@ -1,10 +1,10 @@
 -- INTEGIN Ticket 03 D7-4: work-order signed submission hardening.
 -- Based on docs/architecture/INTEGIN_WORK_ORDER_FIELD_PACKAGE_CONTRACT_2026-09-01.md §6
--- and migrations/0009_work_order_persistence.sql:183-204 as base. Adds
+-- and migrations/0009b_work_order_persistence.sql:183-204 as base. Adds
 -- payload_hash, signature, signing_key_id, replay guard (operation_id UNIQUE,
 -- idempotency_key UNIQUE) and receipt JSONB hardening to work_order_operation.
 -- Uses TEXT ids, organization_id (no org_id shorthand), and mirrors
--- migrations/0010_work_order_rls.sql least-privilege and RLS pattern.
+-- migrations/0010b_work_order_rls.sql least-privilege and RLS pattern.
 -- Disposable isolated apply only; never pilot. Requires verified backup
 -- before any isolated exercise, then dropdb.
 

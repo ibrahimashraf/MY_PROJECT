@@ -1,4 +1,4 @@
-REVOKE EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_runtime;
+DO $$BEGIN IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'integin_resolve_identity_membership') THEN REVOKE EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_runtime; END IF; END$$;
 DROP FUNCTION IF EXISTS integin_resolve_identity_membership(TEXT, TEXT);
 
 ALTER TABLE IF EXISTS identity_membership

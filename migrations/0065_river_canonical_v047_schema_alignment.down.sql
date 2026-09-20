@@ -5,7 +5,18 @@ BEGIN;
 DROP TABLE IF EXISTS river_notification;
 DROP TABLE IF EXISTS river_queue;
 DROP INDEX IF EXISTS river_job_unique_idx;
+-- 0065.up's own partial index predicates on the enum-typed state column and
+-- must go before the TYPE revert; recreated at the end of this file.
+DROP INDEX IF EXISTS river_job_unique_active_idx;
 DROP FUNCTION IF EXISTS river_job_state_in_bitmask(BIT(8), river_job_state);
+-- 0064's partial indexes predicate on the enum-typed state column and block
+-- the TYPE revert below; drop now, recreate at the end. Same for the River
+-- canonical partial indexes (available/queue_priority), which 0065.up left
+-- predicated on the enum type.
+DROP INDEX IF EXISTS river_job_active_state_idx;
+DROP INDEX IF EXISTS river_job_prune_idx;
+DROP INDEX IF EXISTS river_job_available_idx;
+DROP INDEX IF EXISTS river_job_queue_priority_idx;
 
 ALTER TABLE river_job DROP COLUMN IF EXISTS unique_states;
 
@@ -22,6 +33,22 @@ ALTER TABLE river_job
 CREATE UNIQUE INDEX IF NOT EXISTS river_job_unique_active_idx 
     ON river_job (unique_key) 
     WHERE state IN ('available', 'running', 'retryable');
+
+-- Restore 0064's partial indexes dropped above.
+CREATE INDEX IF NOT EXISTS river_job_active_state_idx
+    ON river_job (state, scheduled_at)
+    WHERE state IN ('available', 'running', 'retryable');
+CREATE INDEX IF NOT EXISTS river_job_prune_idx
+    ON river_job (finalized_at)
+    WHERE state IN ('completed', 'cancelled', 'discarded');
+
+-- Restore the River canonical partial indexes (pre-0065 text predicates).
+CREATE INDEX IF NOT EXISTS river_job_available_idx
+    ON river_job (scheduled_at, priority)
+    WHERE state = 'available';
+CREATE INDEX IF NOT EXISTS river_job_queue_priority_idx
+    ON river_job (queue, priority, scheduled_at)
+    WHERE state = 'available';
 
 DROP TABLE IF EXISTS river_migration;
 DROP TYPE IF EXISTS river_job_state;

@@ -3,11 +3,10 @@
 
 BEGIN;
 
-ALTER FUNCTION public.integin_resolve_identity_membership(TEXT, TEXT)
-  RENAME TO integin_resolve_identity_membership;
+DO $$BEGIN IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'integin_resolve_identity_membership') THEN ALTER FUNCTION public.integin_resolve_identity_membership(TEXT, TEXT) RENAME TO integin_resolve_identity_membership; END IF; END$$;
 
-REVOKE ALL ON FUNCTION public.integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
+REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
 
 DO $$
 BEGIN

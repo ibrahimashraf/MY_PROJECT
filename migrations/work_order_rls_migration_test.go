@@ -7,7 +7,7 @@ import (
 )
 
 func TestWorkOrderRLSMigrationContract(t *testing.T) {
-	sql, err := os.ReadFile("0010_work_order_rls.sql")
+	sql, err := os.ReadFile("0010b_work_order_rls.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,13 +47,13 @@ func TestWorkOrderRLSMigrationContract(t *testing.T) {
 	if !strings.Contains(text, "REVOKE ALL ON TABLE") {
 		t.Fatal("RLS migration must revoke broad public/runtime table privileges before granting least privilege")
 	}
-	if _, err := os.Stat("0010_work_order_rls.down.sql"); err != nil {
+	if _, err := os.Stat("0010b_work_order_rls.down.sql"); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestWorkOrderRLSMigrationHasWriteChecks(t *testing.T) {
-	sql, err := os.ReadFile("0010_work_order_rls.sql")
+	sql, err := os.ReadFile("0010b_work_order_rls.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestWorkOrderRLSMigrationHasWriteChecks(t *testing.T) {
 }
 
 func TestWorkOrderRLSDMigrationRollbackContract(t *testing.T) {
-	sql, err := os.ReadFile("0010_work_order_rls.down.sql")
+	sql, err := os.ReadFile("0010b_work_order_rls.down.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

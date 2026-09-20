@@ -18,9 +18,10 @@ $up = @($all | Where-Object { $_.Name -notmatch '\.down\.' -and $_.Name -notmatc
 $dups = $all.Name | Group-Object | Where-Object { $_.Count -gt 1 }
 foreach ($d in $dups) { $errors += "duplicate filename: $($d.Name)" }
 
-# E2: every replayed file must be sequence-numbered (ordering assumption)
+# E2: every replayed file must be sequence-numbered (ordering assumption;
+# a trailing letter allows order-preserving disambiguation, e.g. 0009b_*)
 foreach ($f in $up) {
-    if ($f.Name -notmatch '^\d+_.*\.sql$') { $errors += "unnumbered up-file: $($f.Name)" }
+    if ($f.Name -notmatch '^\d+[a-z]?_.*\.sql$') { $errors += "unnumbered up-file: $($f.Name)" }
 }
 
 # E3: orphan rollback (non-draft .down. with no up partner)
