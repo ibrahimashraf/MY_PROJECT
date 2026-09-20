@@ -44,7 +44,7 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 		return Config{Enabled: false}, nil
 	}
 
-	allowLoopback, err := parseBool(getenv("INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK"), false)
+	allowLoopback, err := parseBool(strings.TrimSpace(getenv("INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK")), false)
 	if err != nil {
 		return Config{}, fmt.Errorf("INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK: %w", err)
 	}
@@ -60,15 +60,15 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 	if parsedIssuer.Scheme != "https" && !(allowLoopback && parsedIssuer.Scheme == "http" && isLoopbackHost(parsedIssuer.Hostname())) {
 		return Config{}, fmt.Errorf("INTEGIN_OIDC_ISSUER must use HTTPS unless the explicit loopback pilot exception is enabled")
 	}
-	clockSkew, err := durationFromSeconds(getenv("INTEGIN_OIDC_CLOCK_SKEW_SECONDS"), defaultClockSkew, 0, 300)
+	clockSkew, err := durationFromSeconds(strings.TrimSpace(getenv("INTEGIN_OIDC_CLOCK_SKEW_SECONDS")), defaultClockSkew, 0, 300)
 	if err != nil {
 		return Config{}, fmt.Errorf("INTEGIN_OIDC_CLOCK_SKEW_SECONDS: %w", err)
 	}
-	maxTokenAge, err := durationFromSeconds(getenv("INTEGIN_OIDC_MAX_TOKEN_AGE_SECONDS"), defaultMaxTokenAge, 60, 3600)
+	maxTokenAge, err := durationFromSeconds(strings.TrimSpace(getenv("INTEGIN_OIDC_MAX_TOKEN_AGE_SECONDS")), defaultMaxTokenAge, 60, 3600)
 	if err != nil {
 		return Config{}, fmt.Errorf("INTEGIN_OIDC_MAX_TOKEN_AGE_SECONDS: %w", err)
 	}
-	refresh, err := durationFromSeconds(getenv("INTEGIN_OIDC_JWKS_REFRESH_SECONDS"), defaultJWKSRefresh, 30, 3600)
+	refresh, err := durationFromSeconds(strings.TrimSpace(getenv("INTEGIN_OIDC_JWKS_REFRESH_SECONDS")), defaultJWKSRefresh, 30, 3600)
 	if err != nil {
 		return Config{}, fmt.Errorf("INTEGIN_OIDC_JWKS_REFRESH_SECONDS: %w", err)
 	}
@@ -77,7 +77,7 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 		Issuer:                      issuer,
 		Audience:                    audience,
 		AuthorizedParty:             strings.TrimSpace(getenv("INTEGIN_OIDC_AUTHORIZED_PARTY")),
-		RequiredAMR:                 splitList(getenv("INTEGIN_OIDC_REQUIRED_AMR")),
+		RequiredAMR:                 splitList(strings.TrimSpace(getenv("INTEGIN_OIDC_REQUIRED_AMR"))),
 		ClockSkew:                   clockSkew,
 		MaxTokenAge:                 maxTokenAge,
 		JWKSRefresh:                 refresh,

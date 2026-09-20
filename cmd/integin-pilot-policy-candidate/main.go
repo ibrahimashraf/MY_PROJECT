@@ -128,7 +128,7 @@ func main() {
 		}
 		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
 			Repository: repository, Processor: processor, SigningSecret: secretStr,
-			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
+			TenantID:          strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID")),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),
 			AuthorityLifetime: time.Duration(envInt("INTEGIN_LOCAL_PROVISIONING_AUTHORITY_MINUTES", 30)) * time.Minute,

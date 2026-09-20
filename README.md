@@ -29,7 +29,7 @@ Do not point the acceptance Flutter run at the pilot by accident. Do not copy a 
 
 The local workflow expects Go, Docker Desktop, PostgreSQL/RustFS pilot resources, Python, and Flutter at `C:\flutter`. The Windows `flutter.bat` wrapper can be silent in this environment, so the task runner invokes Flutter’s bundled Dart tooling through the reviewed pilot test script.
 
-Private values stay in `C:\INTEGIN-SECRETS\`. They must never be placed in source control, Markdown, chat, test fixtures, Docker YAML, logs, screenshots, or generated reports.
+Private values stay in `C:\integin-secrets\`. They must never be placed in source control, Markdown, chat, test fixtures, Docker YAML, logs, screenshots, or generated reports.
 
 ## Safe developer commands
 

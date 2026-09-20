@@ -85,12 +85,12 @@ func loadSignerCert(path string) (*x509.Certificate, error) {
 }
 
 func main() {
-	addr := firstEnv("INTEGIN_TSA_ADDR")
+	addr := strings.TrimSpace(os.Getenv("INTEGIN_TSA_ADDR"))
 	if addr == "" {
 		addr = "127.0.0.1:18280"
 	}
-	keyPath := firstEnv("INTEGIN_TSA_SIGNER_KEY_FILE")
-	rootsPath := firstEnv("INTEGIN_TSA_ROOTS_FILE")
+	keyPath := strings.TrimSpace(os.Getenv("INTEGIN_TSA_SIGNER_KEY_FILE"))
+	rootsPath := strings.TrimSpace(os.Getenv("INTEGIN_TSA_ROOTS_FILE"))
 	if keyPath == "" || rootsPath == "" {
 		log.Fatal("INTEGIN_TSA_SIGNER_KEY_FILE and INTEGIN_TSA_ROOTS_FILE are both required")
 	}

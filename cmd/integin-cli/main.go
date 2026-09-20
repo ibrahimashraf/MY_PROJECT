@@ -17,13 +17,11 @@ import (
 	"strings"
 	"time"
 
-	"integin/internal/envcompat"
 	"integin/pkg/domain"
 	"integin/pkg/licensing"
 )
 
 func main() {
-	envcompat.Mirror()
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)

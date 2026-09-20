@@ -27,7 +27,7 @@ const _windowsStartupTracePath =
 // A non-empty value isolates a controlled pilot walkthrough queue without
 // deleting or mutating any prior local queue history.
 const _pilotOutboxNamespace =
-    String.fromEnvironment('INTEGIN_PILOT_OUTBOX_NAMESPACE', defaultValue: String.fromEnvironment('INTEGIN_PILOT_OUTBOX_NAMESPACE'));
+    String.fromEnvironment('INTEGIN_PILOT_OUTBOX_NAMESPACE');
 
 void _traceWindowsStartup(String stage) {
   if (kIsWeb || _windowsStartupTracePath.isEmpty) {
@@ -47,14 +47,14 @@ void _traceWindowsStartup(String stage) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _traceWindowsStartup('binding-ready');
-  const syncEndpoint = String.fromEnvironment('INTEGIN_SYNC_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_SYNC_ENDPOINT'));
+  const syncEndpoint = String.fromEnvironment('INTEGIN_SYNC_ENDPOINT');
   const localProvisioningEndpoint =
-      String.fromEnvironment('INTEGIN_LOCAL_PROVISIONING_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_LOCAL_PROVISIONING_ENDPOINT'));
+      String.fromEnvironment('INTEGIN_LOCAL_PROVISIONING_ENDPOINT');
   const pilotFixturePath =
-      String.fromEnvironment('INTEGIN_PILOT_WINDOWS_FIXTURE_PATH', defaultValue: String.fromEnvironment('INTEGIN_PILOT_WINDOWS_FIXTURE_PATH'));
-  const pilotMode = bool.fromEnvironment('INTEGIN_PILOT_WINDOWS_MODE', defaultValue: bool.fromEnvironment('INTEGIN_PILOT_WINDOWS_MODE'));
+      String.fromEnvironment('INTEGIN_PILOT_WINDOWS_FIXTURE_PATH');
+  const pilotMode = bool.fromEnvironment('INTEGIN_PILOT_WINDOWS_MODE');
   const pilotAdvisoryEndpoint =
-      String.fromEnvironment('INTEGIN_PILOT_ADVISORY_ENDPOINT', defaultValue: String.fromEnvironment('INTEGIN_PILOT_ADVISORY_ENDPOINT'));
+      String.fromEnvironment('INTEGIN_PILOT_ADVISORY_ENDPOINT');
 
   _traceWindowsStartup('mode-resolved');
   if (pilotMode) {

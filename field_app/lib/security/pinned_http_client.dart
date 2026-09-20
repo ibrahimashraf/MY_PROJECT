@@ -25,9 +25,9 @@ import 'endpoint_guard.dart';
 class PinnedHttpClient {
   PinnedHttpClient._();
 
-  static const pins = String.fromEnvironment('INTEGIN_TLS_PINS', defaultValue: String.fromEnvironment('INTEGIN_TLS_PINS'));
+  static const pins = String.fromEnvironment('INTEGIN_TLS_PINS');
 
-  static const requirePins = bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS', defaultValue: bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS'));
+  static const requirePins = bool.fromEnvironment('INTEGIN_REQUIRE_TLS_PINS');
 
   static http.Client forEndpoint(Uri endpoint,
       {bool allowLoopbackHttp = false, HttpClient? inner}) {

@@ -37,7 +37,6 @@ import (
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/dpphttp"
 	"integin/internal/dpppg"
-	"integin/internal/envcompat"
 	"integin/internal/evidencepackhttp"
 	"integin/internal/evidencepackpg"
 	"integin/internal/formdefinitionhttp"
@@ -76,8 +75,6 @@ func durEnvSeconds(key string, fallback time.Duration) time.Duration {
 // Entry point for cmd/integin-server (which presets
 // INTEGIN_DEPLOY_MODE from --mode before calling Run).
 func Run() {
-	envcompat.Mirror()
-
 	secretStr := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
 	if secretStr == "" {
 		log.Fatal("INTEGIN_SYNC_SECRET is required")
@@ -90,21 +87,21 @@ func Run() {
 	} else {
 		secrets["default"] = secretStr
 	}
-	deployMode, err := parseDeployMode(firstEnv("INTEGIN_DEPLOY_MODE", "INTEGIN_DEPLOY_MODE"))
+	deployMode, err := parseDeployMode(strings.TrimSpace(os.Getenv("INTEGIN_DEPLOY_MODE")))
 	if err != nil {
 		log.Fatal(err)
 	}
-	bindAddr := strings.TrimSpace(firstEnv("INTEGIN_HTTP_ADDR", "INTEGIN_HTTP_ADDR"))
+	bindAddr := strings.TrimSpace(strings.TrimSpace(os.Getenv("INTEGIN_HTTP_ADDR")))
 	if bindAddr == "" {
 		bindAddr = ":8080"
 	}
-	allowLANBind := envBool("INTEGIN_AIRGAP_ALLOW_LAN_BIND") || envBool("INTEGIN_AIRGAP_ALLOW_LAN_BIND")
-	if err := checkDeployMode(deployMode, firstEnv("INTEGIN_DB_URL", "INTEGIN_DB_URL"),
-		strings.EqualFold(strings.TrimSpace(firstEnv("INTEGIN_OIDC_ENABLED", "INTEGIN_OIDC_ENABLED")), "true"),
-		firstEnv("INTEGIN_OIDC_ISSUER", "INTEGIN_OIDC_ISSUER"),
-		firstEnv("INTEGIN_S3_ENDPOINT", "INTEGIN_RUSTFS_ENDPOINT", "INTEGIN_MINIO_ENDPOINT", "INTEGIN_S3_ENDPOINT"),
-		firstEnv("INTEGIN_EVIDENCE_STORE", "INTEGIN_EVIDENCE_STORE"), bindAddr, allowLANBind,
-		firstEnv("INTEGIN_TSA_URL", "INTEGIN_TSA_URL")); err != nil {
+	allowLANBind := envBool("INTEGIN_AIRGAP_ALLOW_LAN_BIND")
+	if err := checkDeployMode(deployMode, strings.TrimSpace(os.Getenv("INTEGIN_DB_URL")),
+		strings.EqualFold(strings.TrimSpace(strings.TrimSpace(os.Getenv("INTEGIN_OIDC_ENABLED"))), "true"),
+		strings.TrimSpace(os.Getenv("INTEGIN_OIDC_ISSUER")),
+		firstEnv("INTEGIN_S3_ENDPOINT", "INTEGIN_RUSTFS_ENDPOINT", "INTEGIN_MINIO_ENDPOINT"),
+		strings.TrimSpace(os.Getenv("INTEGIN_EVIDENCE_STORE")), bindAddr, allowLANBind,
+		strings.TrimSpace(os.Getenv("INTEGIN_TSA_URL"))); err != nil {
 		log.Fatal(err)
 	}
 	if deployMode != DeployModeCloud {
@@ -125,7 +122,7 @@ func Run() {
 	var syncRepo syncstate.Repository
 	var devices []device_trust.Device
 	var authorities []device_trust.AuthorityPackage
-	if dbURL := strings.TrimSpace(os.Getenv("INTEGIN_DB_URL")); dbURL != "" {
+	if dbURL := strings.TrimSpace(strings.TrimSpace(os.Getenv("INTEGIN_DB_URL"))); dbURL != "" {
 		if strings.Contains(dbURL, "6432") && !strings.Contains(dbURL, "default_query_exec_mode") {
 			separator := "?"
 			if strings.Contains(dbURL, "?") {
@@ -162,11 +159,11 @@ func Run() {
 		}
 	} else {
 		var err error
-		authorities, err = loadAuthorities(os.Getenv("INTEGIN_AUTHORITY_FILE"))
+		authorities, err = loadAuthorities(strings.TrimSpace(os.Getenv("INTEGIN_AUTHORITY_FILE")))
 		if err != nil {
 			log.Fatal(err)
 		}
-		devices, err = loadDevices(os.Getenv("INTEGIN_DEVICE_FILE"))
+		devices, err = loadDevices(strings.TrimSpace(os.Getenv("INTEGIN_DEVICE_FILE")))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -199,7 +196,7 @@ func Run() {
 		}
 		return nil
 	}
-	address := os.Getenv("INTEGIN_HTTP_ADDR")
+	address := strings.TrimSpace(os.Getenv("INTEGIN_HTTP_ADDR"))
 	pilotManifestHandler, pilotAuthorityRegistry, err := server.PilotManifestHandlerFromEnvironment(processor, authorities, database, address)
 	if err != nil {
 		log.Fatal(err)
@@ -221,7 +218,7 @@ func Run() {
 		}
 		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
 			Repository: repository, Processor: processor, SigningSecret: secretStr,
-			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
+			TenantID:          strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID")),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),
 			AuthorityLifetime: time.Duration(envInt("INTEGIN_LOCAL_PROVISIONING_AUTHORITY_MINUTES", 30)) * time.Minute,
@@ -497,7 +494,7 @@ func Run() {
 		agentRegistry := &scheduling.InMemoryAgentRegistry{
 			Competencies: map[string][]scheduling.TechnicianCompetency{},
 		}
-		if envJSON := os.Getenv("INTEGIN_BDI_AGENTS_JSON"); envJSON != "" {
+		if envJSON := strings.TrimSpace(os.Getenv("INTEGIN_BDI_AGENTS_JSON")); envJSON != "" {
 			var agents []*cognitive.BDIAgent
 			if err := json.Unmarshal([]byte(envJSON), &agents); err != nil {
 				log.Fatalf("failed to unmarshal INTEGIN_BDI_AGENTS_JSON: %v", err)
@@ -653,7 +650,7 @@ func loadFromPostgres(ctx context.Context, repository *syncstate.PostgresReposit
 }
 
 func configureEvidenceStore() (storage.Store, error) {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv("INTEGIN_EVIDENCE_STORE"))) {
+	switch strings.ToLower(strings.TrimSpace(strings.TrimSpace(os.Getenv("INTEGIN_EVIDENCE_STORE")))) {
 	case "", "disabled":
 		return nil, nil
 	case "memory":
