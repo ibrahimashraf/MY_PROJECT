@@ -22,8 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_short_links_created_at ON short_links (created_at
 ALTER TABLE short_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE short_links FORCE ROW LEVEL SECURITY;
 
-REVOKE ALL ON TABLE short_links FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE short_links TO integin_runtime;
+REVOKE ALL ON TABLE short_links FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE short_links TO integin_test_runtime;
 
 DROP POLICY IF EXISTS short_links_isolation ON short_links;
 CREATE POLICY short_links_isolation ON short_links
@@ -37,3 +37,4 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 COMMIT;
+

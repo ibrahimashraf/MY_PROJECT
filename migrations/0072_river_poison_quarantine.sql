@@ -51,6 +51,6 @@ CREATE POLICY river_poison_quarantine_tenant_isolation ON river_poison_quarantin
         )
     );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON river_poison_quarantine TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON river_poison_quarantine TO integin_test_runtime;
 
 COMMIT;

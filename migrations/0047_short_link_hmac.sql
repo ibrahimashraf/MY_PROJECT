@@ -30,7 +30,8 @@ CREATE POLICY short_link_hmac_secrets_isolation ON short_link_hmac_secrets
     USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON short_link_hmac_secrets TO integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON short_links TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON short_link_hmac_secrets TO integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON short_links TO integin_test_runtime;
 
 COMMIT;
+

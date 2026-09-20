@@ -2,17 +2,17 @@
 -- The runtime role must be provisioned separately as a non-owner, non-superuser
 -- role without BYPASSRLS. This migration does not create or alter roles.
 
-GRANT USAGE ON SCHEMA public TO integin_runtime;
+GRANT USAGE ON SCHEMA public TO integin_test_runtime;
 
 REVOKE ALL ON TABLE work_order, work_order_scope_item, work_order_assignment,
     work_order_assignment_scope, inspection_record, work_order_submission_segment,
     work_order_submission_item, work_order_operation, work_order_state_event,
-    work_order_provisional_record FROM PUBLIC, integin_runtime;
+    work_order_provisional_record FROM PUBLIC, integin_test_runtime;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order, work_order_scope_item,
     work_order_assignment, work_order_assignment_scope, inspection_record,
     work_order_submission_segment, work_order_submission_item, work_order_operation,
-    work_order_state_event, work_order_provisional_record TO integin_runtime;
+    work_order_state_event, work_order_provisional_record TO integin_test_runtime;
 
 ALTER TABLE work_order ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_order FORCE ROW LEVEL SECURITY;
@@ -143,3 +143,4 @@ CREATE POLICY work_order_provisional_record_tenant_organization_isolation ON wor
         tenant_id = current_setting('integin.tenant_id', true)
         AND organization_id = current_setting('integin.organization_id', true)
     );
+

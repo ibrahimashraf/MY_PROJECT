@@ -96,8 +96,8 @@ func TestAnomalyDetectionMigrationContract(t *testing.T) {
 		"REFERENCES short_links(code) ON DELETE CASCADE",
 		"update_anomaly_rule_updated_at",
 		"update_anomaly_alert_updated_at",
-		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_rules TO integin_runtime",
-		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_runtime",
+		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_rules TO integin_test_runtime",
+		"GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if strings.HasPrefix(fragment, "CREATE TABLE ") && !strings.Contains(fragment, "IF NOT EXISTS") {
@@ -387,12 +387,12 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		{
 			upFile:   "0075_device_enrollment_requests.sql",
 			downFile: "0075_device_enrollment_requests.down.sql",
-			required: []string{"CREATE TABLE IF NOT EXISTS device_enrollment_requests", "PRIMARY KEY (tenant_id, organization_id, request_id)", "device_enrollment_requests_device_idx", "device_enrollment_requests_status_idx", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "device_enrollment_requests_tenant_isolation", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT, UPDATE ON device_enrollment_requests TO integin_runtime"},
+			required: []string{"CREATE TABLE IF NOT EXISTS device_enrollment_requests", "PRIMARY KEY (tenant_id, organization_id, request_id)", "device_enrollment_requests_device_idx", "device_enrollment_requests_status_idx", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "device_enrollment_requests_tenant_isolation", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT, UPDATE ON device_enrollment_requests TO integin_test_runtime"},
 		},
 		{
 			upFile:   "0076_oidc_session_store.sql",
 			downFile: "0076_oidc_session_store.down.sql",
-			required: []string{"CREATE TABLE IF NOT EXISTS oidc_session_store", "PRIMARY KEY (session_id)", "subject        TEXT        NOT NULL", "revoked_at     TIMESTAMPTZ", "oidc_session_store_expiry_idx", "expires_at > issued_at", "GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_session_store TO integin_runtime"},
+			required: []string{"CREATE TABLE IF NOT EXISTS oidc_session_store", "PRIMARY KEY (session_id)", "subject        TEXT        NOT NULL", "revoked_at     TIMESTAMPTZ", "oidc_session_store_expiry_idx", "expires_at > issued_at", "GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_session_store TO integin_test_runtime"},
 		},
 		{
 			upFile:   "0081_audit_log_valid_time.sql",
@@ -402,7 +402,7 @@ func TestFieldPackageAndRiverCanonicalMigrationsContract(t *testing.T) {
 		{
 			upFile:   "0077_retention_and_legal_hold.sql",
 			downFile: "0077_retention_and_legal_hold.down.sql",
-			required: []string{"CREATE TABLE IF NOT EXISTS tenant_retention_policy", "retention_days", "NOT NULL DEFAULT 365", "CHECK (action IN ('ARCHIVE', 'PURGE'))", "PRIMARY KEY (tenant_id, entity_type)", "CREATE TABLE IF NOT EXISTS legal_hold_registry", "CHECK (status IN ('ACTIVE', 'RELEASED'))", "UNIQUE (tenant_id, entity_type, entity_id, id)", "CREATE TABLE IF NOT EXISTS export_approval_registry", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "CREATE TABLE IF NOT EXISTS deletion_evidence_receipt", "tombstone_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT ON deletion_evidence_receipt TO integin_runtime", "deletion_evidence_receipt_immutable", "BEFORE UPDATE OR DELETE ON deletion_evidence_receipt"},
+			required: []string{"CREATE TABLE IF NOT EXISTS tenant_retention_policy", "retention_days", "NOT NULL DEFAULT 365", "CHECK (action IN ('ARCHIVE', 'PURGE'))", "PRIMARY KEY (tenant_id, entity_type)", "CREATE TABLE IF NOT EXISTS legal_hold_registry", "CHECK (status IN ('ACTIVE', 'RELEASED'))", "UNIQUE (tenant_id, entity_type, entity_id, id)", "CREATE TABLE IF NOT EXISTS export_approval_registry", "CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))", "CREATE TABLE IF NOT EXISTS deletion_evidence_receipt", "tombstone_hash", "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "NULLIF(current_setting('integin.tenant_id', true), '')", "GRANT SELECT, INSERT ON deletion_evidence_receipt TO integin_test_runtime", "deletion_evidence_receipt_immutable", "BEFORE UPDATE OR DELETE ON deletion_evidence_receipt"},
 		},
 	}
 
@@ -514,10 +514,10 @@ func TestAdvisoryGovernanceRegisterMigrationContract(t *testing.T) {
 		"ENABLE ROW LEVEL SECURITY",
 		"FORCE ROW LEVEL SECURITY",
 		"NULLIF(current_setting('integin.tenant_id', true), '')",
-		"GRANT SELECT ON advisory_model_registry TO integin_runtime",
-		"GRANT SELECT ON advisory_prompt_registry TO integin_runtime",
-		"GRANT SELECT, INSERT ON advisory_audit_trail TO integin_runtime",
-		"GRANT SELECT, INSERT ON advisory_feedback TO integin_runtime",
+		"GRANT SELECT ON advisory_model_registry TO integin_test_runtime",
+		"GRANT SELECT ON advisory_prompt_registry TO integin_test_runtime",
+		"GRANT SELECT, INSERT ON advisory_audit_trail TO integin_test_runtime",
+		"GRANT SELECT, INSERT ON advisory_feedback TO integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if !strings.Contains(text, fragment) {
@@ -573,7 +573,7 @@ func TestSignedAuditCheckpointsMigrationContract(t *testing.T) {
 		"NULLIF(current_setting('integin.tenant_id', true), '')",
 		"audit_checkpoint_no_update",
 		"BEFORE UPDATE OR DELETE ON audit_checkpoint_registry",
-		"GRANT SELECT, INSERT ON TABLE audit_checkpoint_registry TO integin_runtime",
+		"GRANT SELECT, INSERT ON TABLE audit_checkpoint_registry TO integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if !strings.Contains(text, fragment) {
@@ -671,7 +671,7 @@ func TestLegacyRoleAnchorMigrationContract(t *testing.T) {
 	text := string(sql)
 	for _, fragment := range []string{
 		"CREATE ROLE",
-		"integin_runtime",
+		"integin_test_runtime",
 		"NOLOGIN",
 	} {
 		if !strings.Contains(text, fragment) {
@@ -679,3 +679,4 @@ func TestLegacyRoleAnchorMigrationContract(t *testing.T) {
 		}
 	}
 }
+

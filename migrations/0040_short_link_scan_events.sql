@@ -36,8 +36,8 @@ CREATE INDEX IF NOT EXISTS idx_scan_events_utm ON short_link_scan_events (utm_so
 ALTER TABLE short_link_scan_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE short_link_scan_events FORCE ROW LEVEL SECURITY;
 
-REVOKE ALL ON TABLE short_link_scan_events FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE short_link_scan_events TO integin_runtime;
+REVOKE ALL ON TABLE short_link_scan_events FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE short_link_scan_events TO integin_test_runtime;
 
 DROP POLICY IF EXISTS short_link_scan_events_isolation ON short_link_scan_events;
 CREATE POLICY short_link_scan_events_isolation ON short_link_scan_events
@@ -45,3 +45,4 @@ CREATE POLICY short_link_scan_events_isolation ON short_link_scan_events
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
 COMMIT;
+

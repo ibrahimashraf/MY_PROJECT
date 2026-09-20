@@ -44,8 +44,8 @@ CREATE INDEX IF NOT EXISTS work_order_handover_work_order_idx
     ON work_order_handover (tenant_id, organization_id, work_order_id, created_at);
 
 -- Least-privilege runtime grants (mirrors 0010:5-15, no BYPASSRLS).
-REVOKE ALL ON TABLE work_order_handover FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_handover TO integin_runtime;
+REVOKE ALL ON TABLE work_order_handover FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_handover TO integin_test_runtime;
 
 ALTER TABLE work_order_handover ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_order_handover FORCE ROW LEVEL SECURITY;
@@ -61,3 +61,4 @@ CREATE POLICY work_order_handover_tenant_organization_isolation ON work_order_ha
     );
 
 COMMIT;
+

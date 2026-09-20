@@ -21,7 +21,7 @@ import (
 //     upon COMMIT/ROLLBACK and never leak to another tenant reusing the same backend connection.
 //  2. Client connections configured with default_query_exec_mode=exec or simple_protocol
 //     operate without prepared statement collisions (SQLSTATE 26000) under high connection multiplexing.
-//  3. Row-level security (RLS) under integin_runtime prevents cross-tenant reads even when
+//  3. Row-level security (RLS) under integin_test_runtime prevents cross-tenant reads even when
 //     dozens of goroutines alternate rapid transactions across the shared PgCat pool.
 func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 	pgcatURL := os.Getenv("INTEGIN_PGCAT_URL")
@@ -75,7 +75,7 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to begin seed tx: %v", err)
 		}
-		if _, err := seedTx.ExecContext(ctx, "SET LOCAL ROLE integin_runtime"); err != nil {
+		if _, err := seedTx.ExecContext(ctx, "SET LOCAL ROLE integin_test_runtime"); err != nil {
 			seedTx.Rollback()
 			t.Fatalf("set local role failed: %v", err)
 		}
@@ -152,8 +152,8 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 					return
 				}
 
-				// Step 2: Switch to integin_runtime locally and set transaction-local GUC
-				if _, err := tx.ExecContext(ctx, "SET LOCAL ROLE integin_runtime"); err != nil {
+				// Step 2: Switch to integin_test_runtime locally and set transaction-local GUC
+				if _, err := tx.ExecContext(ctx, "SET LOCAL ROLE integin_test_runtime"); err != nil {
 					tx.Rollback()
 					errChan <- fmt.Errorf("worker %d: set local role: %w", workerID, err)
 					return
@@ -225,3 +225,5 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 
 	t.Logf("SUCCESS: Executed %d transactions across %d concurrent workers through PgCat with ZERO GUC leaks and 100%% RLS isolation.", concurrency*iterations, concurrency)
 }
+
+

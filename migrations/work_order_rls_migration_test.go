@@ -42,7 +42,7 @@ func TestWorkOrderRLSMigrationContract(t *testing.T) {
 		t.Fatal("RLS migration must bind policies to the transaction-local organization")
 	}
 	if !strings.Contains(text, "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE") {
-		t.Fatal("RLS migration must grant work-order DML to integin_runtime")
+		t.Fatal("RLS migration must grant work-order DML to integin_test_runtime")
 	}
 	if !strings.Contains(text, "REVOKE ALL ON TABLE") {
 		t.Fatal("RLS migration must revoke broad public/runtime table privileges before granting least privilege")
@@ -75,7 +75,7 @@ func TestWorkOrderRLSDMigrationRollbackContract(t *testing.T) {
 		"ALTER TABLE work_order DISABLE ROW LEVEL SECURITY",
 		"REVOKE ALL ON TABLE work_order",
 		"REVOKE ALL ON TABLE",
-		"work_order_provisional_record FROM integin_runtime",
+		"work_order_provisional_record FROM integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if !strings.Contains(text, fragment) {
@@ -83,3 +83,4 @@ func TestWorkOrderRLSDMigrationRollbackContract(t *testing.T) {
 		}
 	}
 }
+

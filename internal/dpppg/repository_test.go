@@ -144,3 +144,4 @@ func TestDPP4PillarsLifecycleIntegration(t *testing.T) {
 		t.Fatalf("expected ErrNotFound for cross-tenant query, got %v", err)
 	}
 }
+

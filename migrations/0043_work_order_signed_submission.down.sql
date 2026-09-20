@@ -21,9 +21,9 @@ CREATE POLICY work_order_operation_tenant_organization_isolation ON work_order_o
     );
 
 -- Grants: restore 0010 least-privilege grants for this table (idempotent).
-REVOKE ALL ON TABLE work_order_operation FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_operation TO integin_runtime;
-GRANT USAGE ON SCHEMA public TO integin_runtime;
+REVOKE ALL ON TABLE work_order_operation FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_operation TO integin_test_runtime;
+GRANT USAGE ON SCHEMA public TO integin_test_runtime;
 
 -- Drop replay-guard index that was explicitly created by D7-4.
 -- Preserve 0009's work_order_operation_idempotency_idx (base replay guard) and the
@@ -37,3 +37,4 @@ ALTER TABLE work_order_operation DROP CONSTRAINT IF EXISTS work_order_operation_
 ALTER TABLE work_order_operation DROP COLUMN IF EXISTS signing_key_id;
 ALTER TABLE work_order_operation DROP COLUMN IF EXISTS signature;
 ALTER TABLE work_order_operation DROP COLUMN IF EXISTS payload_hash;
+

@@ -16,5 +16,6 @@ WHERE s.issuer=p_issuer AND s.subject=p_subject AND s.status='ACTIVE' AND m.acto
 GROUP BY m.membership_id, m.actor_id, m.tenant_id, m.organization_id, m.work_order_role;
 $$;
 REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
+GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_test_runtime;
 COMMIT;
+

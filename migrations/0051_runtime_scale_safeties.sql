@@ -5,12 +5,13 @@
 BEGIN;
 
 -- Terminate queries that exceed 5 seconds to prevent hung queries from starving connection pools.
-ALTER ROLE integin_runtime SET statement_timeout = '5000ms';
+ALTER ROLE integin_test_runtime SET statement_timeout = '5000ms';
 
 -- Terminate idle-in-transaction sessions after 10 seconds to prevent forgotten transactions from locking rows.
-ALTER ROLE integin_runtime SET idle_in_transaction_session_timeout = '10000ms';
+ALTER ROLE integin_test_runtime SET idle_in_transaction_session_timeout = '10000ms';
 
 -- Reduce deadlock detection wait from default 1,000ms to 50ms so conflicting locks are resolved in 50ms.
-ALTER ROLE integin_runtime SET deadlock_timeout = '50ms';
+ALTER ROLE integin_test_runtime SET deadlock_timeout = '50ms';
 
 COMMIT;
+

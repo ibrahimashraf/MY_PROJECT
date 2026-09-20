@@ -47,6 +47,7 @@ CREATE TRIGGER trigger_update_webhook_delivery_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_webhook_delivery_updated_at();
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON webhook_deliveries TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON webhook_deliveries TO integin_test_runtime;
 
 COMMIT;
+

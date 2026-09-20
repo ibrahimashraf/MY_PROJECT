@@ -24,6 +24,6 @@ CREATE TABLE IF NOT EXISTS oidc_session_store (
 CREATE INDEX IF NOT EXISTS oidc_session_store_expiry_idx
     ON oidc_session_store (expires_at);
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_session_store TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON oidc_session_store TO integin_test_runtime;
 
 COMMIT;

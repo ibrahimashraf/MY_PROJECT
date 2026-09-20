@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS audit_checkpoint_registry (
 CREATE INDEX IF NOT EXISTS audit_checkpoint_registry_tenant_env_sequence_idx
     ON audit_checkpoint_registry (tenant_id, environment, sequence_end DESC);
 
-REVOKE ALL ON TABLE audit_checkpoint_registry FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT ON TABLE audit_checkpoint_registry TO integin_runtime;
+REVOKE ALL ON TABLE audit_checkpoint_registry FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT ON TABLE audit_checkpoint_registry TO integin_test_runtime;
 
 ALTER TABLE audit_checkpoint_registry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_checkpoint_registry FORCE ROW LEVEL SECURITY;

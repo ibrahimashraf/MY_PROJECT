@@ -53,6 +53,6 @@ CREATE POLICY tool_calibration_registry_tenant_isolation ON tool_calibration_reg
         AND organization_id IS NOT NULL
     );
 
-GRANT SELECT, INSERT, UPDATE ON tool_calibration_registry TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE ON tool_calibration_registry TO integin_test_runtime;
 
 COMMIT;

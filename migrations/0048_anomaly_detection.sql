@@ -89,7 +89,8 @@ CREATE TRIGGER trigger_update_anomaly_alert_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_anomaly_alert_updated_at();
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_rules TO integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_rules TO integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON anomaly_alerts TO integin_test_runtime;
 
 COMMIT;
+

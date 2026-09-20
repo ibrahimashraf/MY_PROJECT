@@ -247,3 +247,4 @@ func TestRiverWorkerExecutionThroughPgCatIntegration(t *testing.T) {
 	// Cleanup
 	_, _ = db.ExecContext(ctx, "DELETE FROM river_job WHERE args->>'certificate_id' = $1", uniqueCertID)
 }
+

@@ -50,6 +50,7 @@ AS $$
 $$;
 
 REVOKE ALL ON TABLE identity_subject, identity_membership, identity_membership_capability FROM PUBLIC;
-REVOKE ALL ON TABLE identity_subject, identity_membership, identity_membership_capability FROM integin_runtime;
+REVOKE ALL ON TABLE identity_subject, identity_membership, identity_membership_capability FROM integin_test_runtime;
 REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
+GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_test_runtime;
+

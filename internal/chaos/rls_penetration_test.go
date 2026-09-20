@@ -39,9 +39,9 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to begin seed tx: %v", err)
 	}
-	if _, err := seedTx.ExecContext(ctx, `SET ROLE integin_runtime`); err != nil {
+	if _, err := seedTx.ExecContext(ctx, `SET ROLE integin_test_runtime`); err != nil {
 		seedTx.Rollback()
-		t.Fatalf("failed to set role integin_runtime: %v", err)
+		t.Fatalf("failed to set role integin_test_runtime: %v", err)
 	}
 	_, err = seedTx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, victimTenant, victimOrg)
 	if err != nil {
@@ -81,7 +81,7 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		}
 		defer tx.Rollback()
 
-		if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET ROLE integin_test_runtime"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -103,7 +103,7 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		}
 		defer tx.Rollback()
 
-		if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET ROLE integin_test_runtime"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -131,7 +131,7 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		}
 		defer tx.Rollback()
 
-		if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET ROLE integin_test_runtime"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -159,7 +159,7 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		}
 		defer tx.Rollback()
 
-		if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET ROLE integin_test_runtime"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -192,7 +192,7 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		}
 		defer tx.Rollback()
 
-		if _, err := tx.ExecContext(ctx, "SET ROLE integin_runtime"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SET ROLE integin_test_runtime"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -213,3 +213,5 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		t.Log("PASS: Legitimate tenant read successfully returned 1 row")
 	})
 }
+
+

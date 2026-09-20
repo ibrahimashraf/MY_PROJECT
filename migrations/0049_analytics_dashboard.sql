@@ -19,6 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_scan_events_tenant_device
 CREATE INDEX IF NOT EXISTS idx_scan_events_tenant_ip_timestamp 
     ON short_link_scan_events (tenant_id, organization_id, ip, timestamp DESC);
 
-GRANT SELECT ON short_link_scan_events TO integin_runtime;
+GRANT SELECT ON short_link_scan_events TO integin_test_runtime;
 
 COMMIT;
+

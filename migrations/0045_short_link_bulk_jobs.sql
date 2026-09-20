@@ -32,6 +32,7 @@ CREATE POLICY short_link_bulk_jobs_isolation ON short_link_bulk_jobs
     USING (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true))
     WITH CHECK (tenant_id = current_setting('integin.tenant_id', true) AND organization_id = current_setting('integin.organization_id', true));
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON short_link_bulk_jobs TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON short_link_bulk_jobs TO integin_test_runtime;
 
 COMMIT;
+

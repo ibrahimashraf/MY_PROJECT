@@ -57,6 +57,6 @@ CREATE POLICY device_enrollment_requests_tenant_isolation ON device_enrollment_r
         AND organization_id IS NOT NULL
     );
 
-GRANT SELECT, INSERT, UPDATE ON device_enrollment_requests TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE ON device_enrollment_requests TO integin_test_runtime;
 
 COMMIT;

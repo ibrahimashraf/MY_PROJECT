@@ -10,7 +10,7 @@
 
 BEGIN;
 
-GRANT USAGE ON SCHEMA public TO integin_runtime;
+GRANT USAGE ON SCHEMA public TO integin_test_runtime;
 
 -- Extend work_order_operation with signed-payload fields.
 -- 0009 base already defines:
@@ -72,8 +72,8 @@ BEGIN
 END $$;
 
 -- Least-privilege runtime grants mirror 0010 pattern (single-table scope).
-REVOKE ALL ON TABLE work_order_operation FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_operation TO integin_runtime;
+REVOKE ALL ON TABLE work_order_operation FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_operation TO integin_test_runtime;
 
 -- RLS: tenant/organization isolation matching 0010 (server-derived, never client-authoritative).
 ALTER TABLE work_order_operation ENABLE ROW LEVEL SECURITY;
@@ -90,3 +90,4 @@ CREATE POLICY work_order_operation_tenant_organization_isolation ON work_order_o
     );
 
 COMMIT;
+

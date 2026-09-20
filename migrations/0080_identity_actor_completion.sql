@@ -79,7 +79,7 @@ CREATE INDEX IF NOT EXISTS identity_membership_actor_idx
 
 -- 6. Canonical resolver (drop + recreate mirrors 0008; rerunnable).
 REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_runtime;
+REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_test_runtime;
 DROP FUNCTION IF EXISTS integin_resolve_identity_membership(TEXT, TEXT);
 
 CREATE FUNCTION integin_resolve_identity_membership(p_issuer TEXT, p_subject TEXT)
@@ -121,12 +121,13 @@ AS $$
 $$;
 
 REVOKE ALL ON TABLE identity_actor, identity_subject, identity_membership, identity_membership_capability FROM PUBLIC;
-REVOKE ALL ON TABLE identity_actor, identity_subject, identity_membership, identity_membership_capability FROM integin_runtime;
+REVOKE ALL ON TABLE identity_actor, identity_subject, identity_membership, identity_membership_capability FROM integin_test_runtime;
 REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime;
+GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_test_runtime;
 
 -- Least-privilege runtime grants: the pilot/test path writes membership rows
 -- directly (shared integration helpers), so restore the effective rights the
 -- pre-0080 schema carried. Reads in production go through the SECURITY DEFINER
 -- resolver above; these grants keep that path intact while allowing direct writes.
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE identity_actor, identity_subject, identity_membership, identity_membership_capability TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE identity_actor, identity_subject, identity_membership, identity_membership_capability TO integin_test_runtime;
+

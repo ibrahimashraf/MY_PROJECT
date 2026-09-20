@@ -104,3 +104,4 @@ func TestMultiTenantRLSIsolationDrill(t *testing.T) {
 
 	t.Logf("Successfully completed RLS drill for %d tenants (%d queries total)", numTenants, numTenants*queriesPerTenant)
 }
+

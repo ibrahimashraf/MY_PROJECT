@@ -23,7 +23,7 @@ func TestIdentitySubjectMembershipMigrationContract(t *testing.T) {
 		"SECURITY DEFINER",
 		"REVOKE ALL ON TABLE identity_subject",
 		"REVOKE ALL ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM PUBLIC",
-		"GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime",
+		"GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if !strings.Contains(text, fragment) {
@@ -41,8 +41,8 @@ func TestIdentityRuntimeRoleIsStandardized(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(sql)
-	if !strings.Contains(text, "TO integin_runtime") {
-		t.Fatal("identity migration must grant resolver execution to integin_runtime")
+	if !strings.Contains(text, "TO integin_test_runtime") {
+		t.Fatal("identity migration must grant resolver execution to integin_test_runtime")
 	}
 	if strings.Contains(text, "integin_pilot_runtime") {
 		t.Fatal("identity migration must not retain the obsolete integin_pilot_runtime contract")
@@ -75,7 +75,7 @@ func TestIdentityActorAlignmentMigrationContract(t *testing.T) {
 
 		"SECURITY DEFINER",
 		"SET search_path = pg_catalog, public",
-		"GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_runtime",
+		"GRANT EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) TO integin_test_runtime",
 	}
 	for _, fragment := range required {
 		if !strings.Contains(text, fragment) {
@@ -97,7 +97,7 @@ func TestIdentityActorAlignmentRollbackContract(t *testing.T) {
 	}
 	text := string(sql)
 	required := []string{
-		"REVOKE EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_runtime",
+		"REVOKE EXECUTE ON FUNCTION integin_resolve_identity_membership(TEXT, TEXT) FROM integin_test_runtime",
 		"DROP FUNCTION IF EXISTS integin_resolve_identity_membership(TEXT, TEXT)",
 		"DROP CONSTRAINT IF EXISTS identity_membership_actor_tenant_org_fk",
 		"DROP TABLE IF EXISTS identity_actor",
@@ -122,3 +122,4 @@ func TestIdentityActorAlignmentMigrationRejectsUnmappedMemberships(t *testing.T)
 		t.Fatal("actor alignment migration must fail closed when actor identity fields are incomplete")
 	}
 }
+

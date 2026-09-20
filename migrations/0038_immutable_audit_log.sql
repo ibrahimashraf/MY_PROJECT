@@ -29,8 +29,8 @@ CREATE INDEX IF NOT EXISTS audit_log_actor_idx ON audit_log (tenant_id, organiza
 CREATE INDEX IF NOT EXISTS audit_log_event_idx ON audit_log (tenant_id, organization_id, event_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS audit_log_hash_chain_idx ON audit_log (tenant_id, organization_id, previous_hash, entry_hash);
 
-REVOKE ALL ON TABLE audit_log FROM PUBLIC, integin_runtime;
-GRANT SELECT,INSERT ON TABLE audit_log TO integin_runtime;
+REVOKE ALL ON TABLE audit_log FROM PUBLIC, integin_test_runtime;
+GRANT SELECT,INSERT ON TABLE audit_log TO integin_test_runtime;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS audit_log_tenant_organization_isolation ON audit_log;
@@ -44,3 +44,4 @@ DROP TRIGGER IF EXISTS audit_log_immutable ON audit_log;
 CREATE TRIGGER audit_log_immutable BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_no_update();
 
 COMMIT;
+

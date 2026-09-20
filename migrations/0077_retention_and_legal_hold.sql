@@ -139,10 +139,10 @@ CREATE POLICY deletion_evidence_receipt_tenant_isolation ON deletion_evidence_re
         tenant_id = NULLIF(current_setting('integin.tenant_id', true), '')
     );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON tenant_retention_policy TO integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON legal_hold_registry TO integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON export_approval_registry TO integin_runtime;
-GRANT SELECT, INSERT ON deletion_evidence_receipt TO integin_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON tenant_retention_policy TO integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON legal_hold_registry TO integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON export_approval_registry TO integin_test_runtime;
+GRANT SELECT, INSERT ON deletion_evidence_receipt TO integin_test_runtime;
 
 CREATE OR REPLACE FUNCTION deletion_evidence_receipt_immutable() RETURNS trigger AS $$
 BEGIN

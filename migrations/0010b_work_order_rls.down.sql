@@ -34,4 +34,4 @@ ALTER TABLE work_order_provisional_record DISABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE work_order, work_order_scope_item, work_order_assignment,
     work_order_assignment_scope, inspection_record, work_order_submission_segment,
     work_order_submission_item, work_order_operation, work_order_state_event,
-    work_order_provisional_record FROM integin_runtime;
+    work_order_provisional_record FROM integin_test_runtime;

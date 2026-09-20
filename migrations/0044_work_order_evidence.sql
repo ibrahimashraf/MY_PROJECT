@@ -38,8 +38,8 @@ CREATE INDEX IF NOT EXISTS work_order_evidence_content_hash_idx
     ON work_order_evidence (tenant_id, organization_id, content_hash);
 
 -- Least-privilege runtime grants (mirrors 0010:5-15, no BYPASSRLS).
-REVOKE ALL ON TABLE work_order_evidence FROM PUBLIC, integin_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_evidence TO integin_runtime;
+REVOKE ALL ON TABLE work_order_evidence FROM PUBLIC, integin_test_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE work_order_evidence TO integin_test_runtime;
 
 ALTER TABLE work_order_evidence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_order_evidence FORCE ROW LEVEL SECURITY;
@@ -55,3 +55,4 @@ CREATE POLICY work_order_evidence_tenant_organization_isolation ON work_order_ev
     );
 
 COMMIT;
+

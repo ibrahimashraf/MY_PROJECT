@@ -107,9 +107,9 @@ CREATE POLICY advisory_feedback_tenant_isolation ON advisory_feedback
         tenant_id = NULLIF(current_setting('integin.tenant_id', true), '')
     );
 
-GRANT SELECT ON advisory_model_registry TO integin_runtime;
-GRANT SELECT ON advisory_prompt_registry TO integin_runtime;
-GRANT SELECT, INSERT ON advisory_audit_trail TO integin_runtime;
-GRANT SELECT, INSERT ON advisory_feedback TO integin_runtime;
+GRANT SELECT ON advisory_model_registry TO integin_test_runtime;
+GRANT SELECT ON advisory_prompt_registry TO integin_test_runtime;
+GRANT SELECT, INSERT ON advisory_audit_trail TO integin_test_runtime;
+GRANT SELECT, INSERT ON advisory_feedback TO integin_test_runtime;
 
 COMMIT;
