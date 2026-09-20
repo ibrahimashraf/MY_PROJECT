@@ -5,7 +5,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$pilotRoot = 'C:\INTEGIN-PILOT'
+$pilotRoot = 'C:\integin-pilot'
 $secretDirectory = 'C:\integin-secrets'
 $postgresEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-postgres.env'
 $zipRuntimeEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-zip-runtime.env'
@@ -15,7 +15,7 @@ $java = 'C:\Program Files\Java\jdk-26.0.1\bin\java.exe'
 $runtimeDirectory = Join-Path $pilotRoot 'runtime\keycloak-zip'
 $metadataPath = Join-Path $runtimeDirectory 'keycloak-zip-pilot-metadata.json'
 $postgresContainer = 'integin-pilot-keycloak-zip-postgres'
-$networkName = 'integin-identity-zip-pilot-net'
+$networkName = 'INTEGIN-identity-zip-pilot-net'
 $postgresVolume = 'integin-pilot-keycloak-zip-postgres-data'
 $postgresImage = 'postgres:18'
 
@@ -67,7 +67,7 @@ function Get-ZipIdentityResourceMode {
   if ($count -ne 3) { throw 'Partial ZIP-specific Keycloak identity resources exist; refusing adoption or cleanup.' }
   $identity = & docker inspect $postgresContainer --format '{{.Config.Image}}|{{.HostConfig.NetworkMode}}|{{json .HostConfig.PortBindings}}|{{range .Mounts}}{{.Name}}:{{.Destination}};{{end}}'
   if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect existing ZIP-specific identity PostgreSQL resource.' }
-  if ($identity -notmatch '^postgres:18\|integin-identity-zip-pilot-net\|' -or $identity -notmatch '"HostIp":"127\.0\.0\.1"' -or $identity -notmatch '"HostPort":"15433"' -or $identity -notmatch 'integin-pilot-keycloak-zip-postgres-data:/var/lib/postgresql') { throw 'Existing ZIP-specific identity resource does not match the documented isolated topology.' }
+  if ($identity -notmatch '^postgres:18\|INTEGIN-identity-zip-pilot-net\|' -or $identity -notmatch '"HostIp":"127\.0\.0\.1"' -or $identity -notmatch '"HostPort":"15433"' -or $identity -notmatch 'integin-pilot-keycloak-zip-postgres-data:/var/lib/postgresql') { throw 'Existing ZIP-specific identity resource does not match the documented isolated topology.' }
   return 'matching'
 }
 
@@ -94,7 +94,7 @@ function Assert-OpenBaoSealed {
 function Wait-PostgresReady {
   $deadline = [DateTime]::UtcNow.AddSeconds(90)
   while ([DateTime]::UtcNow -lt $deadline) {
-    if ((Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'integin_keycloak_owner', '-d', 'keycloak_pilot')) -eq 0) { return }
+    if ((Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'INTEGIN_keycloak_owner', '-d', 'keycloak_pilot')) -eq 0) { return }
     Start-Sleep -Seconds 2
   }
   throw 'Dedicated Keycloak PostgreSQL container did not become ready.'
@@ -165,3 +165,5 @@ try {
 $metadata = [ordered]@{ process_id=$process.Id; started_at_utc=[DateTime]::UtcNow.ToString('o'); java=$java; distribution_version='26.7.1'; http='127.0.0.1:18180'; management='127.0.0.1:19090'; postgres_container=$postgresContainer } | ConvertTo-Json
 [System.IO.File]::WriteAllText($metadataPath, $metadata, (New-Object System.Text.UTF8Encoding($false)))
 Write-Output 'KEYCLOAK_ZIP_PILOT_ISOLATED_HEALTH_AND_DISCOVERY_VERIFIED'
+
+

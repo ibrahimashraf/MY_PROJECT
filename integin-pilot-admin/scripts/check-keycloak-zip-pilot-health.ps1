@@ -26,7 +26,7 @@ if (@($result | Where-Object { -not $_.Status }).Count -gt 0) { throw 'One or mo
 $previous = $ErrorActionPreference
 try {
   $ErrorActionPreference = 'Continue'
-  & docker exec integin-pilot-keycloak-zip-postgres pg_isready -U integin_keycloak_owner -d keycloak_pilot 1>$null 2>$null
+  & docker exec integin-pilot-keycloak-zip-postgres pg_isready -U INTEGIN_keycloak_owner -d keycloak_pilot 1>$null 2>$null
   $postgresExit = $LASTEXITCODE
   $rawBao = & docker exec integin-pilot-openbao env BAO_ADDR='http://127.0.0.1:8200' bao status -format=json 2>$null
   $baoExit = $LASTEXITCODE
@@ -35,3 +35,5 @@ if ($postgresExit -ne 0) { throw 'Dedicated Keycloak ZIP pilot PostgreSQL is not
 if ($baoExit -ne 0 -and $baoExit -ne 2) { throw 'Unable to inspect isolated OpenBao sealed status.' }
 if (-not (($rawBao | ConvertFrom-Json).sealed)) { throw 'Isolated OpenBao is not sealed.' }
 Write-Output 'KEYCLOAK_ZIP_PILOT_CONCURRENT_HEALTH_VERIFIED'
+
+

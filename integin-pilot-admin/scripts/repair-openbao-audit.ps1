@@ -1,4 +1,4 @@
-$setupPath = 'C:\INTEGIN-PILOT\setup-openbao-pilot.ps1'
+$setupPath = 'C:\integin-pilot\setup-openbao-pilot.ps1'
 $content = [System.IO.File]::ReadAllText($setupPath)
 $oldAudit = @'
 audit "file" {
@@ -30,3 +30,4 @@ if ($verified.Count -ne 2) {
 }
 
 Write-Output 'PILOT_OPENBAO_AUDIT_STANZA_CORRECTED_AND_VERIFIED'
+

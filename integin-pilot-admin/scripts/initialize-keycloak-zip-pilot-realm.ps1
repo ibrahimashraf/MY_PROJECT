@@ -6,12 +6,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $runtimeEnvironmentPath = 'C:\integin-secrets\keycloak-pilot-zip-runtime.env'
-$runtimeDirectory = 'C:\INTEGIN-PILOT\runtime\keycloak-zip'
+$runtimeDirectory = 'C:\integin-pilot\runtime\keycloak-zip'
 $releaseRecordPath = Join-Path $runtimeDirectory 'integin-pilot-realm-release.json'
 $baseUrl = 'http://127.0.0.1:18180'
 $managementBaseUrl = 'http://127.0.0.1:19090'
 $realmName = 'integin-pilot'
-$clientId = 'integin-field-pilot'
+$clientId = 'INTEGIN-field-pilot'
 
 function Read-EnvironmentFile {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -147,3 +147,5 @@ try {
   $token = $null
   $headers = $null
 }
+
+

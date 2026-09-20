@@ -4,7 +4,7 @@ $dataVolume = 'integin-pilot-openbao-data'
 $logsVolume = 'integin-pilot-openbao-logs'
 $hostPort = 18200
 $image = 'openbao/openbao:2.6.0'
-$pilotRoot = 'C:\INTEGIN-PILOT\openbao'
+$pilotRoot = 'C:\integin-pilot\openbao'
 $configDirectory = Join-Path $pilotRoot 'config'
 $configPath = Join-Path $configDirectory 'openbao.hcl'
 $recoveryPath = 'C:\integin-secrets\openbao-pilot-recovery.json'
@@ -89,3 +89,5 @@ try {
   if ($createdNetwork) { docker network rm $networkName | Out-Null }
   throw
 }
+
+

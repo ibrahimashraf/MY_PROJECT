@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $secretDirectory = 'C:\integin-secrets'
 $postgresEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-postgres.env'
 $runtimeEnvironmentPath = Join-Path $secretDirectory 'keycloak-pilot-runtime.env'
-$markerPath = 'C:\INTEGIN-PILOT\runtime\keycloak-pilot-private-env.created.txt'
+$markerPath = 'C:\integin-pilot\runtime\keycloak-pilot-private-env.created.txt'
 
 foreach ($path in @($postgresEnvironmentPath, $runtimeEnvironmentPath)) {
   if (Test-Path -LiteralPath $path) {
@@ -37,14 +37,14 @@ $temporaryPaths = @()
 
 try {
   $postgresLines = @(
-    'POSTGRES_USER=integin_keycloak_owner',
+    'POSTGRES_USER=INTEGIN_keycloak_owner',
     "POSTGRES_PASSWORD=$postgresPassword",
     'POSTGRES_DB=keycloak_pilot'
   )
   $runtimeLines = @(
     'KC_DB=postgres',
     'KC_DB_URL=jdbc:postgresql://integin-pilot-keycloak-postgres:5432/keycloak_pilot',
-    'KC_DB_USERNAME=integin_keycloak_owner',
+    'KC_DB_USERNAME=INTEGIN_keycloak_owner',
     "KC_DB_PASSWORD=$postgresPassword",
     'KC_BOOTSTRAP_ADMIN_USERNAME=security_operator_pilot',
     "KC_BOOTSTRAP_ADMIN_PASSWORD=$bootstrapPassword",
@@ -85,3 +85,5 @@ try {
 }
 
 Write-Output 'KEYCLOAK_PILOT_PRIVATE_ENV_CREATED_WITHOUT_DISPLAYING_VALUES'
+
+

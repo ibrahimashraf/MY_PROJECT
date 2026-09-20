@@ -27,6 +27,7 @@ foreach ($url in @(
 }
 
 'PILOT_LOGS_PRESENT'
-Get-ChildItem 'C:\INTEGIN-PILOT\runtime' -Filter 'server.*.log' -ErrorAction SilentlyContinue |
+Get-ChildItem 'C:\integin-pilot\runtime' -Filter 'server.*.log' -ErrorAction SilentlyContinue |
   Select-Object Name, Length, LastWriteTime |
   Format-Table -AutoSize
+

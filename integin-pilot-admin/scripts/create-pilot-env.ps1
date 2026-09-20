@@ -42,3 +42,4 @@ $lines = @(
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputPath) | Out-Null
 [System.IO.File]::WriteAllLines($outputPath, $lines, [System.Text.UTF8Encoding]::new($false))
 Write-Output 'PILOT_PRIVATE_ENV_CREATED_WITHOUT_DISPLAYING_VALUES'
+

@@ -4,7 +4,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$networkName = 'integin-identity-pilot-net'
+$networkName = 'INTEGIN-identity-pilot-net'
 $postgresContainer = 'integin-pilot-keycloak-postgres'
 $keycloakContainer = 'integin-pilot-keycloak'
 $postgresVolume = 'integin-pilot-keycloak-postgres-data'
@@ -12,7 +12,7 @@ $postgresImage = 'postgres:18'
 $keycloakImage = 'quay.io/keycloak/keycloak:26.7.1'
 $postgresEnvironmentPath = 'C:\integin-secrets\keycloak-pilot-postgres.env'
 $runtimeEnvironmentPath = 'C:\integin-secrets\keycloak-pilot-runtime.env'
-$metadataPath = 'C:\INTEGIN-PILOT\runtime\keycloak-pilot-metadata.json'
+$metadataPath = 'C:\integin-pilot\runtime\keycloak-pilot-metadata.json'
 
 function Invoke-DockerQuietly {
   param([Parameter(Mandatory = $true)][string[]]$Arguments)
@@ -118,11 +118,11 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($keycloakDigest)) {
   throw 'Unable to resolve the pulled Keycloak image digest.'
 }
 
-Invoke-DockerQuietly -Arguments @('network', 'create', '--internal', '--label', 'integin.scope=identity-pilot', $networkName)
+Invoke-DockerQuietly -Arguments @('network', 'create', '--internal', '--label', 'INTEGIN.scope=identity-pilot', $networkName)
 Invoke-DockerQuietly -Arguments @(
   'run', '-d', '--name', $postgresContainer,
   '--network', $networkName,
-  '--label', 'integin.scope=identity-pilot',
+  '--label', 'INTEGIN.scope=identity-pilot',
   '--env-file', $postgresEnvironmentPath,
   '--volume', "$postgresVolume`:/var/lib/postgresql",
   $postgresImage
@@ -131,7 +131,7 @@ Invoke-DockerQuietly -Arguments @(
 $postgresDeadline = [DateTime]::UtcNow.AddSeconds(60)
 $postgresExitCode = 1
 do {
-  $postgresExitCode = Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'integin_keycloak_owner', '-d', 'keycloak_pilot')
+  $postgresExitCode = Get-DockerExitCode -Arguments @('exec', $postgresContainer, 'pg_isready', '-U', 'INTEGIN_keycloak_owner', '-d', 'keycloak_pilot')
   if ($postgresExitCode -eq 0) {
     break
   }
@@ -144,7 +144,7 @@ if ($postgresExitCode -ne 0) {
 Invoke-DockerQuietly -Arguments @(
   'run', '-d', '--name', $keycloakContainer,
   '--network', $networkName,
-  '--label', 'integin.scope=identity-pilot',
+  '--label', 'INTEGIN.scope=identity-pilot',
   '--memory', '1g',
   '--publish', '127.0.0.1:18180:8080',
   '--publish', '127.0.0.1:19090:9000',
@@ -169,7 +169,7 @@ $metadata = [ordered]@{
   postgres_host_published = $false
   docker_network = $networkName
   openbao_connected = $false
-  integin_oidc_enabled = $false
+  INTEGIN_oidc_enabled = $false
 }
 $metadata | ConvertTo-Json | Set-Content -LiteralPath $metadataPath -Encoding utf8
 
@@ -183,3 +183,5 @@ foreach ($endpoint in @(
 }
 
 Write-Output 'KEYCLOAK_PILOT_ISOLATED_HEALTH_AND_DISCOVERY_VERIFIED'
+
+

@@ -35,3 +35,4 @@ Prove one evidence-linked field workflow end to end: field capture and local dur
 ## Remaining acceptance evidence
 
 The automated tests and live sync/evidence matrix establish transport and boundary behavior. A human-visible Flutter field capture and operator review walkthrough is still required to close complete product acceptance.
+

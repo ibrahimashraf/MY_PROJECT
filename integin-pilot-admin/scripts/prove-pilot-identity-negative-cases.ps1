@@ -1,4 +1,4 @@
-$sourceRoot = 'C:\INTEGIN-PILOT\source'
+$sourceRoot = 'C:\integin-pilot\source'
 $secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $container = 'integin-pilot-postgres'
 $issuer = 'https://identity-pilot.invalid/realms/integin-pilot-negative-test'
@@ -27,7 +27,7 @@ if ($LASTEXITCODE -ne 0 -or $containerStatus.Trim() -ne 'running') { throw "The 
 
 $ownerPassword = $settings['PILOT_POSTGRES_PASSWORD']
 $runtimePassword = $settings['PILOT_RUNTIME_PASSWORD']
-$existing = & docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot -tAc "SELECT EXISTS (SELECT 1 FROM identity_subject WHERE issuer = '$issuer' AND subject = '$subject')"
+$existing = & docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot -tAc "SELECT EXISTS (SELECT 1 FROM identity_subject WHERE issuer = '$issuer' AND subject = '$subject')"
 if ($LASTEXITCODE -ne 0) { throw 'Could not verify the pilot negative-test subject precondition.' }
 if ($existing.Trim() -ne 'f') { throw 'Pilot negative-test subject already exists; refusing to reuse or modify it.' }
 
@@ -56,11 +56,11 @@ DO 'BEGIN
         RAISE EXCEPTION ''one active local membership invariant was not preserved'';
     END IF;
 END';
-SELECT 'wrong_issuer_rows=' || count(*) FROM integin_resolve_identity_membership('$issuer/wrong', '$subject');
-SELECT 'missing_capability_present=' || EXISTS (SELECT 1 FROM integin_resolve_identity_membership('$issuer', '$subject') WHERE 'inspection.approve' = ANY(capabilities))::text;
+SELECT 'wrong_issuer_rows=' || count(*) FROM INTEGIN_resolve_identity_membership('$issuer/wrong', '$subject');
+SELECT 'missing_capability_present=' || EXISTS (SELECT 1 FROM INTEGIN_resolve_identity_membership('$issuer', '$subject') WHERE 'inspection.approve' = ANY(capabilities))::text;
 COMMIT;
 "@
-    $seedOutput = $seed | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot -tA
+    $seedOutput = $seed | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot -tA
     if ($LASTEXITCODE -ne 0) { throw 'Could not seed and verify the isolated pilot negative-test identity.' }
     $seedNormalized = @($seedOutput | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     foreach ($item in @('wrong_issuer_rows=0', 'missing_capability_present=false')) {
@@ -70,13 +70,13 @@ COMMIT;
     $savedErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $runtimeRead = & docker exec -e "PGPASSWORD=$runtimePassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_runtime -d integin_pilot -tAc "SELECT count(*) FROM identity_subject" 2>$null
+        $runtimeRead = & docker exec -e "PGPASSWORD=$runtimePassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_runtime -d INTEGIN_pilot -tAc "SELECT count(*) FROM identity_subject" 2>$null
         $runtimeReadExit = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $savedErrorActionPreference
     }
     if ($runtimeReadExit -eq 0) { throw 'Pilot runtime role unexpectedly read local identity tables directly.' }
-    $runtimeResolution = & docker exec -e "PGPASSWORD=$runtimePassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_runtime -d integin_pilot -tAc "SELECT tenant_id || '|' || organization_id || '|' || COALESCE(array_to_string(capabilities, ','), '') FROM integin_resolve_identity_membership('$issuer', '$subject')"
+    $runtimeResolution = & docker exec -e "PGPASSWORD=$runtimePassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_runtime -d INTEGIN_pilot -tAc "SELECT tenant_id || '|' || organization_id || '|' || COALESCE(array_to_string(capabilities, ','), '') FROM INTEGIN_resolve_identity_membership('$issuer', '$subject')"
     if ($LASTEXITCODE -ne 0) { throw 'Pilot runtime role could not execute the local identity resolver.' }
     if ($runtimeResolution.Trim() -ne "$tenant|$organization|inspection.read") { throw 'Pilot runtime resolver returned an unexpected local membership.' }
 
@@ -84,7 +84,9 @@ COMMIT;
 } finally {
     if ($seedAttempted) {
         $cleanup = "DELETE FROM identity_membership WHERE subject_id IN (SELECT subject_id FROM identity_subject WHERE issuer = '$issuer' AND subject = '$subject'); DELETE FROM identity_subject WHERE issuer = '$issuer' AND subject = '$subject';"
-        $null = $cleanup | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot
+        $null = $cleanup | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot
         if ($LASTEXITCODE -ne 0) { throw 'Pilot negative-test cleanup failed; synthetic identity rows require immediate manual cleanup.' }
     }
 }
+
+

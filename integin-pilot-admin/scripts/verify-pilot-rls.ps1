@@ -22,14 +22,14 @@ VALUES
   ('pilot-rls-event-b', 'pilot-tenant-b', 'pilot-organization-b', 'TESTING', 'PILOT_RLS', 'pilot-aggregate-b', 1, 'PilotRLSChecked', 1, now(), '{}'::jsonb);
 '@
 
-& docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot -c $ownerSql
+& docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot -c $ownerSql
 if ($LASTEXITCODE -ne 0) { throw 'Failed to create disposable RLS test rows.' }
 
-$noContextCount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U integin_pilot_runtime -d integin_pilot -c "SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS';") -join '').Trim()
-$tenantACount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U integin_pilot_runtime -d integin_pilot -c "BEGIN; SET LOCAL integin.tenant_id = 'pilot-tenant-a'; SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS'; COMMIT;") -join '').Trim()
-$tenantBCount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U integin_pilot_runtime -d integin_pilot -c "BEGIN; SET LOCAL integin.tenant_id = 'pilot-tenant-b'; SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS'; COMMIT;") -join '').Trim()
+$noContextCount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U INTEGIN_pilot_runtime -d INTEGIN_pilot -c "SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS';") -join '').Trim()
+$tenantACount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U INTEGIN_pilot_runtime -d INTEGIN_pilot -c "BEGIN; SET LOCAL INTEGIN.tenant_id = 'pilot-tenant-a'; SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS'; COMMIT;") -join '').Trim()
+$tenantBCount = ((& docker exec -e "PGPASSWORD=$runtimePassword" $container psql -qAt -v ON_ERROR_STOP=1 -U INTEGIN_pilot_runtime -d INTEGIN_pilot -c "BEGIN; SET LOCAL INTEGIN.tenant_id = 'pilot-tenant-b'; SELECT count(*) FROM event_log WHERE aggregate_type = 'PILOT_RLS'; COMMIT;") -join '').Trim()
 
-& docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot -c "DELETE FROM event_log WHERE aggregate_type = 'PILOT_RLS';"
+& docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot -c "DELETE FROM event_log WHERE aggregate_type = 'PILOT_RLS';"
 if ($LASTEXITCODE -ne 0) { throw 'Failed to clean up disposable RLS test rows.' }
 
 if ($noContextCount -ne '0') { throw "RLS failed closed without tenant context; observed count: $noContextCount" }
@@ -37,3 +37,5 @@ if ($tenantACount -ne '1') { throw "Tenant A context did not isolate one row; ob
 if ($tenantBCount -ne '1') { throw "Tenant B context did not isolate one row; observed count: $tenantBCount" }
 
 Write-Output 'PILOT_RUNTIME_ROLE_RLS_TENANT_CONTEXT_VERIFIED'
+
+

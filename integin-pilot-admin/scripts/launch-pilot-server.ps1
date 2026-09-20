@@ -1,6 +1,6 @@
-$sourceRoot = 'C:\INTEGIN-PILOT\source'
+$sourceRoot = 'C:\integin-pilot\source'
 $secretsPath = 'C:\integin-secrets\integin-pilot.env'
-$runtimeRoot = 'C:\INTEGIN-PILOT\runtime'
+$runtimeRoot = 'C:\integin-pilot\runtime'
 $binaryPath = Join-Path $runtimeRoot 'integin-server-pilot.exe'
 $stdoutPath = Join-Path $runtimeRoot 'server.stdout.log'
 $stderrPath = Join-Path $runtimeRoot 'server.stderr.log'
@@ -73,3 +73,4 @@ try {
 }
 
 Write-Output 'PILOT_GO_SERVER_HEALTH_AND_READINESS_VERIFIED'
+

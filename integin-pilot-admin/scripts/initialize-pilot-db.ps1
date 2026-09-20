@@ -1,4 +1,4 @@
-$sourceRoot = 'C:\INTEGIN-PILOT\source'
+$sourceRoot = 'C:\integin-pilot\source'
 $secretsPath = 'C:\integin-secrets\integin-pilot.env'
 $container = 'integin-pilot-postgres'
 
@@ -15,7 +15,7 @@ if ([string]::IsNullOrWhiteSpace($ownerPassword)) { throw 'PILOT_POSTGRES_PASSWO
 
 $runtimePassword = ([guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N'))
 $values['PILOT_RUNTIME_PASSWORD'] = $runtimePassword
-$values['INTEGIN_DB_URL'] = "postgres://integin_pilot_runtime:$runtimePassword@127.0.0.1:15432/integin_pilot?sslmode=disable"
+$values['INTEGIN_DB_URL'] = "postgres://INTEGIN_pilot_runtime:$runtimePassword@127.0.0.1:15432/INTEGIN_pilot?sslmode=disable"
 
 $orderedLines = Get-Content -LiteralPath $secretsPath | Where-Object {
   $_ -notmatch '^PILOT_RUNTIME_PASSWORD=' -and $_ -notmatch '^INTEGIN_DB_URL='
@@ -33,29 +33,29 @@ foreach ($migration in $migrations) {
   if (-not (Test-Path -LiteralPath $source)) { throw "Missing migration: $source" }
   & docker cp $source "${container}:/tmp/$migration"
   if ($LASTEXITCODE -ne 0) { throw "Failed to copy migration: $migration" }
-  & docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot -f "/tmp/$migration"
+  & docker exec -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot -f "/tmp/$migration"
   if ($LASTEXITCODE -ne 0) { throw "Migration failed: $migration" }
 }
 
 $sql = (@'
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'integin_pilot_runtime') THEN
-    CREATE ROLE integin_pilot_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '{0}';
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'INTEGIN_pilot_runtime') THEN
+    CREATE ROLE INTEGIN_pilot_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '{0}';
   ELSE
-    ALTER ROLE integin_pilot_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '{0}';
+    ALTER ROLE INTEGIN_pilot_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS PASSWORD '{0}';
   END IF;
 END
 $$;
-GRANT CONNECT ON DATABASE integin_pilot TO integin_pilot_runtime;
-GRANT USAGE ON SCHEMA public TO integin_pilot_runtime;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO integin_pilot_runtime;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO integin_pilot_runtime;
-ALTER DEFAULT PRIVILEGES FOR ROLE integin_pilot_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO integin_pilot_runtime;
-ALTER DEFAULT PRIVILEGES FOR ROLE integin_pilot_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO integin_pilot_runtime;
+GRANT CONNECT ON DATABASE INTEGIN_pilot TO INTEGIN_pilot_runtime;
+GRANT USAGE ON SCHEMA public TO INTEGIN_pilot_runtime;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO INTEGIN_pilot_runtime;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO INTEGIN_pilot_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE INTEGIN_pilot_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO INTEGIN_pilot_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE INTEGIN_pilot_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO INTEGIN_pilot_runtime;
 '@ -f $runtimePassword)
 
-$sql | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot
+$sql | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot
 if ($LASTEXITCODE -ne 0) { throw 'Pilot runtime-role setup failed.' }
 
 $verification = @"
@@ -68,7 +68,9 @@ WHERE n.nspname = 'public'
 ORDER BY c.relname;
 "@
 
-$verification | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U integin_pilot_owner -d integin_pilot
+$verification | & docker exec -i -e "PGPASSWORD=$ownerPassword" $container psql -v ON_ERROR_STOP=1 -U INTEGIN_pilot_owner -d INTEGIN_pilot
 if ($LASTEXITCODE -ne 0) { throw 'Pilot database verification failed.' }
 
 Write-Output 'PILOT_MIGRATIONS_RUNTIME_ROLE_AND_RLS_VERIFICATION_COMPLETE'
+
+

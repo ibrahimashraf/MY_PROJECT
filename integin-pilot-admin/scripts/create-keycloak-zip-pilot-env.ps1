@@ -67,3 +67,5 @@ $lines = @(
 New-Item -ItemType Directory -Force -Path $secretDirectory | Out-Null
 [System.IO.File]::WriteAllText($zipRuntimeEnvironmentPath, ($lines -join [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
 Write-Output 'KEYCLOAK_ZIP_PILOT_PRIVATE_RUNTIME_ENV_CREATED_WITHOUT_DISPLAYING_VALUES'
+
+
