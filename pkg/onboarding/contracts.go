@@ -149,7 +149,8 @@ type KeyOrigin string
 
 const (
 	KeyOriginSecureEnclave KeyOrigin = "SECURE_ENCLAVE" // Apple Secure Enclave
-	KeyOriginStrongBox     KeyOrigin = "STRONGBOX"      // Android StrongBox / TEE
+	KeyOriginStrongBox     KeyOrigin = "STRONGBOX"      // Android StrongBox (discrete security chip)
+	KeyOriginTEE           KeyOrigin = "TEE"            // Android TrustZone TEE (no discrete StrongBox)
 	KeyOriginSoftware      KeyOrigin = "SOFTWARE"       // portable Ed25519 keypair
 	KeyOriginNone          KeyOrigin = "NONE"           // honest "no attestation evidence"
 )

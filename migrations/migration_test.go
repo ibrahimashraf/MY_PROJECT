@@ -618,3 +618,75 @@ func TestLegacyRoleAnchorMigrationContract(t *testing.T) {
 		}
 	}
 }
+
+func TestEdgeLeaseCoordinatorMigrationContract(t *testing.T) {
+	sql, err := os.ReadFile("0085_edge_lease_coordinator.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(sql)
+	tables := []string{
+		"CREATE TABLE IF NOT EXISTS sub_assembly_leases",
+		"CREATE TABLE IF NOT EXISTS draft_work_orders",
+		"CREATE TABLE IF NOT EXISTS lease_tombstones",
+		"CREATE TABLE IF NOT EXISTS authority_epoch_log",
+		"CREATE TABLE IF NOT EXISTS device_revocation_registry",
+		"CREATE TABLE IF NOT EXISTS merkle_audit_log",
+	}
+	for _, table := range tables {
+		if !strings.Contains(text, table) {
+			t.Fatalf("migration missing %q", table)
+		}
+	}
+	required := []string{
+		"PRIMARY KEY (tenant_id, sub_assembly_id)",
+		"PRIMARY KEY (tenant_id, draft_id)",
+		"uq_subassembly_epoch",
+		"PRIMARY KEY (tenant_id, epoch)",
+		"PRIMARY KEY (tenant_id, device_id)",
+		"PRIMARY KEY (tenant_id, sequence_id)",
+		"idx_leases_sweep",
+		"idx_merkle_tenant_seq",
+		"ENABLE ROW LEVEL SECURITY",
+		"FORCE ROW LEVEL SECURITY",
+		"sub_assembly_leases_tenant_isolation",
+		"draft_work_orders_tenant_isolation",
+		"lease_tombstones_tenant_isolation",
+		"authority_epoch_log_tenant_isolation",
+		"device_revocation_registry_tenant_isolation",
+		"merkle_audit_log_tenant_isolation",
+		"NULLIF(current_setting('integin.tenant_id', true), '')",
+		"GRANT SELECT, INSERT, UPDATE ON sub_assembly_leases TO integin_test_runtime",
+		"GRANT SELECT, INSERT, UPDATE ON draft_work_orders TO integin_test_runtime",
+		"GRANT SELECT, INSERT, UPDATE ON lease_tombstones TO integin_test_runtime",
+		"GRANT SELECT, INSERT ON authority_epoch_log TO integin_test_runtime",
+		"GRANT SELECT, INSERT, UPDATE ON device_revocation_registry TO integin_test_runtime",
+		"GRANT SELECT, INSERT ON merkle_audit_log TO integin_test_runtime",
+		"GRANT USAGE, SELECT ON SEQUENCE merkle_audit_log_sequence_id_seq TO integin_test_runtime",
+	}
+	for _, fragment := range required {
+		if !strings.Contains(text, fragment) {
+			t.Fatalf("migration missing %q", fragment)
+		}
+	}
+	if strings.Contains(text, "TO integin_app") {
+		t.Fatal("migration must not grant to undeclared integin_app role")
+	}
+
+	down, err := os.ReadFile("0085_edge_lease_coordinator.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	downText := string(down)
+	for _, fragment := range []string{
+		"DISABLE ROW LEVEL SECURITY",
+		"DROP POLICY IF EXISTS merkle_audit_log_tenant_isolation ON merkle_audit_log",
+		"DROP POLICY IF EXISTS sub_assembly_leases_tenant_isolation ON sub_assembly_leases",
+		"DROP TABLE IF EXISTS merkle_audit_log",
+		"DROP TABLE IF EXISTS sub_assembly_leases",
+	} {
+		if !strings.Contains(downText, fragment) {
+			t.Fatalf("down migration missing %q", fragment)
+		}
+	}
+}

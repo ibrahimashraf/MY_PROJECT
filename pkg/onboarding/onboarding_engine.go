@@ -209,7 +209,7 @@ func (s *EnrollmentSimulator) VerifyOfflineReceiptWithPolicy(receipt SignedInspe
 	if !exists || !dev.IsActive {
 		return false, errors.New("device revoked or not active")
 	}
-	if err := checkPosture(dev.AttestationOrigin, dev.AttestationBiometricBound, policy); err != nil {
+	if err := CheckPosture(dev.AttestationOrigin, dev.AttestationBiometricBound, policy); err != nil {
 		return false, err
 	}
 	return true, nil

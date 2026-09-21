@@ -119,7 +119,7 @@ func (g *IngressGuard) ValidateReceipt(v IngressReceiptValidation) error {
 
 // validateDevice enforces activeness and, when the policy requires hardware,
 // also demands that the recorded attestation was actually verified offline at
-// enrollment (AttestationVerified). checkPosture remains the enforcement axis
+// enrollment (AttestationVerified). CheckPosture remains the enforcement axis
 // for origin/biometric posture; the verified flag closes the loop so a
 // claimed STRONGBOX origin that never supplied a verifiable chain is not
 // treated as hardware trust.
@@ -127,7 +127,7 @@ func (g *IngressGuard) validateDevice(device DeviceTrustRecord) error {
 	if !device.IsActive {
 		return ErrIngressDeviceInactive
 	}
-	if err := checkPosture(device.AttestationOrigin, device.AttestationBiometricBound, g.policy); err != nil {
+	if err := CheckPosture(device.AttestationOrigin, device.AttestationBiometricBound, g.policy); err != nil {
 		return err
 	}
 	if g.policy.RequireHardware && !device.AttestationVerified {
