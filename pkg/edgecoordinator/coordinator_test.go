@@ -64,9 +64,18 @@ func ensureEdgeSchema(t *testing.T, db *sql.DB) {
 	if err != nil {
 		t.Fatalf("failed to read 0085 up migration: %v", err)
 	}
-	// The migration contains no function bodies or dollar-quoting, so
-	// splitting on statement terminators is safe here.
-	for _, stmt := range strings.Split(string(raw), ";") {
+	// Strip full-line comments before splitting: a semicolon inside a
+	// comment (e.g. describing grants) would otherwise fracture a statement.
+	// The migration contains no function bodies, dollar-quoting, or trailing
+	// inline comments, so this split is exact for this file.
+	var body strings.Builder
+	for _, line := range strings.Split(string(raw), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "--") {
+			continue
+		}
+		body.WriteString(line + "\n")
+	}
+	for _, stmt := range strings.Split(body.String(), ";") {
 		stmt = strings.TrimSpace(stmt)
 		if stmt == "" || strings.HasPrefix(stmt, "--") && !strings.Contains(stmt, "\n") {
 			continue
