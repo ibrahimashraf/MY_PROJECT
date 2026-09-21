@@ -29,7 +29,7 @@ void main() {
     });
 
     test('submitInspection signs composite digest and dispatches', () async {
-      const signature = Uint8List.fromList(List.generate(64, (i) => i));
+      final signature = Uint8List.fromList(List.generate(64, (i) => i));
       final payload = SubmissionSealPayload(
         deviceKeyDID: deviceKeyDID,
         tokenID: tokenID,
@@ -59,7 +59,7 @@ void main() {
 
     test('submitInspection handles AUTH_REQUIRED and retries', () async {
       int signCallCount = 0;
-      const signature = Uint8List.fromList(List.generate(64, (i) => i));
+      final signature = Uint8List.fromList(List.generate(64, (i) => i));
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {

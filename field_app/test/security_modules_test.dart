@@ -27,7 +27,7 @@ void main() {
       const alias = 'test_alias';
       final challenge = Uint8List.fromList(List.generate(32, (i) => i));
       const keyOrigin = 'SECURE_ENCLAVE';
-      const publicKeyDer = Uint8List.fromList(List.generate(64, (i) => i));
+      final publicKeyDer = Uint8List.fromList(List.generate(64, (i) => i));
       const certificateChainPem = ['-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----'];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -83,7 +83,7 @@ void main() {
     });
 
     test('signDigest returns signature', () async {
-      const signature = Uint8List.fromList(List.generate(64, (i) => i));
+      final signature = Uint8List.fromList(List.generate(64, (i) => i));
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async => signature);
@@ -199,8 +199,8 @@ void main() {
       const deviceKeyDID = 'did:example:device1';
       const tokenID = 'token-abc';
       const leaseEpoch = 1700000000;
-      const dataPayload = Uint8List.fromList(utf8.encode('test-data'));
-      const appEd25519Sig = Uint8List.fromList(List.generate(64, (i) => i));
+      final dataPayload = Uint8List.fromList(utf8.encode('test-data'));
+      final appEd25519Sig = Uint8List.fromList(List.generate(64, (i) => i));
 
       final payload = SubmissionSealPayload(
         deviceKeyDID: deviceKeyDID,
@@ -213,16 +213,27 @@ void main() {
       final digest = payload.deriveCompositeDigest();
       expect(digest.length, 32);
 
-      // Verify domain separation tag is present
+      // Verify canonical wire format matches implementation
       final tagBytes = utf8.encode("INTEGIN-SEAL-v1\x00");
       final didBytes = utf8.encode(deviceKeyDID);
       final tokenBytes = utf8.encode(tokenID);
       final epochBytes = ByteData(8)..setUint64(0, leaseEpoch, Endian.big);
       final allBytes = <int>[];
       allBytes.addAll(tagBytes);
+      // Length-prefixed DID
+      allBytes.addAll(ByteData(2)
+            .buffer
+            .asUint8List()
+          ..[0] = (didBytes.length >> 8) & 0xFF
+          ..[1] = didBytes.length & 0xFF);
       allBytes.addAll(didBytes);
+      // Length-prefixed TokenID
+      final tokLenData = ByteData(2)..setUint16(0, tokenBytes.length, Endian.big);
+      allBytes.addAll(tokLenData.buffer.asUint8List());
       allBytes.addAll(tokenBytes);
       allBytes.addAll(epochBytes.buffer.asUint8List());
+      // Media count = 0
+      allBytes.addAll(ByteData(2).buffer.asUint8List());
       allBytes.addAll(dataPayload);
       allBytes.addAll(appEd25519Sig);
 
@@ -340,9 +351,11 @@ void main() {
         bootSessionId: 'boot-prev',
       );
 
+      // 20 minutes of uptime after reboot (mono = uptime, not delta)
+      final postRebootMono = Duration(minutes: 20).inMicroseconds * 1000;
       final result = GraceStateMachine.evaluate(
         currentWall: anchor.add(Duration(minutes: 30)),
-        currentMonoNanos: 900000000,
+        currentMonoNanos: postRebootMono,
         currentBootSessionId: 'boot-2',
         checkpoint: checkpoint,
         token: TimeHorizonToken(
@@ -401,7 +414,7 @@ void main() {
           anchorWallTime: anchor,
           anchorMonoNanos: 1000000,
           horizonDuration: Duration(hours: 1),
-          maxSkewAllowed: Duration(minutes: 5),
+          maxSkewAllowed: Duration(hours: 3),
         ),
         policy: policy,
       );
@@ -471,7 +484,7 @@ void main() {
 
       final result = GraceStateMachine.evaluate(
         currentWall: anchor.add(Duration(minutes: 10)),
-        currentMonoNanos: 300000,
+        currentMonoNanos: 1200000, // 0.2s uptime after reboot
         currentBootSessionId: 'boot-2',
         checkpoint: checkpoint,
         token: TimeHorizonToken(

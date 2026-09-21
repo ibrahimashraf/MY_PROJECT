@@ -6,8 +6,8 @@ const String tagSubmissionSeal = "INTEGIN-SEAL-v1\x00";
 
 /// Strict field validation regex — prevents null-byte injection,
 /// Unicode control characters, and other delimiter-injection vectors.
-/// Allow only alphanumeric, hyphen, underscore, dot, colon.
-final RegExp _validFieldChar = RegExp(r'^[a-zA-Z0-9_\-\.:]+$');
+/// Allow only alphanumeric, hyphen, underscore, dot, colon, slash.
+final RegExp _validFieldChar = RegExp(r'^[a-zA-Z0-9_\-\.:\/]+$');
 
 /// Canonical SHA-256 digest of a media artifact embedded in the
 /// submission seal. Maps artifact type + ID to its digest, so

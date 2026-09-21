@@ -87,21 +87,23 @@ class GraceStateMachine {
       );
     }
 
-    final isColdBoot = (currentMonoNanos < checkpoint.monotonicNanos) ||
-        (currentBootSessionId != checkpoint.bootSessionId);
+    // Monotonic regression with same boot session = tamper, not reboot
+    if (currentMonoNanos < checkpoint.monotonicNanos &&
+        currentBootSessionId == checkpoint.bootSessionId) {
+      return const GraceEvaluation(
+        status: GraceStatus.hardLocked,
+        remainingGrace: Duration.zero,
+        blockReason: "Monotonic regression without reboot detected",
+      );
+    }
 
-    if (!isColdBoot) {
+    final rebootDetected =
+        currentBootSessionId != checkpoint.bootSessionId;
+
+    if (!rebootDetected) {
       final elapsedMono = Duration(
         microseconds: (currentMonoNanos - token.anchorMonoNanos) ~/ 1000,
       );
-
-      if (elapsedMono < Duration.zero) {
-        return const GraceEvaluation(
-          status: GraceStatus.hardLocked,
-          remainingGrace: Duration.zero,
-          blockReason: "Monotonic regression without reboot detected",
-        );
-      }
 
       if (elapsedMono > token.horizonDuration) {
         return const GraceEvaluation(
@@ -117,6 +119,7 @@ class GraceStateMachine {
       );
     }
 
+    // Reboot detected: validate cold boot state
     if (currentBootSessionId.isEmpty) {
       return const GraceEvaluation(
         status: GraceStatus.hardLocked,
@@ -125,6 +128,7 @@ class GraceStateMachine {
       );
     }
 
+    // Check horizon expiry BEFORE reboot grace evaluation
     final remainingHorizon = token.horizonDuration -
         checkpoint.wallTimestamp.difference(token.anchorWallTime);
     if (remainingHorizon <= Duration.zero) {
@@ -139,6 +143,11 @@ class GraceStateMachine {
         ? policy.maxRebootGrace
         : remainingHorizon;
 
+    // Elapsed since reboot is measured by the kernel monotonic counter
+    // directly (uptime since boot). After reboot, the monotonic clock
+    // resets, so currentMonoNanos IS the elapsed time. Do NOT subtract
+    // checkpoint.monotonicNanos — that would compare two different
+    // boot clocks. Matches Go fieldtrust.go: rebootElapsed = time.Duration(currentMonoNanos).
     final rebootElapsed = Duration(microseconds: currentMonoNanos ~/ 1000);
 
     if (rebootElapsed > effectiveGrace) {
