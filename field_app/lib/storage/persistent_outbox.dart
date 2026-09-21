@@ -95,4 +95,7 @@ class JsonOutboxStore implements OutboxStore {
       jsonEncode(_entries.map((entry) => entry.toJson()).toList()),
     );
   }
+
+  @override
+  Future<void> close() async {}
 }

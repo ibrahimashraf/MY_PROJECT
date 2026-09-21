@@ -148,6 +148,7 @@ Future<Map<String, Object?>> enrollSimulatedDevice({
   required String inspectorId,
   required String deviceModel,
   http.Client? client,
+  AttestationProvider? attestationProvider,
 }) async {
   // Pilot sim always targets loopback — but guard explicitly so a misconfigured
   // endpoint is caught before key material crosses the wire.
@@ -171,7 +172,7 @@ Future<Map<String, Object?>> enrollSimulatedDevice({
     throw StateError('enrollment challenge is missing challenge_id/nonce');
   }
 
-  final provider = SimulatedAttestationProvider();
+  final provider = attestationProvider ?? SimulatedAttestationProvider();
   final bundle = await provider.attestEnrollment(
     challengeId: challengeId,
     inspectorId: inspectorId,
@@ -212,6 +213,7 @@ Future<Map<String, Object?>> enrollProductionDevice({
   required String userId,
   required String deviceModel,
   http.Client? client,
+  AttestationProvider? attestationProvider,
 }) async {
   // Production enrollment must use HTTPS — reject any plaintext endpoint.
   assertEndpointSafe(endpoint, allowLoopbackHttp: false);
@@ -234,7 +236,7 @@ Future<Map<String, Object?>> enrollProductionDevice({
     throw StateError('enrollment challenge is missing challenge_id/nonce');
   }
 
-  final provider = SimulatedAttestationProvider();
+  final provider = attestationProvider ?? SimulatedAttestationProvider();
   final bundle = await provider.attestEnrollment(
     challengeId: challengeId,
     inspectorId: userId,

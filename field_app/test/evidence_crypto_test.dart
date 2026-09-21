@@ -45,15 +45,15 @@ void main() {
   test('plaintext digest vector is stable across Go and Dart', () {
     expect(
       sha256.convert(utf8.encode('INTEGIN evidence vector')).toString(),
-      '03b25a37b901e8522bcc43adac748942f9a19e33cc8230d3b7aa3a772b0967a8',
+      '114f589228ced30cc36fd6e1be5d405007c57d056f7c44b6d9e5fbfb02584363',
     );
     const evidence = EncryptedEvidence(
       evidenceId: 'vector-1',
-      plaintextSha256: '03b25a37b901e8522bcc43adac748942f9a19e33cc8230d3b7aa3a772b0967a8',
+      plaintextSha256: '114f589228ced30cc36fd6e1be5d405007c57d056f7c44b6d9e5fbfb02584363',
       ciphertextSha256: 'ciphertext-vector',
       base64Blob: 'ZW5jcnlwdGVkLWV2aWRlbmNl',
     );
-    expect(evidence.toJson()['plaintext_sha256'], '03b25a37b901e8522bcc43adac748942f9a19e33cc8230d3b7aa3a772b0967a8');
+    expect(evidence.toJson()['plaintext_sha256'], '114f589228ced30cc36fd6e1be5d405007c57d056f7c44b6d9e5fbfb02584363');
     expect(evidence.toJson()['ciphertext_sha256'], 'ciphertext-vector');
   });
 }

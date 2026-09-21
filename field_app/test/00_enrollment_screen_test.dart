@@ -5,6 +5,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:integin_field_app/presentation/enrollment_screen.dart';
+import 'package:integin_field_app/security/attestation.dart';
+
+/// Fast fake that skips real Ed25519 keygen — avoids slow cryptography
+/// under test-runner memory pressure in the full suite.
+class _FakeAttestationProvider implements AttestationProvider {
+  @override
+  Future<AttestationBundle> attestEnrollment({
+    required String challengeId,
+    required String inspectorId,
+    required String nonceHex,
+    required String deviceModel,
+  }) async => AttestationBundle(
+        devicePublicKeyHex: 'aabbccdd' * 8,
+        deviceFingerprint: 'simulator-aabbcc',
+        signedNonceHex: '00' * 64,
+        deviceModel: deviceModel,
+        keyOrigin: 'SOFTWARE',
+        biometricBound: false,
+      );
+}
 
 http.Client _fakeServer({required bool failChallenge}) {
   return MockClient((request) async {
@@ -66,12 +86,11 @@ Future<void> _pumpScreen(WidgetTester tester, http.Client client, {bool useProdu
       home: EnrollmentScreen(
         tenantId: 'tenant-1',
         organizationId: 'org-1',
-        // Production route requires https:// — use https for useProduction=true.
-        // The MockClient ignores the scheme so test behaviour is identical.
         endpoint:
             useProduction ? 'https://127.0.0.1:18080' : enrollLoopbackEndpoint,
         useProductionRoute: useProduction,
         client: client,
+        attestationProvider: _FakeAttestationProvider(),
       ),
     ),
   );
@@ -84,8 +103,8 @@ void main() {
   // Wait for the terminal state (indicator gone, no pending frames) instead;
   // no assertion is changed.
   Future<void> pumpEnrollResult(WidgetTester tester) async {
-    for (var i = 0; i < 40; i += 1) {
-      await tester.pump(const Duration(milliseconds: 500));
+    for (var i = 0; i < 20; i += 1) {
+      await tester.pump(const Duration(milliseconds: 100));
       if (find.byType(CircularProgressIndicator).evaluate().isEmpty &&
           tester.binding.transientCallbackCount == 0) {
         break;

@@ -392,6 +392,7 @@ class FieldAppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    outboxStore?.close();
     eventStreamClient?.dispose();
     super.dispose();
   }

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../domain/models.dart';
 import '../outbox/outbox.dart' show OutboxEntry, OutboxState, OutboxStore;
-import 'app_database.dart' hide OutboxEntry;
+import 'app_database.dart';
 
 /// Drift-backed outbox store.
 ///
@@ -22,8 +22,7 @@ class DriftOutboxStore implements OutboxStore {
       attempts: entry.attempts,
       lastError: entry.lastError,
       chainHash: entry.chainHash,
-      acknowledgedAt: entry.acknowledgedAt?.toUtc().toIso8601String(),
-      createdAt: DateTime.now().toUtc().toIso8601String(),
+      acknowledgedAt: entry.acknowledgedAt,
     );
   }
 
@@ -42,33 +41,91 @@ class DriftOutboxStore implements OutboxStore {
   @override
   Future<void> mark(OutboxEntry entry, OutboxState state,
       {String? error}) async {
+    // Read current attempts from DB to avoid stale value.
+    final current = await (_db.select(_db.outboxRows)
+          ..where((t) => t.transactionId.equals(entry.mutation.transactionId)))
+        .getSingleOrNull();
+    final currentAttempts = current?.attempts ?? entry.attempts;
+
     await _db.markOutboxEntry(
       transactionId: entry.mutation.transactionId,
       state: state.name.toUpperCase(),
-      attempts: entry.attempts,
+      attempts: currentAttempts,
       lastError: error,
       acknowledgedAt:
           (state == OutboxState.applied || state == OutboxState.duplicate)
-              ? DateTime.now().toUtc().toIso8601String()
+              ? DateTime.now().toUtc()
               : null,
     );
   }
 
-  OutboxEntry _rowToEntry(dynamic row) {
-    final mutation = OfflineMutation.fromJson(
-      Map<String, Object?>.from(jsonDecode(row.mutation as String)),
-    );
-    return OutboxEntry(
-      mutation: mutation,
-      chainHash: row.chainHash,
-    )..state = OutboxState.values.firstWhere(
-        (v) => v.name.toUpperCase() == row.state,
-        orElse: () => OutboxState.queued,
+  OutboxEntry _rowToEntry(OutboxRow row) {
+    try {
+      final mutation = OfflineMutation.fromJson(
+        Map<String, Object?>.from(jsonDecode(row.mutation) as Map),
+      );
+      return OutboxEntry(
+        mutation: mutation,
+        chainHash: row.chainHash,
       )
-      ..attempts = row.attempts
-      ..lastError = row.lastError
-      ..acknowledgedAt = row.acknowledgedAt != null
-          ? DateTime.parse(row.acknowledgedAt as String)
-          : null;
+        ..state = OutboxState.values.firstWhere(
+          (v) => v.name.toUpperCase() == row.state,
+          orElse: () => OutboxState.queued,
+        )
+        ..attempts = row.attempts
+        ..lastError = row.lastError
+        ..acknowledgedAt = row.acknowledgedAt;
+    } on FormatException {
+      return OutboxEntry(
+        mutation: OfflineMutation(
+          transactionId: row.transactionId,
+          context: const TenantContext(
+            tenantId: '',
+            organizationId: '',
+            environment: 'LIVE',
+          ),
+          deviceId: '',
+          userId: '',
+          sequenceNumber: 0,
+          operation: 'corrupt',
+          entityId: '',
+          payload: const {},
+          capturedAt: DateTime.now().toUtc(),
+          authorityId: '',
+          authorityEpoch: 0,
+          signature: '',
+        ),
+      )
+        ..state = OutboxState.securityFailure
+        ..lastError = 'Corrupt mutation data: ${row.transactionId}';
+    } on TypeError {
+      return OutboxEntry(
+        mutation: OfflineMutation(
+          transactionId: row.transactionId,
+          context: const TenantContext(
+            tenantId: '',
+            organizationId: '',
+            environment: 'LIVE',
+          ),
+          deviceId: '',
+          userId: '',
+          sequenceNumber: 0,
+          operation: 'corrupt',
+          entityId: '',
+          payload: const {},
+          capturedAt: DateTime.now().toUtc(),
+          authorityId: '',
+          authorityEpoch: 0,
+          signature: '',
+        ),
+      )
+        ..state = OutboxState.securityFailure
+        ..lastError = 'Malformed mutation data: ${row.transactionId}';
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _db.close();
   }
 }

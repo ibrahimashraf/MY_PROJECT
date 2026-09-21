@@ -1,14 +1,14 @@
 import 'package:drift/drift.dart';
 
-class OutboxEntries extends Table {
+class OutboxRows extends Table {
   TextColumn get transactionId => text()();
   TextColumn get mutation => text()();
   TextColumn get state => text()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
   TextColumn get lastError => text().nullable()();
   TextColumn get chainHash => text().nullable()();
-  TextColumn get acknowledgedAt => text().nullable()();
-  TextColumn get createdAt => text()();
+  DateTimeColumn get acknowledgedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {transactionId};

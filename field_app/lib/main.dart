@@ -84,9 +84,11 @@ Future<void> main() async {
   _traceWindowsStartup('preferences-start');
   _traceWindowsStartup('preferences-ready');
   final secureStorage = SecureKeyValueStore();
-  final encryptionKey = await secureStorage.read('INTEGIN.database.encryption_key');
   _traceWindowsStartup('database-open-start');
-  final database = await openAppDatabase(encryptionKey: encryptionKey);
+  final database = await openAppDatabase(
+    readKey: secureStorage.read,
+    writeKey: secureStorage.write,
+  );
   _traceWindowsStartup('database-open-ready');
   final outboxStore = DriftOutboxStore(database);
   _traceWindowsStartup('outbox-ready');

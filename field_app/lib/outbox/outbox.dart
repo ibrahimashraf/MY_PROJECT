@@ -94,6 +94,7 @@ abstract interface class OutboxStore {
   Future<List<OutboxEntry>> all();
   Future<List<OutboxEntry>> pending();
   Future<void> mark(OutboxEntry entry, OutboxState state, {String? error});
+  Future<void> close();
 }
 
 class InMemoryOutboxStore implements OutboxStore {
@@ -122,4 +123,7 @@ class InMemoryOutboxStore implements OutboxStore {
       entry.acknowledgedAt = DateTime.now().toUtc();
     }
   }
+
+  @override
+  Future<void> close() async {}
 }

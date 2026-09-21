@@ -41,17 +41,7 @@ void main() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async => signature);
 
-      // Mock the HTTP client to return ACCEPTED
-      final mockClient = MockHttpClient((uri) async {
-        return MockHttpResponse(
-          200,
-          jsonEncode({'status': 'ACCEPTED', 'message': 'Inspection recorded'}),
-        );
-      });
-
       service = InspectionSubmissionService();
-      // We can't directly inject the mock client without exposing the setter,
-      // so we test the signing path directly.
 
       final digest = payload.deriveCompositeDigest();
       expect(digest.length, 32);
@@ -142,13 +132,13 @@ void main() {
     const policy = TTLPolicy(maxRebootGrace: Duration(minutes: 15));
 
     test('hardLocked grace blocks submission', () {
-      final anchor = DateTime.now().subtract(Duration(hours: 2));
+      final anchor = DateTime.now();
       final blockReason = InspectionSubmissionService.validateGraceBeforeSubmit(
-        currentWall: DateTime.now(),
-        currentMonoNanos: 3000000,
+        currentWall: anchor.add(Duration(minutes: 10)),
+        currentMonoNanos: 20 * 60 * 1000000000, // 20 minutes in nanos > 15 min grace
         currentBootSessionId: 'boot-2',
         checkpoint: CheckpointLedgerEntry(
-          wallTimestamp: anchor.subtract(Duration(minutes: 20)),
+          wallTimestamp: anchor.subtract(Duration(minutes: 5)),
           monotonicNanos: 1000000,
           bootSessionId: 'boot-prev',
         ),
@@ -192,7 +182,7 @@ void main() {
       final anchor = DateTime.now();
       final evaluation = GraceStateMachine.evaluate(
         currentWall: anchor.add(Duration(minutes: 20)),
-        currentMonoNanos: 900000000,
+        currentMonoNanos: 16 * 60 * 1000000000, // 16 minutes in nanos > 15 min grace
         currentBootSessionId: 'boot-2',
         checkpoint: CheckpointLedgerEntry(
           wallTimestamp: anchor.subtract(Duration(minutes: 20)),
@@ -263,34 +253,4 @@ void main() {
       expect(foregroundResumptionRequired, isTrue);
     });
   });
-}
-
-/// Minimal mock HTTP client for testing.
-class MockHttpClient implements http.Client {
-  final http.StreamedResponse Function(Uri) _onRequest;
-
-  MockHttpClient(this._onRequest);
-
-  @override
-  void close({bool? force}) {}
-
-  @override
-  Future<http.StreamedResponse> get(Uri url, {Map<String, String>? headers}) async => _onRequest(url);
-
-  @override
-  Future<http.StreamedResponse> post(Uri url, {Map<String, String>? headers, String? body, Encoding? encoding}) async => _onRequest(url);
-}
-
-/// Minimal mock HTTP response.
-class MockHttpResponse extends http.StreamedResponse {
-  final String _body;
-
-  MockHttpResponse(int statusCode, this._body)
-      : super(
-          Stream.fromIterable([utf8.encode(_body)]),
-          statusCode: statusCode,
-        );
-
-  @override
-  String get body => _body;
 }

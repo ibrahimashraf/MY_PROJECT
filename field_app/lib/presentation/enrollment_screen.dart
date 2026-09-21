@@ -25,6 +25,7 @@ class EnrollmentScreen extends StatefulWidget {
     this.endpoint = enrollLoopbackEndpoint,
     this.useProductionRoute = false,
     this.client,
+    this.attestationProvider,
   });
 
   final String tenantId;
@@ -32,6 +33,7 @@ class EnrollmentScreen extends StatefulWidget {
   final String endpoint;
   final bool useProductionRoute;
   final http.Client? client;
+  final AttestationProvider? attestationProvider;
 
   @override
   State<EnrollmentScreen> createState() => _EnrollmentScreenState();
@@ -89,6 +91,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
               userId: inspectorId,
               deviceModel: deviceModel,
               client: widget.client,
+              attestationProvider: widget.attestationProvider,
             )
           : await enrollSimulatedDevice(
               endpoint: Uri.parse(widget.endpoint),
@@ -96,6 +99,7 @@ class _EnrollmentScreenState extends State<EnrollmentScreen> {
               inspectorId: inspectorId,
               deviceModel: deviceModel,
               client: widget.client,
+              attestationProvider: widget.attestationProvider,
             );
       if (!mounted) return;
       setState(() {

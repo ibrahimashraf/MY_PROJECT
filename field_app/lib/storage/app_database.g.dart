@@ -3,12 +3,12 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
-class $OutboxEntriesTable extends OutboxEntries
-    with TableInfo<$OutboxEntriesTable, OutboxEntry> {
+class $OutboxRowsTable extends OutboxRows
+    with TableInfo<$OutboxRowsTable, OutboxRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $OutboxEntriesTable(this.attachedDatabase, [this._alias]);
+  $OutboxRowsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _transactionIdMeta =
       const VerificationMeta('transactionId');
   @override
@@ -49,15 +49,17 @@ class $OutboxEntriesTable extends OutboxEntries
   static const VerificationMeta _acknowledgedAtMeta =
       const VerificationMeta('acknowledgedAt');
   @override
-  late final GeneratedColumn<String> acknowledgedAt = GeneratedColumn<String>(
-      'acknowledged_at', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+  late final GeneratedColumn<DateTime> acknowledgedAt =
+      GeneratedColumn<DateTime>('acknowledged_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
-  late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
       'created_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns => [
         transactionId,
@@ -73,9 +75,9 @@ class $OutboxEntriesTable extends OutboxEntries
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'outbox_entries';
+  static const String $name = 'outbox_rows';
   @override
-  VerificationContext validateIntegrity(Insertable<OutboxEntry> instance,
+  VerificationContext validateIntegrity(Insertable<OutboxRow> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -120,8 +122,6 @@ class $OutboxEntriesTable extends OutboxEntries
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
     }
     return context;
   }
@@ -129,9 +129,9 @@ class $OutboxEntriesTable extends OutboxEntries
   @override
   Set<GeneratedColumn> get $primaryKey => {transactionId};
   @override
-  OutboxEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+  OutboxRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return OutboxEntry(
+    return OutboxRow(
       transactionId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}transaction_id'])!,
       mutation: attachedDatabase.typeMapping
@@ -144,29 +144,29 @@ class $OutboxEntriesTable extends OutboxEntries
           .read(DriftSqlType.string, data['${effectivePrefix}last_error']),
       chainHash: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}chain_hash']),
-      acknowledgedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}acknowledged_at']),
+      acknowledgedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}acknowledged_at']),
       createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}created_at'])!,
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
   }
 
   @override
-  $OutboxEntriesTable createAlias(String alias) {
-    return $OutboxEntriesTable(attachedDatabase, alias);
+  $OutboxRowsTable createAlias(String alias) {
+    return $OutboxRowsTable(attachedDatabase, alias);
   }
 }
 
-class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
+class OutboxRow extends DataClass implements Insertable<OutboxRow> {
   final String transactionId;
   final String mutation;
   final String state;
   final int attempts;
   final String? lastError;
   final String? chainHash;
-  final String? acknowledgedAt;
-  final String createdAt;
-  const OutboxEntry(
+  final DateTime? acknowledgedAt;
+  final DateTime createdAt;
+  const OutboxRow(
       {required this.transactionId,
       required this.mutation,
       required this.state,
@@ -189,14 +189,14 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       map['chain_hash'] = Variable<String>(chainHash);
     }
     if (!nullToAbsent || acknowledgedAt != null) {
-      map['acknowledged_at'] = Variable<String>(acknowledgedAt);
+      map['acknowledged_at'] = Variable<DateTime>(acknowledgedAt);
     }
-    map['created_at'] = Variable<String>(createdAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
-  OutboxEntriesCompanion toCompanion(bool nullToAbsent) {
-    return OutboxEntriesCompanion(
+  OutboxRowsCompanion toCompanion(bool nullToAbsent) {
+    return OutboxRowsCompanion(
       transactionId: Value(transactionId),
       mutation: Value(mutation),
       state: Value(state),
@@ -214,18 +214,18 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
     );
   }
 
-  factory OutboxEntry.fromJson(Map<String, dynamic> json,
+  factory OutboxRow.fromJson(Map<String, dynamic> json,
       {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return OutboxEntry(
+    return OutboxRow(
       transactionId: serializer.fromJson<String>(json['transactionId']),
       mutation: serializer.fromJson<String>(json['mutation']),
       state: serializer.fromJson<String>(json['state']),
       attempts: serializer.fromJson<int>(json['attempts']),
       lastError: serializer.fromJson<String?>(json['lastError']),
       chainHash: serializer.fromJson<String?>(json['chainHash']),
-      acknowledgedAt: serializer.fromJson<String?>(json['acknowledgedAt']),
-      createdAt: serializer.fromJson<String>(json['createdAt']),
+      acknowledgedAt: serializer.fromJson<DateTime?>(json['acknowledgedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
   @override
@@ -238,21 +238,21 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
       'attempts': serializer.toJson<int>(attempts),
       'lastError': serializer.toJson<String?>(lastError),
       'chainHash': serializer.toJson<String?>(chainHash),
-      'acknowledgedAt': serializer.toJson<String?>(acknowledgedAt),
-      'createdAt': serializer.toJson<String>(createdAt),
+      'acknowledgedAt': serializer.toJson<DateTime?>(acknowledgedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  OutboxEntry copyWith(
+  OutboxRow copyWith(
           {String? transactionId,
           String? mutation,
           String? state,
           int? attempts,
           Value<String?> lastError = const Value.absent(),
           Value<String?> chainHash = const Value.absent(),
-          Value<String?> acknowledgedAt = const Value.absent(),
-          String? createdAt}) =>
-      OutboxEntry(
+          Value<DateTime?> acknowledgedAt = const Value.absent(),
+          DateTime? createdAt}) =>
+      OutboxRow(
         transactionId: transactionId ?? this.transactionId,
         mutation: mutation ?? this.mutation,
         state: state ?? this.state,
@@ -263,8 +263,8 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
             acknowledgedAt.present ? acknowledgedAt.value : this.acknowledgedAt,
         createdAt: createdAt ?? this.createdAt,
       );
-  OutboxEntry copyWithCompanion(OutboxEntriesCompanion data) {
-    return OutboxEntry(
+  OutboxRow copyWithCompanion(OutboxRowsCompanion data) {
+    return OutboxRow(
       transactionId: data.transactionId.present
           ? data.transactionId.value
           : this.transactionId,
@@ -282,7 +282,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
 
   @override
   String toString() {
-    return (StringBuffer('OutboxEntry(')
+    return (StringBuffer('OutboxRow(')
           ..write('transactionId: $transactionId, ')
           ..write('mutation: $mutation, ')
           ..write('state: $state, ')
@@ -301,7 +301,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is OutboxEntry &&
+      (other is OutboxRow &&
           other.transactionId == this.transactionId &&
           other.mutation == this.mutation &&
           other.state == this.state &&
@@ -312,17 +312,17 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
           other.createdAt == this.createdAt);
 }
 
-class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
+class OutboxRowsCompanion extends UpdateCompanion<OutboxRow> {
   final Value<String> transactionId;
   final Value<String> mutation;
   final Value<String> state;
   final Value<int> attempts;
   final Value<String?> lastError;
   final Value<String?> chainHash;
-  final Value<String?> acknowledgedAt;
-  final Value<String> createdAt;
+  final Value<DateTime?> acknowledgedAt;
+  final Value<DateTime> createdAt;
   final Value<int> rowid;
-  const OutboxEntriesCompanion({
+  const OutboxRowsCompanion({
     this.transactionId = const Value.absent(),
     this.mutation = const Value.absent(),
     this.state = const Value.absent(),
@@ -333,7 +333,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  OutboxEntriesCompanion.insert({
+  OutboxRowsCompanion.insert({
     required String transactionId,
     required String mutation,
     required String state,
@@ -341,21 +341,20 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
     this.lastError = const Value.absent(),
     this.chainHash = const Value.absent(),
     this.acknowledgedAt = const Value.absent(),
-    required String createdAt,
+    this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : transactionId = Value(transactionId),
         mutation = Value(mutation),
-        state = Value(state),
-        createdAt = Value(createdAt);
-  static Insertable<OutboxEntry> custom({
+        state = Value(state);
+  static Insertable<OutboxRow> custom({
     Expression<String>? transactionId,
     Expression<String>? mutation,
     Expression<String>? state,
     Expression<int>? attempts,
     Expression<String>? lastError,
     Expression<String>? chainHash,
-    Expression<String>? acknowledgedAt,
-    Expression<String>? createdAt,
+    Expression<DateTime>? acknowledgedAt,
+    Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -371,17 +370,17 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
     });
   }
 
-  OutboxEntriesCompanion copyWith(
+  OutboxRowsCompanion copyWith(
       {Value<String>? transactionId,
       Value<String>? mutation,
       Value<String>? state,
       Value<int>? attempts,
       Value<String?>? lastError,
       Value<String?>? chainHash,
-      Value<String?>? acknowledgedAt,
-      Value<String>? createdAt,
+      Value<DateTime?>? acknowledgedAt,
+      Value<DateTime>? createdAt,
       Value<int>? rowid}) {
-    return OutboxEntriesCompanion(
+    return OutboxRowsCompanion(
       transactionId: transactionId ?? this.transactionId,
       mutation: mutation ?? this.mutation,
       state: state ?? this.state,
@@ -416,10 +415,10 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
       map['chain_hash'] = Variable<String>(chainHash.value);
     }
     if (acknowledgedAt.present) {
-      map['acknowledged_at'] = Variable<String>(acknowledgedAt.value);
+      map['acknowledged_at'] = Variable<DateTime>(acknowledgedAt.value);
     }
     if (createdAt.present) {
-      map['created_at'] = Variable<String>(createdAt.value);
+      map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -429,7 +428,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
 
   @override
   String toString() {
-    return (StringBuffer('OutboxEntriesCompanion(')
+    return (StringBuffer('OutboxRowsCompanion(')
           ..write('transactionId: $transactionId, ')
           ..write('mutation: $mutation, ')
           ..write('state: $state, ')
@@ -447,42 +446,40 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $OutboxEntriesTable outboxEntries = $OutboxEntriesTable(this);
+  late final $OutboxRowsTable outboxRows = $OutboxRowsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [outboxEntries];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [outboxRows];
 }
 
-typedef $$OutboxEntriesTableCreateCompanionBuilder = OutboxEntriesCompanion
-    Function({
+typedef $$OutboxRowsTableCreateCompanionBuilder = OutboxRowsCompanion Function({
   required String transactionId,
   required String mutation,
   required String state,
   Value<int> attempts,
   Value<String?> lastError,
   Value<String?> chainHash,
-  Value<String?> acknowledgedAt,
-  required String createdAt,
+  Value<DateTime?> acknowledgedAt,
+  Value<DateTime> createdAt,
   Value<int> rowid,
 });
-typedef $$OutboxEntriesTableUpdateCompanionBuilder = OutboxEntriesCompanion
-    Function({
+typedef $$OutboxRowsTableUpdateCompanionBuilder = OutboxRowsCompanion Function({
   Value<String> transactionId,
   Value<String> mutation,
   Value<String> state,
   Value<int> attempts,
   Value<String?> lastError,
   Value<String?> chainHash,
-  Value<String?> acknowledgedAt,
-  Value<String> createdAt,
+  Value<DateTime?> acknowledgedAt,
+  Value<DateTime> createdAt,
   Value<int> rowid,
 });
 
-class $$OutboxEntriesTableFilterComposer
-    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
-  $$OutboxEntriesTableFilterComposer({
+class $$OutboxRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -507,17 +504,17 @@ class $$OutboxEntriesTableFilterComposer
   ColumnFilters<String> get chainHash => $composableBuilder(
       column: $table.chainHash, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get acknowledgedAt => $composableBuilder(
+  ColumnFilters<DateTime> get acknowledgedAt => $composableBuilder(
       column: $table.acknowledgedAt,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get createdAt => $composableBuilder(
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 }
 
-class $$OutboxEntriesTableOrderingComposer
-    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
-  $$OutboxEntriesTableOrderingComposer({
+class $$OutboxRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -543,17 +540,17 @@ class $$OutboxEntriesTableOrderingComposer
   ColumnOrderings<String> get chainHash => $composableBuilder(
       column: $table.chainHash, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get acknowledgedAt => $composableBuilder(
+  ColumnOrderings<DateTime> get acknowledgedAt => $composableBuilder(
       column: $table.acknowledgedAt,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get createdAt => $composableBuilder(
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
 
-class $$OutboxEntriesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
-  $$OutboxEntriesTableAnnotationComposer({
+class $$OutboxRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OutboxRowsTable> {
+  $$OutboxRowsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -578,38 +575,35 @@ class $$OutboxEntriesTableAnnotationComposer
   GeneratedColumn<String> get chainHash =>
       $composableBuilder(column: $table.chainHash, builder: (column) => column);
 
-  GeneratedColumn<String> get acknowledgedAt => $composableBuilder(
+  GeneratedColumn<DateTime> get acknowledgedAt => $composableBuilder(
       column: $table.acknowledgedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get createdAt =>
+  GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
-class $$OutboxEntriesTableTableManager extends RootTableManager<
+class $$OutboxRowsTableTableManager extends RootTableManager<
     _$AppDatabase,
-    $OutboxEntriesTable,
-    OutboxEntry,
-    $$OutboxEntriesTableFilterComposer,
-    $$OutboxEntriesTableOrderingComposer,
-    $$OutboxEntriesTableAnnotationComposer,
-    $$OutboxEntriesTableCreateCompanionBuilder,
-    $$OutboxEntriesTableUpdateCompanionBuilder,
-    (
-      OutboxEntry,
-      BaseReferences<_$AppDatabase, $OutboxEntriesTable, OutboxEntry>
-    ),
-    OutboxEntry,
+    $OutboxRowsTable,
+    OutboxRow,
+    $$OutboxRowsTableFilterComposer,
+    $$OutboxRowsTableOrderingComposer,
+    $$OutboxRowsTableAnnotationComposer,
+    $$OutboxRowsTableCreateCompanionBuilder,
+    $$OutboxRowsTableUpdateCompanionBuilder,
+    (OutboxRow, BaseReferences<_$AppDatabase, $OutboxRowsTable, OutboxRow>),
+    OutboxRow,
     PrefetchHooks Function()> {
-  $$OutboxEntriesTableTableManager(_$AppDatabase db, $OutboxEntriesTable table)
+  $$OutboxRowsTableTableManager(_$AppDatabase db, $OutboxRowsTable table)
       : super(TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$OutboxEntriesTableFilterComposer($db: db, $table: table),
+              $$OutboxRowsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$OutboxEntriesTableOrderingComposer($db: db, $table: table),
+              $$OutboxRowsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$OutboxEntriesTableAnnotationComposer($db: db, $table: table),
+              $$OutboxRowsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> transactionId = const Value.absent(),
             Value<String> mutation = const Value.absent(),
@@ -617,11 +611,11 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
             Value<int> attempts = const Value.absent(),
             Value<String?> lastError = const Value.absent(),
             Value<String?> chainHash = const Value.absent(),
-            Value<String?> acknowledgedAt = const Value.absent(),
-            Value<String> createdAt = const Value.absent(),
+            Value<DateTime?> acknowledgedAt = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
-              OutboxEntriesCompanion(
+              OutboxRowsCompanion(
             transactionId: transactionId,
             mutation: mutation,
             state: state,
@@ -639,11 +633,11 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
             Value<int> attempts = const Value.absent(),
             Value<String?> lastError = const Value.absent(),
             Value<String?> chainHash = const Value.absent(),
-            Value<String?> acknowledgedAt = const Value.absent(),
-            required String createdAt,
+            Value<DateTime?> acknowledgedAt = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
-              OutboxEntriesCompanion.insert(
+              OutboxRowsCompanion.insert(
             transactionId: transactionId,
             mutation: mutation,
             state: state,
@@ -661,25 +655,22 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
         ));
 }
 
-typedef $$OutboxEntriesTableProcessedTableManager = ProcessedTableManager<
+typedef $$OutboxRowsTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
-    $OutboxEntriesTable,
-    OutboxEntry,
-    $$OutboxEntriesTableFilterComposer,
-    $$OutboxEntriesTableOrderingComposer,
-    $$OutboxEntriesTableAnnotationComposer,
-    $$OutboxEntriesTableCreateCompanionBuilder,
-    $$OutboxEntriesTableUpdateCompanionBuilder,
-    (
-      OutboxEntry,
-      BaseReferences<_$AppDatabase, $OutboxEntriesTable, OutboxEntry>
-    ),
-    OutboxEntry,
+    $OutboxRowsTable,
+    OutboxRow,
+    $$OutboxRowsTableFilterComposer,
+    $$OutboxRowsTableOrderingComposer,
+    $$OutboxRowsTableAnnotationComposer,
+    $$OutboxRowsTableCreateCompanionBuilder,
+    $$OutboxRowsTableUpdateCompanionBuilder,
+    (OutboxRow, BaseReferences<_$AppDatabase, $OutboxRowsTable, OutboxRow>),
+    OutboxRow,
     PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$OutboxEntriesTableTableManager get outboxEntries =>
-      $$OutboxEntriesTableTableManager(_db, _db.outboxEntries);
+  $$OutboxRowsTableTableManager get outboxRows =>
+      $$OutboxRowsTableTableManager(_db, _db.outboxRows);
 }
