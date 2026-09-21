@@ -1,4 +1,4 @@
--- INTEGIN Ticket 02-03: tenant/organization RLS and least-privilege runtime access.
+-- integin Ticket 02-03: tenant/organization RLS and least-privilege runtime access.
 -- The runtime role must be provisioned separately as a non-owner, non-superuser
 -- role without BYPASSRLS. This migration does not create or alter roles.
 

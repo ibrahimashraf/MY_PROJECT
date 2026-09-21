@@ -1,4 +1,4 @@
--- INTEGIN certificate-template binding registry rollback candidate.
+-- integin certificate-template binding registry rollback candidate.
 -- CANDIDATE ONLY: execute only after a verified backup and explicit certificate-retention decision.
 
 BEGIN;

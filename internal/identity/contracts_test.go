@@ -1,4 +1,4 @@
-// INTEGIN identity foundation tests: local identity keys and membership-denial reasons remain independent of token claims.
+// integin identity foundation tests: local identity keys and membership-denial reasons remain independent of token claims.
 package identity
 
 import "testing"

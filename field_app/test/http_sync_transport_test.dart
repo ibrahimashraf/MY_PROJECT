@@ -16,7 +16,7 @@ void main() {
       );
     });
     final response = await HttpSyncTransport(
-      endpoint: Uri.parse('https://integin.test/sync'),
+      endpoint: Uri.parse('https://INTEGIN.test/sync'),
       client: client,
     ).submit(_mutation());
 
@@ -26,7 +26,7 @@ void main() {
 
   test('turns an unavailable endpoint into an explicit rejected outcome', () async {
     final response = await HttpSyncTransport(
-      endpoint: Uri.parse('https://integin.test/sync'),
+      endpoint: Uri.parse('https://INTEGIN.test/sync'),
       client: MockClient((_) async => http.Response('unavailable', 503)),
     ).submit(_mutation());
 
@@ -36,7 +36,7 @@ void main() {
 
   test('turns a network exception into a retryable queued outcome', () async {
     final response = await HttpSyncTransport(
-      endpoint: Uri.parse('https://integin.test/sync'),
+      endpoint: Uri.parse('https://INTEGIN.test/sync'),
       client: MockClient((_) async => throw StateError('offline')),
     ).submit(_mutation());
 
@@ -51,7 +51,7 @@ void main() {
       return http.Response('{"outcome":"APPLIED"}', 200);
     });
     await HttpSyncTransport(
-      endpoint: Uri.parse('https://integin.test/sync'),
+      endpoint: Uri.parse('https://INTEGIN.test/sync'),
       client: client,
     ).submit(_mutation(transactionId: 'tx-1756363200000000-1234'));
 

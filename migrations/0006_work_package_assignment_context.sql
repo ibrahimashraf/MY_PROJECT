@@ -1,5 +1,5 @@
--- INTEGIN assignment context: immutable inspection-specific attributes required
--- to render an approved work package in INTEGIN Field. This migration is
+-- integin assignment context: immutable inspection-specific attributes required
+-- to render an approved work package in integin Field. This migration is
 -- additive and source-only until separately reviewed for isolated pilot use.
 CREATE TABLE IF NOT EXISTS work_package_assignment_context (
     tenant_id TEXT NOT NULL,

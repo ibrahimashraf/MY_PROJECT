@@ -4,7 +4,7 @@ import 'package:integin_field_app/sync/camera_picker.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const channel = MethodChannel('integin.field_app/camera');
+  const channel = MethodChannel('INTEGIN.field_app/camera');
 
   Uint8List mockPhoto() => Uint8List.fromList(jpegHeaderBytes);
 

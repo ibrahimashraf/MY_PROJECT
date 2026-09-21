@@ -6,7 +6,7 @@ The drill uses a newly generated `it-recovery-*` fixture in the applied pilot da
 
 | Boundary | Source | Restore target | Prohibited action |
 |---|---|---|---|
-| PostgreSQL | `integin-pilot-postgres` on `127.0.0.1:15432` | Fresh `postgres:18` container on loopback-only `127.0.0.1:25432` with a new volume | No restore over pilot or non-pilot database. |
+| PostgreSQL | `INTEGIN-pilot-postgres` on `127.0.0.1:15432` | Fresh `postgres:18` container on loopback-only `127.0.0.1:25432` with a new volume | No restore over pilot or non-pilot database. |
 | Object storage | `integin-pilot-rustfs` on `127.0.0.1:19000` | Fresh `rustfs/rustfs:1.0.0-rc.1` container on loopback-only `127.0.0.1:29100` with a new volume | No copy into a non-pilot or active bucket. |
 | Fixture authority | One generated tenant, organization, actor, work order, scope item, assignment, inspection, and state event | Restored graph is read/verified only | No user, client, certificate, or production data. |
 

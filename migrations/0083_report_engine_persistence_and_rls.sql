@@ -1,4 +1,4 @@
-﻿-- Migration 0083: Add report_config and generated_report tables with strict tenant RLS
+-- Migration 0083: Add report_config and generated_report tables with strict tenant RLS
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS report_config (

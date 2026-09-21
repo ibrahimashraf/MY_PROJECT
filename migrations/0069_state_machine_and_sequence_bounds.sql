@@ -1,4 +1,4 @@
--- INTEGIN Hardening (F-14 & F-17): State Machine Closed Vocabularies and Integer Safeties
+-- integin Hardening (F-14 & F-17): State Machine Closed Vocabularies and Integer Safeties
 -- Restricts work_order lifecycle states to formal closed vocabularies and ensures BIGINT upper bound constraints.
 
 BEGIN;

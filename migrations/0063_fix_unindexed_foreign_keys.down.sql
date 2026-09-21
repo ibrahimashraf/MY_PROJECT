@@ -1,4 +1,4 @@
--- Revert INTEGIN Hardening: Drop covering foreign key indexes added in 0063
+-- Revert integin Hardening: Drop covering foreign key indexes added in 0063
 
 BEGIN;
 

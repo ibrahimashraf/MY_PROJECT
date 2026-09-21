@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: assurance projection and corrective-work links.
+-- integin Work-Order Field Package: assurance projection and corrective-work links.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0009 inspection_record, 0013 certificate lifecycle, 0053 asset_entitlement.
 

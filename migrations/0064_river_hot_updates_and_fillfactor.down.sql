@@ -1,4 +1,4 @@
--- Revert INTEGIN Hardening: Revert river_job HOT updates, fillfactor and prune index
+-- Revert integin Hardening: Revert river_job HOT updates, fillfactor and prune index
 
 BEGIN;
 

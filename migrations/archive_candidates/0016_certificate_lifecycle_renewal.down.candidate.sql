@@ -1,4 +1,4 @@
--- INTEGIN certificate lifecycle renewal rollback.
+-- integin certificate lifecycle renewal rollback.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 -- This rollback restores the pre-migration state by removing renewal tracking fields.
 BEGIN;

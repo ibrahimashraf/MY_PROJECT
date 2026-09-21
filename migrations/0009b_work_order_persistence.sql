@@ -1,4 +1,4 @@
--- INTEGIN Ticket 02-02: work-order persistence foundation.
+-- integin Ticket 02-02: work-order persistence foundation.
 -- Tenant isolation policies and runtime grants are a later separately gated slice.
 
 -- Removed redundant ALTER; created_at defined in table definition

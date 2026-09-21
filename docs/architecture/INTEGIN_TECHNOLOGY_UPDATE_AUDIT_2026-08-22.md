@@ -27,7 +27,7 @@ This audit reviews the active INTEGIN Go service, PostgreSQL, RustFS, Keycloak, 
 | Database | **PostgreSQL 18.6** — `FORCED RLS` | as-is, **pin exact minor/digest** (currently `postgres:18`) |
 | Evidence/file storage | **RustFS 1.0.0-rc.1** — S3 `x-amz-meta-*` in `223ab5c` | as-is, **rc pinned** — rehearse backup/restore before any `rc` upgrade |
 | Optional advisory AI | **FastAPI sidecar** `v1` `blocking=false` — `ai_service` 5 passed, generic `NDT_DEFECT`/`LIFTING_DEFECT` | as-is, keep advisory-only |
-| Identity (future, gated) | **Keycloak 26.7.1** — disposable sidecar `integin-pilot` `401/200` PASS `2ac15c4`, OIDC `disabled` at rest | **gated** — add to stack only on production-hosted Keycloak gate |
+| Identity (future, gated) | **Keycloak 26.7.1** — disposable sidecar `INTEGIN-pilot` `401/200` PASS `2ac15c4`, OIDC `disabled` at rest | **gated** — add to stack only on production-hosted Keycloak gate |
 | Secrets (future, gated) | **OpenBao 2.6.2** — `sealed/unwired` today, patch `2.6.0→2.6.2` per audit | **gated** — add on sealed-state/config/export gate |
 | Observability (future, gated) | **OpenTelemetry / Loki / Prometheus** — health/readiness/correlation-ID design-only | **gated** — design-only, no collector yet |
 

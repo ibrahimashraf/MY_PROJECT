@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Kill GIN Write Bottleneck & Harden RLS Against Empty String Poisoning
+-- integin Hardening: Kill GIN Write Bottleneck & Harden RLS Against Empty String Poisoning
 -- Builds on 0060_river_scale_10k.sql.
 
 BEGIN;

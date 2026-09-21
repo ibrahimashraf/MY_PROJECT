@@ -44,7 +44,7 @@ chmod +x deploy/edge-appliance/backup/restore-appliance.sh
    ```
 2. Execute delta restore from NVMe Drive B:
    ```bash
-   pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=integin-appliance --delta restore
+   pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=INTEGIN-appliance --delta restore
    ```
 3. Restart PostgreSQL cluster:
    ```bash
@@ -52,5 +52,5 @@ chmod +x deploy/edge-appliance/backup/restore-appliance.sh
    ```
 4. Verify catalog integrity and tenant RLS:
    ```bash
-   pg_isready -U integin_owner -d integin_appliance
+   pg_isready -U INTEGIN_owner -d INTEGIN_appliance
    ```

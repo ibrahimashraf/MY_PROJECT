@@ -1,4 +1,4 @@
--- INTEGIN certificate lifecycle renewal foundation.
+-- integin certificate lifecycle renewal foundation.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 -- Migration fingerprint: 0016_certificate_lifecycle_renewal (sha256 to be recorded in review).
 BEGIN;

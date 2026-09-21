@@ -1,4 +1,4 @@
--- INTEGIN Hardening: WAL Suppression & XID Freeze Protection at 30k jobs/sec
+-- integin Hardening: WAL Suppression & XID Freeze Protection at 30k jobs/sec
 -- Builds on 0065_river_canonical_v047_schema_alignment.sql.
 
 BEGIN;

@@ -1,4 +1,4 @@
--- INTEGIN time sheets / courses — operational optional, behind feature flags FlagTimeSheets/FlagCourses.
+-- integin time sheets / courses — operational optional, behind feature flags FlagTimeSheets/FlagCourses.
 -- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
 BEGIN;
 

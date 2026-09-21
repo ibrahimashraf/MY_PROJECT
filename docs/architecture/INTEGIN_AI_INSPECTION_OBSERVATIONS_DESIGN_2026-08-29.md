@@ -17,7 +17,7 @@ No `ACCEPT`/`REJECT`/`CALIBRATION` verdict, no `certificate`/`commercial_state` 
 2. If chosen: `POST /v1/advisory` `version:v1` `zone:NDT_DEFECT` or `LIFTING_DEFECT` `evidence_refs:[image_id]` (+ `lens: PAUT|EDDY_CURRENT|PULSED_EDDY_CURRENT|TOFD|…` — any current/future lens via default) → `observations[]`
 3. UI renders each observation read-only: `title`/`confidence`/`rationale`/`evidence_refs`/`limitations`/`model {provider, model, version, prompt_version}`/`reasoningTrace`/`blocking=false` + optional **bounding box/heatmap overlay** (visual `evidence_refs`, not a verdict)
 4. Inspector **Attaches as supporting note** or **Dismisses** (with reason) — both write an audit row `AI-suggested vs human-confirmed`; dismiss is ephemeral (not kept as evidence unless attached)
-5. Inspector still writes the primary `inspection_record` verdict — server-authoritative, `integin_runtime` FORCED RLS unchanged
+5. Inspector still writes the primary `inspection_record` verdict — server-authoritative, `INTEGIN_runtime` FORCED RLS unchanged
 
 `Upload directly` never calls AI. No hold/keep/edit — the observation is shown, then either attached or discarded.
 

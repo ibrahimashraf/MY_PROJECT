@@ -171,4 +171,3 @@ func EnsureAdvisoryStrict(zone Zone, insight Insight) error {
 	}
 	return nil
 }
-

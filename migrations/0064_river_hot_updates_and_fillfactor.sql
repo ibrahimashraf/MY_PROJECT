@@ -1,4 +1,4 @@
--- INTEGIN Hardening: River HOT Updates, Heap Fillfactor & Retention Indexing
+-- integin Hardening: River HOT Updates, Heap Fillfactor & Retention Indexing
 -- Addresses Trap #1 and Trap #2 discovered during deep architectural audit.
 
 BEGIN;

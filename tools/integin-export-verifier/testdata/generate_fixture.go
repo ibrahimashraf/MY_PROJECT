@@ -1,7 +1,7 @@
 // Command generate_fixture produces the golden, Go-signed testdata for the
 // Rust export verifier: manifest.json + public_key.hex.
 //
-// Run from testdata/ inside the integin module:
+// Run from testdata/ inside the INTEGIN module:
 //
 //	go run generate_fixture.go
 //

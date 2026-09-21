@@ -40,7 +40,7 @@ void main() {
       deviceState: DeviceTrustState.trusted,
       authority: authority,
     );
-    await tester.pumpWidget(InteginFieldApp(controller: controller));
+    await tester.pumpWidget(INTEGINFieldApp(controller: controller));
     expect(find.text('INTEGIN Field'), findsOneWidget);
   });
 }

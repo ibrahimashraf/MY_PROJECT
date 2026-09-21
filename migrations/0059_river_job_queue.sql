@@ -1,4 +1,4 @@
--- INTEGIN Background Queue: River durable job queue schema.
+-- integin Background Queue: River durable job queue schema.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0058_custody_site_handover.
 

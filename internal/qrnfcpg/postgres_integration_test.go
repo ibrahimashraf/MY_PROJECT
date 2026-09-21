@@ -172,4 +172,3 @@ func TestQRNFC4PillarsIntegration(t *testing.T) {
 		t.Fatalf("expected ErrNotFound for revoked tag verification, got: %v", errPostRevoke)
 	}
 }
-

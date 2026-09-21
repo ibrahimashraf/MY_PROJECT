@@ -15,7 +15,7 @@ class MemoryKeyValueStore implements KeyValueStore {
 void main() {
   test('secure-storage boundary keeps the outbox store platform-neutral', () async {
     final storage = MemoryKeyValueStore();
-    await storage.write('integin.outbox.v1', 'encrypted-payload');
-    expect(await storage.read('integin.outbox.v1'), 'encrypted-payload');
+    await storage.write('INTEGIN.outbox.v1', 'encrypted-payload');
+    expect(await storage.read('INTEGIN.outbox.v1'), 'encrypted-payload');
   });
 }

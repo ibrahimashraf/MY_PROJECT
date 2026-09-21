@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	testMessage = "INTEGIN-CERT-SNAPSHOT"
+	testMessage = "integin-CERT-SNAPSHOT"
 	testNow     = "2026-06-01T12:00:00Z"
 )
 
@@ -57,7 +57,7 @@ func testTSARoot(t *testing.T) (*x509.Certificate, *rsa.PrivateKey) {
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "INTEGIN Pilot TSA Test Root"},
+		Subject:               pkix.Name{CommonName: "integin Pilot TSA Test Root"},
 		NotBefore:             time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 		NotAfter:              time.Date(2035, 1, 1, 0, 0, 0, 0, time.UTC),
 		IsCA:                  true,
@@ -86,7 +86,7 @@ func testTSARootEd25519(t *testing.T) (*x509.Certificate, ed25519.PrivateKey) {
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "INTEGIN Pilot TSA Test Root Ed25519"},
+		Subject:               pkix.Name{CommonName: "integin Pilot TSA Test Root Ed25519"},
 		NotBefore:             time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 		NotAfter:              time.Date(2035, 1, 1, 0, 0, 0, 0, time.UTC),
 		IsCA:                  true,

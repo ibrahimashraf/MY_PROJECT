@@ -1,6 +1,6 @@
--- INTEGIN Ticket 03 D7-6: work-order evidence reference (URL, not blob).
+-- integin Ticket 03 D7-6: work-order evidence reference (URL, not blob).
 -- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
--- Design: docs/architecture/INTEGIN_WORK_ORDER_FIELD_PACKAGE_CONTRACT_2026-09-01.md:78
+-- Design: docs/architecture/integin_WORK_ORDER_FIELD_PACKAGE_CONTRACT_2026-09-01.md:78
 -- Stores external object reference only; content_hash is SHA-256 hex, reference_url is external store URL.
 -- Follows 0009 TEXT ids + composite FK and 0010 combined tenant/organization RLS patterns.
 -- Candidate style: disposable isolated apply only on integin_repo_test@15432 (createdb -> psql -f -> dropdb), never pilot.

@@ -1,4 +1,4 @@
--- Rollback INTEGIN Work-Order Field Package: asset entitlement and offline package.
+-- Rollback integin Work-Order Field Package: asset entitlement and offline package.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

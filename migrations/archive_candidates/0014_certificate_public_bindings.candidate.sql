@@ -1,4 +1,4 @@
--- INTEGIN certificate public-binding foundation.
+-- integin certificate public-binding foundation.
 -- CANDIDATE ONLY. Do not apply without a fresh backup, disposable up/down review,
 -- cross-organization isolation proof, and issuance snapshot integration proof.
 BEGIN;

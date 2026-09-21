@@ -29,7 +29,7 @@ bootstrap (`#sig=…`) keep the verifier unembeddable and referrer-free.
 ```bash
 npm install -g wrangler          # one-time, or use npx
 wrangler login                   # or set CLOUDFLARE_API_TOKEN
-wrangler pages deploy tools/public-verifier --project-name integin-public-verifier
+wrangler pages deploy tools/public-verifier --project-name INTEGIN-public-verifier
 ```
 
 Deploys `index.html` + `_headers` as-is (static, no build command needed).

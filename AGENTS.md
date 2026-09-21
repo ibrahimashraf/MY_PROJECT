@@ -9,7 +9,7 @@
 
 Every agent executing commands or modifying files within this repository MUST follow these invariants without exception:
 
-1. **Single Active Source**: All implementation work happens strictly inside `integin-pilot-source/`. NEVER modify or copy files into `../integin-source/` (it is a frozen read-only reference snapshot).
+1. **Single Active Source**: All implementation work happens strictly inside `integin-pilot-source/`. NEVER modify or copy files into `../INTEGIN-source/` (it is a frozen read-only reference snapshot).
 2. **Zero Root File Sprawl**: NEVER create files in the parent workspace root `C:\MY_PROJECT\`. The parent workspace strictly maintains the **Two-File Root Invariant** (`WORKSPACE.md` and `TRACKER.md` only).
 3. **Opaque Secrets Boundary**: NEVER inspect, read, print, or log anything inside `../private/` or subdirectories.
 4. **Mandatory Multi-Tenant RLS**: Every PostgreSQL query on domain tables must execute under explicit session tenant configuration:

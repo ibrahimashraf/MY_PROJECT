@@ -192,7 +192,7 @@ func TestFieldPackageLifecycleEndToEnd(t *testing.T) {
 		InspectionID:      inspectionID,
 		AssetID:           assetID,
 		AssetType:         "MOBILE_CRANE",
-		CertificateNumber: "CERT-INTEGIN-2026-0091",
+		CertificateNumber: "CERT-integin-2026-0091",
 		CertificateStatus: "ISSUED",
 		InspectionStatus:  "COMPLETED",
 		InspectionVerdict: "PASS",

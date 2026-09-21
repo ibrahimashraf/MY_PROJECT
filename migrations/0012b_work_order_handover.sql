@@ -1,4 +1,4 @@
--- INTEGIN Ticket 03 D7-5: work-order handover placeholder.
+-- integin Ticket 03 D7-5: work-order handover placeholder.
 -- Planned persistence for handover lifecycle requested/approved/transferred.
 -- FKs from_assignment_id / to_assignment_id reference work_order_assignment (tenant_id, organization_id, id) ON DELETE RESTRICT.
 -- Follows 0009 TEXT ids + composite FK and 0010 combined tenant/organization RLS patterns.

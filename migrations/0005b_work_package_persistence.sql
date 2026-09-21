@@ -1,4 +1,4 @@
--- INTEGIN work-package persistence: approved immutable definitions and current device assignments.
+-- integin work-package persistence: approved immutable definitions and current device assignments.
 -- Server-side sync enforcement must resolve the exact package/version/hash from this store.
 
 CREATE TABLE IF NOT EXISTS work_package (

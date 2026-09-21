@@ -210,7 +210,7 @@ class SecureDeviceKeyStore {
     if (deviceId.trim().isEmpty) {
       throw ArgumentError.value(deviceId, 'deviceId');
     }
-    final key = 'integin.device.$deviceId.ed25519.seed';
+    final key = 'INTEGIN.device.$deviceId.ed25519.seed';
     final storedSeed = await storage.read(key);
     final keyPair = storedSeed == null
         ? await algorithm.newKeyPair()

@@ -20,7 +20,7 @@ The test composes `server.NewMux` with `workorderhttp.Handler`. The handler uses
 
 ## Exact executed evidence
 
-The proof command executed `go test -count=1 -run '^TestAuthenticatedPartialSubmissionHTTPPostgresIntegration$' -v ./internal/workorderhttp` with `INTEGIN_TEST_DATABASE_URL` pointed at the local `integin-pilot-postgres` instance. The test passed. Its request log recorded statuses `200`, `200`, and `403` for the valid request, idempotent replay, and cross-organization attempt respectively.
+The proof command executed `go test -count=1 -run '^TestAuthenticatedPartialSubmissionHTTPPostgresIntegration$' -v ./internal/workorderhttp` with `INTEGIN_TEST_DATABASE_URL` pointed at the local `INTEGIN-pilot-postgres` instance. The test passed. Its request log recorded statuses `200`, `200`, and `403` for the valid request, idempotent replay, and cross-organization attempt respectively.
 
 > No external bearer token, OIDC issuer discovery, JWKS retrieval, or identity-provider session was exercised. The validator double isolates the local boundary so that database-backed identity resolution and authorization can be proven deterministically.
 

@@ -1,4 +1,4 @@
--- Revert INTEGIN Hardening: Revert River canonical v0.47 schema alignment
+-- Revert integin Hardening: Revert River canonical v0.47 schema alignment
 
 BEGIN;
 

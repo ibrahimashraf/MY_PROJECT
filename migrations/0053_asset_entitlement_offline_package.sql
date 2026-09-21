@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: asset entitlement and offline package.
+-- integin Work-Order Field Package: asset entitlement and offline package.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0009 work_order_scope_item, 0012 certificate_template, 0052 form_version.
 

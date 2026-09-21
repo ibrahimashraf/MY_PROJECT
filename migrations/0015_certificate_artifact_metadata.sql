@@ -1,4 +1,4 @@
--- INTEGIN certificate artifact metadata foundation.
+-- integin certificate artifact metadata foundation.
 -- CANDIDATE ONLY. Do not apply without fresh backup and disposable up/down review.
 BEGIN;
 

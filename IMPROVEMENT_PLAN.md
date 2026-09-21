@@ -117,7 +117,7 @@ Migrate all `envInt`, `envBool`, `firstEnv`, `envList` helpers out of `main.go` 
 ### 3.2 Docker Compose for Local Development
 Create `docker-compose.yml` with:
 - `postgres:15-alpine` with healthcheck and persistent volume
-- `minio/minio` (or rustfs if available) with `integin-evidence` bucket auto-created
+- `minio/minio` (or rustfs if available) with `INTEGIN-evidence` bucket auto-created
 - `integin-server` Go service with `.env` file binding
 - `ai_service` Python service (optional, behind profile)
 - Shared network, dependency ordering (`depends_on` with condition)
@@ -172,7 +172,7 @@ Enhance `/readyz` to return structured JSON with subsystem status:
 ```json
 {
   "status": "ready",
-  "service": "integin",
+  "service": "INTEGIN",
   "subsystems": {
     "database": "ok",
     "evidence_store": "ok",

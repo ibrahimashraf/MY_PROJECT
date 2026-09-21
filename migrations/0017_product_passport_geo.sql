@@ -1,4 +1,4 @@
--- INTEGIN product passport / geo additive (no DPP patent clone, no cross-tenant sharing).
+-- integin product passport / geo additive (no DPP patent clone, no cross-tenant sharing).
 -- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
 BEGIN;
 

@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Field Cryptographic Merkle Hash Chain Ledger
+-- integin Hardening: Field Cryptographic Merkle Hash Chain Ledger
 -- Stores tamper-evident cryptographic hash links for offline mobile event batches.
 
 BEGIN;

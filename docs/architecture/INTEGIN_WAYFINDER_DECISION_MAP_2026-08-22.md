@@ -1,4 +1,4 @@
-﻿# INTEGIN Wayfinder Decision Map — 2026-08-22
+# INTEGIN Wayfinder Decision Map — 2026-08-22
 
 > Decision map only: no implementation authority.
 

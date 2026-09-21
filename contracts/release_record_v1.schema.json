@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://integin.local/contracts/release-record/v1",
+  "$id": "https://INTEGIN.local/contracts/release-record/v1",
   "title": "INTEGIN Release Record v1",
   "description": "A non-secret evidence record for an approved deployment decision. This schema does not deploy, migrate, or approve a release.",
   "type": "object",

@@ -1,4 +1,4 @@
--- Rollback INTEGIN Work-Order Field Package: assurance projection and corrective-work links.
+-- Rollback integin Work-Order Field Package: assurance projection and corrective-work links.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

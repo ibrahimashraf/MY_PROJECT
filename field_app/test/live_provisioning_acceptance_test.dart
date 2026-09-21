@@ -30,7 +30,7 @@ InspectionWorkPack _workPack(String inspectionID) => InspectionWorkPack(
       inspectionId: inspectionID,
       rootAssetId: 'live-asset',
       inspectionType: 'live-acceptance',
-      procedureVersion: 'integin-local-provision-v1',
+      procedureVersion: 'INTEGIN-local-provision-v1',
       packageId: 'live-work-package',
       packageVersion: 1,
       schemaVersion: 1,

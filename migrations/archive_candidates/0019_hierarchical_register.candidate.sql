@@ -1,4 +1,4 @@
--- INTEGIN hierarchical equipment register (branch/area/zone) + custom fields per equipment type.
+-- integin hierarchical equipment register (branch/area/zone) + custom fields per equipment type.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 BEGIN;
 

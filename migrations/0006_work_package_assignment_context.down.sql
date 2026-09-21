@@ -1,4 +1,4 @@
--- Rollback INTEGIN assignment context: work_package_assignment_context
+-- Rollback integin assignment context: work_package_assignment_context
 BEGIN;
 
 DROP POLICY IF EXISTS work_package_assignment_context_tenant_isolation ON work_package_assignment_context;

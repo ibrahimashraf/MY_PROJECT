@@ -1,4 +1,4 @@
--- Rollback INTEGIN Work-Order Field Package: evidence pack and release-pack composition.
+-- Rollback integin Work-Order Field Package: evidence pack and release-pack composition.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

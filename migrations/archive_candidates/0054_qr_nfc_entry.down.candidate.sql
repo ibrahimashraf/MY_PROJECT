@@ -1,4 +1,4 @@
--- Rollback INTEGIN Work-Order Field Package: authenticated QR/NFC entry.
+-- Rollback integin Work-Order Field Package: authenticated QR/NFC entry.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-var bleTestKey = []byte("INTEGIN-BLE-ENCLAVE-KEY-0123456789ABCD")
+var bleTestKey = []byte("integin-BLE-ENCLAVE-KEY-0123456789ABCD")
 
 func buildBLEFrame(key []byte, seq uint32, tsNanos int64, raw int32, load float32) []byte {
 	buf := make([]byte, bleFrameSize)

@@ -1,4 +1,4 @@
--- INTEGIN hierarchical equipment register rollback.
+-- integin hierarchical equipment register rollback.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 BEGIN;
 

@@ -20,9 +20,9 @@ abstract interface class PhotoPickerService {
 }
 
 /// Captures a photo through the native Android/iOS host over the
-/// `integin.field_app/camera` method channel.
+/// `INTEGIN.field_app/camera` method channel.
 class PlatformChannelPhotoPicker implements PhotoPickerService {
-  static const MethodChannel _channel = MethodChannel('integin.field_app/camera');
+  static const MethodChannel _channel = MethodChannel('INTEGIN.field_app/camera');
 
   @override
   Future<Uint8List?> pickImage() async {

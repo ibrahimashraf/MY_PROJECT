@@ -1,4 +1,4 @@
--- INTEGIN Stage 0 Work-Order Foundation
+-- integin Stage 0 Work-Order Foundation
 -- DRAFT ONLY: do not apply without explicit migration authorization.
 -- Rollback order follows foreign-key dependencies from leaves to roots.
 

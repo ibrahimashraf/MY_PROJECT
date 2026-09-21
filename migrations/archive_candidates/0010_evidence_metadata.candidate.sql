@@ -1,4 +1,4 @@
--- INTEGIN Stage A evidence-retention foundation.
+-- integin Stage A evidence-retention foundation.
 -- CANDIDATE ONLY: requires isolated SQL review, verified pre-apply backup, and controlled pilot execution evidence.
 
 BEGIN;

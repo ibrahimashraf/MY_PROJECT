@@ -4,7 +4,7 @@
 
 ## Applied change
 
-The reviewed `0008_inspection_persistence.candidate.sql` was applied to the local controlled pilot PostgreSQL 18 database only. The exact applied SHA-256 was `12484533879bb0fd374f6cc620119b56af2852bf0a965eb690f46b930ceb3ff3`. A verified post-cleanup pre-apply backup was retained at `docs/evidence/pilot-backups/integin-pilot-pre-0008-20260821-094050.dump` with SHA-256 `780684CB112025E26CA0A6F5F094ACE64CA05B5538221D99F0C08C32E306C3B0`.
+The reviewed `0008_inspection_persistence.candidate.sql` was applied to the local controlled pilot PostgreSQL 18 database only. The exact applied SHA-256 was `12484533879bb0fd374f6cc620119b56af2852bf0a965eb690f46b930ceb3ff3`. A verified post-cleanup pre-apply backup was retained at `docs/evidence/pilot-backups/INTEGIN-pilot-pre-0008-20260821-094050.dump` with SHA-256 `780684CB112025E26CA0A6F5F094ACE64CA05B5538221D99F0C08C32E306C3B0`.
 
 ## Pilot preflight and preservation
 

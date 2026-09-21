@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Rollback for 0061_kill_gin_and_dark_hardening.sql
+-- integin Hardening: Rollback for 0061_kill_gin_and_dark_hardening.sql
 BEGIN;
 
 -- Restore GIN index if needed

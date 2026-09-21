@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://integin.local/contracts/audit-checkpoint/v1",
+  "$id": "https://INTEGIN.local/contracts/audit-checkpoint/v1",
   "title": "INTEGIN Audit Checkpoint v1",
   "type": "object",
   "additionalProperties": false,

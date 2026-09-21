@@ -1,4 +1,4 @@
--- INTEGIN Ticket 03 D7-4 rollback: remove signed submission hardening from work_order_operation.
+-- integin Ticket 03 D7-4 rollback: remove signed submission hardening from work_order_operation.
 -- Reverses migrations/0043_work_order_signed_submission.sql.
 -- Keeps base 0009 persistence and 0010 RLS baseline intact; removes only D7-4 additive columns
 -- and the explicit replay-guard index created by this slice. Disposable isolated

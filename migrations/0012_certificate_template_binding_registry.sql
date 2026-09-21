@@ -1,4 +1,4 @@
--- INTEGIN certificate-template binding registry foundation.
+-- integin certificate-template binding registry foundation.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

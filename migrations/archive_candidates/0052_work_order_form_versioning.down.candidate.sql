@@ -1,4 +1,4 @@
--- Rollback INTEGIN Work-Order Field Package: versioned form definitions, field catalog, and evidence policy.
+-- Rollback integin Work-Order Field Package: versioned form definitions, field catalog, and evidence policy.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 
 BEGIN;

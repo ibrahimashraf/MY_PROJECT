@@ -1,4 +1,4 @@
--- INTEGIN Stage A additive manifest-required metadata extension rollback candidate.
+-- integin Stage A additive manifest-required metadata extension rollback candidate.
 -- CANDIDATE ONLY: execute only after a verified backup and explicit evidence-retention decision.
 
 BEGIN;

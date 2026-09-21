@@ -5,7 +5,7 @@
 
 ## Findings
 
-The existing repository convention uses `tenant_id` and `organization_id` as `TEXT` fields and establishes transaction-local settings named `integin.tenant_id` and `integin.organization_id`. Existing protected tables enable and force row-level security and use both settings in their policies.
+The existing repository convention uses `tenant_id` and `organization_id` as `TEXT` fields and establishes transaction-local settings named `INTEGIN.tenant_id` and `INTEGIN.organization_id`. Existing protected tables enable and force row-level security and use both settings in their policies.
 
 The first Work-Order draft used UUID identifiers and intentionally omitted policies. That draft is retained as historical design material but is not the executable candidate. The revised candidate uses repository-compatible `TEXT` identifiers, carries both tenant and organization scope on every tenant-owned row, uses composite organization/work-order foreign keys, and adds forced tenant-isolation policies using the established settings.
 

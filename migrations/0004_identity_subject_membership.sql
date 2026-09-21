@@ -1,4 +1,4 @@
--- INTEGIN OIDC foundation: maps validated issuer-subject identities to exactly one local INTEGIN membership without granting runtime direct table access.
+-- integin OIDC foundation: maps validated issuer-subject identities to exactly one local integin membership without granting runtime direct table access.
 CREATE TABLE IF NOT EXISTS identity_subject (
     subject_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     issuer TEXT NOT NULL,

@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Asynchronous Soft-Delete & Anti-Cascade Avalanche Table
+-- integin Hardening: Asynchronous Soft-Delete & Anti-Cascade Avalanche Table
 -- Prevents max_locks_per_transaction overflow and long exclusive lock outages during enterprise tenant purges.
 
 BEGIN;

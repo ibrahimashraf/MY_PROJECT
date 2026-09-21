@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../security/attestation.dart';
 
-/// Loopback origin of the pilot EnrollServer (cmd/integin-server, canonical
+/// Loopback origin of the pilot EnrollServer (cmd/INTEGIN-server, canonical
 /// INTEGIN_HTTP_ADDR pilot port :18080). The Go server refuses to mount
 /// enrollment off-loopback, so this screen can never target a remote origin.
 const enrollLoopbackEndpoint = 'http://127.0.0.1:18080';

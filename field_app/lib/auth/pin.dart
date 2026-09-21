@@ -110,7 +110,7 @@ class InMemoryPinStore implements PinStore {
 /// Production [PinStore] backed by [FlutterSecureStorage] (Android KeyStore / iOS Keychain).
 class SecurePinStore implements PinStore {
   SecurePinStore(
-      {FlutterSecureStorage? storage, this.prefix = 'integin.auth.pin'})
+      {FlutterSecureStorage? storage, this.prefix = 'INTEGIN.auth.pin'})
       : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;

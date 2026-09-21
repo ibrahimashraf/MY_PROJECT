@@ -30,7 +30,7 @@ Owner-approved archive: $archive. Manifest: $archive.manifest.txt. SHA-256: $has
 |---|---|---|
 | `cmd/integin-server/main.go` | Work-order, evidence registration, certificate lifecycle/public verifier | Review and stage by hunk only after each handler dependency is captured. |
 | `internal/server/http.go` and tests | Operational controls, work-order route, evidence route, certificate routes, token-path redaction | Preserve route additions with their unit; isolate shared middleware/operational changes if their test boundary is independent. |
-| `openapi/integin-v1.json` | Health, sync, evidence, work-order, provisioning, identity, certificate/public routes | Treat as a contract-reconciliation companion; use interactive hunk review, not an all-or-nothing file commit. |
+| `openapi/INTEGIN-v1.json` | Health, sync, evidence, work-order, provisioning, identity, certificate/public routes | Treat as a contract-reconciliation companion; use interactive hunk review, not an all-or-nothing file commit. |
 | `go.mod` and `go.sum` | Go 1.26.5 upgrade and frozen Go renderer dependencies | Review separately from future renderer selection; do not treat dependency presence as stack adoption. |
 | Planning and architecture records | Every technical unit | Capture last, after the related code and evidence boundaries are frozen. |
 

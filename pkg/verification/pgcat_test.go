@@ -84,7 +84,7 @@ func TestPgCatApplianceDSNParsesExecMode(t *testing.T) {
 	if u.Port() != "6432" {
 		t.Errorf("port = %q, want 6432 (pgcat listener)", u.Port())
 	}
-if !strings.EqualFold(u.Path, "/"+pgcatApplianceDatabase) {
+	if !strings.EqualFold(u.Path, "/"+pgcatApplianceDatabase) {
 		t.Errorf("database path = %q, want /integin_appliance", u.Path)
 	}
 	q := u.Query()
@@ -95,4 +95,3 @@ if !strings.EqualFold(u.Path, "/"+pgcatApplianceDatabase) {
 		t.Errorf("sslmode = %q, want disable (appliance edge)", got)
 	}
 }
-

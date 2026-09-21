@@ -1,4 +1,4 @@
-// INTEGIN organization-aware authorization tests: MFA enforcement, service-account discrimination, and tenant isolation.
+// integin organization-aware authorization tests: MFA enforcement, service-account discrimination, and tenant isolation.
 package identity
 
 import (

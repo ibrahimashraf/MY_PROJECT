@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: versioned form definitions, field catalog, and evidence policy.
+-- integin Work-Order Field Package: versioned form definitions, field catalog, and evidence policy.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0012 certificate_template binding registry (nine-key catalog).
 

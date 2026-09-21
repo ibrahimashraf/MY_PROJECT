@@ -1,4 +1,4 @@
--- INTEGIN Background Queue: River durable job queue schema rollback.
+-- integin Background Queue: River durable job queue schema rollback.
 BEGIN;
 
 DROP TABLE IF EXISTS river_leader CASCADE;

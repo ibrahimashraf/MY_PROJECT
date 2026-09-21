@@ -73,7 +73,7 @@ $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $migrationsDir = Join-Path $projectRoot "migrations"
 if ($dockerOk -and (Test-Path -LiteralPath $migrationsDir)) {
     Write-Host "[*] Setting up integin_runtime role and permissions..." -ForegroundColor Yellow
-    docker exec integin-dev-postgres psql -U $DbUser -d $DbName -c "DO 'BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = ''integin_runtime'') THEN CREATE ROLE integin_runtime WITH LOGIN PASSWORD ''test_password''; END IF; END'; GRANT ALL PRIVILEGES ON DATABASE $DbName TO integin_runtime; GRANT ALL ON SCHEMA public TO integin_runtime;" | Out-Null
+    docker exec integin-dev-postgres psql -U $DbUser -d $DbName -c "DO 'BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = ''integin_runtime'') THEN CREATE ROLE integin_runtime WITH LOGIN PASSWORD ''test_password''; END IF; END'; GRANT ALL PRIVILEGES ON DATABASE $DbName TO INTEGIN_runtime; GRANT ALL ON SCHEMA public TO INTEGIN_runtime;" | Out-Null
 
     Write-Host "[*] Applying core SQL migrations..." -ForegroundColor Yellow
     $coreMigrations = @(

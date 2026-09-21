@@ -1,4 +1,4 @@
--- INTEGIN certificate public-binding rollback candidate.
+-- integin certificate public-binding rollback candidate.
 -- Review only; apply only to the isolated disposable database that received 0014.
 BEGIN;
 

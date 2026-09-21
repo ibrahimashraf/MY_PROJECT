@@ -1,4 +1,4 @@
--- INTEGIN Stage A additive manifest-required metadata extension.
+-- integin Stage A additive manifest-required metadata extension.
 -- CANDIDATE ONLY: encryption references are immutable evidence provenance and may not be inferred from signature metadata.
 
 BEGIN;

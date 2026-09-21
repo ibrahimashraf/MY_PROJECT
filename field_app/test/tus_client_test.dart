@@ -506,7 +506,7 @@ void main() {
   group('HttpTusHttp contract mapping', () {
     late Uri baseUrl;
     setUp(() {
-      baseUrl = Uri.parse('https://integin.test/uploads');
+      baseUrl = Uri.parse('https://INTEGIN.test/uploads');
     });
 
     test('create posts size/checksum/content_type and maps 201', () async {

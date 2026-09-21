@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Canonical River v0.47 Schema Alignment
+-- integin Hardening: Canonical River v0.47 Schema Alignment
 -- Aligns river_job with official River driver schema (ENUM river_job_state, unique_states bit(8),
 -- river_job_state_in_bitmask, river_queue, river_notification, and river_migration table).
 

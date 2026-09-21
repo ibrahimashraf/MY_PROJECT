@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: custody chain and site handover transitions.
+-- integin Work-Order Field Package: custody chain and site handover transitions.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0009 work_order, 0009 work_order_assignment, 0053 asset_entitlement.
 

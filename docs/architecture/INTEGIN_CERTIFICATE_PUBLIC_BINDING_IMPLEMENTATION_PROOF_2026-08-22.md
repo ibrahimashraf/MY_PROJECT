@@ -2,7 +2,7 @@
 
 ## Implemented scope
 
-Migration `0014_certificate_public_bindings.candidate.sql` is applied to the pilot database after a fresh pre-apply custom-format backup (`integin-pilot-pre-0014-20260822-094737.dump`). The migration establishes forced-RLS canonical asset registry, revision-bound public inspection scope, ordered public-scope items, policy binding allow-list, and `certificate_snapshot.public_binding_snapshot`.
+Migration `0014_certificate_public_bindings.candidate.sql` is applied to the pilot database after a fresh pre-apply custom-format backup (`INTEGIN-pilot-pre-0014-20260822-094737.dump`). The migration establishes forced-RLS canonical asset registry, revision-bound public inspection scope, ordered public-scope items, policy binding allow-list, and `certificate_snapshot.public_binding_snapshot`.
 
 Certificate issuance now locks and materializes policy-approved public facts within the existing RLS-scoped issuance transaction. It snapshots admitted values, rejects an unavailable required asset or inspection binding, and includes the public-binding snapshot in the issuance snapshot digest. The existing public verifier response is deliberately unchanged and remains limited to its prior five fields.
 

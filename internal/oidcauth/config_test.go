@@ -1,4 +1,4 @@
-// INTEGIN OIDC foundation tests: assert opt-in configuration and strict pilot-only HTTP handling.
+// integin OIDC foundation tests: assert opt-in configuration and strict pilot-only HTTP handling.
 package oidcauth
 
 import "testing"

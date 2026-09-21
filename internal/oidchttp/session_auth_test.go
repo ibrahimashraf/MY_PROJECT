@@ -1,4 +1,4 @@
-// INTEGIN session auth tests: lifecycle expiry/revocation, clock control, and OrganizationContext binding.
+// integin session auth tests: lifecycle expiry/revocation, clock control, and OrganizationContext binding.
 package oidchttp
 
 import (

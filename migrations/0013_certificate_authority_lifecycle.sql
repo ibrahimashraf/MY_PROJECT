@@ -1,4 +1,4 @@
--- INTEGIN certificate authority lifecycle foundation.
+-- integin certificate authority lifecycle foundation.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 BEGIN;
 

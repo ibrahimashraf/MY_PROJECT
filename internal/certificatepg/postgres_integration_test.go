@@ -483,4 +483,3 @@ func (t *echoTSATransport) RoundTrip(_ context.Context, request []byte) ([]byte,
 	}
 	return timestamp.BuildTestResponse(t.cert, t.key, req.MessageImprint.HashedMessage, t.genTime)
 }
-

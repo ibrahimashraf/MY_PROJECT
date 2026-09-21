@@ -230,4 +230,3 @@ func assertEvidenceRuntimeRLS(t *testing.T, ctx context.Context, db *sql.DB, act
 		}
 	}
 }
-

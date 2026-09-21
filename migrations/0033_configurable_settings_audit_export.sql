@@ -1,4 +1,4 @@
--- INTEGIN 150+ configurable settings per tenant + complete audit trail export.
+-- integin 150+ configurable settings per tenant + complete audit trail export.
 -- Core: "150+ configurable settings per tenant", "Complete audit trail exportable"
 -- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
 BEGIN;

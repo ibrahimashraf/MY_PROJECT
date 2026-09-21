@@ -1,4 +1,4 @@
--- INTEGIN Ticket 02-01: add the canonical actor projection without guessing existing mappings.
+-- integin Ticket 02-01: add the canonical actor projection without guessing existing mappings.
 -- This migration must run with an approved mapping for every existing membership.
 
 CREATE TABLE IF NOT EXISTS identity_actor (

@@ -1,5 +1,5 @@
--- INTEGIN Ticket 03 D7-4: work-order signed submission hardening.
--- Based on docs/architecture/INTEGIN_WORK_ORDER_FIELD_PACKAGE_CONTRACT_2026-09-01.md §6
+-- integin Ticket 03 D7-4: work-order signed submission hardening.
+-- Based on docs/architecture/integin_WORK_ORDER_FIELD_PACKAGE_CONTRACT_2026-09-01.md §6
 -- and migrations/0009_work_order_persistence.sql:183-204 as base. Adds
 -- payload_hash, signature, signing_key_id, replay guard (operation_id UNIQUE,
 -- idempotency_key UNIQUE) and receipt JSONB hardening to work_order_operation.

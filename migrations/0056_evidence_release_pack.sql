@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: evidence pack and release-pack composition.
+-- integin Work-Order Field Package: evidence pack and release-pack composition.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0010 evidence_metadata (evidence index), 0052 evidence_policy (form definition).
 

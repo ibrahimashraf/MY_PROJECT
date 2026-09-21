@@ -1,6 +1,6 @@
 {
-    "name": "integin_field_app",
-    "short_name": "integin_field_app",
+    "name": "INTEGIN_field_app",
+    "short_name": "INTEGIN_field_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,4 +1,4 @@
--- INTEGIN per-question evidence linkage (additive, no RLS downgrade).
+-- integin per-question evidence linkage (additive, no RLS downgrade).
 -- CANDIDATE ONLY: do not apply without verified pre-apply backup and isolated up/down review.
 BEGIN;
 

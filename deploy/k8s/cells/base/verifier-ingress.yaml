@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: integin-verifier-ingress
+  name: INTEGIN-verifier-ingress
   namespace: cell-system
   labels:
     app.kubernetes.io/name: integin-server

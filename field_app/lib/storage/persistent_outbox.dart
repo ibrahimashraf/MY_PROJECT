@@ -11,7 +11,7 @@ abstract interface class KeyValueStore {
 class JsonOutboxStore implements OutboxStore {
   JsonOutboxStore({
     required this.storage,
-    this.key = 'integin.outbox.v1',
+    this.key = 'INTEGIN.outbox.v1',
     CryptographicMerkleHashChain? hashChain,
   }) : _hashChain = hashChain ?? CryptographicMerkleHashChain();
 

@@ -1,4 +1,4 @@
--- INTEGIN Background Queue: Rollback for High-Throughput River Scaling (10,000 jobs/sec)
+-- integin Background Queue: Rollback for High-Throughput River Scaling (10,000 jobs/sec)
 BEGIN;
 
 DROP INDEX IF EXISTS river_job_available_idx;

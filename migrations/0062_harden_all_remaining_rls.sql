@@ -1,4 +1,4 @@
-﻿-- INTEGIN Hardening: Comprehensive RLS NULLIF & Non-Null Protection Across All Remaining Tables
+-- integin Hardening: Comprehensive RLS NULLIF & Non-Null Protection Across All Remaining Tables
 -- Builds on 0061_kill_gin_and_dark_hardening.sql.
 -- Guarantees that empty string session parameters can never access or insert multi-tenant rows.
 

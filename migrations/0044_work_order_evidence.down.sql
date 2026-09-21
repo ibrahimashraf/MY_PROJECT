@@ -1,4 +1,4 @@
--- INTEGIN Ticket 03 D7-6 down: reverses 0044_work_order_evidence.sql (candidate style).
+-- integin Ticket 03 D7-6 down: reverses 0044_work_order_evidence.sql (candidate style).
 -- Drops RLS policy, grants, and table. Reverse order 0044 -> 0008 per contract 6.
 
 DROP POLICY IF EXISTS work_order_evidence_tenant_organization_isolation ON work_order_evidence;

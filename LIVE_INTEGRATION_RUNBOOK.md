@@ -4,15 +4,15 @@ This runbook is for the first live PostgreSQL/RustFS validation. Do not start pr
 
 ## Prerequisites
 
-Start pinned PostgreSQL and RustFS services with persistent volumes. Create the INTEGIN database and a dedicated database role. Create the `integin-evidence` RustFS bucket and a dedicated S3 key restricted to that bucket. Keep passwords and keys in environment variables or a local secret manager.
+Start pinned PostgreSQL and RustFS services with persistent volumes. Create the INTEGIN database and a dedicated database role. Create the `INTEGIN-evidence` RustFS bucket and a dedicated S3 key restricted to that bucket. Keep passwords and keys in environment variables or a local secret manager.
 
 For local RustFS testing, keep the S3 API on port `19000` and access the administration console on port `19001`. Use writable non-root data and log volumes, TLS or a trusted TLS reverse proxy, and a pinned release rather than `latest`.
 
 ## INTEGIN configuration
 
 ```text
-INTEGIN_DB_URL=postgres://integin_runtime:integin_live_run_2026@127.0.0.1:15432/integin_dev?sslmode=disable
-INTEGIN_TENANT_ID=integin-integration-tenant
+INTEGIN_DB_URL=postgres://INTEGIN_runtime:INTEGIN_live_run_2026@127.0.0.1:15432/INTEGIN_dev?sslmode=disable
+INTEGIN_TENANT_ID=INTEGIN-integration-tenant
 INTEGIN_EVIDENCE_STORE=rustfs
 INTEGIN_S3_ENDPOINT=http://127.0.0.1:19000
 INTEGIN_S3_BUCKET=integin-pilot-evidence

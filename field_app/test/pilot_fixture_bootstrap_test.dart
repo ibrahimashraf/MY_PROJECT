@@ -25,8 +25,8 @@ void main() {
     await fixture.writeAsString(
       jsonEncode({
         'tenant_id': 'pilot-tenant-a',
-        'organization_id': 'integin-integration-org',
-        'user_id': 'integin-integration-user',
+        'organization_id': 'INTEGIN-integration-org',
+        'user_id': 'INTEGIN-integration-user',
         'device_id': 'pilot-fixture-device',
         'authority_id': 'pilot-fixture-authority',
         'key_id': 'pilot-fixture-key',

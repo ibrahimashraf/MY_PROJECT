@@ -1,4 +1,4 @@
--- INTEGIN bulk import/export staging.
+-- integin bulk import/export staging.
 -- CANDIDATE ONLY: do not apply without a verified pre-apply backup and isolated up/down review.
 BEGIN;
 

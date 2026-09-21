@@ -1,4 +1,4 @@
--- INTEGIN Background Queue: High-Throughput River Scaling (10,000 jobs/sec)
+-- integin Background Queue: High-Throughput River Scaling (10,000 jobs/sec)
 -- Builds on 0059_river_job_queue.sql.
 -- Optimizes index structures and engine parameters for extreme throughput.
 

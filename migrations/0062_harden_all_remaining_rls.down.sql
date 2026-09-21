@@ -1,4 +1,4 @@
-﻿-- INTEGIN Hardening: Rollback for 0062_harden_all_remaining_rls.sql
+-- integin Hardening: Rollback for 0062_harden_all_remaining_rls.sql
 BEGIN;
 
 DROP POLICY IF EXISTS anomaly_alerts_isolation ON anomaly_alerts;

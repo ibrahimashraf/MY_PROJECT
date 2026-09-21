@@ -11,7 +11,7 @@ import (
 )
 
 func validConfig() Config {
-	return Config{Host: "smtp.example", Port: 587, Username: "user", Password: "password", From: "integin@example.com", UseTLS: true}
+	return Config{Host: "smtp.example", Port: 587, Username: "user", Password: "password", From: "INTEGIN@example.com", UseTLS: true}
 }
 
 func TestSMTPConfigValidation(t *testing.T) {

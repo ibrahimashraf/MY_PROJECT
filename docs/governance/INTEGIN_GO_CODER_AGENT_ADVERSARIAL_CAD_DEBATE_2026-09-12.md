@@ -26,11 +26,11 @@
 
 ### Challenge 3: Cross-Tenant Asset Leakage via Object Storage (Hazard 01)
 - **Document Architecture (§ F-04)**: Segregates CAD binaries to RustFS S3 buckets (`s3://tenant-uuid/cad-blobs/`).
-- **`go_coder_agent` Pushback**: Storing tenant UUID in S3 keys is insufficient if presigned URLs or S3 access tokens are generated without enforcing PostgreSQL session GUCs (`integin.tenant_id`). A malicious tenant could request a presigned download for an adjacent tenant's CAD drawing if handler validation relies on client-supplied path params.
+- **`go_coder_agent` Pushback**: Storing tenant UUID in S3 keys is insufficient if presigned URLs or S3 access tokens are generated without enforcing PostgreSQL session GUCs (`INTEGIN.tenant_id`). A malicious tenant could request a presigned download for an adjacent tenant's CAD drawing if handler validation relies on client-supplied path params.
 - **Mandated Enforcement**:
   - Every CAD blob retrieval must execute an initial database check:
     ```sql
-    SELECT set_config('integin.tenant_id', $1, true);
+    SELECT set_config('INTEGIN.tenant_id', $1, true);
     SELECT s3_key, sha256_digest FROM cad_blobs WHERE id = $2;
     ```
   - If RLS yields 0 rows (SQLSTATE 42501 or empty set), access is denied before S3 presigned generation occurs.

@@ -1,4 +1,4 @@
--- INTEGIN Hardening: Fix Unindexed Foreign Keys to Prevent Deadlocks and Table Scans
+-- integin Hardening: Fix Unindexed Foreign Keys to Prevent Deadlocks and Table Scans
 -- Addresses Trap #3 discovered during deep architectural audit.
 
 BEGIN;

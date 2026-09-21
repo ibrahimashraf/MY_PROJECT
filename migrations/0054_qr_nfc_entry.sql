@@ -1,4 +1,4 @@
--- INTEGIN Work-Order Field Package: authenticated QR/NFC entry with digest-only token storage.
+-- integin Work-Order Field Package: authenticated QR/NFC entry with digest-only token storage.
 -- CANDIDATE ONLY: do not apply without a verified backup and isolated SQL review.
 -- Builds on 0053 asset_entitlement, 0052 form_version.
 

@@ -44,8 +44,8 @@ func TestIdentityRuntimeRoleIsStandardized(t *testing.T) {
 	if !strings.Contains(text, "TO integin_test_runtime") {
 		t.Fatal("identity migration must grant resolver execution to integin_test_runtime")
 	}
-	if strings.Contains(text, "integin_pilot_runtime") {
-		t.Fatal("identity migration must not retain the obsolete integin_pilot_runtime contract")
+	if strings.Contains(text, "INTEGIN_pilot_runtime") {
+		t.Fatal("identity migration must not retain the obsolete INTEGIN_pilot_runtime contract")
 	}
 }
 
@@ -122,4 +122,3 @@ func TestIdentityActorAlignmentMigrationRejectsUnmappedMemberships(t *testing.T)
 		t.Fatal("actor alignment migration must fail closed when actor identity fields are incomplete")
 	}
 }
-

@@ -225,5 +225,3 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 
 	t.Logf("SUCCESS: Executed %d transactions across %d concurrent workers through PgCat with ZERO GUC leaks and 100%% RLS isolation.", concurrency*iterations, concurrency)
 }
-
-

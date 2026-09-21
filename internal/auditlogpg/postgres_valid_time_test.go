@@ -478,4 +478,3 @@ func TestQueryValidTimeFiltersHermetic(t *testing.T) {
 		t.Fatalf("ValidTo-only Total = %d, want 2", resp.Total)
 	}
 }
-

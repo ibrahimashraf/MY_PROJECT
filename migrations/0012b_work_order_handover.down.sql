@@ -1,4 +1,4 @@
--- INTEGIN Ticket 03 D7-5 down: reverses 0012b_work_order_handover.sql (placeholder).
+-- integin Ticket 03 D7-5 down: reverses 0012b_work_order_handover.sql (placeholder).
 -- Drops RLS policy, grants, and table. Reverse order 0012 -> 0009 per contract.
 
 DROP POLICY IF EXISTS work_order_handover_tenant_organization_isolation ON work_order_handover;

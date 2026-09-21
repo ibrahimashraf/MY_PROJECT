@@ -36,8 +36,8 @@ func TestRustFSS3Contract(t *testing.T) {
 		t.Fatalf("signed health check: %v", err)
 	}
 
-	plaintext := []byte("INTEGIN RustFS plaintext integrity vector")
-	ciphertext := []byte("INTEGIN RustFS encrypted evidence bytes v1")
+	plaintext := []byte("integin RustFS plaintext integrity vector")
+	ciphertext := []byte("integin RustFS encrypted evidence bytes v1")
 	plaintextDigest := hexDigest(plaintext)
 	ciphertextDigest := hexDigest(ciphertext)
 	key := "integration/rustfs-contract-" + time.Now().UTC().Format("20060102T150405.000000000") + ".bin"
@@ -128,7 +128,7 @@ func TestRustFSRestartDurability(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	key := "integration/rustfs-restart-durability.bin"
-	payload := []byte("INTEGIN RustFS restart durability encrypted evidence vector")
+	payload := []byte("integin RustFS restart durability encrypted evidence vector")
 	digest := hexDigest(payload)
 
 	switch stage {

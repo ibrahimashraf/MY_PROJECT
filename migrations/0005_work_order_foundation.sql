@@ -1,4 +1,4 @@
--- INTEGIN Stage 0 Work-Order Foundation
+-- integin Stage 0 Work-Order Foundation
 -- CANDIDATE ONLY: do not apply without explicit migration authorization.
 -- Identifier convention follows the existing work-package persistence migration:
 -- tenant_id and organization_id are TEXT and are set in transaction-local context.

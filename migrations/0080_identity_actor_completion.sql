@@ -1,4 +1,4 @@
--- INTEGIN Ticket 02-01 completion: finish 0008_identity_actor_alignment on databases
+-- integin Ticket 02-01 completion: finish 0008_identity_actor_alignment on databases
 -- where only the identity_actor table landed (partial apply).
 -- Fully idempotent and rerunnable: every step guards on current state.
 -- Mirrors 0008 exactly (same columns, constraints, resolver function, grants).

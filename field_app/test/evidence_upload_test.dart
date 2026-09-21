@@ -20,7 +20,7 @@ void main() {
       return http.Response('{"outcome":"APPLIED"}', 200);
     });
     final result = await HttpEvidenceUploadTransport(
-      endpoint: Uri.parse('https://integin.test/evidence'),
+      endpoint: Uri.parse('https://INTEGIN.test/evidence'),
       client: client,
     ).upload(
           scope: const EvidenceScope(tenantId: 'tenant-1', organizationId: 'org-1'),
@@ -51,7 +51,7 @@ void main() {
 
   test('network and server failures are queued, while conflicts are not retryable', () async {
     final network = await HttpEvidenceUploadTransport(
-      endpoint: Uri.parse('https://integin.test/evidence'),
+      endpoint: Uri.parse('https://INTEGIN.test/evidence'),
       client: MockClient((_) async => throw StateError('offline')),
     ).upload(
       scope: const EvidenceScope(tenantId: 'tenant-1', organizationId: 'org-1'),
@@ -63,7 +63,7 @@ void main() {
     expect(network.retryable, isTrue);
 
     final server = await HttpEvidenceUploadTransport(
-      endpoint: Uri.parse('https://integin.test/evidence'),
+      endpoint: Uri.parse('https://INTEGIN.test/evidence'),
       client: MockClient((_) async => http.Response('unavailable', 503)),
     ).upload(
       scope: const EvidenceScope(tenantId: 'tenant-1', organizationId: 'org-1'),

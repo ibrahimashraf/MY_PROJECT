@@ -89,8 +89,8 @@ Future<void> main() async {
   _traceWindowsStartup('preferences-ready');
   final KeyValueStore storage = SecureKeyValueStore();
   final outboxKey = _pilotOutboxNamespace.isEmpty
-      ? 'integin.outbox.v1'
-      : 'integin.outbox.v1.$_pilotOutboxNamespace';
+      ? 'INTEGIN.outbox.v1'
+      : 'INTEGIN.outbox.v1.$_pilotOutboxNamespace';
   final outboxStore = JsonOutboxStore(storage: storage, key: outboxKey);
   _traceWindowsStartup('outbox-load-start');
   await outboxStore.load();
@@ -194,7 +194,7 @@ Future<void> main() async {
     controller.connectivity = ConnectivityState.online;
   }
   _traceWindowsStartup('run-app');
-  runApp(InteginFieldApp(controller: controller));
+  runApp(INTEGINFieldApp(controller: controller));
 }
 
 ProvisionedFieldSession _demonstrationSession() {
@@ -224,8 +224,8 @@ ProvisionedFieldSession _demonstrationSession() {
   );
 }
 
-class InteginFieldApp extends StatelessWidget {
-  const InteginFieldApp({super.key, required this.controller});
+class INTEGINFieldApp extends StatelessWidget {
+  const INTEGINFieldApp({super.key, required this.controller});
 
   final FieldAppController controller;
 

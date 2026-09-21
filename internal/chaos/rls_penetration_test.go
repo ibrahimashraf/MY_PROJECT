@@ -213,5 +213,3 @@ func TestAdversarialMultiTenantRLSPenetrationSuite(t *testing.T) {
 		t.Log("PASS: Legitimate tenant read successfully returned 1 row")
 	})
 }
-
-
