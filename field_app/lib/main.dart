@@ -14,7 +14,8 @@ import 'pilot/pilot_fixture_bootstrap.dart';
 import 'presentation/field_app.dart';
 import 'provisioning/local_provisioning_client.dart';
 import 'security/transaction_signer.dart';
-import 'storage/persistent_outbox.dart';
+import 'storage/app_database.dart';
+import 'storage/drift_outbox_store.dart';
 import 'storage/secure_key_value_store.dart';
 import 'sync/http_sync_transport.dart';
 import 'sync/sync_client.dart';
@@ -23,11 +24,6 @@ import 'security/pinned_http_client.dart';
 
 const _windowsStartupTracePath =
     String.fromEnvironment('INTEGIN_WINDOWS_STARTUP_TRACE_PATH');
-
-// A non-empty value isolates a controlled pilot walkthrough queue without
-// deleting or mutating any prior local queue history.
-const _pilotOutboxNamespace =
-    String.fromEnvironment('INTEGIN_PILOT_OUTBOX_NAMESPACE');
 
 void _traceWindowsStartup(String stage) {
   if (kIsWeb || _windowsStartupTracePath.isEmpty) {
@@ -87,14 +83,13 @@ Future<void> main() async {
 
   _traceWindowsStartup('preferences-start');
   _traceWindowsStartup('preferences-ready');
-  final KeyValueStore storage = SecureKeyValueStore();
-  final outboxKey = _pilotOutboxNamespace.isEmpty
-      ? 'INTEGIN.outbox.v1'
-      : 'INTEGIN.outbox.v1.$_pilotOutboxNamespace';
-  final outboxStore = JsonOutboxStore(storage: storage, key: outboxKey);
-  _traceWindowsStartup('outbox-load-start');
-  await outboxStore.load();
-  _traceWindowsStartup('outbox-load-ready');
+  final secureStorage = SecureKeyValueStore();
+  final encryptionKey = await secureStorage.read('INTEGIN.database.encryption_key');
+  _traceWindowsStartup('database-open-start');
+  final database = await openAppDatabase(encryptionKey: encryptionKey);
+  _traceWindowsStartup('database-open-ready');
+  final outboxStore = DriftOutboxStore(database);
+  _traceWindowsStartup('outbox-ready');
 
   DeviceSigner? deviceSigner;
   String? deviceKeyId;

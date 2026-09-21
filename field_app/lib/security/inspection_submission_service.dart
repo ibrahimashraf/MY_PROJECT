@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:http/http.dart' as http;
 
@@ -155,7 +155,7 @@ class InspectionSubmissionService {
   }) async {
     final authenticated = await _localAuth.authenticate(
       localizedReason: 'Authenticate to complete inspection submission',
-      biometricOnly: true,
+      options: const AuthenticationOptions(biometricOnly: true),
     );
     if (!authenticated) {
       throw SecurityException(
