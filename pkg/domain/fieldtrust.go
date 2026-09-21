@@ -18,7 +18,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"sort"
 	"time"
 )
 
@@ -516,6 +518,15 @@ func EvaluateExecutionGate(
 // 5. SUBMISSION COUNTERSIGNATURE SEAL (FAIL-CLOSED INVARIANT)
 // -------------------------------------------------------------------------
 
+// MediaArtifactDigest binds an evidentiary artifact (photo, reading,
+// calibration certificate) into the composite seal. The SHA256Digest
+// is packed as raw 32 bytes on the wire — never as 64-char ASCII hex.
+type MediaArtifactDigest struct {
+	ArtifactID   string   `json:"artifact_id"`
+	ArtifactType string   `json:"artifact_type"`
+	SHA256Digest [32]byte `json:"sha256_digest"`
+}
+
 // NonStatutoryRouteAllowlist defines routes explicitly exempted from hardware
 // P-256 seals. This is deployment policy, not source truth: prefer loading it
 // from configuration. The map must be treated read-only after init.
@@ -526,23 +537,52 @@ var NonStatutoryRouteAllowlist = map[string]bool{
 }
 
 type SubmissionSeal struct {
-	DeviceKeyDID  string `json:"device_key_did"`
-	TokenID       string `json:"token_id"`
-	LeaseEpoch    uint64 `json:"lease_epoch"`
-	DataPayload   []byte `json:"data_payload"`
-	AppEd25519Sig []byte `json:"app_ed25519_sig"`
-	HwP256Sig     []byte `json:"hw_p256_sig"`
+	DeviceKeyDID  string                `json:"device_key_did"`
+	TokenID       string                `json:"token_id"`
+	LeaseEpoch    uint64                `json:"lease_epoch"`
+	MediaDigests  []MediaArtifactDigest `json:"media_digests"`
+	DataPayload   []byte                `json:"data_payload"`
+	AppEd25519Sig []byte                `json:"app_ed25519_sig"`
+	HwP256Sig     []byte                `json:"hw_p256_sig"`
 }
 
 func (s *SubmissionSeal) DeriveCompositeDigest() []byte {
 	h := sha256.New()
 	h.Write([]byte(TagSubmissionSeal))
-	h.Write([]byte(s.DeviceKeyDID))
-	h.Write([]byte(s.TokenID))
+
+	// Length-prefix DeviceKeyDID and TokenID to prevent
+	// boundary-shifting collisions (e.g. "tablet-1"+"002"
+	// vs "tablet-10"+"02" producing the same byte stream).
+	appendLengthPrefixed(h, s.DeviceKeyDID)
+	appendLengthPrefixed(h, s.TokenID)
 	_ = binary.Write(h, binary.BigEndian, s.LeaseEpoch)
+
+	// Canonical media artifact digests: sort lexicographically
+	// by ArtifactID, write count prefix, then length-prefixed
+	// string fields + raw 32-byte SHA-256 digests.
+	sorted := make([]MediaArtifactDigest, len(s.MediaDigests))
+	copy(sorted, s.MediaDigests)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].ArtifactID < sorted[j].ArtifactID
+	})
+	_ = binary.Write(h, binary.BigEndian, uint16(len(sorted)))
+	for _, artifact := range sorted {
+		appendLengthPrefixed(h, artifact.ArtifactID)
+		appendLengthPrefixed(h, artifact.ArtifactType)
+		h.Write(artifact.SHA256Digest[:]) // Raw 32 bytes
+	}
+
 	h.Write(s.DataPayload)
 	h.Write(s.AppEd25519Sig)
 	return h.Sum(nil)
+}
+
+// appendLengthPrefixed writes a uint16 BE length prefix followed by
+// the UTF-8 bytes of s into the hash.
+func appendLengthPrefixed(w io.Writer, s string) {
+	b := []byte(s)
+	_ = binary.Write(w, binary.BigEndian, uint16(len(b)))
+	w.Write(b)
 }
 
 // Verify enforces the inverted fail-closed gate: the hardware P-256 seal is

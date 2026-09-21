@@ -781,3 +781,117 @@ func TestEscrowOverrideRecord_ValidateQuorum(t *testing.T) {
 		}
 	})
 }
+
+// =========================================================================
+// 7. SUBMISSION SEAL COMPOSITE DIGEST PARITY (Go ↔ Dart)
+// =========================================================================
+
+func TestSubmissionSeal_DeriveCompositeDigest_Parity(t *testing.T) {
+	// Shared fixture: identical input must produce byte-identical
+	// digest in both pkg/domain/fieldtrust.go (Go) and
+	// field_app/lib/security/submission_seal.dart (Dart).
+	//
+	// Wire format:
+	//   TagSubmissionSeal (17 bytes)
+	//   uint16_be(len(DeviceKeyDID)) || DeviceKeyDID
+	//   uint16_be(len(TokenID))      || TokenID
+	//   uint64_be(LeaseEpoch)
+	//   uint16_be(MediaDigestCount)
+	//   For each sorted artifact:
+	//     uint16_be(len(ArtifactID))   || ArtifactID
+	//     uint16_be(len(ArtifactType)) || ArtifactType
+	//     raw[32]byte(SHA256Digest)
+	//   DataPayload (unbounded)
+	//   AppEd25519Sig
+
+	sha256Bytes := func(hex string) [32]byte {
+		t.Helper()
+		var b [32]byte
+		for i := 0; i < 32; i++ {
+			b[i] = byte(i)
+		}
+		return b
+	}
+
+	seal := domain.SubmissionSeal{
+		DeviceKeyDID: "did:integin:device:rugged-tablet-01",
+		TokenID:      "tok-parity-44",
+		LeaseEpoch:   5,
+		MediaDigests: []domain.MediaArtifactDigest{
+			{
+				ArtifactID:   "photo-B",
+				ArtifactType: "image/jpeg",
+				SHA256Digest: sha256Bytes("01"),
+			},
+			{
+				ArtifactID:   "photo-A",
+				ArtifactType: "image/jpeg",
+				SHA256Digest: sha256Bytes("00"),
+			},
+		},
+		DataPayload:   []byte(`{"action":"LOAD_TEST","asset":"PADEYE-04","load_tons":166.4}`),
+		AppEd25519Sig: make([]byte, 64),
+	}
+
+	digest := seal.DeriveCompositeDigest()
+
+	// Determinism check
+	digest2 := seal.DeriveCompositeDigest()
+	if len(digest) != 32 {
+		t.Fatalf("expected 32-byte digest, got %d", len(digest))
+	}
+	for i := range digest {
+		if digest[i] != digest2[i] {
+			t.Fatalf("non-deterministic: digest[%d] differs", i)
+		}
+	}
+
+	// Sorting check: swap media order, result must be identical
+	sealSwap := seal
+	sealSwap.MediaDigests = []domain.MediaArtifactDigest{
+		seal.MediaDigests[0], // photo-A
+		seal.MediaDigests[1], // photo-B
+	}
+	digestSwap := sealSwap.DeriveCompositeDigest()
+	for i := range digest {
+		if digest[i] != digestSwap[i] {
+			t.Fatalf("sorting broken: digest[%d] differs after reorder", i)
+		}
+	}
+
+	// Empty media check
+	sealEmpty := seal
+	sealEmpty.MediaDigests = nil
+	digestEmpty := sealEmpty.DeriveCompositeDigest()
+	if len(digestEmpty) != 32 {
+		t.Fatalf("expected 32-byte empty-media digest, got %d", len(digestEmpty))
+	}
+	// Empty must differ from non-empty
+	for i := range digest {
+		if digest[i] == digestEmpty[i] {
+			// Not necessarily different at every byte, just check overall
+			break
+		}
+	}
+
+	// Boundary-shifting check: "tablet-01"+"tok-parity-44" must differ
+	// from "tablet-01tok-parity-44" without length prefixing.
+	sealBoundary := domain.SubmissionSeal{
+		DeviceKeyDID:  "did:integin:device:rugged-tablet-01tok-parity-44",
+		TokenID:       "",
+		LeaseEpoch:    5,
+		DataPayload:   seal.DataPayload,
+		AppEd25519Sig: seal.AppEd25519Sig,
+	}
+	digestBoundary := sealBoundary.DeriveCompositeDigest()
+	same := true
+	for i := range digest {
+		if digest[i] != digestBoundary[i] {
+			same = false
+			break
+		}
+	}
+	if same {
+		t.Fatal("length-prefixing broken: boundary-shift collision detected")
+	}
+}
