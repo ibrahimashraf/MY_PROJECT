@@ -2,13 +2,13 @@
 
 **Document ID:** REF-2026-09-07-MASTER-ECOSYSTEM-CATALOG  
 **Location:** `c:\MY_PROJECT\docs\architecture\GITHUB_REPOSITORIES_REFERENCE.md`  
-**Purpose:** Canonical inventory of all 120 authoritative GitHub repositories, developer ecosystems, and technology references cataloged across engineering sessions.  
+**Purpose:** Canonical inventory of all 121 authoritative GitHub repositories, developer ecosystems, and technology references cataloged across engineering sessions.  
 **Methodology Sequence:** `RE-VISION > REVIEW > REVISE > REVIEW > DEBATE > PLAN`
 **Library Rule:** Collect everything; tier on read. `Tier: ADOPT` = trial in our harness. `Tier: WATCH` = track releases/issues only. `Tier: REFERENCE` = ideas shelf. `Take vs Build` = extract the good, create ours — never wholesale-adopt a harness into the authority path.
 
 ---
 
-## 📑 Master Repository & Tooling Taxonomy (120 Entries)
+## 📑 Master Repository & Tooling Taxonomy (121 Entries)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -48,8 +48,8 @@
 │    • OmniRoute / axonhub │    • planning-with-files │    • hey-api / humanlayer        │
 │    • AionUi / gentle-ai /│    • plannotator / skill │    • superset / tokscale /       │
 │      iPolloWork / ourob. │      store / court /     │      jcodemunch / magic-context  │
-│    • atlas / openwolf /  │      scholar / ctf /     │    • html-anything               │
-│      agentic-stack / arc │      research / wiki /   │                                  │
+│    • atlas / openwolf /  │      scholar / ctf /     │    • html-anything / copilot-    │
+│      agentic-stack / arc │      research / wiki /   │      chat (Group 15)             │
 │    • agent-teams / deleg.│      mem-mcp / memsearch │                                  │
 │    • awesome-orch / OAC /│    • distilly / stop-shit│                                  │
 │      council / ralph ×3 /│    • free-models / MTPLX │                                  │
@@ -698,4 +698,13 @@
 *   **Role in INTEGIN**: **Tier: REFERENCE.** Agent-built HTML surfaces vs our impeccable-governed workflow — skill-packaging model (75 skills) vs our curated `.agents/skills/` vetting.
 *   **Take vs Build**: Take skill-packaging scale notes; build our vetted set (this file).
 
-*Catalog v4.0.0 — Library sweep 2026-09-22 (2nd): Groups 12–14 appended (entries 75–120). 6 URLs deduped to existing entries (#26, #27, #29, #36, #39, #58). Counts verified same-day via API; 4 entries still ~unverified (#64–67: LifeOS, Caveman, I-have-Adhd, proton). Reconciled into INTEGIN Master Architecture.*
+---
+
+## 📎 Group 15: Late Additions (by theme: OpenCode plugins)
+
+### 121. [ltmoerdani/opencode-copilot-chat](https://github.com/ltmoerdani/opencode-copilot-chat) — ★189 · TS · MIT · pushed 2026-09-11
+*   **Domain**: 30+ AI models (DeepSeek, Kimi, GLM, Claude, GPT, Gemini, Grok) inside GitHub Copilot Chat, free via BYOK.
+*   **Role in INTEGIN**: **Tier: REFERENCE.** BYOK model-multiplexing inside Copilot Chat vs our gateway bake-off (#75 vs #95) — small-star, single-maintainer risk; ideas only until proven.
+*   **Take vs Build**: Take provider-list breadth; build routing/policy ourselves.
+
+*Catalog v4.1.0 — entry 121 appended 2026-09-22 (Group 15: late additions). Count verified same-day via API; 4 entries still ~unverified (#64–67). Reconciled into INTEGIN Master Architecture.*
