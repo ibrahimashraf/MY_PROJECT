@@ -99,13 +99,13 @@ if ($Fresh -and (Test-DockerResourceExists -Kind 'volume' -Name $postgresVolume)
 if (-not (Test-DockerResourceExists -Kind 'volume' -Name $postgresVolume)) {
   Invoke-DockerQuietly -Arguments @('volume', 'create', $postgresVolume)
 }
-Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $postgresContainer, '--network', $networkName, '--env-file', $postgresEnvironmentPath, '--volume', ("${postgresVolume}:/var/lib/postgresql/data"), $postgresImage)
+Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $postgresContainer, '--restart', 'unless-stopped', '--network', $networkName, '--env-file', $postgresEnvironmentPath, '--volume', ("${postgresVolume}:/var/lib/postgresql/data"), $postgresImage)
 Wait-PostgresReady
 
 if (Test-DockerResourceExists -Kind 'container' -Name $casdoorContainer) {
   Invoke-DockerQuietly -Arguments @('rm', '-f', $casdoorContainer)
 }
-Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $casdoorContainer, '--network', $networkName, '-e', 'INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK=true', '--mount', ("type=bind,source=${casdoorConfigHostPath},target=/conf/app.conf"), '--publish', '127.0.0.1:18180:8000', $casdoorImage)
+Invoke-DockerQuietly -Arguments @('run', '-d', '--name', $casdoorContainer, '--restart', 'unless-stopped', '--network', $networkName, '-e', 'INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK=true', '--mount', ("type=bind,source=${casdoorConfigHostPath},target=/conf/app.conf"), '--publish', '127.0.0.1:18180:8000', $casdoorImage)
 
 function Wait-HealthyUrl {
   param([Parameter(Mandatory = $true)][string]$Url,[Parameter(Mandatory = $true)][int]$TimeoutSeconds)
