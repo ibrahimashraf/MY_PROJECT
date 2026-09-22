@@ -43,3 +43,10 @@ gives you structural context (callers, dependents, test coverage) that file sear
 3. Use `get_affected_flows_tool` to understand impact.
 4. Use `query_graph_tool` pattern="tests_for" to check coverage.
 <!-- /code-review-graph MCP tools -->
+
+<!-- shunt-routing (adapted, no Portal needed) -->
+## Token routing (shunt-adapted)
+- Full `Read` >350 lines? No. Use `ctx_read(mode=signatures|map|task|lines:N-M)` or graph `get_review_context` first. Targeted re-read only to edit.
+- Boilerplate from existing pattern? Generate disk-direct from reference, don't pull output into ctx.
+- Never delegate: debugging, edits needing line numbers, arch/security decisions.
+<!-- /shunt-routing -->
