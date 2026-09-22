@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 // INTEGIN field app entry point.
@@ -118,11 +119,36 @@ Future<void> main() async {
     deviceSigner = await SecureDeviceKeyStore().loadOrCreate('field-device');
     deviceKeyId = deviceSigner.keyId;
     if (localProvisioningEndpoint.isNotEmpty) {
-      final session = await LocalProvisioningClient(
-        endpoint: Uri.parse(localProvisioningEndpoint),
-        allowLoopbackHttp: pilotMode ||
-            isLoopbackUri(Uri.parse(localProvisioningEndpoint)),
-      ).provision(deviceSigner);
+      final keyId = deviceSigner.keyId;
+      if (keyId == null || keyId.length < 32) {
+        throw StateError('local provisioning requires a device key id');
+      }
+      final expectedDeviceId = 'field-${keyId.substring(0, 32)}';
+      const sessionCacheKey = 'INTEGIN.provisioned_session';
+      ProvisionedFieldSession? session;
+      final cachedSession = await secureStorage.read(sessionCacheKey);
+      if (cachedSession != null) {
+        try {
+          final parsed = ProvisionedFieldSession.fromJson(
+              Map<String, Object?>.from(
+                  jsonDecode(cachedSession) as Map));
+          if (parsed.deviceId == expectedDeviceId &&
+              parsed.authority.isValidAt(DateTime.now().toUtc())) {
+            session = parsed;
+          }
+        } catch (_) {
+          // Fall through to a fresh provision on any cache decode issue.
+        }
+      }
+      if (session == null) {
+        session = await LocalProvisioningClient(
+          endpoint: Uri.parse(localProvisioningEndpoint),
+          allowLoopbackHttp: pilotMode ||
+              isLoopbackUri(Uri.parse(localProvisioningEndpoint)),
+        ).provision(deviceSigner);
+        await secureStorage.write(
+            sessionCacheKey, jsonEncode(session.toJson()));
+      }
       context = session.context;
       deviceId = session.deviceId;
       userId = session.userId;

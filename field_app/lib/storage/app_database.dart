@@ -45,6 +45,7 @@ class AppDatabase extends _$AppDatabase {
       ),
       mode: InsertMode.insertOrIgnore,
     );
+    await checkpoint();
   }
 
   Future<List<OutboxRow>> allOutboxEntries() => select(outboxRows).get();
@@ -71,6 +72,15 @@ class AppDatabase extends _$AppDatabase {
         acknowledgedAt: Value(acknowledgedAt),
       ),
     );
+    await checkpoint();
+  }
+
+  /// Forces WAL frames into the main database file so outbox state survives
+  /// process death (force-stop / power-cut). Without this, entries reverted
+  /// to their last-checkpointed state on SIGKILL and resubmitted forever.
+  /// ponytail: full TRUNCATE checkpoint per write; batch it if write volume grows.
+  Future<void> checkpoint() async {
+    await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
   }
 
   @override

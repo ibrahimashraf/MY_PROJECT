@@ -47,6 +47,23 @@ class ProvisionedFieldSession {
       ),
     );
   }
+
+  Map<String, Object?> toJson() => {
+        'tenant_id': context.tenantId,
+        'organization_id': context.organizationId,
+        'environment': context.environment,
+        'device_id': deviceId,
+        'user_id': userId,
+        'authority': {
+          'authority_id': authority.id,
+          'authority_epoch': authority.epoch,
+          'scopes': authority.scopes,
+          'procedure_version': authority.procedureVersion,
+          'issued_at': authority.issuedAt.toUtc().toIso8601String(),
+          'expires_at': authority.expiresAt.toUtc().toIso8601String(),
+          'signature': authority.signature,
+        },
+      };
 }
 
 /// Local-integration provisioning client. It never exports a device private key.
