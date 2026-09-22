@@ -76,6 +76,7 @@ type Dependencies struct {
 	DPPHandler                     http.Handler
 	TUSHandler                     http.Handler
 	SchedulingHandler              http.Handler
+	PilotEnrollHandler             http.Handler
 	WorkbenchHandler               http.Handler
 	DeviceEnrollmentHandler        http.Handler
 	Readiness                      func(context.Context) error

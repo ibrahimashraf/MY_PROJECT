@@ -125,12 +125,14 @@ type InspectorCredential struct {
 
 // DeviceEnrollmentChallenge is issued by the server to initiate QR scan-to-pair.
 type DeviceEnrollmentChallenge struct {
-	ChallengeID   string    `json:"challenge_id"`
-	TenantID      string    `json:"tenant_id"`
-	InspectorID   string    `json:"inspector_id"`
-	Nonce         string    `json:"nonce"`
-	ExpiresAt     time.Time `json:"expires_at"`
-	QRCodePayload string    `json:"qr_code_payload"`
+	ChallengeID    string    `json:"challenge_id"`
+	TenantID       string    `json:"tenant_id"`
+	InspectorID    string    `json:"inspector_id"`
+	OrganizationID string    `json:"organization_id"`
+	UserID         string    `json:"user_id"`
+	Nonce          string    `json:"nonce"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	QRCodePayload  string    `json:"qr_code_payload"`
 }
 
 // DeviceEnrollmentSubmission is the cryptographic response sent by the field tablet.
@@ -182,6 +184,8 @@ type AttestationClaim struct {
 type DeviceTrustRecord struct {
 	DeviceID                  string     `json:"device_id"`
 	TenantID                  string     `json:"tenant_id"`
+	OrganizationID            string     `json:"organization_id"`
+	UserID                    string     `json:"user_id"`
 	InspectorID               string     `json:"inspector_id"`
 	DevicePublicKey           string     `json:"device_public_key"`
 	DeviceModel               string     `json:"device_model"`

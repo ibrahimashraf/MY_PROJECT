@@ -163,6 +163,11 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/uploads", gated)
 		mux.Handle("/uploads/", gated)
 	}
+	if d.PilotEnrollHandler != nil {
+		stripped := http.StripPrefix("/enroll", d.PilotEnrollHandler)
+		mux.Handle("/enroll/challenge", stripped)
+		mux.Handle("/enroll/submit", stripped)
+	}
 	if d.WorkOrderAssignmentHandler != nil {
 		mux.Handle("/api/v1/work-orders/", d.WorkOrderAssignmentHandler)
 	}

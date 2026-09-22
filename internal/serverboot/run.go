@@ -2,8 +2,10 @@ package serverboot
 
 import (
 	"context"
+	"crypto/ed25519"
 	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log"
@@ -54,6 +56,7 @@ import (
 	"integin/internal/shortlinkpg"
 	"integin/internal/shortlinksvc"
 	"integin/internal/storage"
+	"integin/internal/syncapi"
 	"integin/internal/syncstate"
 	"integin/internal/timestamp"
 	"integin/pkg/contextground"
@@ -218,7 +221,7 @@ func Run() {
 		}
 		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
 			Repository: repository, Processor: processor, SigningSecret: secretStr,
-			TenantID:          strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID")),
+			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),
 			AuthorityLifetime: time.Duration(envInt("INTEGIN_LOCAL_PROVISIONING_AUTHORITY_MINUTES", 30)) * time.Minute,
@@ -231,16 +234,50 @@ func Run() {
 	// Pilot-only in-memory device enrollment (pkg/onboarding EnrollServer): lets
 	// the field_app simulator submission reach ProcessDeviceEnrollment over
 	// loopback. Off by default; never expose on a non-loopback bind.
+	if pilotAuthorityRegistry == nil {
+		pilotAuthorityRegistry = syncapi.NewAuthorityRegistry()
+	}
 	var enrollHandler http.Handler
 	if envBool("INTEGIN_PILOT_ENROLL_ENABLED") {
-		if !isLoopbackAddress(address) {
+		if !isLoopbackAddress(address) && !envBool("INTEGIN_PILOT_ENROLL_ALLOW_BIND_ALL") {
 			log.Fatal("pilot device enrollment requires INTEGIN_HTTP_ADDR to bind to localhost only")
 		}
 		sim, simErr := onboarding.NewEnrollmentSimulator()
 		if simErr != nil {
 			log.Fatal(simErr)
 		}
-		enrollHandler = onboarding.NewEnrollServer(sim).Handler()
+		enrollSrv := onboarding.NewEnrollServer(sim)
+		enrollSrv.OnEnrolled = func(record onboarding.DeviceTrustRecord) {
+			// Bridge pilot enrollment to the sync processor so enrolled
+			// devices can immediately sync without a DB round-trip.
+			pubBytes, err := hex.DecodeString(record.DevicePublicKey)
+			if err != nil || len(pubBytes) != ed25519.PublicKeySize {
+				log.Printf("pilot enrollment: cannot decode device public key: %v", err)
+				return
+			}
+			pubKeyBase64 := base64.StdEncoding.EncodeToString(pubBytes)
+			device, err := device_trust.NewDevice(record.DeviceID, record.TenantID, record.OrganizationID, record.UserID, pubKeyBase64)
+			if err != nil {
+				log.Printf("pilot enrollment: cannot create device: %v", err)
+				return
+			}
+			if err := device.Trust(); err != nil {
+				log.Printf("pilot enrollment: cannot trust device: %v", err)
+				return
+			}
+			processor.RegisterDevice(device)
+			now := time.Now().UTC()
+			authorityID := "pilot-auth-" + record.DeviceID
+			scopes := []string{"inspection.perform", "inspection.submit"}
+			authority, err := device_trust.IssueAuthorityPackage(device, authorityID, secretStr, scopes, now, 24*time.Hour)
+			if err != nil {
+				log.Printf("pilot enrollment: cannot issue authority: %v", err)
+				return
+			}
+			pilotAuthorityRegistry.Register(authority)
+			log.Printf("pilot enrollment: device %s enrolled and registered with sync processor (org=%s user=%s)", record.DeviceID, record.OrganizationID, record.UserID)
+		}
+		enrollHandler = enrollSrv.Handler()
 	}
 	var oidcSessionHandler http.Handler
 	var sessionRevocationHandler http.Handler
@@ -569,12 +606,10 @@ func Run() {
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
+		PilotEnrollHandler:      enrollHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
-		root := http.NewServeMux()
-		root.Handle("/enroll/", enrollHandler)
-		root.Handle("/", handler)
-		handler = root
+		log.Printf("pilot enrollment server mounted at /enroll/")
 	}
 	httpServer := &http.Server{
 		Addr:              address,

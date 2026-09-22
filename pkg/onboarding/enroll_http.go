@@ -18,8 +18,9 @@ import (
 // The simulator's challenge/device maps are not safe for concurrent access,
 // so every simulator call runs under a single mutex.
 type EnrollServer struct {
-	sim *EnrollmentSimulator
-	mu  sync.Mutex
+	sim        *EnrollmentSimulator
+	mu         sync.Mutex
+	OnEnrolled func(record DeviceTrustRecord)
 }
 
 // NewEnrollServer wraps an EnrollmentSimulator for HTTP use.
@@ -43,15 +44,17 @@ func (s *EnrollServer) createChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	var req struct {
-		TenantID    string `json:"tenant_id"`
-		InspectorID string `json:"inspector_id"`
+		TenantID       string `json:"tenant_id"`
+		InspectorID    string `json:"inspector_id"`
+		OrganizationID string `json:"organization_id"`
+		UserID         string `json:"user_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeEnrollJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid challenge request body"})
 		return
 	}
 	s.mu.Lock()
-	challenge, err := s.sim.CreateEnrollmentChallenge(req.TenantID, req.InspectorID)
+	challenge, err := s.sim.CreateEnrollmentChallengeWithIdentity(req.TenantID, req.InspectorID, req.OrganizationID, req.UserID)
 	s.mu.Unlock()
 	if err != nil {
 		writeEnrollJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -77,6 +80,9 @@ func (s *EnrollServer) submit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeEnrollJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
+	}
+	if s.OnEnrolled != nil {
+		s.OnEnrolled(*record)
 	}
 	writeEnrollJSON(w, http.StatusOK, record)
 }

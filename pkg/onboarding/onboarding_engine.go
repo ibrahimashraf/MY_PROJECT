@@ -35,6 +35,19 @@ func NewEnrollmentSimulator() (*EnrollmentSimulator, error) {
 
 // 1. CreateEnrollmentChallenge creates a short-lived nonce for QR pairing.
 func (s *EnrollmentSimulator) CreateEnrollmentChallenge(tenantID, inspectorID string) (*DeviceEnrollmentChallenge, error) {
+	return s.CreateEnrollmentChallengeWithIdentity(tenantID, inspectorID, "", "")
+}
+
+// CreateEnrollmentChallengeWithIdentity creates a challenge with explicit
+// organization and user identity. When orgID/userID are empty, they default
+// to the inspectorID (backward-compatible with existing callers).
+func (s *EnrollmentSimulator) CreateEnrollmentChallengeWithIdentity(tenantID, inspectorID, orgID, userID string) (*DeviceEnrollmentChallenge, error) {
+	if orgID == "" {
+		orgID = inspectorID
+	}
+	if userID == "" {
+		userID = inspectorID
+	}
 	nonceBytes := make([]byte, 32)
 	if _, err := rand.Read(nonceBytes); err != nil {
 		return nil, err
@@ -43,12 +56,14 @@ func (s *EnrollmentSimulator) CreateEnrollmentChallenge(tenantID, inspectorID st
 	challengeID := fmt.Sprintf("chal_%s", nonceHex[:8])
 
 	challenge := DeviceEnrollmentChallenge{
-		ChallengeID:   challengeID,
-		TenantID:      tenantID,
-		InspectorID:   inspectorID,
-		Nonce:         nonceHex,
-		ExpiresAt:     time.Now().Add(10 * time.Minute),
-		QRCodePayload: fmt.Sprintf("integin://enroll?chal=%s&tenant=%s&nonce=%s", challengeID, tenantID, nonceHex),
+		ChallengeID:    challengeID,
+		TenantID:       tenantID,
+		InspectorID:    inspectorID,
+		OrganizationID: orgID,
+		UserID:         userID,
+		Nonce:          nonceHex,
+		ExpiresAt:      time.Now().Add(10 * time.Minute),
+		QRCodePayload:  fmt.Sprintf("integin://enroll?chal=%s&tenant=%s&nonce=%s", challengeID, tenantID, nonceHex),
 	}
 	s.challenges[challengeID] = challenge
 	return &challenge, nil
@@ -109,11 +124,15 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 		}
 	}
 
-	// Register trusted device
-	deviceID := fmt.Sprintf("dev_%s", hex.EncodeToString(devPubBytes[:6]))
+	// Register trusted device — device_id matches the field_app convention:
+	// "field-" + first 32 hex chars of SHA-256(public_key_bytes).
+	hash := sha256.Sum256(devPubBytes)
+	deviceID := fmt.Sprintf("field-%s", hex.EncodeToString(hash[:])[:32])
 	record := DeviceTrustRecord{
 		DeviceID:                  deviceID,
 		TenantID:                  chal.TenantID,
+		OrganizationID:            chal.OrganizationID,
+		UserID:                    chal.UserID,
 		InspectorID:               sub.InspectorID,
 		DevicePublicKey:           sub.DevicePublicKey,
 		DeviceModel:               sub.DeviceModel,

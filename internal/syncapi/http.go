@@ -80,6 +80,12 @@ func (r *AuthorityRegistry) Get(id string) (device_trust.AuthorityPackage, bool)
 	return authority, exists
 }
 
+func (r *AuthorityRegistry) Register(authority device_trust.AuthorityPackage) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.values[authority.ID] = authority
+}
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "POST is required")

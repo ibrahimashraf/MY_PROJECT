@@ -21,6 +21,7 @@ import 'sync/http_sync_transport.dart';
 import 'sync/sync_client.dart';
 import 'sync/tus_client.dart';
 import 'security/pinned_http_client.dart';
+import 'security/endpoint_guard.dart';
 
 const _windowsStartupTracePath =
     String.fromEnvironment('INTEGIN_WINDOWS_STARTUP_TRACE_PATH');
@@ -119,7 +120,8 @@ Future<void> main() async {
     if (localProvisioningEndpoint.isNotEmpty) {
       final session = await LocalProvisioningClient(
         endpoint: Uri.parse(localProvisioningEndpoint),
-        allowLoopbackHttp: pilotMode,
+        allowLoopbackHttp: pilotMode ||
+            isLoopbackUri(Uri.parse(localProvisioningEndpoint)),
       ).provision(deviceSigner);
       context = session.context;
       deviceId = session.deviceId;
@@ -147,7 +149,7 @@ Future<void> main() async {
       pilotMode && pilotAdvisoryEndpoint.isNotEmpty
           ? PilotAdvisoryClient(
               endpoint: Uri.parse(pilotAdvisoryEndpoint),
-              allowLoopbackHttp: pilotMode,
+            allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint)),
             )
           : null;
   final SyncClient? syncClient = syncEndpoint.isEmpty
@@ -159,7 +161,7 @@ Future<void> main() async {
             // Pilot mode uses http://127.0.0.1:18080 — loopback cleartext is
             // explicitly permitted and validated above. Production never hits
             // this branch with an http:// URL.
-            allowLoopbackHttp: pilotMode,
+            allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint)),
           ),
         );
   final TusClient? tusClient = syncEndpoint.isEmpty
@@ -167,8 +169,8 @@ Future<void> main() async {
       : TusClient(
           http: HttpTusHttp(
             baseUrl: Uri.parse(syncEndpoint).resolve('/uploads'),
-            client: PinnedHttpClient.forEndpoint(Uri.parse(syncEndpoint), allowLoopbackHttp: pilotMode),
-            allowLoopbackHttp: pilotMode,
+            client: PinnedHttpClient.forEndpoint(Uri.parse(syncEndpoint), allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint))),
+            allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint)),
             // In a real device environment, this needs the OIDC token
           ),
         );
@@ -187,7 +189,9 @@ Future<void> main() async {
     trace: _traceWindowsStartup,
   );
   await controller.restoreOutbox();
-  if (syncClient != null) {
+  if (!kIsWeb) {
+    controller.connectivity = ConnectivityState.online;
+  } else if (syncClient != null) {
     controller.connectivity = ConnectivityState.online;
   }
   _traceWindowsStartup('run-app');

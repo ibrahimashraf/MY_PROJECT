@@ -26,7 +26,7 @@ services:
   # 2. Sovereign Identity Provider (Apache 2.0)
   # RS256 token issuance, local credential store, 0 external cloud dependencies
   casdoor-postgres:
-    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    image: postgres:18-alpine
     container_name: appliance-casdoor-postgres
     restart: unless-stopped
     environment:
@@ -34,7 +34,7 @@ services:
       POSTGRES_USER: ${CASDOOR_USER:-casdoor_owner}
       POSTGRES_PASSWORD: ${CASDOOR_PASSWORD:-casdoor_sovereign_secret}
     volumes:
-      - casdoor-postgres-data:/var/lib/postgresql/data
+      - casdoor-postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -57,7 +57,7 @@ services:
       dataSourceName: "host=appliance-casdoor-postgres port=5432 user=${CASDOOR_USER:-casdoor_owner} password=${CASDOOR_PASSWORD:-casdoor_sovereign_secret} dbname=${CASDOOR_DB:-casdoor_appliance} sslmode=disable"
       origin: "http://appliance-casdoor:8000"
     ports:
-      - "18180:8000"
+      - "18181:8000"
     networks:
       - appliance-network
     depends_on:
@@ -74,11 +74,11 @@ services:
     container_name: appliance-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${APPLIANCE_POSTGRES_DB:-INTEGIN_appliance}
-      POSTGRES_USER: ${APPLIANCE_POSTGRES_USER:-INTEGIN_owner}
-      POSTGRES_PASSWORD: ${APPLIANCE_POSTGRES_PASSWORD:-INTEGIN_sovereign_db_secret}
+      POSTGRES_DB: ${APPLIANCE_POSTGRES_DB:-integin_appliance}
+      POSTGRES_USER: ${APPLIANCE_POSTGRES_USER:-integin_owner}
+      POSTGRES_PASSWORD: ${APPLIANCE_POSTGRES_PASSWORD:-integin_sovereign_db_secret}
     volumes:
-      - appliance-postgres-data:/var/lib/postgresql/data
+      - appliance-postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -157,7 +157,7 @@ services:
     restart: unless-stopped
     environment:
       INTEGIN_HTTP_ADDR: "0.0.0.0:8080"
-      INTEGIN_DB_URL: "postgres://${APPLIANCE_POSTGRES_USER:-INTEGIN_owner}:${APPLIANCE_POSTGRES_PASSWORD:-INTEGIN_sovereign_db_secret}@appliance-pgcat:6432/${APPLIANCE_POSTGRES_DB:-INTEGIN_appliance}?sslmode=disable&default_query_exec_mode=simple_protocol"
+      INTEGIN_DB_URL: "postgres://integin_owner:integin_sovereign_db_secret@appliance-pgcat:6432/integin_appliance?sslmode=disable&default_query_exec_mode=simple_protocol"
       INTEGIN_EVIDENCE_STORE: "rustfs"
       INTEGIN_RUSTFS_ENDPOINT: "http://appliance-rustfs:9000"
       INTEGIN_RUSTFS_REGION: "sovereign-edge"
@@ -167,6 +167,8 @@ services:
       INTEGIN_SYNC_SECRET: "${APPLIANCE_SYNC_SECRET:-sovereign_sync_master_key}"
       INTEGIN_TENANT_ID: "${APPLIANCE_TENANT_ID:-INTEGIN-integration-tenant}"
       INTEGIN_ORGANIZATION_ID: "${APPLIANCE_ORGANIZATION_ID:-org-phone-01}"
+      INTEGIN_PILOT_ENROLL_ENABLED: "true"
+      INTEGIN_PILOT_ENROLL_ALLOW_BIND_ALL: "true"
       INTEGIN_OIDC_ENABLED: "true"
       INTEGIN_OIDC_ISSUER: "http://appliance-casdoor:8000"
       INTEGIN_OIDC_AUDIENCE: "${APPLIANCE_OIDC_AUDIENCE:-integin-live-matrix}"
