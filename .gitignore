@@ -60,3 +60,37 @@ docs/evidence/pilot-backups/
 Thumbs.db
 # Added by code-review-graph
 .code-review-graph/
+
+# ==============================================================================
+# Agent Session State & Skill Output (churns constantly, never commit)
+# ==============================================================================
+.opencode/
+graphify-out/
+
+# ==============================================================================
+# Scratch Screenshots & Temp Files (quarantine outside repo, don't commit)
+# ==============================================================================
+/app_*.png
+/integin_screenshot*.png
+*.tmp
+*~
+
+# ==============================================================================
+# Build Leftovers Not Covered Above
+# ==============================================================================
+*.apk
+*.aab
+**/.gradle/
+target/
+
+# ==============================================================================
+# Agent Framework State Dirs (preventive: skins future untracked files;
+# does NOT untrack already-committed content — see git rm note)
+# ==============================================================================
+.codex/
+.codebuddy/
+.gemini/
+.kiro/
+.planning/
+.impeccable/
+.qoder/
