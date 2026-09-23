@@ -1,9 +1,24 @@
-# HANDOVER — INTEGIN Pilot Acceptance (2026-09-22)
+# HANDOVER — INTEGIN Pilot Acceptance (2026-09-22, matrix closed 2026-09-23)
 
 ## Mission Status
 - **Durability proof: COMPLETE** — app re-provisioned, NEW sync_receipt created post-relaunch (`tx-1790093307801923-1819` seq 1 APPLIED 16:12:43Z), both devices `last_accepted_sequence=1`.
-- **Matrix: BLOCKED** — `integin-live-matrix seed` fails on DB connection. Private env `INTEGIN_DB_URL` appears to point at pilot DB (`integin_runtime/leims` on 5432, not exposed). Acceptance server (PID 7484, 8080) runs health/ready 200 — its actual DB connection needs verification.
-- **Commit: DONE** — `c997e51` (4 files: 3 modified + new test).
+- **Matrix: COMPLETE (2026-09-23)** — `seed` OK then `exercise` EXIT 0 against appliance stack: sync APPLIED/DUPLICATE/HELD/CONFLICT/SECURITY_FAILURE + evidence APPLIED/DUPLICATE/CONFLICT/SECURITY_FAILURE. Restart recovery verified (receipts APPLIED=3/HELD=3, 2 evidence objects survive full data-plane restart).
+- **Commit: DONE** — `c997e51` (4 files: 3 modified + new test). Uncommitted: `deployments/docker-compose.appliance.yml` OIDC audience default (see 2026-09-23 note).
+- **go.mod corruption: FIXED** — stray `go 1.2227.1` / `module testintegin` / `test.txt` reverted; tree verified clean.
+
+## 2026-09-23 Matrix Notes (appliance stack)
+- DB via pgcat `127.0.0.1:6432/integin_appliance` + `default_query_exec_mode=simple_protocol` (fixes SQLSTATE 26000).
+- OIDC via appliance-casdoor `127.0.0.1:18181`, app-built-in client creds, `client_credentials` enabled in `grant_types` (casdoor-postgres volume state). Server `INTEGIN_OIDC_AUDIENCE` must equal token aud (app-built-in client_id); compose default updated. Token iss `http://appliance-casdoor:8000`.
+- Server `127.0.0.1:8080` (`/healthz`); matrix guard requires `INTEGIN_SERVER_URL=http://127.0.0.1:18080` → TCP forwarder `port18080.py` (background) bridges 18080→8080.
+- Tenant/secret must match server: `INTEGIN-integration-tenant` / server sync secret. Order: seed → restart server (registers authority) → exercise. Runner: `C:\Users\hima3\AppData\Local\Temp\opencode\run_matrix.ps1`.
+
+## 2026-09-23 Phase 4 Gates (Android only; Apple/desktop deferred)
+- Rig: host `integin-server.exe` (built from source) on `127.0.0.1:8081` with `/local/provision` (loopback guard forbids it on the `0.0.0.0` appliance container); device reverse `tcp:8080→tcp:8081`. OIDC boot via `stub_oidc.py` (RSA JWKS) on 18180 — device flow uses HMAC only.
+- Gate 1 PASS: `TrickyStoreService: TEE verification successful`, `/local/provision` 200, UI "Trusted and valid" (30-min authority).
+- Gate 2 PASS (airplane ON): response recorded (required→0), queue → "1 queued" → Sync → `POST /sync` 200 → "applied or duplicate recorded". Receipt `field-528c…` seq 1 APPLIED `tx-1790181857180729-8125`. Transport note: USB adb reverse bypasses airplane radios; offline-sign+queue behavior genuine.
+- Gate 4 PASS (`adb reboot`): rebooted, `Trusted and valid` with fresh authority, 0 queued, receipt history intact, no corruption. Note: provision mints a fresh device id per enrollment (`field-9700` → `field-528c`).
+- Gate 5 PASS: "Re-submit last receipt" → `/sync` 200 idempotent replay, single receipt row, no dup side effects.
+- Biometric/PIN fallback (Gate 3) NOT run — no lock-screen biometrics enrolled on this device; `AUTH_REQUIRED` path is code-complete, needs a device with biometrics.
 
 ---
 
