@@ -526,7 +526,8 @@ The following 17 items represent the remaining identified blind spots across Spr
 * field_app fixes landed: `Idempotency-Key` header on sync POSTs (`11ac22e` — server 400s keyless posts); APK built with `INTEGIN_SYNC_ENDPOINT` + `INTEGIN_LOCAL_PROVISIONING_ENDPOINT` defines + `adb reverse tcp:18080`.
 * Phone provisioned for real: `field-1643bfc6…` / inspector-phone with server-issued authorities (verified in `device_registry` + `authority_package` with tenant GUCs set session-wide — note: `set_config(...,true)` is transaction-local, one `psql -c` per statement loses it).
 * Debugging is self-serve: logcat (`adb logcat -d -s flutter:E`), curl-from-phone, phone screenshots via `screencap`+pull, server request log at `operations/pilot/runtime/server.stderr.log`.
-* Gotcha: stale demo-session outbox entries fail forever (403 unregistered authority) and latch `blocked`; fix is `pm clear` for a clean provisioned slate.
+* Gotcha (SUPERSEDED 2026-09-23): stale demo-session outbox entries fail forever (403 unregistered authority) and latch `blocked`; fix is `pm clear` for a clean provisioned slate. → Superseded by `reconcileOutboxIdentities()` (see §19): rotation now migrates entries instead of orphaning them; `pm clear` no longer needed and must NOT be used (destroys work).
+* CORRECTION 2026-09-23: "JDK 26 cannot build AGP projects" is stale — full `flutter build apk --debug` passes on JDK 26.0.1 (AGP 9.4.1, Gradle 9.7.1) with benign warnings only.
 
 ### IAM review follow-up — Zitadel read-only spike (2026-09-09, v4.17.3, PASS)
 
@@ -685,7 +686,34 @@ Nothing below is rejected; each names the tomorrow that reopens it.
 | D5 | Mimo/opencode delegate lane | PATH fixed to opencode ≥1.18.0 (stale beta shadowed it → 426 free-tier refusal); retry one small brief before trusting the lane |
 | D6 | Live infra cutover (NOT done in tree) | Permanent keeps: DB role `integin_runtime`, DB `integin_dev`, volumes, `integin-pilot-rustfs` container, `integin-c14n-1`, fixture IDs. Cutover needs a maintenance window: `ALTER ROLE integin_runtime RENAME TO integin_runtime` + fresh DB `integin_dev` via pg_dump reload + container recreate. Code already dual-sets GUCs and mirrors env, so either side boots. Do NOT rename live objects without backup + verify. |
 
+---
+
+## 19. 📱 Live-Device + Matrix Session (2026-09-23, Xiaomi Mi 9, `59af14c0`, opencode lane)
+
+### Commits (all verified before commit)
+* `integin-pilot-source@c997e51` — field_app provision-port fix + durability roundtrip test (prior).
+* `integin-pilot-source@dd74982` — appliance OIDC audience default → casdoor app-built-in client id.
+* `integin-pilot-source@0e0ae44` — **outbox rotation migration** (`reconcileOutboxIdentities` + `OutboxStore.replace` ×3 impls + HELD in drift pending + deterministic read order + `_lastAcceptedSequence` from stored states), AGP 9.4.1, Kotlin 2.4.20, analyzer-lint fixes, enrollment test rename.
+* Parent `ae7fafc`/`baf51a4`/`622984a` — HANDOVER record, submodule bumps, root `run_matrix.ps1` removal.
+
+### Acceptance matrix — COMPLETE ✅
+* `integin-live-matrix seed → exercise` EXIT 0 vs appliance stack: sync APPLIED/DUPLICATE/HELD/CONFLICT/SECURITY_FAILURE + evidence APPLIED/DUPLICATE/CONFLICT/SECURITY_FAILURE. pgcat needs `default_query_exec_mode=simple_protocol`; Casdoor app-built-in needed `client_credentials` in `grant_types` (volume state); server audience must equal token aud; 18080→8080 forwarder satisfies the matrix origin guard; seed→restart-server→exercise order (authorities load at boot). Restart recovery verified (receipts + evidence objects survive full data-plane restart).
+
+### Phase 4 gates (Android; Apple/desktop explicitly deferred, no VS present)
+* Gate 1 PASS (TEE verify + provision 200 + trusted), Gate 2 PASS (airplane-mode queue → sync APPLIED `tx-1790181857180729-8125`), Gate 4 PASS (`adb reboot`, no corruption), Gate 5 PASS (idempotent re-submit). Gate 3 BLOCKED by code gap: auth-bound keys unwired (`generateAttestedKey` zero callers), `biometricOnly: true` contradicts PIN fallback — needs Flutter rebuild.
+* Photo cycle: server TUS leg proven live (`create→append→complete→key` with real OIDC bearer); device leg blocked on missing `TusClient.authToken` wiring + OneShotCamera confirm UX (both need Flutter rebuild).
+
+### MI 9 stuck-outbox bug — ROOT CAUSE + FIX ✅
+* Every fresh provision mints a new authority id → `SyncGuard` rejects old entries → terminal failure states invisible to `pending()` → only cache-clear helped (data loss). Fixed by startup reconciliation (re-bind/re-sequence/re-sign/re-seal, stable tx ids → idempotent replay). Server side verified airtight (durable receipt → DUPLICATE first, durable seq, held resumable).
+
+### Verification ledger
+* `flutter analyze` 0 issues; app suite **209/209** (3 enrollment timeouts were C:-disk-exhaustion flakes + stale naming, green since); `go test ./...` + `go vet` clean; debug APK built (106s) and `install -r` pushed to MI 9 with data preserved.
+* Toolchain: Flutter 3.47.5/Dart 3.13.0 (`D:\LEIMS-TOOLS\flutter-3.47.0`), AGP 9.4.1, Kotlin 2.4.20, Gradle 9.7.1, compileSdk 37, JDK 26.0.1 (works, warnings only). C: rescued (0B → 9GB) by moving `~/.gradle` → `D:\gradle-home`; build with `GRADLE_USER_HOME=D:\gradle-home`. Device APKs REQUIRE `--dart-define` endpoints or they run a silent demo session.
+* Infra notes: pilot Postgres volume is gone (only casdoor/rustfs pilot volumes survive); `lean-ctx` shell worker wedged this session (used native shell path); `adb reboot` wipes `adb reverse` rules (re-establish).
 
 
 
 
+
+
+---

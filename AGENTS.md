@@ -50,3 +50,12 @@ gives you structural context (callers, dependents, test coverage) that file sear
 - Boilerplate from existing pattern? Generate disk-direct from reference, don't pull output into ctx.
 - Never delegate: debugging, edits needing line numbers, arch/security decisions.
 <!-- /shunt-routing -->
+
+<!-- super-agent-stack -->
+## Super-agent stack (persistent gear)
+- Memory across sessions: use the `memory` tool (search before starting related work; add decisions/learnings). Web UI: `http://127.0.0.1:4747`.
+- Session handoff: `/handoff <goal>` at end of a long session — next session resumes with file refs + `read_session`. Ctrl-C exits cleanly.
+- Token/usage audit: `/telemetry-report`.
+- Large command output: pipe through `rtk` (compressed tool output) — `cmd | rtk` when a command would flood context.
+- Long-running / non-interactive processing defaults to plain `bash` tool; opencode auto-compresses at the harness level. Use `rtk` only when you need it BEFORE the harness truncates.
+<!-- /super-agent-stack -->
