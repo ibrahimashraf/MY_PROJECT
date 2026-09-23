@@ -742,7 +742,7 @@
 
 ## 🧭 Group 17: Life-Domain Map — Every Catalog Entry by Domain
 
-*(One entry can appear in many domains. Domains intentionally include brainstorming, branding, problem solving, and other cross-cutting life activities, not just the original 9. Entry numbers = catalog numbers.)*
+*(One entry can appear in many domains. This is the full life spectrum — not a curated subset. Gaps marked `— no entry yet; add when swept.` Entry numbers = catalog numbers.)*
 
 ### 💻 Coding & Engineering
 *   go.dev #1 · awesome-go ×2 #2 · flutter #3 · pub.dev #4 · awesome-dart #7 · samber/cc-skills-golang #58 · conc #60 · hatchet #61 · langchaingo #62 · awesome-postgres #13 · postgrest #14 · drizzle #15 · prisma #16 · codebase-memory-mcp #108
@@ -766,24 +766,56 @@
 *   hacker-laws #55 · council-of-high-intelligence #88 · arc-kit #83 · OpenAgentsControl #87 · MTPLX #113 (eval-driven choices)
 
 ### 💰 Financing & Token Budgets
-*   quota #32 · claude-tap #99 · tokscale #117 · free-coding-models #112 · rtk #42 · headroom #44
+*   quota #32 · claude-tap #99 · tokscale #117 · opencode-telemetry #124 · free-coding-models #112 · rtk #42 · headroom #44
 
-### 📣 Marketing & Content
-*   html-anything #120 · distilly #110 (content skills) · scrapling docs #74 (content portals) · anbeime/skill #102 · agentic-awesome-skills #25
+### 💸 Budgeting & Cost Control
+*   quota #32 (per-provider budgets) · tokscale #117 (spend ledger) · OmniRoute #75 (cost controls) · axonhub #95 (cost controls) · rtk #42 (60–90% token cut) · headroom #44 (~20% cut) · free-coding-models #112 (free-tier selection)
+*   — personal/family/business budgeting: no entry yet; add when swept.
+
+### 👔 Leadership & Management
+*   arc-kit #83 (governance harness) · council #88 (decision deliberation) · teamai-cli #49 (team-native ops) · agent-teams-ai #84 (boss+team chatops) · OpenAgentsControl #87 (approval-based delegation) · hacker-laws #55 (management laws: Brooks/Conway)
+*   — human-leadership training (1-on-1s, org design): no entry yet; add when swept.
+
+### ⏱️ Productivity & Attention
+*   i-have-adhd #66 (single next action) · LifeOS #64 (routines as files) · planning-with-files #100 (crash-proof plans) · beads #54 (task tracker) · opencode-handoff #123 (fresh-session resume)
 
 ### 🧬 Researching & Evidence
 *   claude-scholar #104 · Deep-Research-skills #106 · codebase-memory-mcp #108 · memsearch #109 · harness-memory #122 · integin-primary-research (our skill)
 
-### 🗂️ Organization & Planning
+### 📋 Organization & Planning
 *   beads #54 · atlas #80 · planning-with-files #100 · LifeOS #64 · I-have-Adhd #66 · career-ops #52 (application structure)
+
+### 📣 Marketing & Content
+*   html-anything #120 · distilly #110 (content skills) · scrapling docs #74 (content portals) · anbeime/skill #102 · agentic-awesome-skills #25
+
+### 🔄 Communication & Writing
+*   caveman #65 (terse output) · i-have-adhd #66 (chunked messaging) · stop-that-shit #111 (scope guard) · context-mode #27 (focused reads) · opencode-handoff #123 (state handoff)
 
 ### 🔐 Security & Privacy
 *   Awesome-Hacking #21 · Infisical #17 · ctf-skills #105 · supermemory #10 (tenant isolation)
 
 ### ☁️ Orchestration & Automation
-*   ECC #9 · mco #12 · hive #12 · learn-opencode #38 · delegate-skills #85 · OpenAgentsControl #87 · council #88 · kungfu #93 · openwolf #81
+*   ECC #9 · mco #12 · hive #12 · learn-opencode #38 · delegate-skills #85 · OpenAgentsControl #87 · council #88 · kungfu #93 · openwolf #81 · oh-my-openagent #29 · openwork #37 · AionUi #76
 
-### 🔄 Communication & Relays
-*   Caveman #65 · I-have-Adhd #66 · stop-that-shit #111 · context-mode #27 · opencode-handoff #123
+### 🧑‍💼 Entrepreneurship & Business
+*   InsForge #63 (all-in-one backend) · coolify #18 (sovereign PaaS) · career-ops #52 (ops discipline) · distilly #110 (skill → product) · OmniRoute #75 + axonhub #95 (gateway infra)
+*   — sales/negotiation/pricing: no entry yet; add when swept.
 
-*Catalog v5.0.0 — 2026-09-23. Resolved 4× ~unverified (#64–67); added Group 16 (awesome-opencode deep picks #122–126) and Group 17 (Life-Domain Map, 14 domains incl. brainstorming/branding/problem-solving). Count verified via GitHub API. Reconciled into INTEGIN Master Architecture.*
+### 🚀 Career & Growth
+*   career-ops #52 (A–H reports, scores) · claude-scholar #104 (skill compounding) · llm-wiki-agent #107 (knowledge compounding) · awesome-katas #59 (skill drills)
+
+### 🎨 Creativity & Media
+*   html-anything #120 · pro_image_editor #71 · flutter_image_compress #72 · fluttergems #73 · codebeg.org #68 · Medium GenUI #69 · impeccable #126 · taste-skill #57
+
+### 🤝 Networking & Relationships
+*   career-ops #52 (application + portfolio ops) · opencode-telegram-bot #34 (mobile reach)
+*   — relationship/CRM/social capital: no entry yet; add when swept.
+
+### 🏠 Home & Life Admin
+*   LifeOS #64 (goals/routines/knowledge as files) · i-have-adhd #66 (low-friction capture) · llm-wiki-agent #107 (personal knowledge base)
+*   — budgeting/family ops/health: no entry yet; add when swept.
+
+### 🧘 Health & Wellness
+*   — no entry yet; add when swept (fitness, sleep, focus, mental health).
+
+*Catalog v5.1.0 — 2026-09-23. Resolved 4× ~unverified (#64–67); added Group 16 (awesome-opencode deep picks #122–126) and full-spectrum Group 17 (Life-Domain Map, 23 domains incl. brainstorming/branding/problem-solving/budgeting/leadership). Gaps flagged in-G17 for future sweeps. Reconciled into INTEGIN Master Architecture.*
