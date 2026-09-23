@@ -2,13 +2,13 @@
 
 **Document ID:** REF-2026-09-07-MASTER-ECOSYSTEM-CATALOG  
 **Location:** `c:\MY_PROJECT\docs\architecture\GITHUB_REPOSITORIES_REFERENCE.md`  
-**Purpose:** Canonical inventory of all 121 authoritative GitHub repositories, developer ecosystems, and technology references cataloged across engineering sessions.  
+**Purpose:** Canonical inventory of all 126 authoritative GitHub repositories, developer ecosystems, and technology references cataloged across engineering sessions.  
 **Methodology Sequence:** `RE-VISION > REVIEW > REVISE > REVIEW > DEBATE > PLAN`
 **Library Rule:** Collect everything; tier on read. `Tier: ADOPT` = trial in our harness. `Tier: WATCH` = track releases/issues only. `Tier: REFERENCE` = ideas shelf. `Take vs Build` = extract the good, create ours — never wholesale-adopt a harness into the authority path.
 
 ---
 
-## 📑 Master Repository & Tooling Taxonomy (121 Entries)
+## 📑 Master Repository & Tooling Taxonomy (126 Entries)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -42,7 +42,7 @@
 │    • taste-skill/design  │    • fluttergems/candies │                                  │
 │    • go-skills/conc/     │    • scrapling docs      │                                  │
 │      hatchet/langchaingo │    • 2× Medium guides    │                                  │
-│    • InsForge + 4×~unver.│                          │                                  │
+│    • InsForge + 5×resolved│                          │                                  │
 ├──────────────────────────┼──────────────────────────┼──────────────────────────────────┤
 │ 12. Orchestration & Run  │ 13. Skills/Knowledge/Mem │ 14. API/Codegen/Token Tools      │
 │    • OmniRoute / axonhub │    • planning-with-files │    • hey-api / humanlayer        │
@@ -407,25 +407,25 @@
 *   **Role in INTEGIN**: **Tier: REFERENCE.** Sovereign-appliance contrast vs our Coolify model (#18): agent-provisioned backends are the anti-pattern for our authority path — study the shape, keep our control plane.
 *   **Take vs Build**: Take agent-skill packaging ideas; build backend ourselves, always.
 
-### 64. [LifeOS](~unverified) — search inconclusive, multiple weak matches
-*   **Domain**: (Term only — "LifeOS"-type personal-OS/agent-memory systems.)
-*   **Role in INTEGIN**: **Tier: REFERENCE (pending).** Resolve at next sweep; candidate slot for personal-knowledge/OS patterns if relevant to operator tooling.
-*   **Take vs Build**: TBD on resolution.
+### 64. [danielmiessler/LifeOS](https://github.com/danielmiessler/LifeOS) — ★19.1k · TS · MIT · pushed 2026-09-04
+*   **Domain**: Personal-OS / agent-memory system — everything about you as files (goals, routines, knowledge), loadable by any agent. Runner-up variant: `luneth90/lifeos` (Obsidian).
+*   **Role in INTEGIN**: **Tier: REFERENCE.** Personal-knowledge-as-files model for operator machines: files → diffable memory (pairs with git-native #43). Never in the authority path.
+*   **Take vs Build**: Take files-as-memory convention; build our tenant-scoped version.
 
-### 65. [Caveman](~unverified) — no canonical repo resolved (rate-limited at sweep time)
-*   **Domain**: (Term only — terse, no-fluff communication/prose style for agents.)
-*   **Role in INTEGIN**: **Tier: REFERENCE (pending).** Intent already encoded in our lean-ctx compression rules; resolve only if a canonical skill emerges.
-*   **Take vs Build**: Already built (compression block in AGENTS.md).
+### 65. [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) — ★107.5k · Go · NOASSERTION · pushed 2026-09-23
+*   **Domain**: Terse, no-fluff communication/prose skill for agents (~65% output-token cut). Also a Go HTTP proxy compressing model responses.
+*   **Role in INTEGIN**: **Tier: REFERENCE.** ⚠️ NOASSERTION — ideas only, no code reuse. Validates our lean-ctx compression rules; the token-cut claim is worth a bake-off vs our shunt-routing baseline.
+*   **Take vs Build**: Already built (compression block in AGENTS.md); take benchmark data only.
 
-### 66. [I-have-Adhd](~unverified) — no canonical repo resolved
-*   **Domain**: (Term only — ADHD-friendly productivity/organizer tooling.)
-*   **Role in INTEGIN**: **Tier: REFERENCE (pending).** Operator-UX shelf: low-friction task capture, single-next-action surfacing — relevant to relay-operator ergonomics.
-*   **Take vs Build**: TBD on resolution.
+### 66. [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) — ★50.6k · Python · MIT · pushed 2026-09-19
+*   **Domain**: ADHD-friendly productivity skill — 10 output rules (single next action, no wall-of-text, chunked tasks), SessionStart hook.
+*   **Role in INTEGIN**: **Tier: ADOPT (patterns).** Operator-UX shelf: low-friction task capture + single-next-action surfacing directly serve relay-operator ergonomics. Hook shape is License-MIT-safe.
+*   **Take vs Build**: Take the hook + rules; build our operator runbook around them.
 
-### 67. [proton](~unverified) — candidates: ProtonMail/proton (privacy suite) vs timeplus-io/proton (streaming SQL)
-*   **Domain**: (Term only — unresolved intent.)
-*   **Role in INTEGIN**: **Tier: REFERENCE (pending).** If streaming-SQL intent: compare vs our sync/idempotency model; if privacy-suite intent: shelf under Group 5 contrasts.
-*   **Take vs Build**: TBD on intent.
+### 67. [timeplus-io/proton](https://github.com/timeplus-io/proton) — ★2.3k · C++ · Apache-2.0 · pushed 2026-09-20
+*   **Domain**: Streaming SQL engine (ClickHouse-derived, lightweight) — (ProtonMail privacy suite is the alternative reading; intent resolves to streaming SQL.)
+*   **Role in INTEGIN**: **Tier: REFERENCE.** Streaming-SQL pattern vs our sync/idempotency + standards-sync model; read the pipeline model, not the C++ engine.
+*   **Take vs Build**: Take streaming-pipeline ideas; build on our existing DB/outbox stack.
 
 ---
 
@@ -707,4 +707,83 @@
 *   **Role in INTEGIN**: **Tier: REFERENCE.** BYOK model-multiplexing inside Copilot Chat vs our gateway bake-off (#75 vs #95) — small-star, single-maintainer risk; ideas only until proven.
 *   **Take vs Build**: Take provider-list breadth; build routing/policy ourselves.
 
-*Catalog v4.1.0 — entry 121 appended 2026-09-22 (Group 15: late additions). Count verified same-day via API; 4 entries still ~unverified (#64–67). Reconciled into INTEGIN Master Architecture.*
+---
+
+## 🧠 Group 16: Awesome-OpenCode Deep Picks & Resolved Terms
+
+*(From the awesome-opencode sweep + resolved `~unverified` terms. All real repos, metadata verified via GitHub API on 2026-09-23.)*
+
+### 122. [smc2315/harness-memory](https://github.com/smc2315/harness-memory) — ★19 · TS · MIT · pushed 2026-04-09
+*   **Domain**: Evidence-gated memory — auto-captures interaction evidence, materializes via multi-gate pipeline with human review; 4-layer activation; replaces CLAUDE.md (−73% tokens claimed); local-first sql.js WASM, zero cloud.
+*   **Role in INTEGIN**: **Tier: WATCH.** Evidence-gating at write time matches our immunity harness (nothing unverified enters memory). Tiny star count + older push = verify before trial.
+*   **Take vs Build**: Take evidence-gate concept; build on our git-native memory (#43) + verdict records.
+
+### 123. [joshuadavidthomas/opencode-handoff](https://github.com/joshuadavidthomas/opencode-handoff) — ★172 · TS · MIT · pushed 2026-08-26
+*   **Domain**: Generates a focused handoff prompt (goal/state/next, decisions, open threads) to continue in a fresh session.
+*   **Role in INTEGIN**: **Tier: ADOPT (pattern).** Fits Token Guide Lever 1 (fresh sessions) + our session-resume discipline; minimal, no daemon/memory DB. Small-star but MIT + tiny surface = low risk.
+*   **Take vs Build**: Take the handoff schema; build our work-order handoff (already ours) on it.
+
+### 124. [agostinilabsrl/opencode-telemetry](https://github.com/agostinilabsrl/opencode-telemetry) — ★6 · TS · MIT · pushed 2026-06-04
+*   **Domain**: Passive per-session token audit — local SQLite (tokens, tool calls, skills, per-turn cost), `octm` CLI, no network. (Alternatives: eserete/opencode-token-tracker, Howardzhangdqs/opencode-throughput, IgorWarzocha/Opencode-Context-Analysis-Plugin, slkiser/opencode-quota #32.)
+*   **Role in INTEGIN**: **Tier: WATCH.** Measurement trio with quota (#32) + tokscale (#117); tiny star count — evaluate the SQLite schema, not the project.
+*   **Take vs Build**: Take audit schema; build around our quota/tokscale pipeline.
+
+### 125. [h3nryprod01/design-taste](https://github.com/h3nryprod01/design-taste) — ★58 · JS · MIT · pushed 2026-09-22
+*   **Domain**: Frontend taste skill (anti-slop) — synthesized downstream of #57 taste-skill; pairs with h3nryprod01/design-taste + pbakaus/impeccable.
+*   **Role in INTEGIN**: **Tier: REFERENCE.** Design-slop checklists for `quiet-signal/` surfaces; same niche as our vendored impeccable 4.3.1 — read the deltas, don't stack three overlapping skills.
+*   **Take vs Build**: Take delta checks; build into our impeccable workflow (already ours).
+
+### 126. [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — ★70.2k · JS · Apache-2.0 · pushed 2026-09-22
+*   **Domain**: UI/UX review skill (61-check detector / generator) — upstream repo of our vendored impeccable 4.3.1 skill.
+*   **Role in INTEGIN**: **Tier: ADOPT (in use).** Canonical source for the impeccable skill already vendored in `.agents/skills/impeccable`; track upstream releases here (current = v4.3.1).
+*   **Take vs Build**: Take as-is; it is the build. Upstream diff-tracking point.
+
+---
+
+## 🧭 Group 17: Life-Domain Map — Every Catalog Entry by Domain
+
+*(One entry can appear in many domains. Domains intentionally include brainstorming, branding, problem solving, and other cross-cutting life activities, not just the original 9. Entry numbers = catalog numbers.)*
+
+### 💻 Coding & Engineering
+*   go.dev #1 · awesome-go ×2 #2 · flutter #3 · pub.dev #4 · awesome-dart #7 · samber/cc-skills-golang #58 · conc #60 · hatchet #61 · langchaingo #62 · awesome-postgres #13 · postgrest #14 · drizzle #15 · prisma #16 · codebase-memory-mcp #108
+
+### 🧠 Brainstorming & Ideation
+*   superpowers #53 (brainstorm→plan spine) · council-of-high-intelligence #88 (triad/full deliberation) · spec-kit #56 · planning-with-files #100 · MTPLX #113 (local eval → rapid iteration) · h3nryprod01/design-taste #125
+
+### 🎯 Problem Solving & Debugging
+*   hacker-laws #55 · awesome-scalability #20 · Awesome-Hacking #21 · ctf-skills #105 · codebase-memory-mcp #108 · deepseek-harness #50
+
+### 🏷️ Branding & Design
+*   ui-ux-pro-max-skill #22 · taste-skill #57 · design-taste #125 · impeccable #126 · flutterawesome.com #5 · pro_image_editor #71 · html-anything #120
+
+### 📚 Studying & Learning
+*   learn-opencode #38 · awesome-katas #59 · claude-scholar #104 · Deep-Research-skills #106 · llm-wiki-agent #107 · LifeOS #64 · I-have-Adhd #66
+
+### 👩‍🏫 Teaching & Training
+*   awesome-katas #59 · plannotator #101 · claude-scholar #104 · learn-opencode #38 · superpowers #53 · distilly #110
+
+### 🔍 Analyzing & Decision-Making
+*   hacker-laws #55 · council-of-high-intelligence #88 · arc-kit #83 · OpenAgentsControl #87 · MTPLX #113 (eval-driven choices)
+
+### 💰 Financing & Token Budgets
+*   quota #32 · claude-tap #99 · tokscale #117 · free-coding-models #112 · rtk #42 · headroom #44
+
+### 📣 Marketing & Content
+*   html-anything #120 · distilly #110 (content skills) · scrapling docs #74 (content portals) · anbeime/skill #102 · agentic-awesome-skills #25
+
+### 🧬 Researching & Evidence
+*   claude-scholar #104 · Deep-Research-skills #106 · codebase-memory-mcp #108 · memsearch #109 · harness-memory #122 · integin-primary-research (our skill)
+
+### 🗂️ Organization & Planning
+*   beads #54 · atlas #80 · planning-with-files #100 · LifeOS #64 · I-have-Adhd #66 · career-ops #52 (application structure)
+
+### 🔐 Security & Privacy
+*   Awesome-Hacking #21 · Infisical #17 · ctf-skills #105 · supermemory #10 (tenant isolation)
+
+### ☁️ Orchestration & Automation
+*   ECC #9 · mco #12 · hive #12 · learn-opencode #38 · delegate-skills #85 · OpenAgentsControl #87 · council #88 · kungfu #93 · openwolf #81
+
+### 🔄 Communication & Relays
+*   Caveman #65 · I-have-Adhd #66 · stop-that-shit #111 · context-mode #27 · opencode-handoff #123
+
+*Catalog v5.0.0 — 2026-09-23. Resolved 4× ~unverified (#64–67); added Group 16 (awesome-opencode deep picks #122–126) and Group 17 (Life-Domain Map, 14 domains incl. brainstorming/branding/problem-solving). Count verified via GitHub API. Reconciled into INTEGIN Master Architecture.*
