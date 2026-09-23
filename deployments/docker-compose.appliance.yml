@@ -171,7 +171,9 @@ services:
       INTEGIN_PILOT_ENROLL_ALLOW_BIND_ALL: "true"
       INTEGIN_OIDC_ENABLED: "true"
       INTEGIN_OIDC_ISSUER: "http://appliance-casdoor:8000"
-      INTEGIN_OIDC_AUDIENCE: "${APPLIANCE_OIDC_AUDIENCE:-integin-live-matrix}"
+      INTEGIN_OIDC_AUDIENCE: "${APPLIANCE_OIDC_AUDIENCE:-d61158864559d2b45062}"
+      # Audience must equal the appliance-casdoor app-built-in client_id (token aud).
+      # app-built-in additionally requires client_credentials in grant_types (JSON array in casdoor DB).
       INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK: "true"
     ports:
       - "8080:8080"
