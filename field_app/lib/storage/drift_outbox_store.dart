@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import '../domain/models.dart';
-import '../outbox/outbox.dart' show OutboxEntry, OutboxState, OutboxStore;
+import '../outbox/outbox.dart'
+    show OutboxEntry, OutboxState, OutboxStateSemantics, OutboxStore;
 import 'app_database.dart';
 
 /// Drift-backed outbox store.
@@ -56,6 +57,28 @@ class DriftOutboxStore implements OutboxStore {
           (state == OutboxState.applied || state == OutboxState.duplicate)
               ? DateTime.now().toUtc()
               : null,
+    );
+  }
+
+  @override
+  Future<void> replace(OutboxEntry entry) async {
+    final rows = await (_db.select(_db.outboxRows)
+          ..where(
+              (t) => t.transactionId.equals(entry.mutation.transactionId)))
+        .get();
+    if (rows.isEmpty) {
+      return;
+    }
+    final current = _rowToEntry(rows.first);
+    if (current.state.isAcknowledged) {
+      return;
+    }
+    await _db.replaceOutboxMutation(
+      transactionId: entry.mutation.transactionId,
+      mutationJson: jsonEncode(entry.mutation.toJson()),
+      chainHash: entry.chainHash,
+      state: entry.state.name.toUpperCase(),
+      lastError: entry.lastError,
     );
   }
 

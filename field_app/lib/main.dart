@@ -215,6 +215,10 @@ Future<void> main() async {
     trace: _traceWindowsStartup,
   );
   await controller.restoreOutbox();
+  // Authority packages rotate on every fresh provision: re-bind any entries
+  // queued under a previous device identity so the inspector's work survives
+  // rotation instead of resting in terminal failure states.
+  await controller.reconcileOutboxIdentities();
   if (!kIsWeb) {
     controller.connectivity = ConnectivityState.online;
   } else if (syncClient != null) {

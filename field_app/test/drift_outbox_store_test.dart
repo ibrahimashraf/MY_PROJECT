@@ -69,7 +69,7 @@ void main() {
       expect(all, hasLength(1));
     });
 
-    test('pending returns only QUEUED and UPLOADING entries', () async {
+    test('pending returns QUEUED, UPLOADING and HELD entries', () async {
       final m1 = _testMutation(transactionId: 'tx-1');
       final m2 = _testMutation(transactionId: 'tx-2', sequenceNumber: 2);
       final m3 = _testMutation(transactionId: 'tx-3', sequenceNumber: 3);
@@ -82,14 +82,15 @@ void main() {
       await store.append(e2);
       await store.append(e3);
 
-      // Mark e3 as HELD — should not appear in pending.
+      // Mark e3 as HELD — held entries stay pending so a later flush can
+      // deliver them once the blocking sequence arrives.
       await store.mark(e3, OutboxState.held);
 
       final pending = await store.pending();
-      expect(pending, hasLength(2));
+      expect(pending, hasLength(3));
       expect(
         pending.map((e) => e.mutation.transactionId),
-        containsAll(['tx-1', 'tx-2']),
+        containsAll(['tx-1', 'tx-2', 'tx-3']),
       );
     });
 

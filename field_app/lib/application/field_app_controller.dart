@@ -6,6 +6,7 @@ import '../advisory/pilot_advisory_client.dart';
 import '../domain/inspection_draft.dart';
 import '../workpackages/package_compatibility.dart';
 import '../domain/models.dart';
+import '../outbox/merkle_hash_chain.dart';
 import '../outbox/outbox.dart';
 import '../security/transaction_signer.dart';
 import '../sync/event_stream_client.dart';
@@ -89,6 +90,138 @@ class FieldAppController extends ChangeNotifier {
       }
     }
     notifyListeners();
+  }
+
+  /// Re-binds every unacknowledged outbox entry to the current device identity.
+  ///
+  /// Authority packages rotate on every fresh provision (new id, ~30 minute
+  /// lifetime). Entries queued under a previous device id or authority fail
+  /// [SyncGuard] locally and would otherwise rest in terminal failure states
+  /// forever — the inspector's work silently lost until a cache clear wipes
+  /// it. Reconciliation re-sequences them contiguously from
+  /// [_lastAcceptedSequence], re-signs with the current [deviceSigner],
+  /// re-seals the tamper-evident chain in stored order, and returns them to
+  /// `queued` so the next flush can deliver them. Transaction ids are stable
+  /// across the migration, so server replays stay idempotent (applied becomes
+  /// a harmless duplicate). Returns the number of migrated entries.
+  Future<int> reconcileOutboxIdentities() async {
+    final store = outboxStore;
+    final signer = deviceSigner;
+    final effectiveKeyId = deviceKeyId ?? signer?.keyId;
+    if (store == null ||
+        signer == null ||
+        effectiveKeyId == null ||
+        effectiveKeyId.isEmpty) {
+      return 0;
+    }
+    final entries = await store.all();
+    final ordered = entries.toList()
+      ..sort((a, b) {
+        final byTime =
+            a.mutation.capturedAt.compareTo(b.mutation.capturedAt);
+        if (byTime != 0) {
+          return byTime;
+        }
+        return a.mutation.sequenceNumber.compareTo(b.mutation.sequenceNumber);
+      });
+    final chain = CryptographicMerkleHashChain();
+    var cursor = _lastAcceptedSequence;
+    var migrated = 0;
+    for (final entry in ordered) {
+      final mutation = entry.mutation;
+      if (entry.state.isAcknowledged) {
+        chain.seal(mutation);
+        if (mutation.sequenceNumber > _lastAcceptedSequence) {
+          _lastAcceptedSequence = mutation.sequenceNumber;
+        }
+        continue;
+      }
+      if (mutation.context.tenantId != context.tenantId ||
+          mutation.context.organizationId != context.organizationId) {
+        chain.seal(mutation);
+        continue;
+      }
+      if (mutation.userId != userId) {
+        // Never re-attribute another inspector's work to the current user:
+        // submitting it under a different identity would falsify the
+        // recorded-by chain. Such entries stay put for operator review.
+        chain.seal(mutation);
+        continue;
+      }
+      final expectedSequence = cursor + 1;
+      final isCurrent = mutation.deviceId == deviceId &&
+          mutation.userId == userId &&
+          mutation.authorityId == authority.id &&
+          mutation.authorityEpoch == authority.epoch &&
+          mutation.sequenceNumber == expectedSequence;
+      if (isCurrent) {
+        chain.seal(mutation);
+        cursor = expectedSequence;
+        continue;
+      }
+      cursor = expectedSequence;
+      String signature;
+      try {
+        signature = await signer.signV1(
+          transactionId: mutation.transactionId,
+          tenantId: context.tenantId,
+          organizationId: context.organizationId,
+          environment: context.environment,
+          deviceId: deviceId,
+          userId: userId,
+          sequenceNumber: cursor,
+          operation: mutation.operation,
+          entityId: mutation.entityId,
+          payloadHash: mutation.payloadHash,
+          authorityId: authority.id,
+          authorityEpoch: authority.epoch,
+          capturedAt: mutation.capturedAt,
+          keyId: effectiveKeyId,
+        );
+      } catch (error) {
+        // Fail closed mid-migration: already-replaced entries are durable and
+        // the remainder retry on the next launch. Never strand startup here.
+        lastError = 'Identity reconciliation paused: $error';
+        notifyListeners();
+        break;
+      }
+      final rebound = OfflineMutation(
+        transactionId: mutation.transactionId,
+        context: mutation.context,
+        deviceId: deviceId,
+        userId: userId,
+        sequenceNumber: cursor,
+        operation: mutation.operation,
+        entityId: mutation.entityId,
+        payload: mutation.payload,
+        capturedAt: mutation.capturedAt,
+        authorityId: authority.id,
+        authorityEpoch: authority.epoch,
+        signatureAlgorithm: 'Ed25519',
+        keyId: effectiveKeyId,
+        signature: signature,
+      );
+      final replacement = OutboxEntry(
+        mutation: rebound,
+        chainHash: chain.seal(rebound),
+      )
+        ..attempts = entry.attempts
+        ..lastError =
+            'Re-bound to current device identity; previously: ${entry.lastError ?? 'pending'}.';
+      await store.replace(replacement);
+      migrated += 1;
+    }
+    if (migrated > 0) {
+      _sequence = cursor;
+      final pending = await store.pending();
+      _outbox
+        ..clear()
+        ..addAll(pending.map((entry) => entry.mutation));
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      trace?.call('reconcile-migrated-$migrated');
+      notifyListeners();
+    }
+    return migrated;
   }
 
   bool get canWorkOffline =>
@@ -232,7 +365,6 @@ class FieldAppController extends ChangeNotifier {
     connectivity = ConnectivityState.syncing;
     lastError = null;
     notifyListeners();
-    final pending = await outboxStore!.pending();
     final outcomes = await syncClient!.flush(
       guard: SyncGuard(
         context: context,
@@ -244,14 +376,14 @@ class FieldAppController extends ChangeNotifier {
       ),
       at: at,
     );
-    for (var index = 0;
-        index < outcomes.length && index < pending.length;
-        index += 1) {
-      final outcome = outcomes[index];
-      if ((outcome == SyncOutcome.applied ||
-              outcome == SyncOutcome.duplicate) &&
-          pending[index].mutation.sequenceNumber > _lastAcceptedSequence) {
-        _lastAcceptedSequence = pending[index].mutation.sequenceNumber;
+    // Re-derive from stored states rather than pairing outcomes to a
+    // separately fetched pending list by index: store ordering across two
+    // reads is not a contract any caller should rely on.
+    for (final entry in await outboxStore!.all()) {
+      if ((entry.state == OutboxState.applied ||
+              entry.state == OutboxState.duplicate) &&
+          entry.mutation.sequenceNumber > _lastAcceptedSequence) {
+        _lastAcceptedSequence = entry.mutation.sequenceNumber;
       }
     }
     outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());

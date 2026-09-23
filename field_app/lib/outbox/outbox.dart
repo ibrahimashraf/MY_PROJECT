@@ -94,6 +94,12 @@ abstract interface class OutboxStore {
   Future<List<OutboxEntry>> all();
   Future<List<OutboxEntry>> pending();
   Future<void> mark(OutboxEntry entry, OutboxState state, {String? error});
+
+  /// Replaces the stored entry matched by transaction id with [entry].
+  /// Used by identity reconciliation to re-bind unacknowledged mutations to
+  /// the current device identity without losing the work. Entries that are
+  /// already acknowledged must never be replaced.
+  Future<void> replace(OutboxEntry entry);
   Future<void> close();
 }
 
@@ -122,6 +128,19 @@ class InMemoryOutboxStore implements OutboxStore {
     if (state == OutboxState.applied || state == OutboxState.duplicate) {
       entry.acknowledgedAt = DateTime.now().toUtc();
     }
+  }
+
+  @override
+  Future<void> replace(OutboxEntry entry) async {
+    final index = _entries.indexWhere((candidate) =>
+        candidate.mutation.transactionId == entry.mutation.transactionId);
+    if (index < 0) {
+      return;
+    }
+    if (_entries[index].state.isAcknowledged) {
+      return;
+    }
+    _entries[index] = entry;
   }
 
   @override

@@ -48,12 +48,49 @@ class AppDatabase extends _$AppDatabase {
     await checkpoint();
   }
 
-  Future<List<OutboxRow>> allOutboxEntries() => select(outboxRows).get();
+  // Both reads share one deterministic order (insertion time, then id).
+  // flushOutbox pairs per-entry outcomes with a separately fetched pending
+  // list by index, so the two reads must observe the same order.
+  Future<List<OutboxRow>> allOutboxEntries() =>
+      (select(outboxRows)
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.createdAt),
+              (t) => OrderingTerm(expression: t.transactionId),
+            ]))
+          .get();
 
   Future<List<OutboxRow>> pendingOutboxEntries() =>
       (select(outboxRows)
-            ..where((t) => t.state.isIn(['QUEUED', 'UPLOADING'])))
+            ..where((t) => t.state.isIn(['QUEUED', 'UPLOADING', 'HELD']))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.createdAt),
+              (t) => OrderingTerm(expression: t.transactionId),
+            ]))
           .get();
+
+  /// Replaces the stored mutation bytes (plus seal and state) for one
+  /// transaction id. Used by identity reconciliation to re-bind an
+  /// unacknowledged entry to the current device identity. Acknowledged rows
+  /// are never touched: callers must filter to unacknowledged entries first.
+  Future<void> replaceOutboxMutation({
+    required String transactionId,
+    required String mutationJson,
+    required String? chainHash,
+    required String state,
+    required String? lastError,
+  }) async {
+    await (update(outboxRows)
+          ..where((t) => t.transactionId.equals(transactionId)))
+        .write(
+      OutboxRowsCompanion(
+        mutation: Value(mutationJson),
+        chainHash: Value(chainHash),
+        state: Value(state),
+        lastError: Value(lastError),
+      ),
+    );
+    await checkpoint();
+  }
 
   Future<void> markOutboxEntry({
     required String transactionId,

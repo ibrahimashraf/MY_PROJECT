@@ -89,6 +89,21 @@ class JsonOutboxStore implements OutboxStore {
     await _persist();
   }
 
+  @override
+  Future<void> replace(OutboxEntry entry) async {
+    await load();
+    final index = _entries.indexWhere((candidate) =>
+        candidate.mutation.transactionId == entry.mutation.transactionId);
+    if (index < 0) {
+      return;
+    }
+    if (_entries[index].state.isAcknowledged) {
+      return;
+    }
+    _entries[index] = entry;
+    await _persist();
+  }
+
   Future<void> _persist() async {
     await storage.write(
       key,

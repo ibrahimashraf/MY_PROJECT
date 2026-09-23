@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integin_field_app/security/inspection_submission_service.dart';
@@ -15,8 +14,6 @@ void main() {
     const deviceKeyDID = 'did:example:device1';
     const tokenID = 'token-abc';
     const leaseEpoch = 1700000000;
-
-    late InspectionSubmissionService service;
 
     setUp(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -40,8 +37,6 @@ void main() {
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async => signature);
-
-      service = InspectionSubmissionService();
 
       final digest = payload.deriveCompositeDigest();
       expect(digest.length, 32);
