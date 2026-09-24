@@ -17,6 +17,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	"integin/internal/identity"
+	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
 	"integin/internal/security"
 	"integin/internal/shared/types"
@@ -85,7 +86,7 @@ func adminInspectorOrg() identity.OrganizationContext {
 func adminByRoleOrg() identity.OrganizationContext {
 	org := inspectorOrg()
 	org.ActorID = adminID
-	org.Roles = []string{"Tenant Administrator"}
+	org.Roles = []string{"administrator"}
 	return org
 }
 
@@ -268,6 +269,39 @@ func TestRevocationNotifiesLiveCachesAfterPersistence(t *testing.T) {
 	}
 	if len(notified) != 1 || notified[0] != deviceID {
 		t.Fatalf("revocation must notify caches once with the device id, got %v", notified)
+	}
+}
+
+// TestTenantAdminAuthorizationFollowsRealProjection pins the admin gate to the
+// membership values the database and grant API can actually produce, instead
+// of a hand-built context. Before this was enforced, the role branch compared
+// against a role token the work_order_role CHECK constraint forbids, so it was
+// unreachable in production while still green in tests.
+func TestTenantAdminAuthorizationFollowsRealProjection(t *testing.T) {
+	principal := oidcauth.Principal{Issuer: "https://issuer.example", Subject: "human-admin"}
+	project := func(role string, capabilities ...string) bool {
+		membership := identity.Membership{
+			ActorID: "actor-1", TenantID: testTenant, OrganizationID: testOrg,
+			WorkOrderRole: role, Capabilities: capabilities,
+		}
+		org, err := identity.ProjectMembership(membership, principal, identity.MFAPolicy{RequireMFA: false})
+		if err != nil {
+			t.Fatalf("ProjectMembership(role=%q): %v", role, err)
+		}
+		return hasTenantAdmin(org)
+	}
+
+	if !project("administrator", "workorder.add_evidence_reference") {
+		t.Error("grantable administrator role must authorize tenant admin operations")
+	}
+	if !project("inspector", "admin") {
+		t.Error("admin capability must authorize tenant admin operations")
+	}
+	if project("inspector", "workorder.add_evidence_reference") {
+		t.Error("a non-admin role with an unrelated capability must be denied")
+	}
+	if project("manager", "workorder.add_evidence_reference") {
+		t.Error("a non-admin role must not inherit tenant admin rights")
 	}
 }
 

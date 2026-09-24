@@ -569,8 +569,13 @@ func writeSessionFailure(w http.ResponseWriter, err error) {
 	httpresponse.Error(w, http.StatusForbidden, err.Error())
 }
 
-// hasTenantAdmin reports whether the org context carries the Tenant
-// Administrator role or an "admin" capability.
+// hasTenantAdmin reports whether the org context carries the tenant
+// administrator work-order role or an "admin" capability. The role token is
+// "administrator" because that is the value identity_membership.work_order_role
+// can actually hold: the column is CHECK-constrained to
+// inspector/reviewer/manager/administrator, and it is the same token
+// identity.GrantMembership accepts. Matching any other spelling left this
+// branch unreachable outside test doubles that inject a context by hand.
 func hasTenantAdmin(org identity.OrganizationContext) bool {
 	for _, capability := range org.Capabilities {
 		if strings.EqualFold(capability, "admin") {
@@ -578,7 +583,7 @@ func hasTenantAdmin(org identity.OrganizationContext) bool {
 		}
 	}
 	for _, role := range org.Roles {
-		if strings.EqualFold(role, "Tenant Administrator") {
+		if strings.EqualFold(role, "administrator") {
 			return true
 		}
 	}
