@@ -730,6 +730,12 @@ Nothing below is rejected; each names the tomorrow that reopens it.
 * 2026-09-24 builds (gap skills, all local, MIT, 25 → 28 skills): `.agents/skills/outreach-crm/` (contacts.json log + approval-gated drafts, never auto-send — fills 🤝); `.agents/skills/envelope-budget/` (bank/Actual CSV → envelopes, read-only, no finance advice — fills 💸); `.agents/skills/leadership-checklists/` (1-on-1/delegate/feedback/org sheets, ideas-only refs behind license firewall — fills 👔 human side).
 * 2026-09-24 pull-all (except gateway): quota plugin `@slkiser/opencode-quota` installed (4 plugins; trio complete with telemetry+tokscale); vendored `ponytail` (6.6KB base only), superpowers spine (`superpowers-brainstorm` 17.5KB, `superpowers-plans` 9KB, `superpowers-execute` 20KB — 3 of 15, MIT) → 34 skills; `distill-runbook` built OURS (upstream SKILL was Feishu-colleague-specific, rejected); `okf-memory` skill vendored + bundle `.agents/okf-knowledge/` live (2 linked decisions, strict conformant; binary at Temp scratch, MCP wiring deferred); headroom-ai 0.38.0 installed (CLI works, proxy+evals need upstream wiring — parked); telegram-bot staged not installed (needs bot token from user); wshobson indexed, top picks banked (`agent-orchestration`, `block-no-verify`, `debugging-toolkit`, `codebase-cleanup`, `content-marketing` — pull per need, agent-defs shape ≠ skills).
 
+### 2026-09-24 — Lift workflow parity slice
+- `internal/liftviewexport`: catalog-driven reference-only crane selection; HIRARC and contiguous sequential-method validation; visible HIRARC/method pages and metadata in sealed export.
+- `internal/domain/certificaterender`: lift-plan PDF text now uses visible PDF text operators instead of comment-only content.
+- `tools/lifting-simulator/3d`: removed client model constants, fetches catalog dynamically, adds HIRARC/method editor and bounded OBJ site-reference import with parser tests.
+- Verification: `go test -count=1 ./...` PASS; `go vet ./...` PASS; `gofmt -l .` clean; OBJ/JS checks PASS. Race blocked by repository-required `CGO_ENABLED=0`; Playwright browser smoke unavailable because Chromium is not installed.
+- Deferred: tenant-backed OEM load-chart registry, persisted lift-plan records, full CAD/IFC/GLB import, and defensive-driving simulator.
 
 
 
