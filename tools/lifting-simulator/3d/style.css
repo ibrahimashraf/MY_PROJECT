@@ -368,3 +368,85 @@ button:hover {
 .config-select:focus {
     border-color: var(--accent);
 }
+
+.file-control {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+.file-control input[type="file"] {
+    width: 100%;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+.file-control input[type="file"]::file-selector-button {
+    margin-right: 8px;
+    padding: 6px 8px;
+    color: var(--text-main);
+    background: var(--border-color);
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+#clear-site-model {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+#site-model-status {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+.planning-subhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+.planning-subhead button {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+.planning-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.planning-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+.planning-row input {
+    min-width: 0;
+    padding: 6px;
+    color: var(--text-main);
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+}
+.planning-row input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+.planning-row button {
+    align-self: center;
+    padding: 5px 7px;
+    font-size: 12px;
+}
+.planning-row.method {
+    grid-template-columns: 42px repeat(3, minmax(0, 1fr)) auto;
+}
+#planning-controls .hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}

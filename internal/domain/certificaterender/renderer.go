@@ -79,27 +79,35 @@ func BuildDeterministicPDF(docTitle string, pages [][]string) ([]byte, error) {
 		}
 	}
 
-	// Object numbering: 1=Catalog, 2=Pages tree, then per page (Page, Content).
-	objs := []string{"<< /Type /Catalog /Pages 2 0 R >>"}
+	objs := []string{
+		"<< /Type /Catalog /Pages 2 0 R >>",
+		"",
+		"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+	}
 	kids := make([]string, 0, len(pages))
 	type pageObj struct{ pageNum, contentNum int }
 	pageObjs := make([]pageObj, 0, len(pages))
-	nextNum := 3
+	nextNum := 4
 	for range pages {
 		kids = append(kids, fmt.Sprintf("%d 0 R", nextNum))
 		pageObjs = append(pageObjs, pageObj{pageNum: nextNum, contentNum: nextNum + 1})
 		nextNum += 2
 	}
-	objs = append(objs, fmt.Sprintf("<< /Type /Pages /Kids [%s] /Count %d >>", strings.Join(kids, " "), len(pages)))
+	objs[1] = fmt.Sprintf("<< /Type /Pages /Kids [%s] /Count %d >>", strings.Join(kids, " "), len(pages))
 	for i, lines := range pages {
 		po := pageObjs[i]
 		var stream strings.Builder
-		stream.WriteString("% " + docTitle + " — page " + itoa(i+1) + "\n")
-		for _, line := range lines {
-			stream.WriteString("% " + line + "\n")
+		stream.WriteString("% " + docTitle + " page " + itoa(i+1) + "\n")
+		stream.WriteString("BT\n/F1 12 Tf\n14 TL\n72 760 Td\n")
+		for lineIndex, line := range lines {
+			if lineIndex > 0 {
+				stream.WriteString("T*\n")
+			}
+			stream.WriteString(pdfLiteralText(line) + " Tj\n")
 		}
+		stream.WriteString("ET\n")
 		content := stream.String()
-		objs = append(objs, fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Contents %d 0 R /Resources << >> >>", A4WidthPoints, A4HeightPoints, po.contentNum))
+		objs = append(objs, fmt.Sprintf("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %.2f %.2f] /Contents %d 0 R /Resources << /Font << /F1 3 0 R >> >> >>", A4WidthPoints, A4HeightPoints, po.contentNum))
 		objs = append(objs, fmt.Sprintf("<< /Length %d >>\nstream\n%sendstream", len(content), content))
 	}
 
@@ -138,6 +146,22 @@ func itoa(n int) string {
 
 // generateDeterministicPDF creates a deterministic, compliant minimal PDF document
 // containing the structured certificate metadata, Arabic/English text stream, and security headers.
+func pdfLiteralText(value string) string {
+	value = strings.Map(func(r rune) rune {
+		switch r {
+		case '\r', '\n', '\t':
+			return ' '
+		default:
+			if r < 32 {
+				return -1
+			}
+			return r
+		}
+	}, value)
+	replacer := strings.NewReplacer(`\`, `\\`, `(`, `\(`, `)`, `\)`)
+	return "(" + replacer.Replace(value) + ")"
+}
+
 func generateDeterministicPDF(input JobInput, compiledHTML string) ([]byte, error) {
 	if len(compiledHTML) == 0 {
 		return nil, errors.New("empty compiled html")

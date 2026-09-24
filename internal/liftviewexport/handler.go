@@ -3,7 +3,9 @@ package liftviewexport
 import (
 	"archive/zip"
 	"bytes"
+	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,9 +20,15 @@ import (
 // Request carries raw scene state only. Every rating, verdict, and drawing
 // is computed server-side by the native engines: cad/engine solves,
 // rulesengine gates, cad/dxf draws, certificaterender seals the PDF.
+//
+//go:embed crane_catalog.json
+var embeddedCraneCatalog []byte
+
 type Request struct {
 	Crane1      engine.CraneKinematics `json:"crane1"`
 	Crane2      engine.CraneKinematics `json:"crane2"`
+	Crane1Model string                 `json:"crane1Model"`
+	Crane2Model string                 `json:"crane2Model"`
 	TotalLoadT  float64                `json:"totalLoadT"`
 	CogOffsetM  float64                `json:"cogOffsetM"`
 	MatAreaM2   float64                `json:"matAreaM2"`
@@ -30,12 +38,135 @@ type Request struct {
 	SlingAngleD float64                `json:"slingAngleDeg"`
 	SlingMBLT   float64                `json:"slingMblT"`
 	RiggingT    float64                `json:"riggingT"`
+	Hazards     []HazardControl        `json:"hazards"`
+	MethodSteps []MethodStep           `json:"methodSteps"`
 	Pages       int                    `json:"pages"`
+}
+
+type HazardControl struct {
+	ID      string `json:"id"`
+	Hazard  string `json:"hazard"`
+	Risk    string `json:"risk"`
+	Control string `json:"control"`
+	Owner   string `json:"owner"`
+}
+
+type MethodStep struct {
+	Sequence      int    `json:"sequence"`
+	Action        string `json:"action"`
+	HoldPoint     string `json:"holdPoint"`
+	StopCondition string `json:"stopCondition"`
+}
+
+type CraneReference struct {
+	ID                  string `json:"id"`
+	Manufacturer        string `json:"manufacturer"`
+	Model               string `json:"model"`
+	CraneClass          string `json:"crane_class"`
+	VisualizationStatus string `json:"visualization_status"`
+	DutyChartStatus     string `json:"duty_chart_status"`
+}
+
+func craneCatalog() []CraneReference {
+	var refs []CraneReference
+	if err := json.Unmarshal(embeddedCraneCatalog, &refs); err != nil {
+		return nil
+	}
+	return refs
+}
+
+func findCraneReference(id string) (CraneReference, bool) {
+	for _, ref := range craneCatalog() {
+		if ref.ID == id {
+			return ref, true
+		}
+	}
+	return CraneReference{}, false
+}
+
+func validatePlanningSections(hazards []HazardControl, steps []MethodStep) error {
+	if len(hazards) == 0 || len(hazards) > 50 {
+		return fmt.Errorf("HIRARC requires between 1 and 50 hazards")
+	}
+	seen := make(map[string]struct{}, len(hazards))
+	for _, hazard := range hazards {
+		values := []string{hazard.ID, hazard.Hazard, hazard.Risk, hazard.Control, hazard.Owner}
+		for _, value := range values {
+			if strings.TrimSpace(value) == "" {
+				return fmt.Errorf("HIRARC fields must not be empty")
+			}
+		}
+		if _, exists := seen[hazard.ID]; exists {
+			return fmt.Errorf("HIRARC hazard IDs must be unique")
+		}
+		seen[hazard.ID] = struct{}{}
+	}
+	if len(steps) == 0 || len(steps) > 100 {
+		return fmt.Errorf("sequential method requires between 1 and 100 steps")
+	}
+	for i, step := range steps {
+		if step.Sequence != i+1 {
+			return fmt.Errorf("method step sequence must be contiguous from 1")
+		}
+		if strings.TrimSpace(step.Action) == "" || strings.TrimSpace(step.HoldPoint) == "" || strings.TrimSpace(step.StopCondition) == "" {
+			return fmt.Errorf("method step action, hold point and stop condition are required")
+		}
+	}
+	return nil
+}
+
+func hazardPages(hazards []HazardControl) [][]string {
+	pages := make([][]string, 0, (len(hazards)+17)/18)
+	for start := 0; start < len(hazards); start += 18 {
+		end := start + 18
+		if end > len(hazards) {
+			end = len(hazards)
+		}
+		lines := []string{"HIRARC", "ID | HAZARD | RISK | CONTROL | OWNER"}
+		for _, hazard := range hazards[start:end] {
+			lines = append(lines, fmt.Sprintf("%s | %s | %s | %s | %s", hazard.ID, hazard.Hazard, hazard.Risk, hazard.Control, hazard.Owner))
+		}
+		pages = append(pages, lines)
+	}
+	return pages
+}
+
+func methodPages(steps []MethodStep) [][]string {
+	pages := make([][]string, 0, (len(steps)+17)/18)
+	for start := 0; start < len(steps); start += 18 {
+		end := start + 18
+		if end > len(steps) {
+			end = len(steps)
+		}
+		lines := []string{"SEQUENTIAL METHOD", "SEQ | ACTION | HOLD POINT | STOP CONDITION"}
+		for _, step := range steps[start:end] {
+			lines = append(lines, fmt.Sprintf("%d | %s | %s | %s", step.Sequence, step.Action, step.HoldPoint, step.StopCondition))
+		}
+		pages = append(pages, lines)
+	}
+	return pages
 }
 
 type Handler struct{}
 
 func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/v1/liftviews/cranes" {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", "GET")
+			httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: GET")
+			return
+		}
+		refs := craneCatalog()
+		if len(refs) == 0 {
+			httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(refs); err != nil {
+			httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+		}
+		return
+	}
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
@@ -56,6 +187,16 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	fail := func(msg string) {
 		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", msg)
+	}
+	crane1Ref, crane1OK := findCraneReference(req.Crane1Model)
+	crane2Ref, crane2OK := findCraneReference(req.Crane2Model)
+	if !crane1OK || !crane2OK {
+		fail("crane model reference is missing or unknown")
+		return
+	}
+	if err := validatePlanningSections(req.Hazards, req.MethodSteps); err != nil {
+		fail(err.Error())
+		return
 	}
 	// 1. Solve.
 	res, err := engine.SolveTandemLift(req.Crane1, req.Crane2, req.TotalLoadT, req.CogOffsetM)
@@ -131,17 +272,16 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			numeric(res.MinBoomClearanceM) + "m share " +
 			numeric(res.LoadShareCrane1) + "/" + numeric(res.LoadShareCrane2) +
 			" crane-util " + numeric(verdict.CraneUtil)},
+		{"RIGGING", "heavier share " + numeric(maxShare) + "t", "leg tension " + numeric(legT) + "t", "DHL " + numeric(dhl) + "t"},
+		{"PLAN VIEW", "see plan.dxf"},
+		{"ELEVATION", "see elevation.dxf"},
+		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart NOT_PROVIDED", crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart NOT_PROVIDED"},
+		{"GROUND", "bearing gates passed"},
+		{"EXECUTION", "sealed export"},
 	}
-	if req.Pages == 8 {
-		pages = append(pages,
-			[]string{"RIGGING", "heavier share " + numeric(maxShare) + "t", "leg tension " + numeric(legT) + "t", "DHL " + numeric(dhl) + "t"},
-			[]string{"PLAN VIEW", "see plan.dxf"},
-			[]string{"ELEVATION", "see elevation.dxf"},
-			[]string{"CHART BINDING", "owner-supplied OEM charts"},
-			[]string{"GROUND", "bearing gates passed"},
-			[]string{"EXECUTION", "sealed export"},
-		)
-	}
+	pages = append(pages, hazardPages(req.Hazards)...)
+	pages = append(pages, methodPages(req.MethodSteps)...)
+	req.Pages = len(pages)
 	raw, err := domainrender.BuildDeterministicPDF("TANDEM LIFT PLAN", pages)
 	if err != nil {
 		fail("pdf engine refused: " + err.Error())
@@ -152,19 +292,24 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	meta, err := json.Marshal(map[string]any{
-		"hook_span_m":  res.HookSpanMeters,
-		"clearance_m":  res.MinBoomClearanceM,
-		"share1_pct":   res.LoadShareCrane1,
-		"share2_pct":   res.LoadShareCrane2,
-		"crane_util":   verdict.CraneUtil,
-		"rigging_util": verdict.RiggingUtil,
-		"leg_tension":  legT,
-		"max_share_t":  maxShare,
-		"dhl_t":        dhl,
-		"fos1":         fos[0],
-		"fos2":         fos[1],
-		"renderer":     "integin-engines/v1",
-		"total_pages":  req.Pages,
+		"crane1_model":      crane1Ref.ID,
+		"crane2_model":      crane2Ref.ID,
+		"duty_chart_status": crane1Ref.DutyChartStatus,
+		"hazards":           req.Hazards,
+		"method_steps":      req.MethodSteps,
+		"hook_span_m":       res.HookSpanMeters,
+		"clearance_m":       res.MinBoomClearanceM,
+		"share1_pct":        res.LoadShareCrane1,
+		"share2_pct":        res.LoadShareCrane2,
+		"crane_util":        verdict.CraneUtil,
+		"rigging_util":      verdict.RiggingUtil,
+		"leg_tension":       legT,
+		"max_share_t":       maxShare,
+		"dhl_t":             dhl,
+		"fos1":              fos[0],
+		"fos2":              fos[1],
+		"renderer":          "integin-engines/v1",
+		"total_pages":       req.Pages,
 	})
 	if err != nil {
 		fail("meta render failed")

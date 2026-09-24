@@ -97,6 +97,10 @@
                         <option value="port">⚓ Commercial Deepwater Port Quay</option>
                     </select>
 
+                    <label class="file-control">Import site reference (.obj)<input type="file" id="site-model-input" accept=".obj"></label>
+                    <button id="clear-site-model" type="button">Clear imported site</button>
+                    <p id="site-model-status" class="hint">No imported site model.</p>
+
                     <label for="lift-mode-select" style="margin-top: 10px;">Lift Execution Mode:</label>
                     <select id="lift-mode-select" class="config-select">
                         <option value="tandem">👥 Dual Crane Tandem Lift (2 Cranes)</option>
@@ -129,7 +133,8 @@
 
                 <h2>Crane Fleet Kinematics</h2>
                 <div class="control-group">
-                    <h3>Crane Alpha (Liebherr LTM 1500)</h3>
+                    <h3 id="crane1-model-label">Crane Alpha</h3>
+                    <label>Model reference<select id="crane1-model-select" class="config-select" disabled><option>Loading catalog…</option></select></label>
                     <label>Boom Angle: <span id="crane1-angle-val">65°</span></label>
                     <input type="range" id="crane1-angle" min="30" max="80" value="65">
                     
@@ -138,7 +143,8 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>Crane Beta (Tadano ATF 400G)</h3>
+                    <h3 id="crane2-model-label">Crane Beta</h3>
+                    <label>Model reference<select id="crane2-model-select" class="config-select" disabled><option>Loading catalog…</option></select></label>
                     <label>Boom Angle: <span id="crane2-angle-val">60°</span></label>
                     <input type="range" id="crane2-angle" min="30" max="80" value="60">
 
@@ -147,7 +153,7 @@
                 </div>
 
                 <div class="control-group" id="crane3-ctrl-group" style="display: none;">
-                    <h3>Crane Gamma (Grove GMK 7550)</h3>
+                    <h3>Crane Gamma · reference geometry</h3>
                     <label>Boom Angle: <span id="crane3-angle-val">62°</span></label>
                     <input type="range" id="crane3-angle" min="30" max="80" value="62">
 
@@ -156,7 +162,7 @@
                 </div>
 
                 <div class="control-group" id="crane4-ctrl-group" style="display: none;">
-                    <h3>Crane Delta (Demag AC 500)</h3>
+                    <h3>Crane Delta · reference geometry</h3>
                     <label>Boom Angle: <span id="crane4-angle-val">62°</span></label>
                     <input type="range" id="crane4-angle" min="30" max="80" value="62">
 
@@ -192,6 +198,15 @@
                     <label>Timeline window (s)<input type="number" id="in-T" value="60" min="10" step="5"></label>
                 </div>
 
+                <h2>Safety Controls</h2>
+                <div class="control-group" id="planning-controls">
+                    <div class="planning-subhead"><span>HIRARC</span><button id="add-hazard" type="button">Add hazard</button></div>
+                    <div id="hazard-list" class="planning-list"></div>
+                    <div class="planning-subhead"><span>Sequential method</span><button id="add-method" type="button">Add step</button></div>
+                    <div id="method-list" class="planning-list"></div>
+                    <p class="hint">Export remains refused until every hazard, control, hold point and stop condition is entered.</p>
+                </div>
+
                 <h2>Manifest Binding</h2>
                 <div class="binding-card">
                     <p>Status: <strong class="badge-bound">1-Click Execution Ready</strong></p>
@@ -213,6 +228,7 @@
     </div>
     <script src="hierarchy.js"></script>
     <script src="blocks.js"></script>
+    <script src="obj_import.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

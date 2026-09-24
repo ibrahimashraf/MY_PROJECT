@@ -10,7 +10,7 @@
                 id: 'SYS-HOIST', code: 'HS', name: 'Hoisting', icon: '🏗️',
                 components: [
                     {
-                        id: 'CRN-ALPHA', level: 'Level 2 · assembly', name: 'Crane Alpha (LTM 1500)',
+                        id: 'CRN-ALPHA', level: 'Level 2 · assembly', name: 'Crane Alpha · reference geometry',
                         status: 'Active', desc: 'Primary mobile crane. Boom tip position and working radius are solved live from boom/slew state.',
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
@@ -18,7 +18,7 @@
                         evidence: 'OEM load chart (owner-supplied, bound at plan build).'
                     },
                     {
-                        id: 'CRN-BETA', level: 'Level 2 · assembly', name: 'Crane Beta (ATF 400G)',
+                        id: 'CRN-BETA', level: 'Level 2 · assembly', name: 'Crane Beta · reference geometry',
                         status: 'Active', desc: 'Secondary mobile crane. Shares the vessel load by lever rule over hook span.',
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
@@ -42,7 +42,7 @@
                         evidence: 'Hook cert + WLL marking photograph.'
                     },
                     {
-                        id: 'CRN-GAMMA', level: 'Level 2 · assembly', name: 'Crane Gamma (GMK 7550)',
+                        id: 'CRN-GAMMA', level: 'Level 2 · assembly', name: 'Crane Gamma · reference geometry',
                         status: 'Active', desc: 'Tertiary crane in 3-crane and 4-crane tandem lifts. Participates in load share equilibrium.',
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
@@ -58,7 +58,7 @@
                         evidence: 'Hook cert + WLL marking photograph.'
                     },
                     {
-                        id: 'CRN-DELTA', level: 'Level 2 · assembly', name: 'Crane Delta (AC 500)',
+                        id: 'CRN-DELTA', level: 'Level 2 · assembly', name: 'Crane Delta · reference geometry',
                         status: 'Active', desc: 'Quaternary crane in 4-crane complex tandem lifts. Quad-rigging stabilization.',
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],

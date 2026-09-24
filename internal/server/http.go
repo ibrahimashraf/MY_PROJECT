@@ -77,7 +77,12 @@ type Dependencies struct {
 	TUSHandler                     http.Handler
 	// UploadTokenSecret authenticates provision-bound TUS upload tokens as
 	// an alternative to OIDC bearer tokens. Empty disables the token path.
-	UploadTokenSecret       string
+	UploadTokenSecret string
+	// UploadAuthorityRegistry overrides the registry consulted when
+	// validating upload tokens. It must be the mux-owned registry so that
+	// authorities issued after startup (local provisioning, pilot enrollment)
+	// are honoured; nil falls back to AuthorityRegistry.
+	UploadAuthorityRegistry *syncapi.AuthorityRegistry
 	SchedulingHandler       http.Handler
 	PilotEnrollHandler      http.Handler
 	WorkbenchHandler        http.Handler

@@ -405,6 +405,16 @@ func Run() {
 		}
 		if syncRepo != nil {
 			enrollCfg.Repo = deviceenrollhttp.SyncRepository(syncRepo)
+			// Revocation must reach the request-time caches, not just the
+			// database: without this a revoked device keeps syncing until the
+			// next restart.
+			enrollCfg.OnDeviceRevoked = func(deviceID string) {
+				processor.RevokeDevice(deviceID)
+				revokedAuthorities := pilotAuthorityRegistry.RevokeDeviceAuthorities(deviceID)
+				log.Printf("device revocation applied to live caches: device=%s authorities=%d", deviceID, revokedAuthorities)
+			}
+		} else {
+			log.Printf("WARNING: device revocation is NOT available — INTEGIN_DB_URL is missing, so no device can be revoked at runtime")
 		}
 		rawEnrollHandler, enrollErr := deviceenrollhttp.NewHandler(enrollCfg)
 		if enrollErr != nil {
@@ -604,7 +614,7 @@ func Run() {
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, IdentityGrantHandler: identityGrantHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr,
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr, UploadAuthorityRegistry: pilotAuthorityRegistry,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
 		PilotEnrollHandler:      enrollHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})

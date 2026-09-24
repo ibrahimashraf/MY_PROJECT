@@ -10,6 +10,7 @@ import (
 	"integin/internal/evidenceapi"
 	"integin/internal/localprovision"
 	"integin/internal/middleware"
+	"integin/internal/syncapi"
 	"integin/pkg/telemetry"
 )
 
@@ -162,7 +163,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/dpp/", d.DPPHandler)
 	}
 	if d.TUSHandler != nil {
-		gated := requireTUSAuth(d.Validator, d.UploadTokenSecret, d.TUSHandler)
+		gated := requireTUSAuth(d.Validator, d.UploadTokenSecret, authorityRegistryForUploadTokens(d), d.TUSHandler)
 		mux.Handle("/uploads", gated)
 		mux.Handle("/uploads/", gated)
 	}
@@ -192,10 +193,13 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 
 // requireTUSAuth gates the TUS upload endpoints behind OIDC bearer
 // authentication or, failing that, a provision-bound upload token minted at
-// device enrollment. Missing credentials and invalid tokens return 401; when
-// neither a validator nor an upload-token secret is configured the gate fails
-// closed with 503 so uploads are never exposed unauthenticated.
-func requireTUSAuth(validator TokenValidator, uploadSecret string, next http.Handler) http.Handler {
+// device enrollment. Upload tokens are additionally checked against the live
+// authority registry so a token is only honoured while the exact
+// (device, authority, epoch) it names is still registered and unexpired.
+// Missing credentials and invalid tokens return 401; when neither a validator
+// nor an upload-token secret is configured the gate fails closed with 503 so
+// uploads are never exposed unauthenticated.
+func requireTUSAuth(validator TokenValidator, uploadSecret string, authorities *syncapi.AuthorityRegistry, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		raw, ok := bearerToken(request.Header.Get("Authorization"))
 		if !ok {
@@ -209,7 +213,8 @@ func requireTUSAuth(validator TokenValidator, uploadSecret string, next http.Han
 			}
 		}
 		if uploadSecret != "" {
-			if _, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC()); err == nil {
+			claims, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC())
+			if err == nil && uploadTokenAuthorityCurrent(claims, authorities, time.Now().UTC()) {
 				next.ServeHTTP(writer, request)
 				return
 			}
@@ -220,6 +225,36 @@ func requireTUSAuth(validator TokenValidator, uploadSecret string, next http.Han
 		}
 		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 	})
+}
+
+// uploadTokenAuthorityCurrent proves a provision-bound token still names a
+// live authority on this server. A valid HMAC alone is not enough: the
+// signature only proves this server once issued the token, not that the bound
+// authority is still registered, still belongs to the named device and epoch,
+// and has not expired.
+func uploadTokenAuthorityCurrent(claims localprovision.UploadTokenClaims, authorities *syncapi.AuthorityRegistry, now time.Time) bool {
+	if authorities == nil {
+		return false
+	}
+	authority, exists := authorities.Get(claims.AuthorityID)
+	if !exists {
+		return false
+	}
+	if authority.DeviceID != claims.DeviceID || authority.Epoch != claims.Epoch {
+		return false
+	}
+	return now.Before(authority.ExpiresAt.Add(time.Minute))
+}
+
+// authorityRegistryForUploadTokens is the registry the /uploads gate must
+// consult: the mux-owned registry, which carries every authority registered
+// since boot (including those issued after startup by local provisioning and
+// pilot enrollment), not the startup snapshot the sync handler was built with.
+func authorityRegistryForUploadTokens(d Dependencies) *syncapi.AuthorityRegistry {
+	if d.UploadAuthorityRegistry != nil {
+		return d.UploadAuthorityRegistry
+	}
+	return d.AuthorityRegistry
 }
 
 func bearerToken(value string) (string, bool) {

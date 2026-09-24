@@ -57,10 +57,51 @@ type Handler struct {
 type AuthorityRegistry struct {
 	mu     sync.RWMutex
 	values map[string]device_trust.AuthorityPackage
+	// revoked tombstones authority ids withdrawn by device revocation so the
+	// withdrawal takes effect at request time instead of at next boot.
+	revoked map[string]struct{}
 }
 
 func NewAuthorityRegistry() *AuthorityRegistry {
-	return &AuthorityRegistry{values: make(map[string]device_trust.AuthorityPackage)}
+	return &AuthorityRegistry{
+		values:  make(map[string]device_trust.AuthorityPackage),
+		revoked: make(map[string]struct{}),
+	}
+}
+
+// Revoke withdraws an authority immediately. Both the sync boundary and the
+// upload-token gate resolve authorities through Get, so a tombstoned id stops
+// authorizing work without waiting for a process restart.
+func (r *AuthorityRegistry) Revoke(id string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.revoked[id] = struct{}{}
+}
+
+// IsRevoked reports whether an authority id has been withdrawn.
+func (r *AuthorityRegistry) IsRevoked(id string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	_, revoked := r.revoked[id]
+	return revoked
+}
+
+// RevokeDeviceAuthorities withdraws every authority issued to a device. It
+// walks the registry's own contents rather than any startup snapshot, so
+// authorities minted after boot (local provisioning, pilot enrolment) are
+// tombstoned too.
+func (r *AuthorityRegistry) RevokeDeviceAuthorities(deviceID string) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	revoked := 0
+	for id, authority := range r.values {
+		if authority.DeviceID != deviceID {
+			continue
+		}
+		r.revoked[id] = struct{}{}
+		revoked++
+	}
+	return revoked
 }
 
 func NewHandler(processor *domainsync.Processor) *Handler {
@@ -76,6 +117,9 @@ func (h *Handler) RegisterAuthority(authority device_trust.AuthorityPackage) {
 func (r *AuthorityRegistry) Get(id string) (device_trust.AuthorityPackage, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+	if _, revoked := r.revoked[id]; revoked {
+		return device_trust.AuthorityPackage{}, false
+	}
 	authority, exists := r.values[id]
 	return authority, exists
 }
@@ -83,6 +127,15 @@ func (r *AuthorityRegistry) Get(id string) (device_trust.AuthorityPackage, bool)
 func (r *AuthorityRegistry) Register(authority device_trust.AuthorityPackage) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if _, tombstoned := r.revoked[authority.ID]; tombstoned {
+		// Re-enrolment legitimately reissues an authority, so a package that
+		// differs from the withdrawn one clears the tombstone. An identical
+		// package stays revoked so a replayed registration cannot resurrect a
+		// withdrawn grant.
+		if existing, exists := r.values[authority.ID]; !exists || existing.Signature != authority.Signature {
+			delete(r.revoked, authority.ID)
+		}
+	}
 	r.values[authority.ID] = authority
 }
 

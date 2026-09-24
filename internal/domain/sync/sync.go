@@ -140,6 +140,26 @@ func (p *Processor) RegisterDevice(device device_trust.Device) {
 	defer p.mu.Unlock()
 	p.devices[device.ID()] = device
 }
+
+// RevokeDevice withdraws a device with immediate effect. The in-memory device
+// map is a boot snapshot, so without this a revoked device would keep syncing
+// until the process restarted. Dropping the entry makes Submit fail closed
+// with "device is not registered"; recovery is a fresh enrolment, which
+// re-registers the device under a new authority.
+func (p *Processor) RevokeDevice(deviceID string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.devices, deviceID)
+}
+
+// DeviceRegistered reports whether a device is currently trusted by this
+// processor, letting callers distinguish a never-seen device from a revoked one.
+func (p *Processor) DeviceRegistered(deviceID string) bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	_, exists := p.devices[deviceID]
+	return exists
+}
 func (p *Processor) HeldTransactions() []Transaction {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

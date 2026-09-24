@@ -54,6 +54,80 @@ func TestHandlerAppliesAndDeduplicatesSignedTransaction(t *testing.T) {
 	}
 }
 
+func TestRevokedAuthorityStopsAuthorizingImmediately(t *testing.T) {
+	registry := NewAuthorityRegistry()
+	registry.Register(device_trust.AuthorityPackage{ID: "auth-live", DeviceID: "device-1"})
+	if _, ok := registry.Get("auth-live"); !ok {
+		t.Fatal("registered authority must resolve before revocation")
+	}
+	registry.Revoke("auth-live")
+	if _, ok := registry.Get("auth-live"); ok {
+		t.Fatal("revoked authority must not resolve")
+	}
+	if !registry.IsRevoked("auth-live") {
+		t.Fatal("IsRevoked must report the tombstone")
+	}
+	// Replaying the identical package must not resurrect the grant.
+	revoked, _ := registry.Get("auth-live")
+	registry.Register(revoked)
+	if _, ok := registry.Get("auth-live"); ok {
+		t.Fatal("replaying the revoked package must not resurrect it")
+	}
+	// A genuinely reissued authority (different signature) clears the tombstone.
+	fresh := device_trust.AuthorityPackage{ID: "auth-live", DeviceID: "device-1", Signature: "new-signature"}
+	registry.Register(fresh)
+	if _, ok := registry.Get("auth-live"); !ok {
+		t.Fatal("a reissued authority must resolve again")
+	}
+}
+
+func TestRevokeDeviceAuthoritiesCoversRuntimeIssuedPackages(t *testing.T) {
+	registry := NewAuthorityRegistry()
+	// One authority from a boot snapshot and one minted after boot, as local
+	// provisioning does: both must be withdrawn.
+	registry.Register(device_trust.AuthorityPackage{ID: "auth-boot", DeviceID: "device-1"})
+	registry.Register(device_trust.AuthorityPackage{ID: "auth-runtime", DeviceID: "device-1"})
+	registry.Register(device_trust.AuthorityPackage{ID: "auth-other", DeviceID: "device-2"})
+
+	if revoked := registry.RevokeDeviceAuthorities("device-1"); revoked != 2 {
+		t.Fatalf("revoked authority count = %d, want 2", revoked)
+	}
+	for _, id := range []string{"auth-boot", "auth-runtime"} {
+		if _, ok := registry.Get(id); ok {
+			t.Fatalf("%s must be withdrawn", id)
+		}
+	}
+	if _, ok := registry.Get("auth-other"); !ok {
+		t.Fatal("another device's authority must remain valid")
+	}
+}
+
+func TestRevokedDeviceCannotSyncWithoutRestart(t *testing.T) {
+	processor, authority := testProcessor(t)
+	if !processor.DeviceRegistered("device-1") {
+		t.Fatal("device must be registered before revocation")
+	}
+	processor.RevokeDevice("device-1")
+	if processor.DeviceRegistered("device-1") {
+		t.Fatal("revoked device must not remain registered")
+	}
+
+	transaction := domainsync.NewTransaction("tx-revoked", "tenant-1", "device-1", "user-1", 1, "InspectionSubmitted", []byte(`{"inspection_id":"inspection-1"}`))
+	transaction.OrganizationID = "org-1"
+	transaction.EntityID = "inspection-1"
+	transaction.AuthorityID = authority.ID
+	transaction.AuthorityEpoch = authority.Epoch
+	transaction = domainsync.SignTransaction(transaction, "secret", "default")
+
+	result := processor.Submit(transaction, authority, time.Date(2026, 8, 13, 11, 0, 0, 0, time.UTC))
+	if result.Outcome != domainsync.SecurityFailure {
+		t.Fatalf("revoked device outcome = %s, want %s", result.Outcome, domainsync.SecurityFailure)
+	}
+	if !strings.Contains(result.Reason, "not registered") {
+		t.Fatalf("revoked device reason = %q, want an unregistered-device rejection", result.Reason)
+	}
+}
+
 func TestHandlerRejectsUnknownAuthorityAndMalformedPayload(t *testing.T) {
 	processor, authority := testProcessor(t)
 	handler := NewHandler(processor)

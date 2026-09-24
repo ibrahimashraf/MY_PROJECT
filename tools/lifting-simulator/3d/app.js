@@ -5,7 +5,7 @@
     'use strict';
 
     // State Variables
-    let scene, camera, renderer, controls, envGroup;
+    let scene, camera, renderer, controls, envGroup, importedSiteGroup;
     let crane1Group, crane2Group, crane3Group, crane4Group;
     let boom1, boom2, boom3, boom4, suspendedLoad;
     let hook1Mesh, hook2Mesh, hook3Mesh, hook4Mesh;
@@ -26,11 +26,15 @@
         liftMode: 'tandem', // 'tandem', 'triple', 'quad', 'single', 'tailing'
         crane1: { x: -15, z: 0, boomAngle: 65, slewAngle: 15, boomLength: 30 },
         crane2: { x: 15, z: 0, boomAngle: 60, slewAngle: -20, boomLength: 28 },
+        crane1Model: '',
+        crane2Model: '',
         crane3: { x: 0, z: 18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
         crane4: { x: 0, z: -18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
         load: { massTonnes: 45.0, length: 12.0, radius: 1.5 },
         loadBlockId: 'BLOCK_LOAD_VESSEL',
         allowableGbpKPa: 220.0,
+        hazards: [],
+        methodSteps: [],
         // User-supplied plan data. Defaults mirror the demo scenario; the
         // engine treats every value as untrusted input and gates it.
         plan: {
@@ -100,6 +104,8 @@
         applyEnvironment(state.environment);
         buildSceneObjects();
         setupEventListeners();
+        renderPlanningRows();
+        loadCraneModels();
         buildSystemsList();
         buildBlocksList();
         setupBlocksTabs();
@@ -535,6 +541,48 @@
 
         loadObj.userData.nodeId = 'VESSEL-45T';
         return loadObj;
+    }
+
+    function disposeObject(object) {
+        object.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => material.dispose());
+            }
+        });
+    }
+
+    function clearImportedSite() {
+        if (importedSiteGroup && scene) {
+            scene.remove(importedSiteGroup);
+            disposeObject(importedSiteGroup);
+        }
+        importedSiteGroup = null;
+        const status = document.getElementById('site-model-status');
+        if (status) status.textContent = 'No imported site model.';
+    }
+
+    async function importSiteModel(file) {
+        const status = document.getElementById('site-model-status');
+        if (!file || !window.INTEGIN_OBJ) {
+            if (status) status.textContent = 'OBJ importer unavailable.';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            if (status) status.textContent = 'OBJ import refused: file exceeds 5 MiB.';
+            return;
+        }
+        try {
+            const parsed = window.INTEGIN_OBJ.parseOBJ(await file.text());
+            const group = window.INTEGIN_OBJ.createOBJGroup(parsed, THREE);
+            clearImportedSite();
+            importedSiteGroup = group;
+            scene.add(group);
+            if (status) status.textContent = `Imported ${parsed.vertices} vertices / ${parsed.faces} faces as reference geometry.`;
+        } catch (error) {
+            if (status) status.textContent = `OBJ import failed: ${error.message}`;
+        }
     }
 
     function buildSceneObjects() {
@@ -1101,6 +1149,10 @@
         return {
             crane1: crane(state.crane1, P.chassis1),
             crane2: crane(state.crane2, P.chassis2),
+            crane1Model: state.crane1Model,
+            crane2Model: state.crane2Model,
+            hazards: state.hazards,
+            methodSteps: state.methodSteps,
             totalLoadT: state.load.massTonnes,
             cogOffsetM: P.cogOffset,
             matAreaM2: P.matArea,
@@ -1117,6 +1169,50 @@
     // Server-authoritative verdicts: the browser mirror above is display-only
     // estimation (offline fallback). Ratings arrive from the engines.
     const API_BASE = window.location.port === '18080' ? '' : 'http://127.0.0.1:18080';
+
+    async function loadCraneModels() {
+        const bindings = [
+            { select: document.getElementById('crane1-model-select'), label: document.getElementById('crane1-model-label'), key: 'crane1Model' },
+            { select: document.getElementById('crane2-model-select'), label: document.getElementById('crane2-model-label'), key: 'crane2Model' }
+        ];
+        try {
+            const res = await fetch(`${API_BASE}/api/v1/liftviews/cranes`);
+            if (!res.ok) throw new Error(`catalog ${res.status}`);
+            const refs = await res.json();
+            for (const binding of bindings) {
+                binding.select.replaceChildren();
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select model reference';
+                binding.select.appendChild(placeholder);
+                for (const ref of refs) {
+                    const option = document.createElement('option');
+                    option.value = ref.id;
+                    option.textContent = `${ref.manufacturer} ${ref.model} · duty chart ${ref.duty_chart_status}`;
+                    binding.select.appendChild(option);
+                }
+                binding.select.disabled = false;
+                binding.select.addEventListener('change', () => {
+                    state[binding.key] = binding.select.value;
+                    const selected = refs.find(ref => ref.id === binding.select.value);
+                    binding.label.textContent = selected
+                        ? `${selected.manufacturer} ${selected.model} · generic reference`
+                        : 'Crane model not selected';
+                    scheduleVerdicts();
+                });
+                binding.label.textContent = 'Crane model not selected';
+            }
+        } catch {
+            for (const binding of bindings) {
+                binding.select.disabled = true;
+                binding.select.replaceChildren();
+                const option = document.createElement('option');
+                option.textContent = 'Crane catalog unavailable';
+                binding.select.appendChild(option);
+            }
+            document.getElementById('export-status').textContent = 'crane catalog unavailable';
+        }
+    }
 
     function scheduleVerdicts() {
         if (verdictTimer) clearTimeout(verdictTimer);
@@ -1192,6 +1288,72 @@
     }
 
     let currentHoistDrop = 16.5;
+
+    function planningInput(value, label, onInput) {
+        const input = document.createElement('input');
+        input.value = value;
+        input.placeholder = label;
+        input.setAttribute('aria-label', label);
+        input.addEventListener('input', onInput);
+        return input;
+    }
+
+    function renderPlanningRows() {
+        const hazardList = document.getElementById('hazard-list');
+        const methodList = document.getElementById('method-list');
+        hazardList.replaceChildren();
+        methodList.replaceChildren();
+        state.hazards.forEach((hazard, index) => {
+            const row = document.createElement('div');
+            row.className = 'planning-row';
+            ['id', 'hazard', 'risk', 'control', 'owner'].forEach(key => {
+                row.appendChild(planningInput(hazard[key], key, event => {
+                    state.hazards[index][key] = event.target.value;
+                    scheduleVerdicts();
+                }));
+            });
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', 'Remove hazard');
+            remove.addEventListener('click', () => {
+                state.hazards.splice(index, 1);
+                renderPlanningRows();
+                scheduleVerdicts();
+            });
+            row.appendChild(remove);
+            hazardList.appendChild(row);
+        });
+        state.methodSteps.forEach((step, index) => {
+            const row = document.createElement('div');
+            row.className = 'planning-row method';
+            const sequence = planningInput(step.sequence, 'Sequence', event => {
+                step.sequence = Number.parseInt(event.target.value, 10) || 0;
+                scheduleVerdicts();
+            });
+            sequence.type = 'number';
+            sequence.min = '1';
+            row.appendChild(sequence);
+            ['action', 'holdPoint', 'stopCondition'].forEach(key => {
+                row.appendChild(planningInput(step[key], key, event => {
+                    step[key] = event.target.value;
+                    scheduleVerdicts();
+                }));
+            });
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', 'Remove method step');
+            remove.addEventListener('click', () => {
+                state.methodSteps.splice(index, 1);
+                state.methodSteps.forEach((item, itemIndex) => { item.sequence = itemIndex + 1; });
+                renderPlanningRows();
+                scheduleVerdicts();
+            });
+            row.appendChild(remove);
+            methodList.appendChild(row);
+        });
+    }
 
     function setupEventListeners() {
         const sliderTime = document.getElementById('time-slider');
@@ -1286,6 +1448,18 @@
             });
         });
 
+        document.getElementById('add-hazard').addEventListener('click', () => {
+            const index = state.hazards.length + 1;
+            state.hazards.push({ id: `H-${String(index).padStart(2, '0')}`, hazard: '', risk: '', control: '', owner: '' });
+            renderPlanningRows();
+            scheduleVerdicts();
+        });
+        document.getElementById('add-method').addEventListener('click', () => {
+            state.methodSteps.push({ sequence: state.methodSteps.length + 1, action: '', holdPoint: '', stopCondition: '' });
+            renderPlanningRows();
+            scheduleVerdicts();
+        });
+
         document.getElementById('btn-play').addEventListener('click', () => {
             if (!isPlaying) {
                 isPlaying = true;
@@ -1355,6 +1529,15 @@
                 applyEnvironment(e.target.value);
             });
         }
+
+        const siteModelInput = document.getElementById('site-model-input');
+        if (siteModelInput) {
+            siteModelInput.addEventListener('change', event => importSiteModel(event.target.files[0]));
+        }
+        document.getElementById('clear-site-model').addEventListener('click', () => {
+            clearImportedSite();
+            siteModelInput.value = '';
+        });
 
         const liftModeSelect = document.getElementById('lift-mode-select');
         if (liftModeSelect) {

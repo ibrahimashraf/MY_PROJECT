@@ -1,0 +1,34 @@
+[
+  {
+    "id": "LIEBHERR_LTM_1500",
+    "manufacturer": "Liebherr",
+    "model": "LTM 1500",
+    "crane_class": "MOBILE_CRANE",
+    "visualization_status": "GENERIC_REFERENCE",
+    "duty_chart_status": "NOT_PROVIDED"
+  },
+  {
+    "id": "TADANO_ATF_400G",
+    "manufacturer": "Tadano",
+    "model": "ATF 400G",
+    "crane_class": "MOBILE_CRANE",
+    "visualization_status": "GENERIC_REFERENCE",
+    "duty_chart_status": "NOT_PROVIDED"
+  },
+  {
+    "id": "GROVE_GMK_7550",
+    "manufacturer": "Grove",
+    "model": "GMK 7550",
+    "crane_class": "MOBILE_CRANE",
+    "visualization_status": "GENERIC_REFERENCE",
+    "duty_chart_status": "NOT_PROVIDED"
+  },
+  {
+    "id": "DEMAG_AC_500",
+    "manufacturer": "Demag",
+    "model": "AC 500",
+    "crane_class": "MOBILE_CRANE",
+    "visualization_status": "GENERIC_REFERENCE",
+    "duty_chart_status": "NOT_PROVIDED"
+  }
+]

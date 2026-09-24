@@ -237,6 +237,40 @@ func (c *testClient) enroll() (device_trust.AuthorityPackage, string, ed25519.Pu
 	return approval.AuthorityPackage, deriveDeviceID(publicKey), publicKey, privateKey
 }
 
+func TestRevocationNotifiesLiveCachesAfterPersistence(t *testing.T) {
+	now := time.Date(2026, 9, 15, 9, 0, 0, 0, time.UTC)
+	var notified []string
+	h, err := NewHandler(Config{
+		SigningSecret: testSecret,
+		Now:           func() time.Time { return now },
+		OnDeviceRevoked: func(deviceID string) {
+			notified = append(notified, deviceID)
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	client := &testClient{t: t, handler: h, mux: h.Routes(), now: &now}
+	_, deviceID, _, _ := client.enroll()
+
+	// A rejected revoke must not touch the caches.
+	nonAdmin := client.perform(nonAdminOrg(), http.MethodPost, "/v1/devices/"+deviceID+"/revoke", map[string]string{"reason": "lost"})
+	if nonAdmin.Code != http.StatusForbidden {
+		t.Fatalf("non-admin revoke status %d, want 403", nonAdmin.Code)
+	}
+	if len(notified) != 0 {
+		t.Fatalf("a rejected revoke must not notify caches, got %v", notified)
+	}
+
+	revoked := client.perform(adminOrg(), http.MethodPost, "/v1/devices/"+deviceID+"/revoke", map[string]string{"reason": "device reported stolen"})
+	if revoked.Code != http.StatusOK {
+		t.Fatalf("revoke status %d: %s", revoked.Code, revoked.Body.String())
+	}
+	if len(notified) != 1 || notified[0] != deviceID {
+		t.Fatalf("revocation must notify caches once with the device id, got %v", notified)
+	}
+}
+
 func TestFullEnrollmentLifecycle(t *testing.T) {
 	client := newTestClient(t)
 	authority, deviceID, publicKey, _ := client.enroll()

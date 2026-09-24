@@ -67,7 +67,11 @@ type Config struct {
 	// Repo persists devices and authority packages. Nil uses an in-memory
 	// store so the handler runs hermetically without any external daemon.
 	Repo Repository
-	Now  func() time.Time
+	// OnDeviceRevoked is invoked with the revoked device id after the database
+	// write succeeds, so request-time caches (authority registry, sync
+	// processor) can drop the device immediately instead of at next boot.
+	OnDeviceRevoked func(deviceID string)
+	Now             func() time.Time
 }
 
 // enrollmentRecord is the handler-local lifecycle state of one enrollment
@@ -85,15 +89,16 @@ type enrollmentRecord struct {
 // Handler implements the production device enrollment and offline authority
 // API. It is safe for concurrent use.
 type Handler struct {
-	mu             sync.Mutex
-	now            func() time.Time
-	secret         string
-	challengeTTL   time.Duration
-	authorityTTL   time.Duration
-	approvalWindow time.Duration
-	scopes         []string
-	repo           Repository
-	requests       map[string]*enrollmentRecord
+	mu              sync.Mutex
+	now             func() time.Time
+	secret          string
+	challengeTTL    time.Duration
+	authorityTTL    time.Duration
+	approvalWindow  time.Duration
+	scopes          []string
+	repo            Repository
+	requests        map[string]*enrollmentRecord
+	onDeviceRevoked func(deviceID string)
 }
 
 // NewHandler validates configuration and returns the enrollment handler.
@@ -126,14 +131,15 @@ func NewHandler(cfg Config) (*Handler, error) {
 		scopes = append(scopes, defaultOfflineScopes...)
 	}
 	return &Handler{
-		now:            now,
-		secret:         cfg.SigningSecret,
-		challengeTTL:   challengeTTL,
-		authorityTTL:   ttl,
-		approvalWindow: approvalWindow,
-		scopes:         scopes,
-		repo:           repo,
-		requests:       make(map[string]*enrollmentRecord),
+		now:             now,
+		secret:          cfg.SigningSecret,
+		challengeTTL:    challengeTTL,
+		authorityTTL:    ttl,
+		approvalWindow:  approvalWindow,
+		scopes:          scopes,
+		repo:            repo,
+		requests:        make(map[string]*enrollmentRecord),
+		onDeviceRevoked: cfg.OnDeviceRevoked,
 	}, nil
 }
 
@@ -526,6 +532,13 @@ func (h *Handler) revokeDevice(w http.ResponseWriter, r *http.Request) {
 			httpresponse.Error(w, http.StatusInternalServerError, "failed to revoke authority package")
 			return
 		}
+	}
+
+	// The database is now authoritative. Push the withdrawal into the
+	// request-time caches so a revoked device and its authorities stop
+	// authorizing work immediately rather than at the next process restart.
+	if h.onDeviceRevoked != nil {
+		h.onDeviceRevoked(deviceID)
 	}
 
 	httpresponse.JSON(w, http.StatusOK, map[string]any{

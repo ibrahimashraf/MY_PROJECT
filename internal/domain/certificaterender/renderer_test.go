@@ -92,6 +92,22 @@ func TestDeterministicPDFRenderer(t *testing.T) {
 	}
 }
 
+func TestBuildDeterministicPDFWritesVisibleText(t *testing.T) {
+	raw, err := BuildDeterministicPDF("LIFT PLAN", [][]string{{"GROUND PRESSURE", "PASS"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pdf := string(raw)
+	for _, want := range []string{"/Font << /F1", "BT", "/F1 12 Tf", "72 760 Td", "(GROUND PRESSURE) Tj", "ET"} {
+		if !strings.Contains(pdf, want) {
+			t.Fatalf("PDF missing visible text operator %q", want)
+		}
+	}
+	if strings.Contains(pdf, "% GROUND PRESSURE") {
+		t.Fatal("visible text must not be encoded as a PDF comment")
+	}
+}
+
 func TestRendererInputValidation(t *testing.T) {
 	renderer := NewDeterministicPDFRenderer()
 

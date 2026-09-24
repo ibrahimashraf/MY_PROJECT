@@ -14,9 +14,11 @@ import (
 	"testing"
 	"time"
 
+	"integin/internal/domain/device_trust"
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
+	"integin/internal/syncapi"
 )
 
 type tusValidatorStub struct{ err error }
@@ -54,32 +56,90 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 	}
 	store := storage.NewInMemoryStore()
 	// No OIDC validator: the provision-bound token alone must authenticate.
-	mux := NewMux(Dependencies{
-		TUSHandler:        storage.TUSRouteHandler{Manager: manager, Store: store},
-		UploadTokenSecret: "upload-secret",
-	})
-	token, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", 1, time.Now().UTC().Add(time.Hour))
+	registry := syncapi.NewAuthorityRegistry()
+	device, err := device_trust.NewDevice("device-1", "tenant-1", "org-1", "user-1", "public-key")
 	if err != nil {
 		t.Fatal(err)
 	}
-	rec := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":11,"checksum":"`+strings.Repeat("ab", 32)+`","content_type":"image/jpeg"}`))
-	request.Header.Set("Authorization", "Bearer "+token)
-	mux.ServeHTTP(rec, request)
-	if rec.Code != http.StatusCreated {
+	if err := device.Trust(); err != nil {
+		t.Fatal(err)
+	}
+	authority, err := device_trust.IssueAuthorityPackage(device, "auth-1", "upload-secret", []string{"evidence.upload"}, time.Now().UTC().Add(-time.Minute), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry.Register(authority)
+
+	mux := NewMux(Dependencies{
+		TUSHandler:              storage.TUSRouteHandler{Manager: manager, Store: store},
+		UploadTokenSecret:       "upload-secret",
+		UploadAuthorityRegistry: registry,
+	})
+	createBody := `{"size":11,"checksum":"` + strings.Repeat("ab", 32) + `","content_type":"image/jpeg"}`
+	post := func(token string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(createBody))
+		request.Header.Set("Authorization", "Bearer "+token)
+		mux.ServeHTTP(rec, request)
+		return rec
+	}
+	token, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch, authority.ExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(token); rec.Code != http.StatusCreated {
 		t.Fatalf("upload-token create status=%d body=%s, want 201", rec.Code, rec.Body.String())
 	}
 
-	expired, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", 1, time.Now().UTC().Add(-time.Hour))
+	// A valid HMAC for an authority this server never issued must be refused.
+	unregistered, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-unknown", 1, time.Now().UTC().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
-	rec = httptest.NewRecorder()
-	request = httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":11,"checksum":"`+strings.Repeat("ab", 32)+`","content_type":"image/jpeg"}`))
-	request.Header.Set("Authorization", "Bearer "+expired)
-	mux.ServeHTTP(rec, request)
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("expired upload token status=%d, want 401", rec.Code)
+	if rec := post(unregistered); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("unregistered authority token status=%d, want 401", rec.Code)
+	}
+
+	// A token naming a different device than its authority must be refused.
+	crossDevice, err := localprovision.MintUploadToken("upload-secret", "device-other", "auth-1", authority.Epoch, authority.ExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(crossDevice); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("cross-device token status=%d, want 401", rec.Code)
+	}
+
+	// A token for the wrong epoch must be refused.
+	wrongEpoch, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch+7, authority.ExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(wrongEpoch); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong-epoch token status=%d, want 401", rec.Code)
+	}
+
+	// A token bound to an already-expired authority must be refused even
+	// though the token's own expiry nominally still lies ahead.
+	expiredAuthority, err := device_trust.IssueAuthorityPackage(device, "auth-expired", "upload-secret", []string{"evidence.upload"}, time.Now().UTC().Add(-2*time.Hour), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry.Register(expiredAuthority)
+	expired, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-expired", expiredAuthority.Epoch, time.Now().UTC().Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(expired); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expired-authority token status=%d, want 401", rec.Code)
+	}
+
+	// An expired token remains rejected regardless of registry state.
+	stale, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch, time.Now().UTC().Add(-time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec := post(stale); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expired token status=%d, want 401", rec.Code)
 	}
 }
 
