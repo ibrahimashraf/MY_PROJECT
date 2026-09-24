@@ -70,6 +70,9 @@ type response struct {
 	DeviceID       string            `json:"device_id"`
 	UserID         string            `json:"user_id"`
 	Authority      authorityResponse `json:"authority"`
+	// UploadToken authenticates TUS media uploads for this device authority
+	// without an interactive OIDC login. It expires with the authority.
+	UploadToken string `json:"upload_token"`
 }
 
 func NewHandler(config Config) (*Handler, error) {
@@ -155,6 +158,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, httpRequest *http.Reques
 		writeError(writer, http.StatusInternalServerError, "unable to issue authority")
 		return
 	}
+	// Mint before persisting anything: a mint failure must not leave a saved
+	// authority and registered device behind a 500 response.
+	uploadToken, err := MintUploadToken(h.config.SigningSecret, incoming.DeviceID, authority.ID, authority.Epoch, authority.ExpiresAt)
+	if err != nil {
+		writeError(writer, http.StatusInternalServerError, "unable to issue upload token")
+		return
+	}
 	if err := h.config.Repository.SaveAuthority(httpRequest.Context(), syncstate.AuthorityRecord{
 		AuthorityID: authority.ID, TenantID: authority.TenantID, OrganizationID: h.config.OrganizationID, DeviceID: authority.DeviceID, UserID: authority.UserID,
 		AuthorityEpoch: authority.Epoch, Scopes: authority.Scopes, ProcedureVersion: "integin-local-provision-v1", IssuedAt: authority.IssuedAt, ExpiresAt: authority.ExpiresAt, Signature: []byte(authority.Signature),
@@ -166,7 +176,8 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, httpRequest *http.Reques
 	registrar(authority)
 	writeJSON(writer, http.StatusOK, response{
 		TenantID: h.config.TenantID, OrganizationID: h.config.OrganizationID, Environment: "LIVE", DeviceID: incoming.DeviceID, UserID: h.config.UserID,
-		Authority: authorityResponse{AuthorityID: authority.ID, AuthorityEpoch: authority.Epoch, Scopes: authority.Scopes, ProcedureVersion: "integin-local-provision-v1", IssuedAt: authority.IssuedAt, ExpiresAt: authority.ExpiresAt, Signature: authority.Signature},
+		Authority:   authorityResponse{AuthorityID: authority.ID, AuthorityEpoch: authority.Epoch, Scopes: authority.Scopes, ProcedureVersion: "integin-local-provision-v1", IssuedAt: authority.IssuedAt, ExpiresAt: authority.ExpiresAt, Signature: authority.Signature},
+		UploadToken: uploadToken,
 	})
 }
 

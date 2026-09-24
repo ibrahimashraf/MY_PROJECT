@@ -101,6 +101,7 @@ Future<void> main() async {
   late String deviceId;
   late String userId;
   late OfflineAuthority authority;
+  String? uploadToken;
 
   _traceWindowsStartup('mode-resolved');
   if (pilotMode) {
@@ -153,6 +154,7 @@ Future<void> main() async {
       deviceId = session.deviceId;
       userId = session.userId;
       authority = session.authority;
+      uploadToken = session.uploadToken;
     } else {
       final session = _demonstrationSession();
       context = session.context;
@@ -197,7 +199,9 @@ Future<void> main() async {
             baseUrl: Uri.parse(syncEndpoint).resolve('/uploads'),
             client: PinnedHttpClient.forEndpoint(Uri.parse(syncEndpoint), allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint))),
             allowLoopbackHttp: pilotMode || isLoopbackUri(Uri.parse(syncEndpoint)),
-            // In a real device environment, this needs the OIDC token
+            // Provision-bound upload token minted with the device authority;
+            // the server accepts it on /uploads without an interactive login.
+            authToken: uploadToken,
           ),
         );
   final controller = FieldAppController(

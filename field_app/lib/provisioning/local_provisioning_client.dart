@@ -13,12 +13,17 @@ class ProvisionedFieldSession {
     required this.deviceId,
     required this.userId,
     required this.authority,
+    this.uploadToken,
   });
 
   final TenantContext context;
   final String deviceId;
   final String userId;
   final OfflineAuthority authority;
+
+  /// Bearer token for TUS media uploads, minted with the authority and
+  /// expiring with it. Null on older cached sessions; renewed on reprovision.
+  final String? uploadToken;
 
   factory ProvisionedFieldSession.fromJson(Map<String, Object?> json) {
     final authorityJSON = Map<String, Object?>.from(json['authority'] as Map);
@@ -32,6 +37,7 @@ class ProvisionedFieldSession {
       context: context,
       deviceId: json['device_id'] as String,
       userId: json['user_id'] as String,
+      uploadToken: json['upload_token'] as String?,
       authority: OfflineAuthority(
         id: authorityJSON['authority_id'] as String,
         deviceId: json['device_id'] as String,
@@ -54,6 +60,7 @@ class ProvisionedFieldSession {
         'environment': context.environment,
         'device_id': deviceId,
         'user_id': userId,
+        if (uploadToken != null) 'upload_token': uploadToken,
         'authority': {
           'authority_id': authority.id,
           'authority_epoch': authority.epoch,

@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"runtime"
 	"strings"
+	"time"
 
 	"integin/internal/evidenceapi"
+	"integin/internal/localprovision"
 	"integin/internal/middleware"
 	"integin/pkg/telemetry"
 )
@@ -133,6 +135,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 	if d.LiftViewExportHandler != nil {
 		mux.Handle("/api/v1/liftviews/export", d.LiftViewExportHandler)
+		mux.Handle("/api/v1/liftviews/cranes", d.LiftViewExportHandler)
 	}
 	if d.ShortLinkHandler != nil {
 		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
@@ -159,7 +162,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/dpp/", d.DPPHandler)
 	}
 	if d.TUSHandler != nil {
-		gated := requireTUSAuth(d.Validator, d.TUSHandler)
+		gated := requireTUSAuth(d.Validator, d.UploadTokenSecret, d.TUSHandler)
 		mux.Handle("/uploads", gated)
 		mux.Handle("/uploads/", gated)
 	}
@@ -187,26 +190,35 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 }
 
-// requireTUSAuth gates the TUS upload endpoints behind the same OIDC bearer
-// authentication the certificate and evidence handlers enforce. Missing
-// credentials and invalid tokens return 401; a missing validator fails closed
-// with 503 so uploads are never exposed unauthenticated.
-func requireTUSAuth(validator TokenValidator, next http.Handler) http.Handler {
+// requireTUSAuth gates the TUS upload endpoints behind OIDC bearer
+// authentication or, failing that, a provision-bound upload token minted at
+// device enrollment. Missing credentials and invalid tokens return 401; when
+// neither a validator nor an upload-token secret is configured the gate fails
+// closed with 503 so uploads are never exposed unauthenticated.
+func requireTUSAuth(validator TokenValidator, uploadSecret string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if validator == nil {
-			writeOperationalJSON(writer, http.StatusServiceUnavailable, `{"error":"service_unavailable"}`)
-			return
-		}
 		raw, ok := bearerToken(request.Header.Get("Authorization"))
 		if !ok {
 			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 			return
 		}
-		if _, err := validator.Validate(request.Context(), raw); err != nil {
-			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+		if validator != nil {
+			if _, err := validator.Validate(request.Context(), raw); err == nil {
+				next.ServeHTTP(writer, request)
+				return
+			}
+		}
+		if uploadSecret != "" {
+			if _, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC()); err == nil {
+				next.ServeHTTP(writer, request)
+				return
+			}
+		}
+		if validator == nil && uploadSecret == "" {
+			writeOperationalJSON(writer, http.StatusServiceUnavailable, `{"error":"service_unavailable"}`)
 			return
 		}
-		next.ServeHTTP(writer, request)
+		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 	})
 }
 

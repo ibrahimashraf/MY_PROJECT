@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:integin_field_app/security/inspection_submission_service.dart';
 import 'package:integin_field_app/security/grace_state_machine.dart';
 import 'package:integin_field_app/security/hardware_attestation_bridge.dart';
@@ -74,6 +76,49 @@ void main() {
       final result = await provider.signDigest(alias: 'test', precomputed32ByteDigest: digest);
       expect(result, signature);
       expect(signCallCount, 2);
+    });
+
+    test('AUTH_REQUIRED retry accepts device-credential fallback', () async {
+      var signCalls = 0;
+      final service = InspectionSubmissionService(
+        attestationProvider: _FlakyProvider(onSign: () async {
+          signCalls += 1;
+          if (signCalls == 1) {
+            throw SecurityException(
+              'UserNotAuthenticated: biometric expired',
+              'AUTH_REQUIRED',
+            );
+          }
+          return Uint8List.fromList(List.generate(64, (i) => i));
+        }),
+      );
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/local_auth'),
+        (call) async => call.method == 'authenticate' ? true : null,
+      );
+
+      final result = await service.submitInspection(
+        payload: SubmissionSealPayload(
+          deviceKeyDID: deviceKeyDID,
+          tokenID: tokenID,
+          leaseEpoch: leaseEpoch,
+          dataPayload: Uint8List.fromList(utf8.encode('test-payload')),
+          appEd25519Sig: Uint8List.fromList(List.generate(64, (i) => i)),
+        ),
+        deviceKeyDID: deviceKeyDID,
+        endpoint: Uri.parse('https://edge.example.com'),
+        tokenID: tokenID,
+        leaseEpoch: leaseEpoch,
+        appEd25519Sig: Uint8List.fromList(List.generate(64, (i) => i)),
+        httpClient: MockClient((request) async => http.Response(
+              jsonEncode({'status': 'ACCEPTED', 'message': 'Recorded'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            )),
+      );
+      expect(result.status, SubmissionTransportStatus.accepted);
+      expect(signCalls, 2);
     });
 
     test('deriveCompositeDigest produces deterministic 32-byte output', () {
@@ -248,4 +293,29 @@ void main() {
       expect(foregroundResumptionRequired, isTrue);
     });
   });
+}
+
+class _FlakyProvider implements HardwareAttestationProvider {
+  _FlakyProvider({required this.onSign});
+
+  final Future<Uint8List> Function() onSign;
+
+  @override
+  Future<AttestationResult> generateAttestedKey({
+    required String alias,
+    required Uint8List challenge,
+    required bool requireUserAuth,
+    required int authValidityDurationSeconds,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Uint8List> signDigest({
+    required String alias,
+    required Uint8List precomputed32ByteDigest,
+  }) =>
+      onSign();
+
+  @override
+  Future<BootSessionState> getBootSession() => throw UnimplementedError();
 }

@@ -144,10 +144,13 @@ class InspectionSubmissionService {
     }
   }
 
-  /// Retries [signDigest] after prompting the user for biometric
-  /// authentication via [LocalAuthentication].
+  /// Retries [signDigest] after prompting the user for authentication via
+  /// [LocalAuthentication].
   ///
-  /// Returns the signature on success. Throws [SecurityException]
+  /// Device-credential fallback (PIN/pattern/password) is deliberately
+  /// allowed alongside biometrics: soiled gloves or an unenrolled sensor
+  /// must degrade to the device credential, never strand a signed
+  /// inspection. Returns the signature on success. Throws [SecurityException]
   /// if the user cancels or if signing fails again.
   Future<Uint8List> _retryWithBiometric({
     required String alias,
@@ -155,7 +158,7 @@ class InspectionSubmissionService {
   }) async {
     final authenticated = await _localAuth.authenticate(
       localizedReason: 'Authenticate to complete inspection submission',
-      options: const AuthenticationOptions(biometricOnly: true),
+      options: const AuthenticationOptions(biometricOnly: false),
     );
     if (!authenticated) {
       throw SecurityException(

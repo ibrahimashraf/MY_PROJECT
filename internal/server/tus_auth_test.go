@@ -12,7 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
 )
@@ -42,6 +44,42 @@ func TestTUSRoutesRejectUnauthenticatedThroughMux(t *testing.T) {
 	rejecting.ServeHTTP(rec, request)
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("invalid-bearer status=%d want %d body=%s", rec.Code, http.StatusUnauthorized, rec.Body.String())
+	}
+}
+
+func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
+	manager, err := storage.NewTUSManager(t.TempDir(), 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := storage.NewInMemoryStore()
+	// No OIDC validator: the provision-bound token alone must authenticate.
+	mux := NewMux(Dependencies{
+		TUSHandler:        storage.TUSRouteHandler{Manager: manager, Store: store},
+		UploadTokenSecret: "upload-secret",
+	})
+	token, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", 1, time.Now().UTC().Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":11,"checksum":"`+strings.Repeat("ab", 32)+`","content_type":"image/jpeg"}`))
+	request.Header.Set("Authorization", "Bearer "+token)
+	mux.ServeHTTP(rec, request)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("upload-token create status=%d body=%s, want 201", rec.Code, rec.Body.String())
+	}
+
+	expired, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", 1, time.Now().UTC().Add(-time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec = httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodPost, "/uploads", strings.NewReader(`{"size":11,"checksum":"`+strings.Repeat("ab", 32)+`","content_type":"image/jpeg"}`))
+	request.Header.Set("Authorization", "Bearer "+expired)
+	mux.ServeHTTP(rec, request)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expired upload token status=%d, want 401", rec.Code)
 	}
 }
 

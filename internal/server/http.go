@@ -75,12 +75,15 @@ type Dependencies struct {
 	AssetEntitlementHandler        http.Handler
 	DPPHandler                     http.Handler
 	TUSHandler                     http.Handler
-	SchedulingHandler              http.Handler
-	PilotEnrollHandler             http.Handler
-	WorkbenchHandler               http.Handler
-	DeviceEnrollmentHandler        http.Handler
-	Readiness                      func(context.Context) error
-	ReadinessTimeout               time.Duration
+	// UploadTokenSecret authenticates provision-bound TUS upload tokens as
+	// an alternative to OIDC bearer tokens. Empty disables the token path.
+	UploadTokenSecret       string
+	SchedulingHandler       http.Handler
+	PilotEnrollHandler      http.Handler
+	WorkbenchHandler        http.Handler
+	DeviceEnrollmentHandler http.Handler
+	Readiness               func(context.Context) error
+	ReadinessTimeout        time.Duration
 }
 
 // NewMux composes the HTTP boundary without creating global state. Runtime
@@ -158,7 +161,7 @@ func productionMiddleware(next http.Handler) http.Handler {
 
 func productionMiddlewareWithLimiter(next http.Handler, rateLimiter *middleware.RateLimiter) http.Handler {
 	gate := newConcurrencyGateFromEnv()
-	return withSecurityHeaders(requestLogger(withCorrelationID(middleware.EarlyDataMiddleware(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20)))))
+	return withCORS(newCORSConfigFromEnv(), withSecurityHeaders(requestLogger(withCorrelationID(middleware.EarlyDataMiddleware(withRequestLimit(gate.Middleware(rateLimiter.Middleware(next)), 10<<20))))))
 }
 
 func withSecurityHeaders(next http.Handler) http.Handler {

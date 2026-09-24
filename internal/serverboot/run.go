@@ -604,7 +604,7 @@ func Run() {
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, IdentityGrantHandler: identityGrantHandler, TrainingHandler: trainingHandler,
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler,
+		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
 		PilotEnrollHandler:      enrollHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
