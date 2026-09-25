@@ -58,13 +58,25 @@ type MethodStep struct {
 	StopCondition string `json:"stopCondition"`
 }
 
+type ChartPoint struct {
+	RadiusM   float64 `json:"radius_m"`
+	CapacityT float64 `json:"capacity_t"`
+}
+
+type CraneProvenance struct {
+	DocumentID string `json:"document_id,omitempty"`
+	SourceSHA  string `json:"source_sha256,omitempty"`
+}
+
 type CraneReference struct {
-	ID                  string `json:"id"`
-	Manufacturer        string `json:"manufacturer"`
-	Model               string `json:"model"`
-	CraneClass          string `json:"crane_class"`
-	VisualizationStatus string `json:"visualization_status"`
-	DutyChartStatus     string `json:"duty_chart_status"`
+	ID                  string          `json:"id"`
+	Manufacturer        string          `json:"manufacturer"`
+	Model               string          `json:"model"`
+	CraneClass          string          `json:"crane_class"`
+	VisualizationStatus string          `json:"visualization_status"`
+	DutyChartStatus     string          `json:"duty_chart_status"`
+	Provenance          CraneProvenance `json:"provenance,omitempty"`
+	ChartMatrix         []ChartPoint    `json:"chart_matrix,omitempty"`
 }
 
 func craneCatalog() []CraneReference {
@@ -82,6 +94,18 @@ func findCraneReference(id string) (CraneReference, bool) {
 		}
 	}
 	return CraneReference{}, false
+}
+
+func calculateCapacity(ref CraneReference, radius float64) float64 {
+	if len(ref.ChartMatrix) == 0 {
+		return 0
+	}
+	for _, pt := range ref.ChartMatrix {
+		if radius <= pt.RadiusM {
+			return pt.CapacityT
+		}
+	}
+	return 0
 }
 
 func validatePlanningSections(hazards []HazardControl, steps []MethodStep) error {
@@ -220,7 +244,16 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail("DHL ledger refused: " + err.Error())
 		return
 	}
-	_ = dhl
+	if crane1Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
+		if capT := calculateCapacity(crane1Ref, res.Hook1State.WorkingRadius); capT > 0 {
+			req.Crane1CapT = capT
+		}
+	}
+	if crane2Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
+		if capT := calculateCapacity(crane2Ref, res.Hook2State.WorkingRadius); capT > 0 {
+			req.Crane2CapT = capT
+		}
+	}
 	verdict, err := rulesengine.EvaluateCapacityGates(rulesengine.CapacityGates{
 		CraneLoadT: res.Crane1LoadTonnes, CraneCapT: req.Crane1CapT,
 		RiggingLoadT: legT, RiggingCapT: req.SlingMBLT,

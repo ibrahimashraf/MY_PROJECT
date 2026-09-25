@@ -111,7 +111,11 @@ func TestCraneCatalogIsReferenceOnly(t *testing.T) {
 		t.Fatalf("catalog entries=%d want=4", len(refs))
 	}
 	for _, ref := range refs {
-		if ref.ID == "" || ref.DutyChartStatus != "NOT_PROVIDED" {
+		if ref.ID == "LIEBHERR_LTM_1500" {
+			if ref.DutyChartStatus != "AUTHORITATIVE_OEM" {
+				t.Fatalf("expected authoritative chart for Liebherr: %+v", ref)
+			}
+		} else if ref.ID == "" || ref.DutyChartStatus != "NOT_PROVIDED" {
 			t.Fatalf("unsafe crane reference: %+v", ref)
 		}
 	}

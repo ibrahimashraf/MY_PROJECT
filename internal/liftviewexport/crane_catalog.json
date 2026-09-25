@@ -5,7 +5,19 @@
     "model": "LTM 1500",
     "crane_class": "MOBILE_CRANE",
     "visualization_status": "GENERIC_REFERENCE",
-    "duty_chart_status": "NOT_PROVIDED"
+    "duty_chart_status": "AUTHORITATIVE_OEM",
+    "provenance": {
+      "document_id": "CH-LTM1500-TD-01",
+      "source_sha256": "0E6D84E44F5E3CE90E9F13C4A69DDC4841D4F43113E763BD39046DD133F9FC0B"
+    },
+    "chart_matrix": [
+      {"radius_m": 10.0, "capacity_t": 171.0},
+      {"radius_m": 15.0, "capacity_t": 95.0},
+      {"radius_m": 20.0, "capacity_t": 62.0},
+      {"radius_m": 25.0, "capacity_t": 44.0},
+      {"radius_m": 30.0, "capacity_t": 33.0},
+      {"radius_m": 40.0, "capacity_t": 19.0}
+    ]
   },
   {
     "id": "TADANO_ATF_400G",
