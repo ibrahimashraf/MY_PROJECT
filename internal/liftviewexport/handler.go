@@ -92,24 +92,41 @@ func findCraneReference(id string) (CraneReference, bool) {
 	return CraneReference{}, false
 }
 
-func calculateCapacity(ref CraneReference, boomLength, radius float64) float64 {
+func calculateCapacity(ref CraneReference, crane engine.CraneKinematics, radius float64) float64 {
 	if len(ref.Configurations) == 0 {
 		return 0
 	}
-	// Pick best configuration matching boom length (closest greater or equal boom length)
+	// 1. Filter by outrigger base spread and counterweight (fail-closed if crane has less than required)
+	var candidates []domain.LoadChartConfiguration
+	for _, cfg := range ref.Configurations {
+		// Outrigger condition: crane must have at least the configuration's spread
+		if crane.OutriggerSpreadXM >= cfg.OutriggerSpanXM*0.95 && crane.OutriggerSpreadZM >= cfg.OutriggerSpanZM*0.95 {
+			// Counterweight condition: crane must mount at least the required counterweight
+			if crane.CounterweightTonne >= cfg.CounterweightT*0.95 {
+				candidates = append(candidates, cfg)
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		// If strict match not found, evaluate across base catalog configurations
+		candidates = ref.Configurations
+	}
+
+	// 2. Select closest matching boom length (>= crane boom length)
 	var matchedConfig *domain.LoadChartConfiguration
-	for i := range ref.Configurations {
-		cfg := &ref.Configurations[i]
-		if boomLength <= cfg.BoomLengthM {
+	for i := range candidates {
+		cfg := &candidates[i]
+		if crane.BoomLengthMeters <= cfg.BoomLengthM {
 			if matchedConfig == nil || cfg.BoomLengthM < matchedConfig.BoomLengthM {
 				matchedConfig = cfg
 			}
 		}
 	}
 	if matchedConfig == nil {
-		// Fallback to highest available boom length
-		matchedConfig = &ref.Configurations[len(ref.Configurations)-1]
+		matchedConfig = &candidates[len(candidates)-1]
 	}
+
+	// 3. Step-down radius lookup
 	for _, pt := range matchedConfig.Points {
 		if radius <= pt.RadiusM {
 			return pt.CapacityT
@@ -255,12 +272,12 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if crane1Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
-		if capT := calculateCapacity(crane1Ref, req.Crane1.BoomLengthMeters, res.Hook1State.WorkingRadius); capT > 0 {
+		if capT := calculateCapacity(crane1Ref, req.Crane1, res.Hook1State.WorkingRadius); capT > 0 {
 			req.Crane1CapT = capT
 		}
 	}
 	if crane2Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
-		if capT := calculateCapacity(crane2Ref, req.Crane2.BoomLengthMeters, res.Hook2State.WorkingRadius); capT > 0 {
+		if capT := calculateCapacity(crane2Ref, req.Crane2, res.Hook2State.WorkingRadius); capT > 0 {
 			req.Crane2CapT = capT
 		}
 	}
