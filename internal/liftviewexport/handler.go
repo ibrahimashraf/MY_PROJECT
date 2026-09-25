@@ -13,6 +13,7 @@ import (
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/pkg/cad/dxf"
 	"integin/pkg/cad/engine"
+	"integin/pkg/domain"
 	"integin/pkg/httputil"
 	"integin/pkg/rulesengine"
 )
@@ -58,25 +59,20 @@ type MethodStep struct {
 	StopCondition string `json:"stopCondition"`
 }
 
-type ChartPoint struct {
-	RadiusM   float64 `json:"radius_m"`
-	CapacityT float64 `json:"capacity_t"`
-}
-
 type CraneProvenance struct {
 	DocumentID string `json:"document_id,omitempty"`
 	SourceSHA  string `json:"source_sha256,omitempty"`
 }
 
 type CraneReference struct {
-	ID                  string          `json:"id"`
-	Manufacturer        string          `json:"manufacturer"`
-	Model               string          `json:"model"`
-	CraneClass          string          `json:"crane_class"`
-	VisualizationStatus string          `json:"visualization_status"`
-	DutyChartStatus     string          `json:"duty_chart_status"`
-	Provenance          CraneProvenance `json:"provenance,omitempty"`
-	ChartMatrix         []ChartPoint    `json:"chart_matrix,omitempty"`
+	ID                  string                          `json:"id"`
+	Manufacturer        string                          `json:"manufacturer"`
+	Model               string                          `json:"model"`
+	CraneClass          string                          `json:"crane_class"`
+	VisualizationStatus string                          `json:"visualization_status"`
+	DutyChartStatus     string                          `json:"duty_chart_status"`
+	Provenance          CraneProvenance                 `json:"provenance,omitempty"`
+	Configurations      []domain.LoadChartConfiguration `json:"configurations,omitempty"`
 }
 
 func craneCatalog() []CraneReference {
@@ -96,11 +92,25 @@ func findCraneReference(id string) (CraneReference, bool) {
 	return CraneReference{}, false
 }
 
-func calculateCapacity(ref CraneReference, radius float64) float64 {
-	if len(ref.ChartMatrix) == 0 {
+func calculateCapacity(ref CraneReference, boomLength, radius float64) float64 {
+	if len(ref.Configurations) == 0 {
 		return 0
 	}
-	for _, pt := range ref.ChartMatrix {
+	// Pick best configuration matching boom length (closest greater or equal boom length)
+	var matchedConfig *domain.LoadChartConfiguration
+	for i := range ref.Configurations {
+		cfg := &ref.Configurations[i]
+		if boomLength <= cfg.BoomLengthM {
+			if matchedConfig == nil || cfg.BoomLengthM < matchedConfig.BoomLengthM {
+				matchedConfig = cfg
+			}
+		}
+	}
+	if matchedConfig == nil {
+		// Fallback to highest available boom length
+		matchedConfig = &ref.Configurations[len(ref.Configurations)-1]
+	}
+	for _, pt := range matchedConfig.Points {
 		if radius <= pt.RadiusM {
 			return pt.CapacityT
 		}
@@ -245,12 +255,12 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if crane1Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
-		if capT := calculateCapacity(crane1Ref, res.Hook1State.WorkingRadius); capT > 0 {
+		if capT := calculateCapacity(crane1Ref, req.Crane1.BoomLengthMeters, res.Hook1State.WorkingRadius); capT > 0 {
 			req.Crane1CapT = capT
 		}
 	}
 	if crane2Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
-		if capT := calculateCapacity(crane2Ref, res.Hook2State.WorkingRadius); capT > 0 {
+		if capT := calculateCapacity(crane2Ref, req.Crane2.BoomLengthMeters, res.Hook2State.WorkingRadius); capT > 0 {
 			req.Crane2CapT = capT
 		}
 	}
