@@ -275,7 +275,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		{"RIGGING", "heavier share " + numeric(maxShare) + "t", "leg tension " + numeric(legT) + "t", "DHL " + numeric(dhl) + "t"},
 		{"PLAN VIEW", "see plan.dxf"},
 		{"ELEVATION", "see elevation.dxf"},
-		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart NOT_PROVIDED", crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart NOT_PROVIDED"},
+		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart " + crane1Ref.DutyChartStatus, crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart " + crane2Ref.DutyChartStatus},
 		{"GROUND", "bearing gates passed"},
 		{"EXECUTION", "sealed export"},
 	}

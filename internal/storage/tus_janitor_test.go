@@ -12,7 +12,7 @@ import (
 
 func writeOrphanSession(t *testing.T, dir, id string, chunk []byte, size int64, checksum string, modTime time.Time) {
 	t.Helper()
-	sidecar := tusSidecar{ID: id, Size: size, Checksum: checksum, Offset: 0, ContentType: "application/octet-stream"}
+	sidecar := tusSidecar{ID: id, TenantID: "t1", SessionID: "s1", Size: size, Checksum: checksum, Offset: 0, ContentType: "application/octet-stream"}
 	data, err := json.Marshal(sidecar)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +73,7 @@ func TestTUSSweepResumesFreshIncompleteOrphan(t *testing.T) {
 	if report.Resumed != 1 || report.Deleted != 0 {
 		t.Fatalf("fresh orphan must be resumed, got %+v", report)
 	}
-	session, err := manager.Offset(context.Background(), "fresh-orphan")
+	session, err := manager.Offset(context.Background(), "t1", "s1", "fresh-orphan")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,11 +86,11 @@ func TestTUSSweepPurgesStaleLiveSession(t *testing.T) {
 	manager := newTestTUSManager(t, time.Hour)
 	ctx := context.Background()
 	_, payload, checksum := testPayload(DefaultTUSChunkSize)
-	id, err := manager.Create(ctx, int64(len(payload)), checksum, "video/mp4")
+	id, err := manager.Create(ctx, "t1", "s1", int64(len(payload)), checksum, "video/mp4")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := manager.Append(ctx, id, 0, payload[:100]); err != nil {
+	if _, err := manager.Append(ctx, "t1", "s1", id, 0, payload[:100]); err != nil {
 		t.Fatal(err)
 	}
 	manager.mu.Lock()
@@ -104,7 +104,7 @@ func TestTUSSweepPurgesStaleLiveSession(t *testing.T) {
 	if report.Purged != 1 || report.Active != 0 {
 		t.Fatalf("stale live session must be purged, got %+v", report)
 	}
-	if _, err := manager.Offset(ctx, id); !errors.Is(err, ErrUploadNotFound) {
+	if _, err := manager.Offset(ctx, "t1", "s1", id); !errors.Is(err, ErrUploadNotFound) {
 		t.Fatalf("purged session must be gone, got %v", err)
 	}
 }
@@ -113,10 +113,10 @@ func TestTUSSweepReportsActiveUploadCount(t *testing.T) {
 	manager := newTestTUSManager(t, time.Hour)
 	ctx := context.Background()
 	_, _, checksum := testPayload(10)
-	if _, err := manager.Create(ctx, 10, checksum, "image/png"); err != nil {
+	if _, err := manager.Create(ctx, "t1", "s1", 10, checksum, "image/png"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := manager.Create(ctx, 10, checksum, "image/png"); err != nil {
+	if _, err := manager.Create(ctx, "t1", "s1", 10, checksum, "image/png"); err != nil {
 		t.Fatal(err)
 	}
 	report, err := manager.Sweep(ctx, nil)

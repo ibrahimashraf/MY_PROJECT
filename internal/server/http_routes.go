@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"integin/internal/evidenceapi"
+	"integin/internal/identity"
 	"integin/internal/localprovision"
 	"integin/internal/middleware"
 	"integin/internal/syncapi"
@@ -59,9 +60,9 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middlew
 		mux.Handle("/work-orders/", d.WorkOrderEvidenceHandler)
 	}
 	if d.WorkOrderReconciliationHandler != nil {
-		mux.Handle("/work-orders/provisional", d.WorkOrderReconciliationHandler)
-		mux.Handle("/work-orders/receipts/", d.WorkOrderReconciliationHandler)
-		mux.Handle("/work-orders/held", d.WorkOrderReconciliationHandler)
+		mux.Handle("/api/v1/work-orders/provisional", d.WorkOrderReconciliationHandler)
+		mux.Handle("/api/v1/work-orders/receipts/", d.WorkOrderReconciliationHandler)
+		mux.Handle("/api/v1/work-orders/held", d.WorkOrderReconciliationHandler)
 	}
 	if d.CertificateHandler != nil {
 		mux.Handle("/certificates/", d.CertificateHandler)
@@ -135,8 +136,10 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
 	}
 	if d.LiftViewExportHandler != nil {
-		mux.Handle("/api/v1/liftviews/export", d.LiftViewExportHandler)
-		mux.Handle("/api/v1/liftviews/cranes", d.LiftViewExportHandler)
+		gated := requireOIDCAuth(d.Validator, d.LiftViewExportHandler)
+		mux.Handle("/api/v1/liftviews/export", gated)
+		mux.Handle("/api/v1/liftviews/cranes", gated)
+		mux.Handle("/api/v1/liftviews/evaluate4d", gated)
 	}
 	if d.ShortLinkHandler != nil {
 		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
@@ -163,7 +166,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/dpp/", d.DPPHandler)
 	}
 	if d.TUSHandler != nil {
-		gated := requireTUSAuth(d.Validator, d.UploadTokenSecret, authorityRegistryForUploadTokens(d), d.TUSHandler)
+		gated := requireTUSAuth(d.Validator, d.Resolver, d.UploadTokenSecret, authorityRegistryForUploadTokens(d), d.TUSHandler)
 		mux.Handle("/uploads", gated)
 		mux.Handle("/uploads/", gated)
 	}
@@ -191,15 +194,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 }
 
-// requireTUSAuth gates the TUS upload endpoints behind OIDC bearer
-// authentication or, failing that, a provision-bound upload token minted at
-// device enrollment. Upload tokens are additionally checked against the live
-// authority registry so a token is only honoured while the exact
-// (device, authority, epoch) it names is still registered and unexpired.
-// Missing credentials and invalid tokens return 401; when neither a validator
-// nor an upload-token secret is configured the gate fails closed with 503 so
-// uploads are never exposed unauthenticated.
-func requireTUSAuth(validator TokenValidator, uploadSecret string, authorities *syncapi.AuthorityRegistry, next http.Handler) http.Handler {
+func requireOIDCAuth(validator TokenValidator, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		raw, ok := bearerToken(request.Header.Get("Authorization"))
 		if !ok {
@@ -212,11 +207,43 @@ func requireTUSAuth(validator TokenValidator, uploadSecret string, authorities *
 				return
 			}
 		}
+		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+	})
+}
+
+func requireTUSAuth(validator TokenValidator, resolver identity.Resolver, uploadSecret string, authorities *syncapi.AuthorityRegistry, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Strip incoming headers to prevent injection attacks from OIDC clients.
+		request.Header.Del("X-TUS-Tenant-ID")
+		request.Header.Del("X-TUS-Session-ID")
+
+		raw, ok := bearerToken(request.Header.Get("Authorization"))
+		if !ok {
+			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+			return
+		}
+		if validator != nil {
+			if principal, err := validator.Validate(request.Context(), raw); err == nil {
+				if resolver != nil {
+					if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
+						request.Header.Set("X-TUS-Tenant-ID", membership.TenantID)
+						request.Header.Set("X-TUS-Session-ID", membership.ActorID)
+						next.ServeHTTP(writer, request)
+						return
+					}
+				}
+			}
+		}
 		if uploadSecret != "" {
 			claims, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC())
 			if err == nil && uploadTokenAuthorityCurrent(claims, authorities, time.Now().UTC()) {
-				next.ServeHTTP(writer, request)
-				return
+				auth, _ := authorities.Get(claims.AuthorityID)
+				if auth.TenantID == claims.TenantID {
+					request.Header.Set("X-TUS-Tenant-ID", claims.TenantID)
+					request.Header.Set("X-TUS-Session-ID", claims.SessionID)
+					next.ServeHTTP(writer, request)
+					return
+				}
 			}
 		}
 		if validator == nil && uploadSecret == "" {

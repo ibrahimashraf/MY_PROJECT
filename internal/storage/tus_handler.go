@@ -34,6 +34,8 @@ var (
 // bytes against the declared checksum.
 type UploadSession struct {
 	ID          string
+	TenantID    string
+	SessionID   string
 	ContentType string
 	Size        int64
 	Checksum    string
@@ -47,10 +49,10 @@ type tusSession struct {
 	file string
 }
 
-// tusSidecar is the on-disk JSON record that lets a restarted process reattach
-// an in-flight session without any in-memory state.
 type tusSidecar struct {
 	ID          string `json:"id"`
+	TenantID    string `json:"tenant_id"`
+	SessionID   string `json:"session_id"`
 	Size        int64  `json:"size"`
 	Checksum    string `json:"checksum"`
 	Offset      int64  `json:"offset"`
@@ -93,7 +95,7 @@ func NewTUSManager(dir string, chunkSize int64, staleTTL time.Duration) (*TUSMan
 
 // Create opens a new upload session for a media object of size bytes with the
 // given full-object SHA-256 hex checksum. Negative and zero sizes are rejected.
-func (m *TUSManager) Create(ctx context.Context, size int64, checksum, contentType string) (string, error) {
+func (m *TUSManager) Create(ctx context.Context, tenantID, sessionID string, size int64, checksum, contentType string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
@@ -120,7 +122,7 @@ func (m *TUSManager) Create(ctx context.Context, size int64, checksum, contentTy
 	}
 	now := time.Now().UTC()
 	session := &tusSession{UploadSession: UploadSession{
-		ID: id, ContentType: contentType, Size: size,
+		ID: id, TenantID: tenantID, SessionID: sessionID, ContentType: contentType, Size: size,
 		Checksum:  strings.ToLower(strings.TrimSpace(checksum)),
 		CreatedAt: now, UpdatedAt: now,
 	}, file: path}
@@ -142,7 +144,7 @@ func (m *TUSManager) Create(ctx context.Context, size int64, checksum, contentTy
 // Append writes one chunk at the session's current offset. A chunk whose
 // offset does not match exactly is rejected so dropped or reordered links can
 // never corrupt the object. Returns the next offset on success.
-func (m *TUSManager) Append(ctx context.Context, id string, offset int64, chunk []byte) (int64, error) {
+func (m *TUSManager) Append(ctx context.Context, tenantID, sessionID, id string, offset int64, chunk []byte) (int64, error) {
 	if err := ctx.Err(); err != nil {
 		return 0, err
 	}
@@ -159,6 +161,21 @@ func (m *TUSManager) Append(ctx context.Context, id string, offset int64, chunk 
 	defer m.mu.Unlock()
 	session, ok := m.sessions[id]
 	if !ok {
+		return 0, ErrUploadNotFound
+	}
+	// OIDC tokens might not have TenantID/SessionID injected, so we only check if they are provided
+	// But the prompt says "TUS claims are not session/tenant-bound ... Enforce session/tenant bounds for TUS uploads".
+	// Since both OIDC (via headers) and tokens will have them.
+	if tenantID == "" || sessionID == "" {
+		return 0, ErrUploadNotFound
+	}
+	if tenantID == "" || sessionID == "" {
+		return 0, ErrUploadNotFound
+	}
+	if session.TenantID != tenantID {
+		return 0, ErrUploadNotFound
+	}
+	if session.SessionID != sessionID {
 		return 0, ErrUploadNotFound
 	}
 	if offset != session.Offset {
@@ -205,7 +222,7 @@ func (m *TUSManager) Append(ctx context.Context, id string, offset int64, chunk 
 
 // Offset returns the session's resumable state. The client asks for this after
 // a link drop and replays its next chunk from Offset, never from parse guesses.
-func (m *TUSManager) Offset(ctx context.Context, id string) (UploadSession, error) {
+func (m *TUSManager) Offset(ctx context.Context, tenantID, sessionID, id string) (UploadSession, error) {
 	if err := ctx.Err(); err != nil {
 		return UploadSession{}, err
 	}
@@ -215,13 +232,22 @@ func (m *TUSManager) Offset(ctx context.Context, id string) (UploadSession, erro
 	if !ok {
 		return UploadSession{}, ErrUploadNotFound
 	}
+	if tenantID == "" || sessionID == "" {
+		return UploadSession{}, ErrUploadNotFound
+	}
+	if session.TenantID != tenantID {
+		return UploadSession{}, ErrUploadNotFound
+	}
+	if session.SessionID != sessionID {
+		return UploadSession{}, ErrUploadNotFound
+	}
 	return session.UploadSession, nil
 }
 
 // Complete assembles the session file into an Object after verifying the
 // object was fully received (Offset == Size) and its SHA-256 matches the
 // checksum declared at Create. The session is then reclaimed.
-func (m *TUSManager) Complete(ctx context.Context, id string) (Object, error) {
+func (m *TUSManager) Complete(ctx context.Context, tenantID, sessionID, id string) (Object, error) {
 	if err := ctx.Err(); err != nil {
 		return Object{}, err
 	}
@@ -229,6 +255,15 @@ func (m *TUSManager) Complete(ctx context.Context, id string) (Object, error) {
 	defer m.mu.Unlock()
 	session, ok := m.sessions[id]
 	if !ok {
+		return Object{}, ErrUploadNotFound
+	}
+	if tenantID == "" || sessionID == "" {
+		return Object{}, ErrUploadNotFound
+	}
+	if session.TenantID != tenantID {
+		return Object{}, ErrUploadNotFound
+	}
+	if session.SessionID != sessionID {
 		return Object{}, ErrUploadNotFound
 	}
 	if session.Offset != session.Size {
@@ -254,7 +289,7 @@ func (m *TUSManager) Complete(ctx context.Context, id string) (Object, error) {
 
 // Abort discards a session and its partial bytes. Unknown ids return
 // ErrUploadNotFound.
-func (m *TUSManager) Abort(ctx context.Context, id string) error {
+func (m *TUSManager) Abort(ctx context.Context, tenantID, sessionID, id string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -262,6 +297,15 @@ func (m *TUSManager) Abort(ctx context.Context, id string) error {
 	defer m.mu.Unlock()
 	session, ok := m.sessions[id]
 	if !ok {
+		return ErrUploadNotFound
+	}
+	if tenantID == "" || sessionID == "" {
+		return ErrUploadNotFound
+	}
+	if session.TenantID != tenantID {
+		return ErrUploadNotFound
+	}
+	if session.SessionID != sessionID {
 		return ErrUploadNotFound
 	}
 	if err := os.Remove(session.file); err != nil {
@@ -418,6 +462,8 @@ func (m *TUSManager) PurgeStale(ctx context.Context) (int, error) {
 func (m *TUSManager) writeSidecar(session *tusSession) error {
 	data, err := json.Marshal(tusSidecar{
 		ID:          session.ID,
+		TenantID:    session.TenantID,
+		SessionID:   session.SessionID,
 		Size:        session.Size,
 		Checksum:    session.Checksum,
 		Offset:      session.Offset,
@@ -451,6 +497,8 @@ func loadSidecar(path, id string) (*tusSession, bool) {
 	now := time.Now().UTC()
 	return &tusSession{UploadSession: UploadSession{
 		ID:          sidecar.ID,
+		TenantID:    sidecar.TenantID,
+		SessionID:   sidecar.SessionID,
 		ContentType: sidecar.ContentType,
 		Size:        sidecar.Size,
 		Checksum:    strings.ToLower(sidecar.Checksum),

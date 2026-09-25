@@ -26,14 +26,16 @@ foreach ($f in $up) {
 
 # E3: orphan rollback (non-draft .down. with no up partner)
 foreach ($f in ($all | Where-Object { $_.Name -match '\.down\.' -and $_.Name -notmatch '\.draft\.' })) {
-    $partner = $f.Name -replace '\.down\.sql$', '.sql'
-    if ($partner -notin $up.Name) { $errors += "orphan rollback, no up-file: $($f.Name)" }
+    $partner1 = $f.Name -replace '\.down\.sql$', '.sql'
+    $partner2 = $f.Name -replace '\.down\.sql$', '.up.sql'
+    if ($partner1 -notin $up.Name -and $partner2 -notin $up.Name) { $errors += "orphan rollback, no up-file: $($f.Name)" }
 }
 
 # W1/W2: grandfathered smells — down-pair required only for NEW files above current max seq
 $maxSeq = ($up.Name | ForEach-Object { if ($_ -match '^(\d+)_') { $Matches[1] } } | Sort-Object -Descending | Select-Object -First 1)
 foreach ($f in $up) {
-    if (-not (Test-Path (Join-Path $MigrationDir ($f.BaseName + ".down.sql")))) {
+    $base = $f.Name -replace '\.up\.sql$|\.sql$', ''
+    if (-not (Test-Path (Join-Path $MigrationDir ($base + ".down.sql")))) {
         $seq = if ($f.Name -match '^(\d+)_') { $Matches[1] } else { "" }
         if ($seq -gt $maxSeq) { $errors += "new up-file missing .down.sql pair: $($f.Name)" }
         else { $warnings += "no .down.sql pair (grandfathered): $($f.Name)" }

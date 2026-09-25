@@ -81,6 +81,8 @@ func (h TUSRouteHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 }
 
 func (h TUSRouteHandler) handleCreate(writer http.ResponseWriter, request *http.Request) {
+	tenantID := request.Header.Get("X-TUS-Tenant-ID")
+	sessionID := request.Header.Get("X-TUS-Session-ID")
 	request.Body = http.MaxBytesReader(writer, request.Body, 1<<20)
 	var req tusCreateRequest
 	decoder := json.NewDecoder(request.Body)
@@ -101,7 +103,7 @@ func (h TUSRouteHandler) handleCreate(writer http.ResponseWriter, request *http.
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "content type is not permitted"})
 		return
 	}
-	id, err := h.Manager.Create(request.Context(), req.Size, req.Checksum, req.ContentType)
+	id, err := h.Manager.Create(request.Context(), tenantID, sessionID, req.Size, req.Checksum, req.ContentType)
 	if err != nil {
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: err.Error()})
 		return
@@ -110,7 +112,9 @@ func (h TUSRouteHandler) handleCreate(writer http.ResponseWriter, request *http.
 }
 
 func (h TUSRouteHandler) handleAppend(writer http.ResponseWriter, request *http.Request, id string) {
-	session, err := h.Manager.Offset(request.Context(), id)
+	tenantID := request.Header.Get("X-TUS-Tenant-ID")
+	sessionID := request.Header.Get("X-TUS-Session-ID")
+	session, err := h.Manager.Offset(request.Context(), tenantID, sessionID, id)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, ErrUploadNotFound) {
@@ -146,7 +150,7 @@ func (h TUSRouteHandler) handleAppend(writer http.ResponseWriter, request *http.
 		writeTUSJSON(writer, http.StatusBadRequest, tusErrorResponse{Error: "chunk payload size exceeds remaining upload bytes"})
 		return
 	}
-	next, err := h.Manager.Append(request.Context(), id, req.Offset, data)
+	next, err := h.Manager.Append(request.Context(), tenantID, sessionID, id, req.Offset, data)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, ErrUploadNotFound) {
@@ -161,7 +165,9 @@ func (h TUSRouteHandler) handleAppend(writer http.ResponseWriter, request *http.
 }
 
 func (h TUSRouteHandler) handleOffset(writer http.ResponseWriter, request *http.Request, id string) {
-	session, err := h.Manager.Offset(request.Context(), id)
+	tenantID := request.Header.Get("X-TUS-Tenant-ID")
+	sessionID := request.Header.Get("X-TUS-Session-ID")
+	session, err := h.Manager.Offset(request.Context(), tenantID, sessionID, id)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, ErrUploadNotFound) {
@@ -177,7 +183,9 @@ func (h TUSRouteHandler) handleOffset(writer http.ResponseWriter, request *http.
 }
 
 func (h TUSRouteHandler) handleComplete(writer http.ResponseWriter, request *http.Request, id string) {
-	object, err := h.Manager.Complete(request.Context(), id)
+	tenantID := request.Header.Get("X-TUS-Tenant-ID")
+	sessionID := request.Header.Get("X-TUS-Session-ID")
+	object, err := h.Manager.Complete(request.Context(), tenantID, sessionID, id)
 	if err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, ErrUploadNotFound) {
@@ -207,7 +215,9 @@ func (h TUSRouteHandler) handleComplete(writer http.ResponseWriter, request *htt
 }
 
 func (h TUSRouteHandler) handleAbort(writer http.ResponseWriter, request *http.Request, id string) {
-	if err := h.Manager.Abort(request.Context(), id); err != nil {
+	tenantID := request.Header.Get("X-TUS-Tenant-ID")
+	sessionID := request.Header.Get("X-TUS-Session-ID")
+	if err := h.Manager.Abort(request.Context(), tenantID, sessionID, id); err != nil {
 		status := http.StatusBadRequest
 		if errors.Is(err, ErrUploadNotFound) {
 			status = http.StatusNotFound

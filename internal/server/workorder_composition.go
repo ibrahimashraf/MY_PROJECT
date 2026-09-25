@@ -117,3 +117,7 @@ func NewWorkOrderAssignmentHandlerFromService(service workorder.Service, validat
 	}
 	return workorderhttp.AssignmentHandler{Validator: validator, Resolver: resolver, Service: service}, nil
 }
+
+func NewWorkOrderReconciliationHandler() http.Handler {
+	return workorderhttp.NewReconciliationHandler()
+}

@@ -32,14 +32,14 @@ func TestTUSRoutesRejectUnauthenticatedThroughMux(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager}, Validator: tusValidatorStub{}})
+	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager}, Validator: tusValidatorStub{}, Resolver: stubResolver{}})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/uploads", nil))
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("no-bearer create status=%d want %d body=%s", rec.Code, http.StatusUnauthorized, rec.Body.String())
 	}
 
-	rejecting := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager}, Validator: tusValidatorStub{err: errors.New("rejected")}})
+	rejecting := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager}, Validator: tusValidatorStub{err: errors.New("rejected")}, Resolver: stubResolver{}})
 	request := httptest.NewRequest(http.MethodPost, "/uploads", nil)
 	request.Header.Set("Authorization", "Bearer invalid-token")
 	rec = httptest.NewRecorder()
@@ -83,7 +83,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 		mux.ServeHTTP(rec, request)
 		return rec
 	}
-	token, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch, authority.ExpiresAt)
+	token, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-1", "auth-1", "auth-1", authority.Epoch, authority.ExpiresAt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 	}
 
 	// A valid HMAC for an authority this server never issued must be refused.
-	unregistered, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-unknown", 1, time.Now().UTC().Add(time.Hour))
+	unregistered, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-1", "auth-unknown", "auth-unknown", 1, time.Now().UTC().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 	}
 
 	// A token naming a different device than its authority must be refused.
-	crossDevice, err := localprovision.MintUploadToken("upload-secret", "device-other", "auth-1", authority.Epoch, authority.ExpiresAt)
+	crossDevice, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-other", "auth-1", "auth-1", authority.Epoch, authority.ExpiresAt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 	}
 
 	// A token for the wrong epoch must be refused.
-	wrongEpoch, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch+7, authority.ExpiresAt)
+	wrongEpoch, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-1", "auth-1", "auth-1", authority.Epoch+7, authority.ExpiresAt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	registry.Register(expiredAuthority)
-	expired, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-expired", expiredAuthority.Epoch, time.Now().UTC().Add(time.Hour))
+	expired, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-1", "auth-expired", "auth-expired", expiredAuthority.Epoch, time.Now().UTC().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestTUSRoutesAcceptProvisionUploadToken(t *testing.T) {
 	}
 
 	// An expired token remains rejected regardless of registry state.
-	stale, err := localprovision.MintUploadToken("upload-secret", "device-1", "auth-1", authority.Epoch, time.Now().UTC().Add(-time.Hour))
+	stale, err := localprovision.MintUploadToken("upload-secret", "tenant-1", "device-1", "auth-1", "auth-1", authority.Epoch, time.Now().UTC().Add(-time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestTUSAuthenticatedUploadFlowThroughMux(t *testing.T) {
 		t.Fatal(err)
 	}
 	store := storage.NewInMemoryStore()
-	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager, Store: store}, Validator: tusValidatorStub{}})
+	mux := NewMux(Dependencies{TUSHandler: storage.TUSRouteHandler{Manager: manager, Store: store}, Validator: tusValidatorStub{}, Resolver: stubResolver{}})
 
 	payload := make([]byte, 3000)
 	for i := range payload {

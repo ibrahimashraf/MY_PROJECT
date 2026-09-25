@@ -109,7 +109,7 @@
         buildSystemsList();
         buildBlocksList();
         setupBlocksTabs();
-        
+
         // Initialize timeline to stage 0
         const sliderTime = document.getElementById('time-slider');
         if (sliderTime) {
@@ -574,12 +574,56 @@
             return;
         }
         try {
-            const parsed = window.INTEGIN_OBJ.parseOBJ(await file.text());
+            const fileText = await file.text();
+            const parsed = window.INTEGIN_OBJ.parseOBJ(fileText);
             const group = window.INTEGIN_OBJ.createOBJGroup(parsed, THREE);
             clearImportedSite();
             importedSiteGroup = group;
             scene.add(group);
-            if (status) status.textContent = `Imported ${parsed.vertices} vertices / ${parsed.faces} faces as reference geometry.`;
+
+            // Call server for authoritative spatial clearance
+            fetch('/api/v1/liftviews/evaluate4d', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    crane1: {
+                        base_position: {x: state.crane1.x, y: 0, z: state.crane1.z},
+                        boom_length_meters: state.crane1.boomLength,
+                        boom_angle_deg: state.crane1.boomAngle,
+                        slew_angle_deg: state.crane1.slewAngle,
+                        counterweight_tonne: state.plan.counterweight,
+                        outrigger_spread_x_m: state.plan.spread,
+                        outrigger_spread_z_m: state.plan.spread,
+                        chassis_weight_tonne: state.plan.chassis1
+                    },
+                    crane2: {
+                        base_position: {x: state.crane2.x, y: 0, z: state.crane2.z},
+                        boom_length_meters: state.crane2.boomLength,
+                        boom_angle_deg: state.crane2.boomAngle,
+                        slew_angle_deg: state.crane2.slewAngle,
+                        counterweight_tonne: state.plan.counterweight,
+                        outrigger_spread_x_m: state.plan.spread,
+                        outrigger_spread_z_m: state.plan.spread,
+                        chassis_weight_tonne: state.plan.chassis2
+                    },
+                    load: {
+                        mass_tonnes: state.load.massTonnes,
+                        length_m: state.load.length,
+                        radius_m: state.load.radius
+                    },
+                    stages: [{time_s: 0, crane1_angle: state.crane1.boomAngle, crane2_angle: state.crane2.boomAngle, crane1_slew: state.crane1.slewAngle, crane2_slew: state.crane2.slewAngle}],
+                    obj_data: fileText
+                })
+            }).then(r => r.json()).then(data => {
+                if(data.passed) {
+                    if (status) status.textContent = `Imported ${parsed.vertices} vertices. Server verification PASSED.`;
+                } else {
+                    if (status) status.textContent = `Server verification FAILED: ${data.fail_reason}`;
+                }
+            }).catch(e => {
+                if (status) status.textContent = `Server verification error.`;
+            });
+
         } catch (error) {
             if (status) status.textContent = `OBJ import failed: ${error.message}`;
         }

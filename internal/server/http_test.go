@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"integin/internal/identity"
 	"io"
 	"log/slog"
 	"net/http"
@@ -246,13 +247,43 @@ func TestNewMuxMountsTUSRoutesOnlyWhenHandlerProvided(t *testing.T) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
-	mux := NewMux(Dependencies{TUSHandler: handler, Validator: tusValidatorStub{}})
+	mux := NewMux(Dependencies{TUSHandler: handler, Validator: tusValidatorStub{}, Resolver: stubResolver{}})
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/uploads", nil)
 	request.Header.Set("Authorization", "Bearer valid")
 	mux.ServeHTTP(response, request)
 	if response.Code != http.StatusNoContent || calls != 1 {
 		t.Fatalf("mounted TUS status=%d calls=%d", response.Code, calls)
+	}
+}
+
+func TestNewMuxMountsLiftViewRoutesOnlyWhenHandlerProvided(t *testing.T) {
+	absent := NewMux(Dependencies{})
+	for _, path := range []string{"/api/v1/liftviews/export", "/api/v1/liftviews/cranes", "/api/v1/liftviews/evaluate4d"} {
+		response := httptest.NewRecorder()
+		absent.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+		if response.Code != http.StatusNotFound {
+			t.Fatalf("absent route %s status=%d, want 404", path, response.Code)
+		}
+	}
+	calls := 0
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusOK)
+	})
+	mux := NewMux(Dependencies{LiftViewExportHandler: handler, Validator: tusValidatorStub{}})
+	unauth := httptest.NewRecorder()
+	mux.ServeHTTP(unauth, httptest.NewRequest(http.MethodGet, "/api/v1/liftviews/cranes", nil))
+	if unauth.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated liftview status=%d, want 401", unauth.Code)
+	}
+
+	authRec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/liftviews/cranes", nil)
+	req.Header.Set("Authorization", "Bearer valid")
+	mux.ServeHTTP(authRec, req)
+	if authRec.Code != http.StatusOK || calls != 1 {
+		t.Fatalf("authenticated liftview status=%d calls=%d, want 200/1", authRec.Code, calls)
 	}
 }
 
@@ -385,4 +416,10 @@ func TestNewMux_EarlyDataRejectionOnMutatingRoutes(t *testing.T) {
 	if getRec.Code != http.StatusOK {
 		t.Fatalf("GET /healthz with Early-Data: 1 status = %d, want %d", getRec.Code, http.StatusOK)
 	}
+}
+
+type stubResolver struct{}
+
+func (s stubResolver) Resolve(ctx context.Context, key identity.PrincipalKey) (identity.Membership, error) {
+	return identity.Membership{TenantID: "tenant-1", ActorID: "session-1"}, nil
 }
