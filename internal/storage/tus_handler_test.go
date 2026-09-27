@@ -213,6 +213,57 @@ func TestTUSRejectsInvalidCreateAndChunks(t *testing.T) {
 	}
 }
 
+func TestTUSRejectsEmptyTenantOrSessionID(t *testing.T) {
+	manager := newTestTUSManager(t, time.Hour)
+	ctx := context.Background()
+	_, payload, checksum := testPayload(64)
+
+	// Create rejection on empty tenant or session
+	if _, err := manager.Create(ctx, "", "s1", int64(len(payload)), checksum, "image/jpeg"); err == nil {
+		t.Fatal("empty tenant ID should be rejected on create")
+	}
+	if _, err := manager.Create(ctx, "   ", "s1", int64(len(payload)), checksum, "image/jpeg"); err == nil {
+		t.Fatal("whitespace tenant ID should be rejected on create")
+	}
+	if _, err := manager.Create(ctx, "t1", "", int64(len(payload)), checksum, "image/jpeg"); err == nil {
+		t.Fatal("empty session ID should be rejected on create")
+	}
+	if _, err := manager.Create(ctx, "t1", "   ", int64(len(payload)), checksum, "image/jpeg"); err == nil {
+		t.Fatal("whitespace session ID should be rejected on create")
+	}
+
+	id, err := manager.Create(ctx, "t1", "s1", int64(len(payload)), checksum, "image/jpeg")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Access rejection with empty strings
+	if _, err := manager.Append(ctx, "", "s1", id, 0, payload); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("append with empty tenant should return ErrUploadNotFound, got %v", err)
+	}
+	if _, err := manager.Append(ctx, "t1", "", id, 0, payload); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("append with empty session should return ErrUploadNotFound, got %v", err)
+	}
+	if _, err := manager.Offset(ctx, "", "s1", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("offset with empty tenant should return ErrUploadNotFound, got %v", err)
+	}
+	if _, err := manager.Offset(ctx, "t1", "", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("offset with empty session should return ErrUploadNotFound, got %v", err)
+	}
+	if _, err := manager.Complete(ctx, "", "s1", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("complete with empty tenant should return ErrUploadNotFound, got %v", err)
+	}
+	if _, err := manager.Complete(ctx, "t1", "", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("complete with empty session should return ErrUploadNotFound, got %v", err)
+	}
+	if err := manager.Abort(ctx, "", "s1", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("abort with empty tenant should return ErrUploadNotFound, got %v", err)
+	}
+	if err := manager.Abort(ctx, "t1", "", id); !errors.Is(err, ErrUploadNotFound) {
+		t.Fatalf("abort with empty session should return ErrUploadNotFound, got %v", err)
+	}
+}
+
 func TestTUSResumeAfterRestart(t *testing.T) {
 	dir := t.TempDir()
 	manager, err := NewTUSManager(dir, 0, 0)

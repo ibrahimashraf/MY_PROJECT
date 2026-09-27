@@ -99,6 +99,12 @@ func (m *TUSManager) Create(ctx context.Context, tenantID, sessionID string, siz
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
+	if strings.TrimSpace(tenantID) == "" {
+		return "", errors.New("tenant ID is required")
+	}
+	if strings.TrimSpace(sessionID) == "" {
+		return "", errors.New("session ID is required")
+	}
 	if size <= 0 {
 		return "", errors.New("upload size must be positive")
 	}
@@ -166,16 +172,10 @@ func (m *TUSManager) Append(ctx context.Context, tenantID, sessionID, id string,
 	// OIDC tokens might not have TenantID/SessionID injected, so we only check if they are provided
 	// But the prompt says "TUS claims are not session/tenant-bound ... Enforce session/tenant bounds for TUS uploads".
 	// Since both OIDC (via headers) and tokens will have them.
-	if tenantID == "" || sessionID == "" {
+	if tenantID == "" || sessionID == "" || session.TenantID == "" || session.SessionID == "" {
 		return 0, ErrUploadNotFound
 	}
-	if tenantID == "" || sessionID == "" {
-		return 0, ErrUploadNotFound
-	}
-	if session.TenantID != tenantID {
-		return 0, ErrUploadNotFound
-	}
-	if session.SessionID != sessionID {
+	if session.TenantID != tenantID || session.SessionID != sessionID {
 		return 0, ErrUploadNotFound
 	}
 	if offset != session.Offset {
@@ -232,13 +232,10 @@ func (m *TUSManager) Offset(ctx context.Context, tenantID, sessionID, id string)
 	if !ok {
 		return UploadSession{}, ErrUploadNotFound
 	}
-	if tenantID == "" || sessionID == "" {
+	if tenantID == "" || sessionID == "" || session.TenantID == "" || session.SessionID == "" {
 		return UploadSession{}, ErrUploadNotFound
 	}
-	if session.TenantID != tenantID {
-		return UploadSession{}, ErrUploadNotFound
-	}
-	if session.SessionID != sessionID {
+	if session.TenantID != tenantID || session.SessionID != sessionID {
 		return UploadSession{}, ErrUploadNotFound
 	}
 	return session.UploadSession, nil
@@ -257,13 +254,10 @@ func (m *TUSManager) Complete(ctx context.Context, tenantID, sessionID, id strin
 	if !ok {
 		return Object{}, ErrUploadNotFound
 	}
-	if tenantID == "" || sessionID == "" {
+	if tenantID == "" || sessionID == "" || session.TenantID == "" || session.SessionID == "" {
 		return Object{}, ErrUploadNotFound
 	}
-	if session.TenantID != tenantID {
-		return Object{}, ErrUploadNotFound
-	}
-	if session.SessionID != sessionID {
+	if session.TenantID != tenantID || session.SessionID != sessionID {
 		return Object{}, ErrUploadNotFound
 	}
 	if session.Offset != session.Size {
@@ -299,13 +293,10 @@ func (m *TUSManager) Abort(ctx context.Context, tenantID, sessionID, id string) 
 	if !ok {
 		return ErrUploadNotFound
 	}
-	if tenantID == "" || sessionID == "" {
+	if tenantID == "" || sessionID == "" || session.TenantID == "" || session.SessionID == "" {
 		return ErrUploadNotFound
 	}
-	if session.TenantID != tenantID {
-		return ErrUploadNotFound
-	}
-	if session.SessionID != sessionID {
+	if session.TenantID != tenantID || session.SessionID != sessionID {
 		return ErrUploadNotFound
 	}
 	if err := os.Remove(session.file); err != nil {
@@ -491,7 +482,7 @@ func loadSidecar(path, id string) (*tusSession, bool) {
 	if err := json.Unmarshal(data, &sidecar); err != nil {
 		return nil, false
 	}
-	if sidecar.ID != id || sidecar.Size <= 0 || sidecar.Offset < 0 || sidecar.Offset > sidecar.Size || !validSHA256Hex(sidecar.Checksum) || strings.TrimSpace(sidecar.ContentType) == "" {
+	if sidecar.ID != id || sidecar.Size <= 0 || sidecar.Offset < 0 || sidecar.Offset > sidecar.Size || !validSHA256Hex(sidecar.Checksum) || strings.TrimSpace(sidecar.ContentType) == "" || strings.TrimSpace(sidecar.TenantID) == "" || strings.TrimSpace(sidecar.SessionID) == "" {
 		return nil, false
 	}
 	now := time.Now().UTC()
