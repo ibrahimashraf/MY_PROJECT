@@ -107,16 +107,21 @@ func TestCraneCatalogIsReferenceOnly(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &refs); err != nil {
 		t.Fatal(err)
 	}
-	if len(refs) != 4 {
-		t.Fatalf("catalog entries=%d want=4", len(refs))
+	if len(refs) != 6 {
+		t.Fatalf("catalog entries=%d want=6", len(refs))
 	}
 	for _, ref := range refs {
-		if ref.ID == "LIEBHERR_LTM_1500" || ref.ID == "GROVE_GMK_7550" {
+		switch ref.ID {
+		case "LIEBHERR_LTM_1500", "GROVE_GMK_7550", "TADANO_ATF_200G_5", "DEMAG_AC_200_1":
 			if ref.DutyChartStatus != "AUTHORITATIVE_OEM" {
 				t.Fatalf("expected authoritative chart for %s: %+v", ref.ID, ref)
 			}
-		} else if ref.ID == "" || ref.DutyChartStatus != "NOT_PROVIDED" {
-			t.Fatalf("unsafe crane reference: %+v", ref)
+		case "TADANO_ATF_400G", "DEMAG_AC_500":
+			if ref.DutyChartStatus != "NOT_PROVIDED" {
+				t.Fatalf("expected NOT_PROVIDED for %s: %+v", ref.ID, ref)
+			}
+		default:
+			t.Fatalf("unexpected crane reference: %+v", ref)
 		}
 	}
 }
@@ -240,7 +245,7 @@ func TestVerdictMode(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
 		t.Fatal(err)
 	}
-	for _, k := range []string{"crane1_model", "crane2_model", "hazards", "method_steps", "hook_span_m", "clearance_m", "share1_pct", "fos1", "fos2", "crane_util"} {
+	for _, k := range []string{"crane1_model", "crane2_model", "hazards", "method_steps", "hook_span_m", "clearance_m", "share1_pct", "fos1", "fos2", "crane_util", "certification_scope", "rigging_field_notice"} {
 		if _, ok := meta[k]; !ok {
 			t.Fatalf("verdict missing %s", k)
 		}
@@ -305,5 +310,40 @@ func TestTackleDeductionsRefuseOverload(t *testing.T) {
 	rec := post(t, req)
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("code=%d want 422 for gross hook overload with tackle deductions", rec.Code)
+	}
+}
+
+func TestTadanoAndDemagAuthoritativeCalculation(t *testing.T) {
+	req := simRequest()
+	req.Crane1Model = "TADANO_ATF_200G_5"
+	req.Crane1.BoomLengthMeters = 30.6
+	req.Crane1.CounterweightTonne = 50.0
+	req.Crane1.OutriggerSpreadXM = 8.5
+	req.Crane1.OutriggerSpreadZM = 9.1
+
+	req.Crane2Model = "DEMAG_AC_200_1"
+	req.Crane2.BoomLengthMeters = 29.2
+	req.Crane2.CounterweightTonne = 69.0
+	req.Crane2.OutriggerSpreadXM = 8.5
+	req.Crane2.OutriggerSpreadZM = 8.7
+
+	raw, err := json.Marshal(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	httpReq := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/export?mode=verdict", bytes.NewReader(raw))
+	httpReq.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, httpReq)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var meta map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatal(err)
+	}
+	scope := meta["certification_scope"].(string)
+	if !strings.Contains(scope, "SEALED CERTIFICATION: AUTHORITATIVE OEM") {
+		t.Fatalf("expected authoritative OEM certification scope, got %q", scope)
 	}
 }

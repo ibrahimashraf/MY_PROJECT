@@ -335,8 +335,14 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 6. Seal the pack PDF through the one shared engine.
+	scopeStamp := "SEALED CERTIFICATION: AUTHORITATIVE OEM CRANE KINEMATICS & LOAD CHARTS"
+	if crane1Ref.DutyChartStatus != "AUTHORITATIVE_OEM" || crane2Ref.DutyChartStatus != "AUTHORITATIVE_OEM" {
+		scopeStamp = "CONDITIONAL VERDICT: CONTAINS UNVERIFIED CRANE DUTY REFERENCE"
+	}
+	riggingNotice := "FIELD NOTICE: TACKLE & GROUND BEARING REQUIRE APPOINTED PERSON PHYSICAL SIGN-OFF"
+
 	pages := [][]string{
-		{"TANDEM LIFT PLAN — solved, not drawn"},
+		{"TANDEM LIFT PLAN — solved, not drawn", scopeStamp, riggingNotice},
 		{"span " + numeric(res.HookSpanMeters) + "m clear " +
 			numeric(res.MinBoomClearanceM) + "m share " +
 			numeric(res.LoadShareCrane1) + "/" + numeric(res.LoadShareCrane2) +
@@ -346,7 +352,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		{"ELEVATION", "see elevation.dxf"},
 		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart " + crane1Ref.DutyChartStatus, crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart " + crane2Ref.DutyChartStatus},
 		{"GROUND", "bearing gates passed"},
-		{"EXECUTION", "sealed export"},
+		{"EXECUTION", "sealed export", scopeStamp},
 	}
 	pages = append(pages, hazardPages(req.Hazards)...)
 	pages = append(pages, methodPages(req.MethodSteps)...)
@@ -361,9 +367,11 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	meta, err := json.Marshal(map[string]any{
-		"crane1_model":      crane1Ref.ID,
-		"crane2_model":      crane2Ref.ID,
-		"duty_chart_status": crane1Ref.DutyChartStatus,
+		"crane1_model":         crane1Ref.ID,
+		"crane2_model":         crane2Ref.ID,
+		"duty_chart_status":    crane1Ref.DutyChartStatus,
+		"certification_scope":  scopeStamp,
+		"rigging_field_notice": riggingNotice,
 		"hazards":           req.Hazards,
 		"method_steps":      req.MethodSteps,
 		"hook_span_m":       res.HookSpanMeters,
