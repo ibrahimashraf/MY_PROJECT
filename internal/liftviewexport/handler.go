@@ -280,11 +280,21 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			req.Crane2CapT = capT
 		}
 	}
+	// 4. Tackle deduction and gross hook load verification.
+	riggingShare1 := req.RiggingT * (res.LoadShareCrane1 / 100.0)
+	riggingShare2 := req.RiggingT * (res.LoadShareCrane2 / 100.0)
+	crane1GrossHookLoad := res.Crane1LoadTonnes + riggingShare1 + req.Crane1.HookBlockWeightTonne
+	crane2GrossHookLoad := res.Crane2LoadTonnes + riggingShare2 + req.Crane2.HookBlockWeightTonne
+
 	verdict, err := rulesengine.EvaluateCapacityGates(rulesengine.CapacityGates{
-		CraneLoadT: res.Crane1LoadTonnes, CraneCapT: req.Crane1CapT,
-		RiggingLoadT: legT, RiggingCapT: req.SlingMBLT,
-		SteelLoadT: maxShare, SteelCapT: req.Crane1CapT,
-		ObjectLoadT: maxShare, ObjectCapT: req.Crane2CapT,
+		CraneLoadT:   crane1GrossHookLoad,
+		CraneCapT:    req.Crane1CapT,
+		RiggingLoadT: legT,
+		RiggingCapT:  req.SlingMBLT,
+		SteelLoadT:   crane1GrossHookLoad,
+		SteelCapT:    req.Crane1CapT,
+		ObjectLoadT:  crane2GrossHookLoad,
+		ObjectCapT:   req.Crane2CapT,
 	})
 	if err != nil {
 		fail("capacity gates refused: " + err.Error())
@@ -361,6 +371,8 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"share1_pct":        res.LoadShareCrane1,
 		"share2_pct":        res.LoadShareCrane2,
 		"crane_util":        verdict.CraneUtil,
+		"crane1_gross_load": crane1GrossHookLoad,
+		"crane2_gross_load": crane2GrossHookLoad,
 		"rigging_util":      verdict.RiggingUtil,
 		"leg_tension":       legT,
 		"max_share_t":       maxShare,

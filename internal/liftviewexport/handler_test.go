@@ -264,3 +264,46 @@ func TestExportMethodNotAllowed(t *testing.T) {
 		t.Fatalf("code=%d", rec.Code)
 	}
 }
+
+func TestVerdictIncludesGrossHookLoads(t *testing.T) {
+	req := simRequest()
+	req.Crane1.HookBlockWeightTonne = 2.5
+	req.Crane2.HookBlockWeightTonne = 1.5
+	raw, err := json.Marshal(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	httpReq := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/export?mode=verdict", bytes.NewReader(raw))
+	httpReq.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, httpReq)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var meta map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &meta); err != nil {
+		t.Fatal(err)
+	}
+	c1Gross := meta["crane1_gross_load"].(float64)
+	c2Gross := meta["crane2_gross_load"].(float64)
+	// Base load share = 22.5t, rigging share = 1.0t
+	// C1: 22.5 + 1.0 + 2.5 = 26.0t
+	// C2: 22.5 + 1.0 + 1.5 = 25.0t
+	if c1Gross != 26.0 {
+		t.Fatalf("c1Gross=%v want 26.0", c1Gross)
+	}
+	if c2Gross != 25.0 {
+		t.Fatalf("c2Gross=%v want 25.0", c2Gross)
+	}
+}
+
+func TestTackleDeductionsRefuseOverload(t *testing.T) {
+	req := simRequest()
+	// Total load share is 22.5t, capacity is 40t.
+	// Massive hook block of 20t pushes gross hook load to 22.5 + 1.0 + 20 = 43.5t > 40t capacity!
+	req.Crane1.HookBlockWeightTonne = 20.0
+	rec := post(t, req)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("code=%d want 422 for gross hook overload with tackle deductions", rec.Code)
+	}
+}
