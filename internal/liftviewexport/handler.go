@@ -108,8 +108,7 @@ func calculateCapacity(ref CraneReference, crane engine.CraneKinematics, radius 
 		}
 	}
 	if len(candidates) == 0 {
-		// If strict match not found, evaluate across base catalog configurations
-		candidates = ref.Configurations
+		return 0
 	}
 
 	// 2. Select closest matching boom length (>= crane boom length)

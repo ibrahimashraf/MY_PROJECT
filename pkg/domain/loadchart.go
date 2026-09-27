@@ -52,8 +52,9 @@ type LoadChartProvenance struct {
 }
 
 type LoadChartPoint struct {
-	RadiusM   float64 `json:"radius_m"`
-	CapacityT float64 `json:"capacity_t"`
+	RadiusM       float64 `json:"radius_m"`
+	CapacityT     float64 `json:"capacity_t"`
+	GoverningMode string  `json:"governing_mode,omitempty"` // "STRUCTURAL" or "STABILITY"
 }
 
 type LoadChartConfiguration struct {
@@ -206,6 +207,9 @@ func validateLoadChartConfiguration(config LoadChartConfiguration) error {
 	for _, point := range config.Points {
 		if !finitePositive(point.RadiusM) || !finitePositive(point.CapacityT) {
 			return fmt.Errorf("%w: configuration %q", ErrLoadChartPointValues, config.ID)
+		}
+		if point.GoverningMode != "" && point.GoverningMode != "STRUCTURAL" && point.GoverningMode != "STABILITY" {
+			return fmt.Errorf("%w: configuration %q governing mode %q invalid", ErrLoadChartPointValues, config.ID, point.GoverningMode)
 		}
 		if point.RadiusM <= previousRadius {
 			return fmt.Errorf("%w: configuration %q", ErrLoadChartPointOrder, config.ID)

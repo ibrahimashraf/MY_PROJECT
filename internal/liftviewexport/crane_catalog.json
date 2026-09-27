@@ -18,12 +18,12 @@
         "outrigger_span_x_m": 10.0,
         "outrigger_span_z_m": 9.6,
         "points": [
-          {"radius_m": 5.0, "capacity_t": 224.0},
-          {"radius_m": 10.0, "capacity_t": 171.0},
-          {"radius_m": 15.0, "capacity_t": 95.0},
-          {"radius_m": 20.0, "capacity_t": 62.0},
-          {"radius_m": 25.0, "capacity_t": 44.0},
-          {"radius_m": 28.0, "capacity_t": 36.0}
+          {"radius_m": 5.0, "capacity_t": 224.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 10.0, "capacity_t": 171.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 15.0, "capacity_t": 95.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 20.0, "capacity_t": 62.0, "governing_mode": "STABILITY"},
+          {"radius_m": 25.0, "capacity_t": 44.0, "governing_mode": "STABILITY"},
+          {"radius_m": 28.0, "capacity_t": 36.0, "governing_mode": "STABILITY"}
         ]
       },
       {
@@ -33,12 +33,12 @@
         "outrigger_span_x_m": 10.0,
         "outrigger_span_z_m": 9.6,
         "points": [
-          {"radius_m": 10.0, "capacity_t": 120.0},
-          {"radius_m": 15.0, "capacity_t": 82.0},
-          {"radius_m": 20.0, "capacity_t": 55.0},
-          {"radius_m": 30.0, "capacity_t": 33.0},
-          {"radius_m": 40.0, "capacity_t": 19.0},
-          {"radius_m": 48.0, "capacity_t": 12.0}
+          {"radius_m": 10.0, "capacity_t": 120.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 15.0, "capacity_t": 82.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 20.0, "capacity_t": 55.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 30.0, "capacity_t": 33.0, "governing_mode": "STABILITY"},
+          {"radius_m": 40.0, "capacity_t": 19.0, "governing_mode": "STABILITY"},
+          {"radius_m": 48.0, "capacity_t": 12.0, "governing_mode": "STABILITY"}
         ]
       }
     ]
