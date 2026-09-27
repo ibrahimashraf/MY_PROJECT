@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../application/field_app_controller.dart';
+import '../domain/models.dart';
 import '../domain/inspection_draft.dart';
+import '../outbox/outbox.dart';
 import '../sync/event_stream_client.dart';
 import '../workpackages/package_compatibility.dart';
 import 'adaptive_scaffold.dart';
@@ -9,6 +11,7 @@ import 'custody_handover_view.dart';
 import 'dynamic_form_view.dart';
 import 'enrollment_screen.dart';
 import '../sync/image_picker_service.dart';
+import '../sync/in_app_camera.dart';
 
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
@@ -59,7 +62,22 @@ class _FieldHomePageState extends State<FieldHomePage> {
     super.dispose();
   }
 
-  void _refresh() => setState(() {});
+  void _refresh() {
+    final draft = widget.controller.activeDraft;
+    if (draft != null) {
+      if (draft.notes != null && draft.notes!.isNotEmpty && notesController.text != draft.notes) {
+        notesController.text = draft.notes!;
+      }
+      final firstItem = draft.workPack.items.isNotEmpty ? draft.workPack.items.first : null;
+      if (firstItem != null) {
+        final existingFinding = draft.findings[firstItem.id];
+        if (existingFinding != null && responseController.text != existingFinding.response) {
+          responseController.text = existingFinding.response;
+        }
+      }
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +118,7 @@ class _FieldHomePageState extends State<FieldHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _StatusCard(controller: controller),
+            _StatusCard(controller: controller, workPack: workPack),
             const SizedBox(height: 20),
             if (draft == null)
               _WorkPackCard(controller: controller, workPack: workPack)
@@ -147,7 +165,7 @@ class _FieldHomePageState extends State<FieldHomePage> {
                   ),
                 ],
                 tusClient: controller.tusClient,
-                onPickPhoto: ImagePickerPhotoService().pickImage,
+                onPickPhoto: InAppCameraPhotoService(context).pickImage,
                 onSave: (values) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -159,7 +177,7 @@ class _FieldHomePageState extends State<FieldHomePage> {
               CustodyHandoverView(
                 workOrderId: workPack.inspectionId,
                 assetId: workPack.rootAssetId,
-                onHandoverCompleted: (handoverData) {
+                onHandoverCompleted: (handoverData) async {
                   final notes = [
                     if (handoverData['releasing_party'] != null)
                       'Releasing: ${handoverData['releasing_party']}',
@@ -169,7 +187,14 @@ class _FieldHomePageState extends State<FieldHomePage> {
                         (handoverData['site_notes'] as String).isNotEmpty)
                       handoverData['site_notes'],
                   ].join(' | ');
-                  controller.queueForSync(notes: notes);
+                  if (controller.connectivity == ConnectivityState.online) {
+                    final ok = await controller.submitLive(notes: notes);
+                    if (!ok) {
+                      await controller.queueForSync(notes: notes);
+                    }
+                  } else {
+                    await controller.queueForSync(notes: notes);
+                  }
                 },
               ),
             ],
@@ -198,35 +223,206 @@ class _FieldHomePageState extends State<FieldHomePage> {
 }
 
 class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.controller});
+  const _StatusCard({required this.controller, required this.workPack});
 
   final FieldAppController controller;
+  final InspectionWorkPack workPack;
+
+  void _showOutboxReviewSheet(BuildContext context) async {
+    final store = controller.outboxStore;
+    if (store == null) return;
+    final allEntries = await store.all();
+    if (!context.mounted) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (scrollContext, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Outbox Mutations (${allEntries.length})',
+                        style: Theme.of(sheetContext).textTheme.titleLarge,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Unseal any pending mutation back into an active draft to edit responses, notes, or attachments before re-queuing.',
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
+                  const Divider(height: 24),
+                  Expanded(
+                    child: allEntries.isEmpty
+                        ? const Center(child: Text('Outbox is empty'))
+                        : ListView.separated(
+                            controller: scrollController,
+                            itemCount: allEntries.length,
+                            separatorBuilder: (_, __) => const Divider(),
+                            itemBuilder: (_, index) {
+                              final entry = allEntries[index];
+                              final isEditable = entry.state == OutboxState.queued ||
+                                  entry.state == OutboxState.held ||
+                                  entry.state.isFailure;
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: entry.state == OutboxState.applied
+                                      ? Colors.green.shade100
+                                      : entry.state.isFailure
+                                          ? Colors.red.shade100
+                                          : Colors.amber.shade100,
+                                  child: Icon(
+                                    entry.state == OutboxState.applied
+                                        ? Icons.check
+                                        : entry.state.isFailure
+                                            ? Icons.error_outline
+                                            : Icons.access_time,
+                                    color: entry.state == OutboxState.applied
+                                        ? Colors.green.shade800
+                                        : entry.state.isFailure
+                                            ? Colors.red.shade800
+                                            : Colors.amber.shade800,
+                                    size: 20,
+                                  ),
+                                ),
+                                title: Text(
+                                  'Seq #${entry.mutation.sequenceNumber} · ${entry.state.name.toUpperCase()}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Tx: ${entry.mutation.transactionId}'),
+                                    if (entry.lastError != null && entry.lastError!.isNotEmpty)
+                                      Text(
+                                        'Error: ${entry.lastError}',
+                                        style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                                      ),
+                                    Text(
+                                      'Captured: ${entry.mutation.capturedAt.toLocal()}',
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                                trailing: isEditable
+                                    ? FilledButton.tonal(
+                                        onPressed: () async {
+                                          Navigator.of(sheetContext).pop();
+                                          await controller.editOutboxEntry(entry, workPack);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Unsealed Seq #${entry.mutation.sequenceNumber} back into draft for editing.'),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: const Text('Edit'),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Wrap(
-          spacing: 24,
-          runSpacing: 12,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Offline authority',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            Text(controller.canWorkOffline ? 'Trusted and valid' : 'Blocked'),
-            Text('Expires ${controller.authority.expiresAt.toLocal()}'),
-            Text('Outbox ${controller.queuedCount}'),
-            Text('Failures ${controller.failedCount}'),
-            Text('Tenant ${controller.context.tenantId}'),
-            FilledButton.tonalIcon(
-              onPressed:
-                  controller.isSyncConfigured && controller.queuedCount > 0
-                      ? () => controller.flushOutbox()
-                      : null,
-              icon: const Icon(Icons.sync),
-              label: Text(controller.isSyncConfigured
-                  ? 'Sync outbox'
-                  : 'Sync not configured'),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('Status: ${controller.canWorkOffline ? "Trusted and valid" : "Blocked"}'),
+            Text('Expires: ${controller.authority.expiresAt.toLocal()}'),
+            Text('Outbox: ${controller.queuedCount}  |  Failures: ${controller.failedCount}'),
+            Text('Tenant: ${controller.context.tenantId}'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed:
+                      controller.isSyncConfigured && controller.queuedCount > 0
+                          ? () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final outcomes = await controller.flushOutbox();
+                              final pending = await controller.outboxStore?.pending() ?? [];
+                              final errorMsg = pending.map((e) => e.lastError).where((e) => e != null && e.isNotEmpty).join(" | ");
+                              if (context.mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Sync completed: ${outcomes.map((o) => o.name).join(", ")}${errorMsg.isNotEmpty ? " ($errorMsg)" : ""}'),
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                  icon: const Icon(Icons.sync),
+                  label: Text(controller.isSyncConfigured
+                      ? 'Sync outbox'
+                      : 'Sync not configured'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _showOutboxReviewSheet(context),
+                  icon: const Icon(Icons.playlist_play),
+                  label: const Text('Review / Edit Outbox'),
+                ),
+                if (controller.failedCount > 0 || controller.outboxSummary.held > 0) ...[
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final count = await controller.retryFailedOutbox();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Re-queued $count entries back to outbox')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Re-queue to outbox'),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final cleared = await controller.clearFailures();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Cleared $cleared failed submissions')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.delete_sweep, color: Colors.red),
+                    label: const Text('Clear failures', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -318,11 +514,24 @@ class _CaptureCard extends StatelessWidget {
                   child: const Text('Save response locally'),
                 ),
                 FilledButton.icon(
-                  onPressed: () => controller.queueForSync(
-                      packageCompatibility: compatibility,
-                      notes: notesController.text),
+                  onPressed: () async {
+                    if (controller.connectivity == ConnectivityState.online) {
+                      final ok = await controller.submitLive(
+                          packageCompatibility: compatibility,
+                          notes: notesController.text);
+                      if (!ok) {
+                        await controller.queueForSync(
+                            packageCompatibility: compatibility,
+                            notes: notesController.text);
+                      }
+                    } else {
+                      await controller.queueForSync(
+                          packageCompatibility: compatibility,
+                          notes: notesController.text);
+                    }
+                  },
                   icon: const Icon(Icons.cloud_upload_outlined),
-                  label: const Text('Queue signed submission'),
+                  label: const Text('Submit / Queue'),
                 ),
               ],
             ),

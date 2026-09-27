@@ -608,7 +608,7 @@ func Run() {
 		go tusManager.RunJanitor(context.Background(), 0, nil)
 	}
 	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil, evidenceStore != nil)
-	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, SessionRevocationHandler: sessionRevocationHandler, SessionRevokeAllHandler: sessionRevokeAllHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler,
+	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, SessionRevocationHandler: sessionRevocationHandler, SessionRevokeAllHandler: sessionRevokeAllHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler, WorkOrderReconciliationHandler: server.NewWorkOrderReconciliationHandler(),
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
 		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, IdentityGrantHandler: identityGrantHandler, TrainingHandler: trainingHandler,

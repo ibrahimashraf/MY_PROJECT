@@ -135,11 +135,11 @@ func AuthorizeExport(ctx context.Context, approval *ExportApproval, requestedBy,
 func GenerateDeletionCertificate(tenantID, entityType, entityID, actorID string, deletedAt time.Time, secretSeed []byte) DeletionCertificate {
 	h := sha256.New()
 	for _, part := range [][]byte{
-		[]byte(tenantID), []byte{0},
-		[]byte(entityType), []byte{0},
-		[]byte(entityID), []byte{0},
-		[]byte(deletedAt.UTC().Format(time.RFC3339Nano)), []byte{0},
-		[]byte(actorID), []byte{0},
+		[]byte(tenantID), {0},
+		[]byte(entityType), {0},
+		[]byte(entityID), {0},
+		[]byte(deletedAt.UTC().Format(time.RFC3339Nano)), {0},
+		[]byte(actorID), {0},
 		secretSeed,
 	} {
 		h.Write(part)

@@ -3,6 +3,20 @@ allprojects {
         google()
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force("org.jetbrains.kotlin:kotlin-stdlib:2.2.10")
+            force("org.jetbrains.kotlin:kotlin-reflect:2.2.10")
+        }
+    }
+    buildscript {
+        configurations.all {
+            resolutionStrategy {
+                force("org.jetbrains.kotlin:kotlin-stdlib:2.2.10")
+                force("org.jetbrains.kotlin:kotlin-reflect:2.2.10")
+            }
+        }
+    }
 }
 
 val newBuildDir: Directory =

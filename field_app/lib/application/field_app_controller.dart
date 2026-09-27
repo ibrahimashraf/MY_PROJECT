@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../advisory/pilot_advisory_client.dart';
@@ -13,6 +14,10 @@ import '../sync/event_stream_client.dart';
 import '../sync/sync_client.dart';
 import '../sync/sync_guard.dart';
 import '../sync/tus_client.dart';
+import '../sync/http_sync_transport.dart';
+import '../security/endpoint_guard.dart';
+import '../security/inspection_submission_service.dart';
+import '../security/submission_seal.dart';
 
 class FieldAppController extends ChangeNotifier {
   FieldAppController({
@@ -28,6 +33,7 @@ class FieldAppController extends ChangeNotifier {
     this.eventStreamClient,
     this.advisoryClient,
     this.tusClient,
+    this.submissionService,
     this.trace,
   }) {
     _initStream();
@@ -44,6 +50,7 @@ class FieldAppController extends ChangeNotifier {
   final SyncClient? syncClient;
   final EventStreamClient? eventStreamClient;
   final TusClient? tusClient;
+  final InspectionSubmissionService? submissionService;
 
   /// Present only in the isolated pilot build; advisory data has no authority.
   final PilotAdvisoryClient? advisoryClient;
@@ -224,6 +231,113 @@ class FieldAppController extends ChangeNotifier {
     return migrated;
   }
 
+  /// Resets all rejected, failed, or held mutations back to the queued state
+  /// so the inspector can retry syncing without losing captured field evidence.
+  Future<int> retryFailedOutbox() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final allEntries = await store.all();
+    var resetCount = 0;
+    for (final entry in allEntries) {
+      if (entry.state == OutboxState.held ||
+          entry.state == OutboxState.rejected ||
+          entry.state == OutboxState.conflict ||
+          entry.state == OutboxState.securityFailure) {
+        entry.attempts = 0;
+        await store.mark(entry, OutboxState.queued, error: null);
+        resetCount++;
+      }
+    }
+    // Reconcile and re-sign all entries so sequence contiguity is guaranteed
+    await reconcileOutboxIdentities();
+    final pending = await store.pending();
+    _outbox
+      ..clear()
+      ..addAll(pending.map((e) => e.mutation));
+    outboxSummary = OutboxSummary.fromEntries(await store.all());
+    lastError = null;
+    connectivity = ConnectivityState.degraded;
+    notifyListeners();
+    return resetCount;
+  }
+
+  /// Removes permanently rejected or conflict mutations from the store
+  /// by marking them abandoned without corrupting the sequence watermarks.
+  Future<int> clearFailures() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final allEntries = await store.all();
+    var clearedCount = 0;
+    for (final entry in allEntries) {
+      if (entry.state.isFailure) {
+        await store.mark(entry, OutboxState.abandoned, error: 'Cleared by operator');
+        clearedCount++;
+      }
+    }
+    if (clearedCount > 0) {
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      lastError = null;
+      if (connectivity == ConnectivityState.blocked) {
+        connectivity = ConnectivityState.online;
+      }
+      notifyListeners();
+    }
+    return clearedCount;
+  }
+
+  /// Unseals an outbox entry back into an active draft so the operator can
+  /// edit values, notes, or photo attachments before re-signing and re-queuing.
+  Future<bool> editOutboxEntry(OutboxEntry entry, InspectionWorkPack workPack) async {
+    final store = outboxStore;
+    if (store == null) return false;
+
+    final draft = InspectionDraft(
+      context: context,
+      workPack: workPack,
+      recordedBy: entry.mutation.userId,
+      createdAt: entry.mutation.capturedAt,
+    );
+
+    final payload = entry.mutation.payload;
+    if (payload['notes'] is String) {
+      draft.notes = payload['notes'] as String;
+    }
+    if (payload['findings'] is List) {
+      for (final f in payload['findings'] as List) {
+        if (f is Map<String, Object?>) {
+          final itemId = f['item_id'] as String? ?? '';
+          if (itemId.isNotEmpty) {
+            draft.findings[itemId] = FindingDraft(
+              id: f['id'] as String? ?? '',
+              inspectionId: f['inspection_id'] as String? ?? workPack.inspectionId,
+              assetId: f['asset_id'] as String? ?? '',
+              sectionId: f['section_id'] as String? ?? '',
+              itemId: itemId,
+              itemPrompt: f['item_prompt'] as String? ?? '',
+              response: f['response'] as String? ?? '',
+              recordedBy: f['recorded_by'] as String? ?? userId,
+              recordedAt: DateTime.tryParse(f['recorded_at'] as String? ?? '') ?? DateTime.now().toUtc(),
+              notes: f['notes'] as String?,
+            );
+          }
+        }
+      }
+    }
+
+    // Mark previous entry abandoned so it is replaced when re-queued
+    await store.mark(entry, OutboxState.abandoned, error: 'Unsealed for operator edit');
+    activeDraft = draft;
+    lastError = null;
+
+    final pending = await store.pending();
+    _outbox
+      ..clear()
+      ..addAll(pending.map((e) => e.mutation));
+    outboxSummary = OutboxSummary.fromEntries(await store.all());
+    notifyListeners();
+    return true;
+  }
+
   bool get canWorkOffline =>
       deviceState == DeviceTrustState.trusted &&
       authority.deviceId == deviceId &&
@@ -262,6 +376,82 @@ class FieldAppController extends ChangeNotifier {
       severity: severity,
     );
     notifyListeners();
+  }
+
+  Future<bool> submitLive({String? notes, PackageCompatibilityDecision? packageCompatibility}) async {
+    if (submissionService == null || syncClient == null) return false;
+    final draft = activeDraft;
+    if (draft == null) {
+      lastError = 'Open an assigned inspection before submitting.';
+      notifyListeners();
+      return false;
+    }
+    if (packageCompatibility != null && !packageCompatibility.allowsAuthoritativeSync) {
+      lastError = packageCompatibility.userMessage;
+      notifyListeners();
+      return false;
+    }
+    final completeness = draft.validateLocally();
+    if (!completeness.isComplete) {
+      lastError = 'Complete every required checklist item before queuing.';
+      notifyListeners();
+      return false;
+    }
+    draft.notes = notes;
+    draft.status = InspectionStatus.completed;
+    
+    final payload = draft.toPayload();
+    final dataBytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+    
+    Uint8List appSig = Uint8List(0);
+    if (deviceSigner != null) {
+      try {
+        appSig = await deviceSigner!.signRawBytes(dataBytes);
+      } catch (_) {
+        // Fall back gracefully if signing unavailable
+      }
+    }
+
+    final seal = SubmissionSealPayload(
+      deviceKeyDID: deviceKeyId!,
+      tokenID: authority.id,
+      leaseEpoch: authority.epoch,
+      dataPayload: dataBytes,
+      appEd25519Sig: appSig,
+    );
+
+    try {
+      final endpoint = (syncClient!.transport as HttpSyncTransport).endpoint;
+      final result = await submissionService!.submitInspection(
+        payload: seal,
+        deviceKeyDID: deviceKeyId!,
+        endpoint: endpoint,
+        tokenID: authority.id,
+        leaseEpoch: authority.epoch,
+        appEd25519Sig: appSig,
+        httpClient: null,
+        allowLoopbackHttp: isLoopbackUri(endpoint),
+      );
+
+      if (result.status == SubmissionTransportStatus.accepted) {
+        activeDraft = null;
+        lastError = null;
+        notifyListeners();
+        return true;
+      } else if (result.status == SubmissionTransportStatus.awaitingReconciliation) {
+        lastError = 'Awaiting Server Reconciliation';
+        notifyListeners();
+        return true;
+      } else {
+        lastError = result.serverMessage ?? 'Submission rejected';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      lastError = 'Live submission failed: $e';
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> queueForSync(

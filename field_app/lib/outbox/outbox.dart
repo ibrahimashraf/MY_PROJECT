@@ -1,11 +1,12 @@
 import '../domain/models.dart';
 
-enum OutboxState { queued, uploading, applied, duplicate, held, rejected, conflict, securityFailure }
+enum OutboxState { queued, uploading, applied, duplicate, held, rejected, conflict, securityFailure, abandoned }
 
 extension OutboxStateSemantics on OutboxState {
   bool get isPending => this == OutboxState.queued || this == OutboxState.uploading || this == OutboxState.held;
   bool get isAcknowledged => this == OutboxState.applied || this == OutboxState.duplicate;
   bool get isFailure => this == OutboxState.rejected || this == OutboxState.conflict || this == OutboxState.securityFailure;
+  bool get isAbandoned => this == OutboxState.abandoned;
 }
 
 class OutboxEntry {
@@ -86,6 +87,7 @@ class OutboxSummary {
         OutboxState.rejected => OutboxSummary(queued: queued, uploading: uploading, held: held, applied: applied, duplicate: duplicate, rejected: rejected + 1, conflict: conflict, securityFailure: securityFailure),
         OutboxState.conflict => OutboxSummary(queued: queued, uploading: uploading, held: held, applied: applied, duplicate: duplicate, rejected: rejected, conflict: conflict + 1, securityFailure: securityFailure),
         OutboxState.securityFailure => OutboxSummary(queued: queued, uploading: uploading, held: held, applied: applied, duplicate: duplicate, rejected: rejected, conflict: conflict, securityFailure: securityFailure + 1),
+        OutboxState.abandoned => this,
       };
 }
 

@@ -7,7 +7,7 @@ import (
 
 func TestUploadTokenRoundTrip(t *testing.T) {
 	expires := time.Now().UTC().Add(30 * time.Minute)
-	token, err := MintUploadToken("secret", "device-1", "auth-1", 3, expires)
+	token, err := MintUploadToken("secret", "tenant-1", "device-1", "auth-1", "session-1", 3, expires)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestUploadTokenRoundTrip(t *testing.T) {
 
 func TestUploadTokenRejectsTamperingAndExpiry(t *testing.T) {
 	now := time.Now().UTC()
-	token, err := MintUploadToken("secret", "device-1", "auth-1", 1, now.Add(time.Minute))
+	token, err := MintUploadToken("secret", "tenant-1", "device-1", "auth-1", "session-1", 1, now.Add(time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,14 +39,14 @@ func TestUploadTokenRejectsTamperingAndExpiry(t *testing.T) {
 	if _, err := ValidateUploadToken("secret", "v1.not-base64!!.also-not", now); err == nil {
 		t.Fatal("malformed token must be rejected")
 	}
-	expired, err := MintUploadToken("secret", "device-1", "auth-1", 1, now.Add(-time.Hour))
+	expired, err := MintUploadToken("secret", "tenant-1", "device-1", "auth-1", "session-1", 1, now.Add(-time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := ValidateUploadToken("secret", expired, now); err == nil {
 		t.Fatal("expired token must be rejected")
 	}
-	if _, err := MintUploadToken("", "device-1", "auth-1", 1, now); err == nil {
+	if _, err := MintUploadToken("", "tenant-1", "device-1", "auth-1", "session-1", 1, now); err == nil {
 		t.Fatal("empty secret must be refused at mint")
 	}
 }

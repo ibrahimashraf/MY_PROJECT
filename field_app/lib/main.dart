@@ -23,6 +23,7 @@ import 'sync/sync_client.dart';
 import 'sync/tus_client.dart';
 import 'security/pinned_http_client.dart';
 import 'security/endpoint_guard.dart';
+import 'security/inspection_submission_service.dart';
 
 const _windowsStartupTracePath =
     String.fromEnvironment('INTEGIN_WINDOWS_STARTUP_TRACE_PATH');
@@ -216,6 +217,7 @@ Future<void> main() async {
     syncClient: syncClient,
     tusClient: tusClient,
     advisoryClient: advisoryClient,
+    submissionService: InspectionSubmissionService(),
     trace: _traceWindowsStartup,
   );
   await controller.restoreOutbox();

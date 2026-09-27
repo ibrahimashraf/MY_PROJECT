@@ -2,9 +2,14 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../sync/downsample.dart';
 import '../sync/tus_client.dart';
+
+String computeDigest(List<int> bytes) {
+  return sha256.convert(bytes).toString();
+}
 
 enum FieldPrimitiveType {
   textInput,
@@ -193,45 +198,87 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    if (widget.tusClient != null && widget.onPickPhoto != null) {
+                    if (widget.onPickPhoto != null) {
                       try {
                         final rawBytes = await widget.onPickPhoto!();
                         if (rawBytes == null || rawBytes.isEmpty) {
                           return;
                         }
-                        final downsampled = await downsampleForUpload(
-                          rawBytes,
-                          contentType: 'image/jpeg',
-                          config: widget.downsampleConfig,
-                        );
-                        final digest = sha256.convert(downsampled.bytes).toString();
-                        final uploadId = await widget.tusClient!.upload(
-                          data: downsampled.bytes,
-                          size: downsampled.bytes.length,
-                          sha256: digest,
-                          contentType: downsampled.contentType,
-                        );
-                        final completion = await widget.tusClient!.complete(uploadId);
-                        setState(() {
-                          _values[field.fieldId] = completion.key;
-                        });
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Evidence Uploaded: ${completion.key}')),
-                          );
+                        
+                        String newKey;
+                        bool uploaded = false;
+                        if (widget.tusClient != null) {
+                          try {
+                            final downsampled = await downsampleForUpload(
+                              rawBytes,
+                              contentType: 'image/jpeg',
+                              config: widget.downsampleConfig,
+                            );
+                            final digest = await compute(computeDigest, downsampled.bytes);
+                            final uploadId = await widget.tusClient!.upload(
+                              data: downsampled.bytes,
+                              size: downsampled.bytes.length,
+                              sha256: digest,
+                              contentType: downsampled.contentType,
+                            );
+                            final completion = await widget.tusClient!.complete(uploadId);
+                            newKey = completion.key;
+                            uploaded = true;
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Evidence Uploaded: $newKey')),
+                              );
+                            }
+                          } catch (e) {
+                            // Offline fallback when server upload endpoint fails / network unreachable
+                            final digest = await compute(computeDigest, rawBytes);
+                            newKey = 'offline-evidence:$digest';
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Upload failed ($e). Saved locally as offline evidence.')),
+                              );
+                            }
+                          }
+                        } else {
+                          // Offline/Mock mode: photo captured but no server to upload to
+                          final digest = await compute(computeDigest, rawBytes);
+                          newKey = 'offline-evidence:$digest';
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Photo captured (Offline/Local mode)')),
+                            );
+                          }
                         }
+                        
+                        setState(() {
+                          final existing = _values[field.fieldId];
+                          if (existing is List<String>) {
+                            _values[field.fieldId] = [...existing, newKey];
+                          } else if (existing is String) {
+                            _values[field.fieldId] = [existing, newKey];
+                          } else {
+                            _values[field.fieldId] = [newKey];
+                          }
+                        });
                       } catch (e) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Upload failed: $e')),
+                            SnackBar(content: Text('Upload/Capture failed: $e')),
                           );
                         }
                       }
                     } else if (widget.allowMockFallback) {
                       // Explicit mock fallback for test harnesses/dev simulation only
+                      final mockKey = 'evidence-sha256:mock:${DateTime.now().millisecondsSinceEpoch}';
                       setState(() {
-                        _values[field.fieldId] =
-                            'evidence-sha256:mock:${DateTime.now().millisecondsSinceEpoch}';
+                          final existing = _values[field.fieldId];
+                          if (existing is List<String>) {
+                            _values[field.fieldId] = [...existing, mockKey];
+                          } else if (existing is String) {
+                            _values[field.fieldId] = [existing, mockKey];
+                          } else {
+                            _values[field.fieldId] = [mockKey];
+                          }
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -246,9 +293,53 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                       );
                     }
                   },
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Capture Encrypted Photo (#q=)'),
+                  icon: Icon((_values[field.fieldId] is List && (_values[field.fieldId] as List).isNotEmpty) ? Icons.add_a_photo : Icons.camera_alt),
+                  label: Text((_values[field.fieldId] is List && (_values[field.fieldId] as List).isNotEmpty) ? 'Add Another Photo' : 'Capture Encrypted Photo (#q=)'),
                 ),
+                if (_values[field.fieldId] != null)
+                  Builder(
+                    builder: (context) {
+                      final val = _values[field.fieldId];
+                      final list = val is List ? val.cast<String>() : [val.toString()];
+                      if (list.isEmpty) return const SizedBox.shrink();
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: list.map((item) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Attached: ${item.split(':').last.substring(0, 8)}...',
+                                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                    onPressed: () {
+                                      setState(() {
+                                        final newList = List<String>.from(list);
+                                        newList.remove(item);
+                                        _values[field.fieldId] = newList.isEmpty ? null : newList;
+                                      });
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  )
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           ),

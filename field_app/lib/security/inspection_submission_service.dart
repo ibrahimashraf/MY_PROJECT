@@ -67,8 +67,9 @@ class InspectionSubmissionService {
     required int leaseEpoch,
     required Uint8List appEd25519Sig,
     required http.Client? httpClient,
+    bool allowLoopbackHttp = false,
   }) async {
-    assertEndpointSafe(endpoint, allowLoopbackHttp: false);
+    assertEndpointSafe(endpoint, allowLoopbackHttp: allowLoopbackHttp);
 
     // Step 1: Compute composite digest
     final compositeDigest = payload.deriveCompositeDigest();

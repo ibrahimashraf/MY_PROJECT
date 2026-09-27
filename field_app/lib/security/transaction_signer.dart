@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' hide Hmac;
@@ -176,6 +177,15 @@ class DeviceSigner {
       keyPair: keyPair,
     );
     return base64Encode(signature.bytes);
+  }
+
+  /// Signs raw byte payloads directly using the device Ed25519 keypair.
+  Future<Uint8List> signRawBytes(List<int> bytes) async {
+    final signature = await Ed25519().sign(
+      bytes,
+      keyPair: keyPair,
+    );
+    return Uint8List.fromList(signature.bytes);
   }
 }
 

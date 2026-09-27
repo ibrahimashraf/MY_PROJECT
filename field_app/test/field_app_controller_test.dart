@@ -92,4 +92,68 @@ void main() {
     expect(await controller.flushOutbox(), isEmpty);
     expect(controller.lastError, contains('not configured'));
   });
+
+  test('editOutboxEntry unseals queued entry back to draft and marks entry abandoned', () async {
+    final store = InMemoryOutboxStore();
+    final controller = await _controller(
+        syncClient: SyncClient(store: store, transport: _AppliedTransport()));
+    final workPack = _workPack();
+    controller.beginInspection(workPack);
+    controller.recordResponse(
+        item: workPack.items.single, response: 'initial-val', note: 'initial-note');
+    expect(await controller.queueForSync(notes: 'general-note'), isTrue);
+
+    final entries = await store.all();
+    expect(entries.length, 1);
+    expect(entries.first.state, OutboxState.queued);
+    expect(controller.activeDraft, isNull);
+
+    // Operator unseals entry for editing
+    final unsealed = await controller.editOutboxEntry(entries.first, workPack);
+    expect(unsealed, isTrue);
+
+    // Active draft restored with previous data
+    final draft = controller.activeDraft;
+    expect(draft, isNotNull);
+    expect(draft!.notes, 'general-note');
+    expect(draft.findings['item-1']?.response, 'initial-val');
+
+    // Original entry marked abandoned
+    final updatedEntries = await store.all();
+    expect(updatedEntries.first.state, OutboxState.abandoned);
+    expect(controller.queuedCount, 0);
+
+    // Operator edits and re-queues
+    controller.recordResponse(
+        item: workPack.items.single, response: 'edited-val', note: 'edited-note');
+    expect(await controller.queueForSync(notes: 'updated-general-note'), isTrue);
+
+    expect(controller.activeDraft, isNull);
+    final finalEntries = await store.all();
+    expect(finalEntries.length, 2);
+    expect(finalEntries.last.state, OutboxState.queued);
+    expect(finalEntries.last.mutation.payload['notes'], 'updated-general-note');
+  });
+
+  test('clearFailures marks failed mutations as abandoned instead of applied', () async {
+    final store = InMemoryOutboxStore();
+    final controller = await _controller(
+        syncClient: SyncClient(store: store, transport: _AppliedTransport()));
+    final workPack = _workPack();
+    controller.beginInspection(workPack);
+    controller.recordResponse(item: workPack.items.single, response: 'val');
+    await controller.queueForSync();
+
+    final entry = (await store.all()).first;
+    await store.mark(entry, OutboxState.rejected, error: 'validation error');
+    controller.outboxSummary = OutboxSummary.fromEntries(await store.all());
+    expect(controller.failedCount, 1);
+
+    final cleared = await controller.clearFailures();
+    expect(cleared, 1);
+    expect(controller.failedCount, 0);
+
+    final updated = (await store.all()).first;
+    expect(updated.state, OutboxState.abandoned);
+  });
 }

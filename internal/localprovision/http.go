@@ -160,7 +160,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, httpRequest *http.Reques
 	}
 	// Mint before persisting anything: a mint failure must not leave a saved
 	// authority and registered device behind a 500 response.
-	uploadToken, err := MintUploadToken(h.config.SigningSecret, incoming.DeviceID, authority.ID, authority.Epoch, authority.ExpiresAt)
+	uploadToken, err := MintUploadToken(h.config.SigningSecret, h.config.TenantID, incoming.DeviceID, authority.ID, authority.ID, authority.Epoch, authority.ExpiresAt)
 	if err != nil {
 		writeError(writer, http.StatusInternalServerError, "unable to issue upload token")
 		return
