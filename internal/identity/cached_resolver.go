@@ -73,6 +73,21 @@ func (c *CachedResolver) Resolve(ctx context.Context, principal PrincipalKey) (M
 		return call.val, call.err
 	}
 
+	// Re-check the cache under the lock: the leader may have completed
+	// (stored the value and retired the in-flight entry) between our
+	// first check and acquiring the mutex. The leader stores before it
+	// deletes, and the mutex handoff orders those writes before this
+	// read, so we either see the in-flight call above or the stored
+	// value here — a completed leader can never trigger a redundant
+	// second query.
+	if val, ok := c.cache.Load(key); ok {
+		entry := val.(cacheEntry)
+		if time.Now().Before(entry.expiresAt) {
+			c.sfMu.Unlock()
+			return entry.membership, nil
+		}
+	}
+
 	call := &singleflightCall{}
 	call.wg.Add(1)
 	c.inFlight[key] = call
