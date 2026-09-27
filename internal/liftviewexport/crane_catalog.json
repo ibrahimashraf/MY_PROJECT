@@ -57,7 +57,52 @@
     "model": "GMK 7550",
     "crane_class": "MOBILE_CRANE",
     "visualization_status": "GENERIC_REFERENCE",
-    "duty_chart_status": "NOT_PROVIDED"
+    "duty_chart_status": "AUTHORITATIVE_OEM",
+    "provenance": {
+      "document_id": "GMK7550-PG-01",
+      "source_sha256": "3EDC818A90A5A698A5643F480CA5A7AE07CC5C90E2CFECEDEE3315400CA65BAE"
+    },
+    "configurations": [
+      {
+        "id": "T-30.5m-CW120t",
+        "boom_length_m": 30.5,
+        "counterweight_t": 120.0,
+        "outrigger_span_x_m": 8.9,
+        "outrigger_span_z_m": 8.76,
+        "points": [
+          {"radius_m": 6.1, "capacity_t": 186.0, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 7.6, "capacity_t": 166.9, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 9.1, "capacity_t": 144.2, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 10.7, "capacity_t": 126.1, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 12.2, "capacity_t": 110.7, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 15.2, "capacity_t": 87.5, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 18.3, "capacity_t": 71.2, "governing_mode": "STABILITY"},
+          {"radius_m": 21.3, "capacity_t": 57.6, "governing_mode": "STABILITY"},
+          {"radius_m": 24.4, "capacity_t": 48.1, "governing_mode": "STABILITY"},
+          {"radius_m": 27.4, "capacity_t": 39.5, "governing_mode": "STABILITY"}
+        ]
+      },
+      {
+        "id": "T-49.7m-CW120t",
+        "boom_length_m": 49.7,
+        "counterweight_t": 120.0,
+        "outrigger_span_x_m": 8.9,
+        "outrigger_span_z_m": 8.76,
+        "points": [
+          {"radius_m": 9.1, "capacity_t": 82.1, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 10.7, "capacity_t": 66.2, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 12.2, "capacity_t": 55.8, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 15.2, "capacity_t": 50.8, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 18.3, "capacity_t": 44.5, "governing_mode": "STRUCTURAL"},
+          {"radius_m": 21.3, "capacity_t": 39.0, "governing_mode": "STABILITY"},
+          {"radius_m": 24.4, "capacity_t": 34.5, "governing_mode": "STABILITY"},
+          {"radius_m": 30.5, "capacity_t": 27.2, "governing_mode": "STABILITY"},
+          {"radius_m": 36.6, "capacity_t": 21.3, "governing_mode": "STABILITY"},
+          {"radius_m": 42.7, "capacity_t": 18.0, "governing_mode": "STABILITY"},
+          {"radius_m": 45.7, "capacity_t": 16.2, "governing_mode": "STABILITY"}
+        ]
+      }
+    ]
   },
   {
     "id": "DEMAG_AC_500",
