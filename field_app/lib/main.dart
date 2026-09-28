@@ -46,7 +46,12 @@ void _traceWindowsStartup(String stage) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _traceWindowsStartup('binding-ready');
-  const syncEndpoint = String.fromEnvironment('INTEGIN_SYNC_ENDPOINT');
+  String syncEndpoint = const String.fromEnvironment('INTEGIN_SYNC_ENDPOINT'); // Production env var; dev fallback follows
+  if (syncEndpoint.isEmpty) {
+    // Development fallback: use loopback sync server on port 8080
+    syncEndpoint = 'http://127.0.0.1:8080/api/v1/sync';
+    print('⚙️ Using fallback sync endpoint: $syncEndpoint');
+  }
   const localProvisioningEndpoint =
       String.fromEnvironment('INTEGIN_LOCAL_PROVISIONING_ENDPOINT');
   const pilotFixturePath =

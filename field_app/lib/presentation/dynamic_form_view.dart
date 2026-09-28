@@ -5,7 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 import '../sync/downsample.dart';
-import '../sync/tus_client.dart';
+import 'package:integin_field_app/assurance/rule_evaluator.dart';
+import 'package:integin_field_app/assurance/rule_bundle_store.dart';
+import 'package:integin_field_app/network/tus_client_stub.dart';
+import 'compliance_result_card.dart';
+
+// Add private state field
+EvaluationOutcome? _complianceOutcome;
+
+// Private async method to evaluate compliance
+Future<EvaluationOutcome> _evaluateCompliance(Map<String, dynamic> values) async {
+  // Initialize key-value store (use SharedPreferencesKeyValueStore if available)
+  final kvStore = await SharedPreferencesKeyValueStore.getInstance();
+  final bundleStore = RuleBundleStore(storage: kvStore);
+  // Retrieve the appropriate bundle (hard‑coded ID for now)
+  final bundle = await bundleStore.getEffectiveBundle('ISO4309_LIFTING_ROPES', tenantId: context.tenantId);
+  // Convert form values to double map for evaluator
+  final vars = values.map((k, v) => MapEntry(k, (v is num) ? v.toDouble() : double.tryParse(v?.toString() ?? '') ?? 0.0));
+  return DynamicRuleEvaluator().evaluateBundle(bundle: bundle!, variables: vars);
+}
 
 String computeDigest(List<int> bytes) {
   return sha256.convert(bytes).toString();
@@ -424,7 +442,14 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 FilledButton.icon(
-                  onPressed: () => widget.onSave(_values),
+                  onPressed: () async {
+                    final outcome = await _evaluateCompliance(_values);
+                    setState(() => _complianceOutcome = outcome);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Form evaluated: ${outcome.state}')),
+                    );
+                    widget.onSave(_values);
+                  },
                   icon: const Icon(Icons.save),
                   label: const Text('Save Form to Canonical Outbox'),
                 ),

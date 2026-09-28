@@ -13,6 +13,7 @@ import 'enrollment_screen.dart';
 import '../sync/image_picker_service.dart';
 import '../sync/in_app_camera.dart';
 
+
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
 
@@ -119,6 +120,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _StatusCard(controller: controller, workPack: workPack),
+            const SizedBox(height: 20),
+            // FlashingText removed
             const SizedBox(height: 20),
             if (draft == null)
               _WorkPackCard(controller: controller, workPack: workPack)
