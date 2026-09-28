@@ -1,0 +1,17 @@
+# Progress
+
+| Time | Action | Result | Validation or limitation | Next action |
+|---|---|---|---|---|
+| 2026-09-24 | Loaded the planning suite and inspected the canonical tracker, simulator source, architecture ADR, and existing CAD/rules packages. | Gap baseline established across rated data, authority, interoperability, delivery, and static-equipment scope. | Tracker is canonical; source review distinguishes implemented foundations from roadmap claims. | Owner selects Phase 0 target wedge. |
+| 2026-09-24 | Reviewed the three user-provided competitor sources. | SEG = full static-equipment CAD claim; CranePro 3D = 3D lift simulation claim; Construct-Tech = AI/cloud/branding/LOLER claim. | Public marketing sources are not implementation or compliance evidence. | Validate competitor claims before publishing comparisons. |
+| 2026-09-24 | Initialized an isolated local plan. | `C:\MY_PROJECT\.planning\plans\competitor-gap-closure\` created. | No production code or runtime was changed. | Approve scope and data-rights boundary. |
+| 2026-09-24 | Added `pkg/domain/loadchart.go` and `pkg/domain/loadchart_test.go` as the first rated-data foundation slice. | Typed chart/config/point/provenance/effective-date contract; exact-point lookup; draft/demo refusal for authority; fail-closed validation. | No OEM chart values or database persistence added; `EffectiveAt` accepts structural drafts while authority lookup requires verified data. | Owner supplies first licensed/user-supplied chart and approves target crane/jurisdiction slice. |
+| 2026-09-24 | Ran `gofmt`, package tests, `go vet`, and repository-wide `go test`. | New package passes; `go vet ./...` passes; `gofmt -l .` clean. | Full tests hit machine memory exhaustion in `internal/domain/acceptance`; `internal/liftviewexport` baseline is inconsistent with pre-existing uncommitted handler changes. Race test unavailable because repository requires `CGO_ENABLED=0`. | Do not broaden implementation until baseline and owner decisions are resolved. |
+| 2026-09-28 | Implemented live assurance rule evaluation in `field_app` (`dynamic_form_view.dart`, `compliance_result_card.dart`, `inspection_draft.dart`, `field_app_controller.dart`). | Form evaluations run against rule bundles with tenant shadowing; outbox payloads carry signed outcomes; 23/23 tests pass. | Evaluator uses offline rule bundles with tenant shadowing and `SecureKeyValueStore`. | Connect backend live assurance sync endpoints. |
+| 2026-09-28 | Added conservative step-down and linear interpolation capacity lookups to `pkg/domain/loadchart.go` (`LookupCapacityConservative`, `LookupCapacityLinear`). | Safe solver interpolation within valid radius envelopes; out-of-envelope radii fail closed (`ErrLoadChartRadiusOutOfRange`). | Tests in `pkg/domain/loadchart_test.go` pass 100%; `gofmt` and `go vet` clean. | Connect `LoadChart` methods to `internal/liftviewexport` solver. |
+
+## Continuity checkpoint
+
+| Current phase | Last validated action | Unresolved decision or limitation | Next safe action |
+|---|---|---|---|
+| Phase 1 & 2 — rated-data & solver foundations | Conservative and linear capacity lookups pass in `pkg/domain/loadchart_test.go`. Field app live assurance evaluation passes 23 tests. | Integration of `domain.LoadChart` into `internal/liftviewexport` server handler. | Wire `LoadChart` lookup into `internal/liftviewexport` handler. |
