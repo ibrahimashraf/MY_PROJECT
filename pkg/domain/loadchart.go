@@ -41,6 +41,7 @@ var (
 	ErrLoadChartNotVerified            = errors.New("load chart is not verified for authoritative use")
 	ErrLoadChartConfigurationNotFound  = errors.New("load chart configuration was not found")
 	ErrLoadChartPointNotFound          = errors.New("load chart point was not found")
+	ErrLoadChartRadiusOutOfRange       = errors.New("load chart radius is outside tabulated configuration range")
 )
 
 type LoadChartProvenance struct {
@@ -168,6 +169,69 @@ func (c LoadChart) LookupCapacityExact(configurationID string, radiusM float64) 
 			}
 		}
 		return 0, fmt.Errorf("%w: configuration %q radius %g", ErrLoadChartPointNotFound, configurationID, radiusM)
+	}
+	return 0, fmt.Errorf("%w: %q", ErrLoadChartConfigurationNotFound, configurationID)
+}
+
+func (c LoadChart) LookupCapacityConservative(configurationID string, radiusM float64) (float64, error) {
+	if err := c.ValidateForAuthority(); err != nil {
+		return 0, err
+	}
+	if math.IsNaN(radiusM) || math.IsInf(radiusM, 0) || radiusM <= 0 {
+		return 0, fmt.Errorf("%w: radius must be finite and > 0", ErrLoadChartPointValues)
+	}
+	for _, config := range c.Configurations {
+		if config.ID != configurationID {
+			continue
+		}
+		if len(config.Points) == 0 {
+			return 0, ErrLoadChartPointsRequired
+		}
+		if radiusM < config.Points[0].RadiusM {
+			return config.Points[0].CapacityT, nil
+		}
+		if radiusM > config.Points[len(config.Points)-1].RadiusM {
+			return 0, fmt.Errorf("%w: radius %g exceeds maximum envelope %g for %q",
+				ErrLoadChartRadiusOutOfRange, radiusM, config.Points[len(config.Points)-1].RadiusM, configurationID)
+		}
+		for _, pt := range config.Points {
+			if radiusM <= pt.RadiusM {
+				return pt.CapacityT, nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("%w: %q", ErrLoadChartConfigurationNotFound, configurationID)
+}
+
+func (c LoadChart) LookupCapacityLinear(configurationID string, radiusM float64) (float64, error) {
+	if err := c.ValidateForAuthority(); err != nil {
+		return 0, err
+	}
+	if math.IsNaN(radiusM) || math.IsInf(radiusM, 0) || radiusM <= 0 {
+		return 0, fmt.Errorf("%w: radius must be finite and > 0", ErrLoadChartPointValues)
+	}
+	for _, config := range c.Configurations {
+		if config.ID != configurationID {
+			continue
+		}
+		if len(config.Points) == 0 {
+			return 0, ErrLoadChartPointsRequired
+		}
+		if radiusM < config.Points[0].RadiusM || radiusM > config.Points[len(config.Points)-1].RadiusM {
+			return 0, fmt.Errorf("%w: radius %g outside [%g, %g] for %q",
+				ErrLoadChartRadiusOutOfRange, radiusM, config.Points[0].RadiusM, config.Points[len(config.Points)-1].RadiusM, configurationID)
+		}
+		for i := 0; i < len(config.Points); i++ {
+			if config.Points[i].RadiusM == radiusM {
+				return config.Points[i].CapacityT, nil
+			}
+			if config.Points[i].RadiusM > radiusM {
+				prev := config.Points[i-1]
+				curr := config.Points[i]
+				t := (radiusM - prev.RadiusM) / (curr.RadiusM - prev.RadiusM)
+				return prev.CapacityT + t*(curr.CapacityT-prev.CapacityT), nil
+			}
+		}
 	}
 	return 0, fmt.Errorf("%w: %q", ErrLoadChartConfigurationNotFound, configurationID)
 }

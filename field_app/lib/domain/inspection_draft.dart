@@ -1,3 +1,4 @@
+import '../assurance/rule_evaluator.dart';
 import 'models.dart';
 
 enum ChecklistResponseType { text, number, boolean, choice, passFailNA }
@@ -71,6 +72,7 @@ class InspectionDraft {
   final Map<String, FindingDraft> findings = {};
   InspectionStatus status = InspectionStatus.inProgress;
   String? notes;
+  EvaluationOutcome? evaluationOutcome;
 
   void recordResponse({
     required ChecklistItem item,
@@ -117,6 +119,7 @@ class InspectionDraft {
         'status': status.name.toUpperCase(),
         'notes': notes,
         'findings': findings.values.map((finding) => finding.toJson()).toList(),
+        if (evaluationOutcome != null) 'evaluation_outcome': evaluationOutcome!.toJson(),
       };
 
   Map<String, Object?> toJson() => {
@@ -126,6 +129,7 @@ class InspectionDraft {
         'status': status.name,
         'notes': notes,
         'findings': findings.map((k, v) => MapEntry(k, v.toJson())),
+        if (evaluationOutcome != null) 'evaluation_outcome': evaluationOutcome!.toJson(),
       };
 
   void hydrateFindings(Map<String, Object?> rawFindings) {

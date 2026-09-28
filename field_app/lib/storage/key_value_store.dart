@@ -1,23 +1,14 @@
-// Simple key‑value store wrapper using SharedPreferences
-// Provides the minimal API used by the app (getInstance, getString, setString).
-import 'package:shared_preferences/shared_preferences.dart';
+import 'persistent_outbox.dart';
 
-class SharedPreferencesKeyValueStore {
-  SharedPreferencesKeyValueStore._();
+/// In-memory key-value store implementing [KeyValueStore] without external dependencies.
+class InMemoryKeyValueStore implements KeyValueStore {
+  final Map<String, String> _data = {};
 
-  static Future<SharedPreferencesKeyValueStore> getInstance() async {
-    // Ensure SharedPreferences is initialized.
-    await SharedPreferences.getInstance();
-    return SharedPreferencesKeyValueStore._();
-  }
+  @override
+  Future<String?> read(String key) async => _data[key];
 
-  Future<void> setString(String key, String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, value);
-  }
-
-  Future<String?> getString(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
+  @override
+  Future<void> write(String key, String value) async {
+    _data[key] = value;
   }
 }

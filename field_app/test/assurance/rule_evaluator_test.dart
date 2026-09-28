@@ -166,5 +166,50 @@ void main() {
       expect(outcome.state, 'NON_COMPLIANT');
       expect(outcome.highestSeverity, AssuranceSeverity.major);
     });
+
+    test('serializes and deserializes EvaluationOutcome and RuleEvaluationResult round-trip', () {
+      const outcome = EvaluationOutcome(
+        bundleId: 'ISO4309_LIFTING_ROPES',
+        version: '1.0.0',
+        ruleHash: 'sha256:dynamic-ISO4309_LIFTING_ROPES-1.0.0',
+        results: [
+          RuleEvaluationResult(
+            ruleId: 'ISO4309_DIAMETER_REDUCTION',
+            computedValue: 0.89,
+            matchedBranch: EvaluationBranch(
+              operator: RuleOperator.lt,
+              threshold: 0.90,
+              severity: AssuranceSeverity.critical,
+              reason: 'Diameter reduction critical',
+              isBlocking: true,
+            ),
+            passed: false,
+          ),
+        ],
+        highestSeverity: AssuranceSeverity.critical,
+        isNonCompliant: true,
+        isCondemned: true,
+        reasons: ['Diameter reduction critical'],
+        state: 'CONDEMNED',
+      );
+
+      final json = outcome.toJson();
+      final decoded = EvaluationOutcome.fromJson(json);
+
+      expect(decoded.bundleId, outcome.bundleId);
+      expect(decoded.version, outcome.version);
+      expect(decoded.ruleHash, outcome.ruleHash);
+      expect(decoded.highestSeverity, outcome.highestSeverity);
+      expect(decoded.isNonCompliant, outcome.isNonCompliant);
+      expect(decoded.isCondemned, outcome.isCondemned);
+      expect(decoded.reasons, outcome.reasons);
+      expect(decoded.state, outcome.state);
+      expect(decoded.results.length, 1);
+      expect(decoded.results.first.ruleId, 'ISO4309_DIAMETER_REDUCTION');
+      expect(decoded.results.first.computedValue, 0.89);
+      expect(decoded.results.first.passed, isFalse);
+      expect(decoded.results.first.matchedBranch?.operator, RuleOperator.lt);
+      expect(decoded.results.first.matchedBranch?.severity, AssuranceSeverity.critical);
+    });
   });
 }

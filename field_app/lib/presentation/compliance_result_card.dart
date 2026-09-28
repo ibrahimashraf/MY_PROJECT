@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../assurance/rule_evaluator.dart';
 
 /// Widget that displays the result of a rule evaluation.
@@ -7,48 +8,54 @@ import '../assurance/rule_evaluator.dart';
 /// (ASSURED, CONDITIONAL, NON_COMPLIANT, CONDEMNED).
 class ComplianceResultCard extends StatelessWidget {
   const ComplianceResultCard({
-    Key? key,
+    super.key,
     required this.outcome,
-  }) : super(key: key);
+  });
 
   final EvaluationOutcome outcome;
 
   Color _backgroundColor() {
-    switch (outcome.state) {
-      case EvaluationState.assured:
+    switch (outcome.state.toUpperCase()) {
+      case 'ASSURED':
         return Colors.green.shade100;
-      case EvaluationState.conditional:
+      case 'CONDITIONAL':
         return Colors.yellow.shade100;
-      case EvaluationState.nonCompliant:
+      case 'NON_COMPLIANT':
         return Colors.orange.shade100;
-      case EvaluationState.condemned:
+      case 'CONDEMNED':
         return Colors.red.shade100;
+      default:
+        return Colors.grey.shade200;
     }
   }
 
   IconData _iconData() {
-    switch (outcome.state) {
-      case EvaluationState.assured:
+    switch (outcome.state.toUpperCase()) {
+      case 'ASSURED':
         return Icons.check_circle;
-      case EvaluationState.conditional:
+      case 'CONDITIONAL':
         return Icons.error_outline;
-      case EvaluationState.nonCompliant:
+      case 'NON_COMPLIANT':
         return Icons.warning_amber;
-      case EvaluationState.condemned:
+      case 'CONDEMNED':
         return Icons.cancel;
+      default:
+        return Icons.info_outline;
     }
   }
 
   String _label() {
-    switch (outcome.state) {
-      case EvaluationState.assured:
+    switch (outcome.state.toUpperCase()) {
+      case 'ASSURED':
         return 'Assured';
-      case EvaluationState.conditional:
+      case 'CONDITIONAL':
         return 'Conditional';
-      case EvaluationState.nonCompliant:
+      case 'NON_COMPLIANT':
         return 'Non‑Compliant';
-      case EvaluationState.condemned:
+      case 'CONDEMNED':
         return 'Condemned';
+      default:
+        return outcome.state;
     }
   }
 
@@ -60,7 +67,14 @@ class ComplianceResultCard extends StatelessWidget {
       child: ListTile(
         leading: Icon(_iconData(), size: 32),
         title: Text('Compliance: ${_label()}'),
-        subtitle: Text('Highest severity: ${outcome.highestSeverity.name}'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Highest severity: ${outcome.highestSeverity.name}'),
+            if (outcome.reasons.isNotEmpty)
+              Text('Reasons: ${outcome.reasons.join(", ")}'),
+          ],
+        ),
       ),
     );
   }

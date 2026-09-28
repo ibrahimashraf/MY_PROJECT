@@ -1,29 +1,14 @@
-import 'dart:typed_data';
-
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
+import '../assurance/rule_bundle.dart';
+import '../assurance/rule_bundle_store.dart';
+import '../assurance/rule_evaluator.dart';
+import '../storage/secure_key_value_store.dart';
 import '../sync/downsample.dart';
-import 'package:integin_field_app/assurance/rule_evaluator.dart';
-import 'package:integin_field_app/assurance/rule_bundle_store.dart';
-import 'package:integin_field_app/network/tus_client_stub.dart';
+import '../sync/tus_client.dart';
 import 'compliance_result_card.dart';
-
-// Add private state field
-EvaluationOutcome? _complianceOutcome;
-
-// Private async method to evaluate compliance
-Future<EvaluationOutcome> _evaluateCompliance(Map<String, dynamic> values) async {
-  // Initialize key-value store (use SharedPreferencesKeyValueStore if available)
-  final kvStore = await SharedPreferencesKeyValueStore.getInstance();
-  final bundleStore = RuleBundleStore(storage: kvStore);
-  // Retrieve the appropriate bundle (hard‑coded ID for now)
-  final bundle = await bundleStore.getEffectiveBundle('ISO4309_LIFTING_ROPES', tenantId: context.tenantId);
-  // Convert form values to double map for evaluator
-  final vars = values.map((k, v) => MapEntry(k, (v is num) ? v.toDouble() : double.tryParse(v?.toString() ?? '') ?? 0.0));
-  return DynamicRuleEvaluator().evaluateBundle(bundle: bundle!, variables: vars);
-}
 
 String computeDigest(List<int> bytes) {
   return sha256.convert(bytes).toString();
@@ -65,6 +50,9 @@ class DynamicFormEngineView extends StatefulWidget {
     required this.formTitle,
     required this.fields,
     required this.onSave,
+    this.onSaveWithOutcome,
+    this.tenantId,
+    this.ruleBundleStore,
     this.tusClient,
     this.onPickPhoto,
     this.downsampleConfig = const DownsampleConfig(),
@@ -74,6 +62,9 @@ class DynamicFormEngineView extends StatefulWidget {
   final String formTitle;
   final List<DynamicFormFieldDefinition> fields;
   final ValueChanged<Map<String, dynamic>> onSave;
+  final void Function(Map<String, dynamic> values, EvaluationOutcome? outcome)? onSaveWithOutcome;
+  final String? tenantId;
+  final RuleBundleStore? ruleBundleStore;
   final TusClient? tusClient;
   final Future<Uint8List?> Function()? onPickPhoto;
   final DownsampleConfig downsampleConfig;
@@ -86,6 +77,39 @@ class DynamicFormEngineView extends StatefulWidget {
 class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
   final Map<String, dynamic> _values = {};
   final Map<String, TextEditingController> _controllers = {};
+  EvaluationOutcome? _complianceOutcome;
+
+  Future<EvaluationOutcome?> _evaluateCompliance(Map<String, dynamic> values) async {
+    try {
+      final store = widget.ruleBundleStore ??
+          RuleBundleStore(storage: SecureKeyValueStore());
+      var bundle = await store.getEffectiveBundle(
+        'ISO4309_LIFTING_ROPES',
+        tenantId: widget.tenantId,
+      );
+      bundle ??= const RuleBundle(
+        bundleId: 'ISO4309_LIFTING_ROPES',
+        version: '1.0.0',
+        ruleHash: 'sha256:baseline-iso4309',
+        rules: [],
+      );
+      final vars = <String, double>{};
+      values.forEach((k, v) {
+        if (v is num) {
+          vars[k] = v.toDouble();
+        } else if (v is bool) {
+          vars[k] = v ? 1.0 : 0.0;
+        } else {
+          final parsed = double.tryParse(v?.toString() ?? '');
+          if (parsed != null) vars[k] = parsed;
+        }
+      });
+      return const DynamicRuleEvaluator().evaluateBundle(bundle: bundle, variables: vars);
+    } catch (e) {
+      debugPrint('Assurance rule evaluation error: $e');
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -224,7 +248,6 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                         }
                         
                         String newKey;
-                        bool uploaded = false;
                         if (widget.tusClient != null) {
                           try {
                             final downsampled = await downsampleForUpload(
@@ -241,7 +264,6 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                             );
                             final completion = await widget.tusClient!.complete(uploadId);
                             newKey = completion.key;
-                            uploaded = true;
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Evidence Uploaded: $newKey')),
@@ -438,16 +460,25 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                   _buildFieldWidget(widget.fields[index]),
             ),
             const SizedBox(height: 24),
+            if (_complianceOutcome != null) ...[
+              ComplianceResultCard(outcome: _complianceOutcome!),
+              const SizedBox(height: 16),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 FilledButton.icon(
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     final outcome = await _evaluateCompliance(_values);
-                    setState(() => _complianceOutcome = outcome);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Form evaluated: ${outcome.state}')),
-                    );
+                    if (!mounted) return;
+                    if (outcome != null) {
+                      setState(() => _complianceOutcome = outcome);
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('Form evaluated: ${outcome.state}')),
+                      );
+                    }
+                    widget.onSaveWithOutcome?.call(_values, outcome);
                     widget.onSave(_values);
                   },
                   icon: const Icon(Icons.save),

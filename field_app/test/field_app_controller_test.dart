@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integin_field_app/application/field_app_controller.dart';
+import 'package:integin_field_app/assurance/rule_bundle.dart';
+import 'package:integin_field_app/assurance/rule_evaluator.dart';
 import 'package:integin_field_app/domain/inspection_draft.dart';
 import 'package:integin_field_app/domain/models.dart';
 import 'package:integin_field_app/outbox/outbox.dart';
@@ -155,5 +157,38 @@ void main() {
 
     final updated = (await store.all()).first;
     expect(updated.state, OutboxState.abandoned);
+  });
+
+  test('queueForSync embeds evaluationOutcome in outbox payload and verifies hash integrity', () async {
+    final store = InMemoryOutboxStore();
+    final controller = await _controller(
+        syncClient: SyncClient(store: store, transport: _AppliedTransport()));
+    final workPack = _workPack();
+    controller.beginInspection(workPack);
+    controller.recordResponse(item: workPack.items.single, response: 'pass');
+
+    const outcome = EvaluationOutcome(
+      bundleId: 'ISO4309_LIFTING_ROPES',
+      version: '1.0.0',
+      ruleHash: 'sha256:iso4309',
+      results: [],
+      highestSeverity: AssuranceSeverity.info,
+      isNonCompliant: false,
+      isCondemned: false,
+      reasons: [],
+      state: 'ASSURED',
+    );
+    controller.recordEvaluationOutcome(outcome);
+
+    expect(await controller.queueForSync(notes: 'evaluation-test'), isTrue);
+
+    final entries = await store.all();
+    expect(entries.length, 1);
+    final payload = entries.first.mutation.payload;
+    expect(payload['notes'], 'evaluation-test');
+    expect(payload['evaluation_outcome'], isNotNull);
+    final outcomeMap = payload['evaluation_outcome'] as Map<String, dynamic>;
+    expect(outcomeMap['state'], 'ASSURED');
+    expect(outcomeMap['bundle_id'], 'ISO4309_LIFTING_ROPES');
   });
 }

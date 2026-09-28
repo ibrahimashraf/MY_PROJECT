@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../advisory/pilot_advisory_client.dart';
+import '../assurance/rule_evaluator.dart';
 import '../domain/inspection_draft.dart';
 import '../workpackages/package_compatibility.dart';
 import '../domain/models.dart';
@@ -375,6 +376,11 @@ class FieldAppController extends ChangeNotifier {
       note: note,
       severity: severity,
     );
+    notifyListeners();
+  }
+
+  void recordEvaluationOutcome(EvaluationOutcome outcome) {
+    activeDraft?.evaluationOutcome = outcome;
     notifyListeners();
   }
 

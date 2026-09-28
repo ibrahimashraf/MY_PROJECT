@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import 'rule_bundle.dart';
 
 /// The result of evaluating an individual decision rule.
@@ -18,6 +22,25 @@ class RuleEvaluationResult {
       matchedBranch?.severity ?? AssuranceSeverity.info;
   bool get isBlocking => matchedBranch?.isBlocking ?? false;
   String? get reason => matchedBranch?.reason;
+
+  factory RuleEvaluationResult.fromJson(Map<String, dynamic> json) {
+    return RuleEvaluationResult(
+      ruleId: json['rule_id'] as String,
+      computedValue: (json['computed_value'] as num).toDouble(),
+      matchedBranch: json['matched_branch'] != null
+          ? EvaluationBranch.fromJson(
+              json['matched_branch'] as Map<String, dynamic>)
+          : null,
+      passed: json['passed'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'rule_id': ruleId,
+        'computed_value': computedValue,
+        if (matchedBranch != null) 'matched_branch': matchedBranch!.toJson(),
+        'passed': passed,
+      };
 }
 
 /// The aggregate outcome of evaluating a complete RuleBundle against inspection facts.
@@ -43,6 +66,43 @@ class EvaluationOutcome {
   final bool isCondemned;
   final List<String> reasons;
   final String state; // "ASSURED", "NON_COMPLIANT", "CONDEMNED", etc.
+
+  factory EvaluationOutcome.fromJson(Map<String, dynamic> json) {
+    final rawResults = json['results'] as List<dynamic>? ?? const [];
+    final rawReasons = json['reasons'] as List<dynamic>? ?? const [];
+    return EvaluationOutcome(
+      bundleId: json['bundle_id'] as String,
+      version: json['version'] as String,
+      ruleHash: json['rule_hash'] as String,
+      results: rawResults
+          .map((r) => RuleEvaluationResult.fromJson(r as Map<String, dynamic>))
+          .toList(),
+      highestSeverity: AssuranceSeverity.fromString(
+          json['highest_severity'] as String? ?? 'INFO'),
+      isNonCompliant: json['is_non_compliant'] as bool? ?? false,
+      isCondemned: json['is_condemned'] as bool? ?? false,
+      reasons: rawReasons.map((e) => e.toString()).toList(),
+      state: json['state'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'bundle_id': bundleId,
+        'version': version,
+        'rule_hash': ruleHash,
+        'results': results.map((r) => r.toJson()).toList(),
+        'highest_severity': highestSeverity.name.toUpperCase(),
+        'is_non_compliant': isNonCompliant,
+        'is_condemned': isCondemned,
+        'reasons': reasons,
+        'state': state,
+      };
+
+  /// Computes a deterministic SHA-256 cryptographic digest of the serialized outcome.
+  String computeDigest() {
+    final bytes = utf8.encode(jsonEncode(toJson()));
+    return sha256.convert(bytes).toString();
+  }
 }
 
 /// Pure Dart, generic, standard-agnostic evaluation engine.

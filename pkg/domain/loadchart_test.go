@@ -201,3 +201,52 @@ func TestLoadChartEffectiveAtAndExactLookupRefusal(t *testing.T) {
 		t.Fatalf("invalid radius error = %v", err)
 	}
 }
+
+func TestLoadChartLookupCapacityConservativeAndLinear(t *testing.T) {
+	chart := validLoadChart()
+
+	// 1. Conservative Lookup
+	// Exact matches
+	capExact, err := chart.LookupCapacityConservative("boom-30-cw-20", 6)
+	if err != nil || capExact != 80 {
+		t.Fatalf("conservative exact at 6m: cap=%g, err=%v", capExact, err)
+	}
+	// Between 3m and 6m (4.5m) -> steps down to 6m capacity (80t)
+	capBetween, err := chart.LookupCapacityConservative("boom-30-cw-20", 4.5)
+	if err != nil || capBetween != 80 {
+		t.Fatalf("conservative between at 4.5m: cap=%g, want 80, err=%v", capBetween, err)
+	}
+	// Below minimum (2m) -> clamps to first point capacity (120t)
+	capBelow, err := chart.LookupCapacityConservative("boom-30-cw-20", 2.0)
+	if err != nil || capBelow != 120 {
+		t.Fatalf("conservative below min at 2m: cap=%g, want 120, err=%v", capBelow, err)
+	}
+	// Above maximum (10m) -> fails closed
+	if _, err := chart.LookupCapacityConservative("boom-30-cw-20", 10.0); !errors.Is(err, ErrLoadChartRadiusOutOfRange) {
+		t.Fatalf("conservative out of range: want ErrLoadChartRadiusOutOfRange, got %v", err)
+	}
+
+	// 2. Linear Lookup
+	// Exact matches
+	linExact, err := chart.LookupCapacityLinear("boom-30-cw-20", 6)
+	if err != nil || linExact != 80 {
+		t.Fatalf("linear exact at 6m: cap=%g, err=%v", linExact, err)
+	}
+	// Midway between 3m (120t) and 6m (80t) at 4.5m -> 100t
+	linMid, err := chart.LookupCapacityLinear("boom-30-cw-20", 4.5)
+	if err != nil || math.Abs(linMid-100.0) > 1e-9 {
+		t.Fatalf("linear at 4.5m: cap=%g, want 100, err=%v", linMid, err)
+	}
+	// Midway between 6m (80t) and 9m (50t) at 7.5m -> 65t
+	linMid2, err := chart.LookupCapacityLinear("boom-30-cw-20", 7.5)
+	if err != nil || math.Abs(linMid2-65.0) > 1e-9 {
+		t.Fatalf("linear at 7.5m: cap=%g, want 65, err=%v", linMid2, err)
+	}
+	// Outside bounds fails closed
+	if _, err := chart.LookupCapacityLinear("boom-30-cw-20", 2.0); !errors.Is(err, ErrLoadChartRadiusOutOfRange) {
+		t.Fatalf("linear below min: want ErrLoadChartRadiusOutOfRange, got %v", err)
+	}
+	if _, err := chart.LookupCapacityLinear("boom-30-cw-20", 10.0); !errors.Is(err, ErrLoadChartRadiusOutOfRange) {
+		t.Fatalf("linear above max: want ErrLoadChartRadiusOutOfRange, got %v", err)
+	}
+}
