@@ -73,6 +73,8 @@ class InspectionDraft {
   InspectionStatus status = InspectionStatus.inProgress;
   String? notes;
   EvaluationOutcome? evaluationOutcome;
+  String? unsealedFromTxId;
+  int? unsealedSequenceNumber;
 
   void recordResponse({
     required ChecklistItem item,

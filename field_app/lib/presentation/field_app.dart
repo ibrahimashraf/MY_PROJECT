@@ -239,7 +239,9 @@ class _StatusCard extends StatelessWidget {
   void _showOutboxReviewSheet(BuildContext context) async {
     final store = controller.outboxStore;
     if (store == null) return;
-    final allEntries = await store.all();
+    final allEntries = (await store.all())
+        .where((e) => e.state != OutboxState.abandoned)
+        .toList();
     if (!context.mounted) return;
 
     showModalBottomSheet<void>(

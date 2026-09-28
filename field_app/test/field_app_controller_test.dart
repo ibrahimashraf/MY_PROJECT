@@ -132,9 +132,10 @@ void main() {
 
     expect(controller.activeDraft, isNull);
     final finalEntries = await store.all();
-    expect(finalEntries.length, 2);
-    expect(finalEntries.last.state, OutboxState.queued);
-    expect(finalEntries.last.mutation.payload['notes'], 'updated-general-note');
+    // Replaced in-place: zero abandoned ghosts left behind
+    expect(finalEntries.length, 1);
+    expect(finalEntries.single.state, OutboxState.queued);
+    expect(finalEntries.single.mutation.payload['notes'], 'updated-general-note');
   });
 
   test('clearFailures marks failed mutations as abandoned instead of applied', () async {

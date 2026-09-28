@@ -166,6 +166,7 @@ services:
       INTEGIN_RUSTFS_SECRET_KEY: "${RUSTFS_SECRET_KEY:-sovereign_rustfs_secret_key_643}"
       INTEGIN_SYNC_SECRET: "${APPLIANCE_SYNC_SECRET:-sovereign_sync_master_key}"
       INTEGIN_TENANT_ID: "${APPLIANCE_TENANT_ID:-INTEGIN-integration-tenant}"
+      INTEGIN_TENANT_IDS: "${APPLIANCE_TENANT_IDS:-INTEGIN-integration-tenant,tenant-session}"
       INTEGIN_ORGANIZATION_ID: "${APPLIANCE_ORGANIZATION_ID:-org-phone-01}"
       INTEGIN_PILOT_ENROLL_ENABLED: "true"
       INTEGIN_PILOT_ENROLL_ALLOW_BIND_ALL: "true"

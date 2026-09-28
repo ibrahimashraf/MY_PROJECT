@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -174,18 +175,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "authority_id is required")
 		return
 	}
+	log.Printf("[SYNC-REQ] dev=%s tenant=%s user=%s auth=%s keyID=%s seq=%d", incoming.DeviceID, incoming.TenantID, incoming.UserID, incoming.AuthorityID, incoming.KeyID, incoming.SequenceNumber)
 	if org, ok := oidchttp.OrganizationContextFrom(r.Context()); ok {
 		if strings.TrimSpace(org.TenantID) != "" && incoming.TenantID != org.TenantID {
+			log.Printf("[SYNC-403] tenant_scope_conflict: incoming.TenantID=%q != org.TenantID=%q", incoming.TenantID, org.TenantID)
 			writeError(w, http.StatusForbidden, "tenant_scope_conflict")
 			return
 		}
 		if strings.TrimSpace(org.ActorID) != "" && incoming.UserID != org.ActorID {
+			log.Printf("[SYNC-403] user_scope_conflict: incoming.UserID=%q != org.ActorID=%q", incoming.UserID, org.ActorID)
 			writeError(w, http.StatusForbidden, "user_scope_conflict")
 			return
 		}
 	}
 	authority, exists := h.Authorities.Get(incoming.AuthorityID)
 	if !exists {
+		log.Printf("[SYNC-403] authority package is not registered: authorityID=%q, incoming.TenantID=%q, incoming.DeviceID=%q", incoming.AuthorityID, incoming.TenantID, incoming.DeviceID)
 		writeError(w, http.StatusForbidden, "authority package is not registered")
 		return
 	}
@@ -221,6 +226,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	result := h.Processor.SubmitContext(r.Context(), transaction, authority, h.Now().UTC())
+	log.Printf("[SYNC-RESULT] tx=%s outcome=%s reason=%s expectedSeq=%d", result.TransactionID, result.Outcome, result.Reason, result.ExpectedSequence)
 	if result.Outcome == domainsync.Applied {
 		// Server-side cascade drain of any held transactions awaiting this sequence
 		h.Processor.DrainHeld(r.Context(), transaction.TenantID, transaction.DeviceID, h.Now().UTC())

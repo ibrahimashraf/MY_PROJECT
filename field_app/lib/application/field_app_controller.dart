@@ -144,6 +144,9 @@ class FieldAppController extends ChangeNotifier {
         }
         continue;
       }
+      if (entry.state == OutboxState.abandoned) {
+        continue;
+      }
       if (mutation.context.tenantId != context.tenantId ||
           mutation.context.organizationId != context.organizationId) {
         chain.seal(mutation);
@@ -297,7 +300,9 @@ class FieldAppController extends ChangeNotifier {
       workPack: workPack,
       recordedBy: entry.mutation.userId,
       createdAt: entry.mutation.capturedAt,
-    );
+    )
+      ..unsealedFromTxId = entry.mutation.transactionId
+      ..unsealedSequenceNumber = entry.mutation.sequenceNumber;
 
     final payload = entry.mutation.payload;
     if (payload['notes'] is String) {
@@ -483,16 +488,25 @@ class FieldAppController extends ChangeNotifier {
     }
     draft.notes = notes;
     draft.status = InspectionStatus.completed;
-    _sequence += 1;
+    final String transactionId;
+    final int sequence;
+    final bool isUnsealedReplacement = draft.unsealedFromTxId != null;
+    if (isUnsealedReplacement) {
+      transactionId = draft.unsealedFromTxId!;
+      sequence = draft.unsealedSequenceNumber ?? (_sequence + 1);
+    } else {
+      _sequence += 1;
+      sequence = _sequence;
+      transactionId = _transactionId();
+    }
     final payload = draft.toPayload();
-    final transactionId = _transactionId();
     final capturedAt = DateTime.now().toUtc();
     final hashOnly = OfflineMutation(
       transactionId: 'hash-only',
       context: context,
       deviceId: deviceId,
       userId: userId,
-      sequenceNumber: _sequence,
+      sequenceNumber: sequence,
       operation: 'hash-only',
       entityId: draft.workPack.inspectionId,
       payload: payload,
@@ -515,7 +529,7 @@ class FieldAppController extends ChangeNotifier {
       environment: context.environment,
       deviceId: deviceId,
       userId: userId,
-      sequenceNumber: _sequence,
+      sequenceNumber: sequence,
       operation: 'InspectionSubmitted',
       entityId: draft.workPack.inspectionId,
       payloadHash: hashOnly.payloadHash,
@@ -530,7 +544,7 @@ class FieldAppController extends ChangeNotifier {
       context: context,
       deviceId: deviceId,
       userId: userId,
-      sequenceNumber: _sequence,
+      sequenceNumber: sequence,
       operation: 'InspectionSubmitted',
       entityId: draft.workPack.inspectionId,
       payload: payload,
@@ -541,10 +555,29 @@ class FieldAppController extends ChangeNotifier {
       keyId: deviceKeyId,
       signature: signature,
     );
-    _outbox.add(mutation);
     if (outboxStore != null) {
-      await outboxStore!.append(OutboxEntry(mutation: mutation));
+      final entry = OutboxEntry(mutation: mutation)..state = OutboxState.queued;
+      if (isUnsealedReplacement) {
+        await outboxStore!.replace(entry);
+      } else {
+        await outboxStore!.append(entry);
+      }
+      final pending = await outboxStore!.pending();
+      _outbox
+        ..clear()
+        ..addAll(pending.map((e) => e.mutation));
       outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());
+    } else {
+      if (isUnsealedReplacement) {
+        final idx = _outbox.indexWhere((m) => m.transactionId == transactionId);
+        if (idx >= 0) {
+          _outbox[idx] = mutation;
+        } else {
+          _outbox.add(mutation);
+        }
+      } else {
+        _outbox.add(mutation);
+      }
     }
     activeDraft = null;
     lastError = null;

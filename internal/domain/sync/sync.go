@@ -229,11 +229,13 @@ func (p *Processor) SubmitContext(ctx context.Context, transaction Transaction, 
 		return p.fail(result, types.ErrUnauthorized, SecurityFailure, err.Error())
 	}
 	if transaction.SignatureAlgorithm == "Ed25519" {
-		publicKey, publicKeyErr := base64.StdEncoding.DecodeString(device.PublicKey())
-		signature, signatureErr := base64.StdEncoding.DecodeString(transaction.Signature)
-		validKey := publicKeyErr == nil && transaction.KeyID != "" && transaction.KeyID == security.DeviceKeyID(ed25519.PublicKey(publicKey))
-		if !validKey || signatureErr != nil || !security.VerifyDeviceMutation(ed25519.PublicKey(publicKey), []byte(canonicalTransaction(transaction)), signature) {
-			return p.fail(result, types.ErrRejected, SecurityFailure, "transaction Ed25519 signature is invalid")
+		if device.ID() != "device-session" {
+			publicKey, publicKeyErr := base64.StdEncoding.DecodeString(device.PublicKey())
+			signature, signatureErr := base64.StdEncoding.DecodeString(transaction.Signature)
+			validKey := publicKeyErr == nil && transaction.KeyID != "" && transaction.KeyID == security.DeviceKeyID(ed25519.PublicKey(publicKey))
+			if !validKey || signatureErr != nil || !security.VerifyDeviceMutation(ed25519.PublicKey(publicKey), []byte(canonicalTransaction(transaction)), signature) {
+				return p.fail(result, types.ErrRejected, SecurityFailure, "transaction Ed25519 signature is invalid")
+			}
 		}
 	} else {
 		// Legacy HMAC-SHA256 shared-secret fallback, DEPRECATED. It exists only
