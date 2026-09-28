@@ -35,6 +35,7 @@ func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middlew
 	// scan blocks on the first claim's uncommitted row — an undetectable
 	// self-deadlock that hangs every /sync request until client timeout.
 	mux.Handle("/sync", syncHandler)
+	mux.Handle("/api/v1/sync", syncHandler)
 	if d.PilotManifestHandler != nil {
 		mux.Handle("/work-package-manifest", d.PilotManifestHandler)
 	}
