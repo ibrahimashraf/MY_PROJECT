@@ -112,5 +112,15 @@ class JsonOutboxStore implements OutboxStore {
   }
 
   @override
+  Future<int> removeWhere(bool Function(OutboxEntry) predicate) async {
+    await load();
+    final before = _entries.length;
+    _entries.removeWhere(predicate);
+    final removed = before - _entries.length;
+    if (removed > 0) await _persist();
+    return removed;
+  }
+
+  @override
   Future<void> close() async {}
 }

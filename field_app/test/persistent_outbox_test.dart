@@ -103,4 +103,37 @@ void main() {
     expect(pending.single.state, OutboxState.queued);
     expect(pending.single.lastError, contains('interrupted upload'));
   });
+  test('JSON outbox removeWhere deletes matching entries and persists', () async {
+    const context = TenantContext(tenantId: 'tenant-1', organizationId: 'org-1', environment: 'LIVE');
+    final m1 = OfflineMutation(
+      transactionId: 'tx-1', context: context, deviceId: 'device-1',
+      userId: 'user-1', sequenceNumber: 1, operation: 'InspectionSubmitted',
+      entityId: 'inspection-1', payload: const {'inspection_id': '1'},
+      capturedAt: DateTime.utc(2026, 8, 13), authorityId: 'auth-1',
+      authorityEpoch: 1, signature: 'sig-1',
+    );
+    final m2 = OfflineMutation(
+      transactionId: 'tx-2', context: context, deviceId: 'device-1',
+      userId: 'user-1', sequenceNumber: 2, operation: 'InspectionSubmitted',
+      entityId: 'inspection-2', payload: const {'inspection_id': '2'},
+      capturedAt: DateTime.utc(2026, 8, 13), authorityId: 'auth-1',
+      authorityEpoch: 1, signature: 'sig-2',
+    );
+    final storage = MemoryKeyValueStore();
+    final store = JsonOutboxStore(storage: storage);
+    await store.append(OutboxEntry(mutation: m1));
+    await store.append(OutboxEntry(mutation: m2));
+
+    final e1 = (await store.all()).first;
+    await store.mark(e1, OutboxState.applied);
+
+    final removed = await store.removeWhere((e) => e.state.isAcknowledged);
+    expect(removed, 1);
+
+    // Survives reload
+    final store2 = JsonOutboxStore(storage: storage);
+    final remaining = await store2.all();
+    expect(remaining, hasLength(1));
+    expect(remaining.single.mutation.transactionId, 'tx-2');
+  });
 }

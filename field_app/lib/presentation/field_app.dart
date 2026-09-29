@@ -432,6 +432,19 @@ class _StatusCard extends StatelessWidget {
                     label: const Text('Clear failures', style: TextStyle(color: Colors.red)),
                   ),
                 ],
+                if (controller.outboxSummary.applied > 0 || controller.outboxSummary.duplicate > 0)
+                  TextButton.icon(
+                    onPressed: () async {
+                      final cleared = await controller.clearApplied();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Purged $cleared completed entries')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.cleaning_services, color: Colors.orange),
+                    label: const Text('Clear applied', style: TextStyle(color: Colors.orange)),
+                  ),
               ],
             ),
           ],

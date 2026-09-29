@@ -102,6 +102,11 @@ abstract interface class OutboxStore {
   /// the current device identity without losing the work. Entries that are
   /// already acknowledged must never be replaced.
   Future<void> replace(OutboxEntry entry);
+
+  /// Permanently deletes all entries whose state satisfies [predicate].
+  /// Returns the number of entries removed.
+  Future<int> removeWhere(bool Function(OutboxEntry) predicate);
+
   Future<void> close();
 }
 
@@ -143,6 +148,13 @@ class InMemoryOutboxStore implements OutboxStore {
       return;
     }
     _entries[index] = entry;
+  }
+
+  @override
+  Future<int> removeWhere(bool Function(OutboxEntry) predicate) async {
+    final before = _entries.length;
+    _entries.removeWhere(predicate);
+    return before - _entries.length;
   }
 
   @override

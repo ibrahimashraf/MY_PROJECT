@@ -148,6 +148,27 @@ class DriftOutboxStore implements OutboxStore {
   }
 
   @override
+  Future<int> removeWhere(bool Function(OutboxEntry) predicate) async {
+    final rows = await _db.allOutboxEntries();
+    final entries = rows.map(_rowToEntry).toList();
+    final toDelete = <String>[];
+    for (final entry in entries) {
+      if (predicate(entry)) {
+        toDelete.add(entry.mutation.transactionId);
+      }
+    }
+    if (toDelete.isEmpty) return 0;
+    // Delete one-by-one by transaction id for predicate accuracy.
+    for (final txId in toDelete) {
+      await (_db.delete(_db.outboxRows)
+            ..where((t) => t.transactionId.equals(txId)))
+          .go();
+    }
+    await _db.checkpoint();
+    return toDelete.length;
+  }
+
+  @override
   Future<void> close() async {
     await _db.close();
   }

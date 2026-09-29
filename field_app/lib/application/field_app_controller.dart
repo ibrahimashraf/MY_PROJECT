@@ -289,6 +289,21 @@ class FieldAppController extends ChangeNotifier {
     return clearedCount;
   }
 
+  /// Permanently deletes applied, duplicate, and abandoned entries from
+  /// the outbox store. These are fully processed and safe to purge.
+  Future<int> clearApplied() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final removed = await store.removeWhere(
+      (entry) => entry.state.isAcknowledged || entry.state.isAbandoned,
+    );
+    if (removed > 0) {
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      notifyListeners();
+    }
+    return removed;
+  }
+
   /// Unseals an outbox entry back into an active draft so the operator can
   /// edit values, notes, or photo attachments before re-signing and re-queuing.
   Future<bool> editOutboxEntry(OutboxEntry entry, InspectionWorkPack workPack) async {

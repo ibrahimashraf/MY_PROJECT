@@ -192,4 +192,32 @@ void main() {
     expect(outcomeMap['state'], 'ASSURED');
     expect(outcomeMap['bundle_id'], 'ISO4309_LIFTING_ROPES');
   });
+  test('clearApplied permanently deletes applied and abandoned entries', () async {
+    final store = InMemoryOutboxStore();
+    final controller = await _controller(
+        syncClient: SyncClient(store: store, transport: _AppliedTransport()));
+    final workPack = _workPack();
+
+    // Queue and flush to get an applied entry
+    controller.beginInspection(workPack);
+    controller.recordResponse(item: workPack.items.single, response: 'val');
+    await controller.queueForSync();
+    await controller.flushOutbox();
+
+    // Verify we have one applied entry
+    final before = await store.all();
+    expect(before.length, 1);
+    expect(before.single.state, OutboxState.applied);
+    expect(controller.outboxSummary.applied, 1);
+
+    // Clear applied
+    final cleared = await controller.clearApplied();
+    expect(cleared, 1);
+
+    // Store is now empty
+    final after = await store.all();
+    expect(after, isEmpty);
+    expect(controller.outboxSummary.applied, 0);
+    expect(controller.queuedCount, 0);
+  });
 }

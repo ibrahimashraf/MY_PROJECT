@@ -112,6 +112,16 @@ class AppDatabase extends _$AppDatabase {
     await checkpoint();
   }
 
+  /// Permanently deletes outbox rows whose state is in [states].
+  /// Returns the number of deleted rows.
+  Future<int> deleteOutboxEntriesByState(List<String> states) async {
+    final count = await (delete(outboxRows)
+          ..where((t) => t.state.isIn(states)))
+        .go();
+    await checkpoint();
+    return count;
+  }
+
   /// Forces WAL frames into the main database file so outbox state survives
   /// process death (force-stop / power-cut). Without this, entries reverted
   /// to their last-checkpointed state on SIGKILL and resubmitted forever.

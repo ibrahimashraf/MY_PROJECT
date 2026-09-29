@@ -153,5 +153,31 @@ void main() {
         throwsA(anything),
       );
     });
+    test('removeWhere deletes entries matching predicate and preserves others', () async {
+      final m1 = _testMutation(transactionId: 'tx-applied');
+      final m2 = _testMutation(transactionId: 'tx-queued', sequenceNumber: 2);
+      final m3 = _testMutation(transactionId: 'tx-abandoned', sequenceNumber: 3);
+
+      await store.append(OutboxEntry(mutation: m1));
+      await store.append(OutboxEntry(mutation: m2));
+      await store.append(OutboxEntry(mutation: m3));
+
+      // Mark states — lookup by transactionId, not index
+      final entries = await store.all();
+      final eApplied = entries.firstWhere((e) => e.mutation.transactionId == 'tx-applied');
+      final eAbandoned = entries.firstWhere((e) => e.mutation.transactionId == 'tx-abandoned');
+      await store.mark(eApplied, OutboxState.applied);
+      await store.mark(eAbandoned, OutboxState.abandoned);
+
+      // Remove applied and abandoned
+      final removed = await store.removeWhere(
+        (e) => e.state.isAcknowledged || e.state.isAbandoned,
+      );
+      expect(removed, 2);
+
+      final remaining = await store.all();
+      expect(remaining, hasLength(1));
+      expect(remaining.single.mutation.transactionId, 'tx-queued');
+    });
   });
 }
