@@ -1,0 +1,383 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-25T01:09:09.564+03:00",
+  "title": "Design System: INTEGIN",
+  "extensions": {
+    "colorMeta": {
+      "authority-teal": {
+        "role": "primary",
+        "displayName": "Provisional Authority Teal",
+        "canonical": "#0f766e",
+        "status": "observed-provisional",
+        "tonalRamp": ["#134e4a", "#115e59", "#0f766e", "#0d9488", "#14b8a6", "#5eead4", "#99f6e4", "#ccfbf1"]
+      },
+      "field-sage": {
+        "role": "primary",
+        "displayName": "Field Sage",
+        "canonical": "#537a68",
+        "status": "observed-provisional",
+        "tonalRamp": ["#243b32", "#345145", "#456857", "#537a68", "#6e9b86", "#91bba5", "#b5d7c4", "#dcebdd"]
+      },
+      "accent-surface": {
+        "role": "neutral",
+        "displayName": "Accent Wash",
+        "canonical": "#f0fdfa",
+        "status": "observed",
+        "tonalRamp": ["#042f2e", "#115e59", "#0f766e", "#0d9488", "#14b8a6", "#5eead4", "#99f6e4", "#f0fdfa"]
+      },
+      "accent-border": {
+        "role": "neutral",
+        "displayName": "Accent Border",
+        "canonical": "#99f6e4",
+        "status": "observed",
+        "tonalRamp": ["#042f2e", "#115e59", "#0f766e", "#0d9488", "#14b8a6", "#5eead4", "#99f6e4", "#ccfbf1"]
+      },
+      "rail-surface": {
+        "role": "neutral",
+        "displayName": "Rail Surface",
+        "canonical": "#f5f5f5",
+        "status": "observed",
+        "tonalRamp": ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f5f5f5"]
+      },
+      "action-blue": {
+        "role": "secondary",
+        "displayName": "Action Blue",
+        "canonical": "#2563eb",
+        "status": "observed-provisional",
+        "tonalRamp": ["#172554", "#1e3a8a", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"]
+      },
+      "sync-green": {
+        "role": "secondary",
+        "displayName": "Sync Green",
+        "canonical": "#16a34a",
+        "status": "observed-provisional",
+        "tonalRamp": ["#052e16", "#166534", "#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#dcfce7"]
+      },
+      "status-valid": {
+        "role": "tertiary",
+        "displayName": "Valid Green",
+        "canonical": "#059669",
+        "status": "observed-provisional",
+        "tonalRamp": ["#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0", "#d1fae5"]
+      },
+      "status-warning": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "#d97706",
+        "status": "observed-provisional",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fef3c7"]
+      },
+      "status-critical": {
+        "role": "tertiary",
+        "displayName": "Critical Red",
+        "canonical": "#b91c1c",
+        "status": "observed-provisional",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fee2e2"]
+      },
+      "status-info": {
+        "role": "tertiary",
+        "displayName": "Information Blue",
+        "canonical": "#0369a1",
+        "status": "observed-provisional",
+        "tonalRamp": ["#082f49", "#0c4a6e", "#0369a1", "#0284c7", "#0ea5e9", "#38bdf8", "#7dd3fc", "#e0f2fe"]
+      },
+      "valid-surface": {
+        "role": "status-surface",
+        "displayName": "Valid Surface",
+        "canonical": "#dcfce7",
+        "status": "observed-provisional",
+        "tonalRamp": ["#052e16", "#166534", "#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#dcfce7"]
+      },
+      "critical-surface": {
+        "role": "status-surface",
+        "displayName": "Critical Surface",
+        "canonical": "#fee2e2",
+        "status": "observed-provisional",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fee2e2"]
+      },
+      "warning-surface": {
+        "role": "status-surface",
+        "displayName": "Warning Surface",
+        "canonical": "#fef3c7",
+        "status": "observed-provisional",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fef3c7"]
+      },
+      "info-surface": {
+        "role": "status-surface",
+        "displayName": "Information Surface",
+        "canonical": "#e0f2fe",
+        "status": "observed-provisional",
+        "tonalRamp": ["#082f49", "#0c4a6e", "#0369a1", "#0284c7", "#0ea5e9", "#38bdf8", "#7dd3fc", "#e0f2fe"]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "status": "observed",
+        "tonalRamp": ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#ffffff"]
+      },
+      "canvas-mist": {
+        "role": "neutral",
+        "displayName": "Mist Canvas",
+        "canonical": "#f9fafb",
+        "status": "observed",
+        "tonalRamp": ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb"]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Muted Surface",
+        "canonical": "#f3f4f6",
+        "status": "observed",
+        "tonalRamp": ["#111827", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111827",
+        "status": "observed",
+        "tonalRamp": ["#030712", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db"]
+      },
+      "heading-ink": {
+        "role": "neutral",
+        "displayName": "Heading Ink",
+        "canonical": "#08060d",
+        "status": "observed",
+        "tonalRamp": ["#08060d", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db"]
+      },
+      "muted-slate": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#6b7280",
+        "status": "observed",
+        "tonalRamp": ["#111827", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6"]
+      },
+      "border-slate": {
+        "role": "neutral",
+        "displayName": "Border Slate",
+        "canonical": "#e5e7eb",
+        "status": "observed",
+        "tonalRamp": ["#1f2937", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#ffffff"]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Strong Border",
+        "canonical": "#cccccc",
+        "status": "observed",
+        "tonalRamp": ["#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#cccccc", "#d9d9d9", "#eeeeee"]
+      },
+      "dark-canvas": {
+        "role": "neutral",
+        "displayName": "Dark Canvas",
+        "canonical": "#16171d",
+        "status": "observed-base-only",
+        "tonalRamp": ["#090a0e", "#0f1015", "#16171d", "#1f2028", "#2e303a", "#474955", "#6b7280", "#9ca3af"]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "Dark Border",
+        "canonical": "#2e303a",
+        "status": "observed-base-only",
+        "tonalRamp": ["#090a0e", "#0f1015", "#16171d", "#1f2028", "#2e303a", "#474955", "#6b7280", "#9ca3af"]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted",
+        "canonical": "#9ca3af",
+        "status": "observed-base-only",
+        "tonalRamp": ["#111827", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6"]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark Accent",
+        "canonical": "#c084fc",
+        "status": "observed-base-only",
+        "tonalRamp": ["#3b0764", "#581c87", "#7e22ce", "#a855f7", "#c084fc", "#d8b4fe", "#e9d5ff", "#f3e8ff"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Large base headings when a surface does not override the global h1 scale."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page and section headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel, signal, and compact field-section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Explanations, rationales, form content, and operational guidance."
+      },
+      "utility": {
+        "displayName": "Utility",
+        "purpose": "Metadata, environment state, helper text, and secondary controls."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Compact operational and status labels."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Identifiers, digests, fingerprints, timestamps, and code."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-low",
+        "value": "rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px",
+        "purpose": "Base token for a genuinely lifted state; not the default card treatment."
+      },
+      {
+        "name": "ambient-dark",
+        "value": "rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px",
+        "purpose": "Dark-mode counterpart for intentional elevation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "600px"
+      },
+      {
+        "name": "web-compact",
+        "value": "900px"
+      },
+      {
+        "name": "expanded",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Action Button",
+      "kind": "button",
+      "refersTo": "button-action",
+      "description": "Primary field action for saving or starting an inspection.",
+      "html": "<button class='ds-button-action'>Save Locally</button>",
+      "css": ".ds-button-action { background: #2563eb; color: #fff; border: 0; border-radius: 4px; padding: 8px 16px; font: 500 13px system-ui, sans-serif; cursor: pointer; } .ds-button-action:hover { background: #1d4ed8; } .ds-button-action:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; } .ds-button-action:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Sync Button",
+      "kind": "button",
+      "refersTo": "button-sync",
+      "description": "Green synchronization action with explicit loading or unavailable state.",
+      "html": "<button class='ds-button-sync'>Sync Now</button>",
+      "css": ".ds-button-sync { background: #16a34a; color: #fff; border: 0; border-radius: 4px; padding: 6px 12px; font: 500 13px system-ui, sans-serif; cursor: pointer; } .ds-button-sync:hover { background: #15803d; } .ds-button-sync:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; } .ds-button-sync:disabled { background: #cccccc; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet non-primary action such as cancel or local response save.",
+      "html": "<button class='ds-button-secondary'>Cancel</button>",
+      "css": ".ds-button-secondary { background: #f9fafb; color: #111827; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px 16px; font: 500 13px system-ui, sans-serif; cursor: pointer; } .ds-button-secondary:hover { background: #f3f4f6; } .ds-button-secondary:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action requiring explicit context and confirmation.",
+      "html": "<button class='ds-button-danger'>Revoke</button>",
+      "css": ".ds-button-danger { background: #b91c1c; color: #fff; border: 0; border-radius: 4px; padding: 8px 16px; font: 500 13px system-ui, sans-serif; cursor: pointer; } .ds-button-danger:hover { background: #991b1b; } .ds-button-danger:focus-visible { outline: 2px solid #d97706; outline-offset: 2px; }"
+    },
+    {
+      "name": "Standard Input",
+      "kind": "input",
+      "refersTo": "input-standard",
+      "description": "Labeled compact field for tenant, organization, and inspection metadata.",
+      "html": "<label class='ds-field'><span>Tenant ID</span><input class='ds-input' placeholder='tenant-1' /></label>",
+      "css": ".ds-field { display: grid; gap: 4px; color: #111827; font: 400 13px system-ui, sans-serif; } .ds-input { background: #fff; color: #111827; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; font: inherit; } .ds-input:focus-visible { outline: 2px solid #0f766e; outline-offset: 1px; border-color: #0f766e; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel-surface",
+      "description": "Flat bordered container for health, advisory, signal, and detail groups.",
+      "html": "<section class='ds-panel'><h2>Health / Canary</h2><p>Operational state and recovery details.</p></section>",
+      "css": ".ds-panel { background: #fff; color: #111827; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; } .ds-panel h2 { margin: 0 0 12px; color: #6b7280; font: 700 11px system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; } .ds-panel p { margin: 0; font: 400 13px/1.5 system-ui, sans-serif; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Compact semantic label for zones, validity, legal hold, or authority state.",
+      "html": "<span class='ds-status-chip'>VALID</span>",
+      "css": ".ds-status-chip { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 999px; background: #dcfce7; color: #059669; font: 700 11px system-ui, sans-serif; }"
+    },
+    {
+      "name": "Navigation Rail",
+      "kind": "nav",
+      "refersTo": "nav-sidebar",
+      "description": "Operations-console navigation with a quiet surface and stable section order.",
+      "html": "<nav class='ds-nav'><strong>INTEGIN</strong><a href='#devices'>Devices</a><a href='#evidence'>Evidence</a><a href='#audit'>Audit Log</a></nav>",
+      "css": ".ds-nav { width: 220px; min-height: 100vh; box-sizing: border-box; display: grid; align-content: start; gap: 12px; padding: 16px; background: #f3f4f6; border-right: 1px solid #cccccc; color: #111827; font: 400 13px system-ui, sans-serif; } .ds-nav a { color: #111827; text-decoration: none; padding: 4px 0; } .ds-nav a:hover, .ds-nav a:focus-visible { color: #0f766e; outline: none; }"
+    },
+    {
+      "name": "Advisory Boundary Banner",
+      "kind": "custom",
+      "refersTo": "boundary-banner",
+      "description": "Non-blocking authority boundary for advisory surfaces.",
+      "html": "<div class='ds-boundary'><strong>Advisory only</strong><span>Non-blocking analysis cannot change primary workflow state.</span></div>",
+      "css": ".ds-boundary { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid #99f6e4; border-radius: 8px; background: #f0fdfa; color: #111827; font: 400 13px/1.5 system-ui, sans-serif; } .ds-boundary span { color: #6b7280; font-size: 12px; }"
+    },
+    {
+      "name": "Evidence Table",
+      "kind": "custom",
+      "refersTo": "data-table",
+      "description": "Compact metadata table for evidence keys, digests, integrity, and legal hold.",
+      "html": "<table class='ds-table'><thead><tr><th>Evidence ID</th><th>Object Key</th><th>Integrity</th></tr></thead><tbody><tr><td>ev-001</td><td>evidence/object.jpg</td><td><span class='ds-status-chip'>VALID</span></td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; background: #fff; color: #111827; font: 400 12px system-ui, sans-serif; } .ds-table th, .ds-table td { border: 1px solid #cccccc; padding: 8px; text-align: left; } .ds-table th { color: #6b7280; font-weight: 700; } .ds-table td:nth-child(2) { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Ledger / Control Room",
+    "overview": "INTEGIN's incumbent interface behaves like an operational instrument for people who need to know what is trusted, what is pending, what failed, and what remains server-controlled. The field client favors explicit authority and recovery states; the operations console favors compact data, filters, evidence metadata, audit trails, and administrative actions. Both surfaces are functional first, with little decorative language.\n\nThe system is calm enough for repeated use, direct enough for field conditions, and technical enough for operators who need to inspect identifiers, timestamps, digests, and authority metadata. It is not a finalized brand identity. The current colors were generated in implementation code and are recorded as provisional observed tokens; the React console and Flutter client have not been normalized into one approved palette.",
+    "keyCharacteristics": [
+      "State and authority are visible before decoration.",
+      "Dense operational information remains readable through hierarchy, labels, and monospace data.",
+      "Layout adapts from mobile field navigation to tablet rails and desktop split panes.",
+      "Semantic green, amber, red, blue, and neutral states are used as operational signals.",
+      "Flat surfaces and borders are the default; elevation is reserved for meaningful state changes."
+    ],
+    "rules": [
+      {
+        "name": "The Evidence Before Ornament Rule",
+        "body": "Do not add decorative treatment that competes with authority, sync, validation, or failure state.",
+        "section": "colors"
+      },
+      {
+        "name": "The Provisional Palette Rule",
+        "body": "These values document observed implementation, not approved brand identity; do not extend or normalize them without a human design decision.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data Gets a Monospace Voice Rule",
+        "body": "Use monospace for values that must be compared, copied, audited, or verified; do not use it for prose.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-At-Rest Rule",
+        "body": "Keep operational surfaces flat at rest; use elevation only when it communicates focus, selection, or a meaningful state transition.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do make online/offline, trusted/blocked, queued, failed, held, and server-authoritative states explicit.",
+      "Do use semantic colors with text labels, icons, or shape cues so status is not color-only.",
+      "Do preserve adaptive navigation and stable reading order across compact, tablet, and desktop layouts.",
+      "Do use monospace for identifiers, digests, fingerprints, timestamps, and other auditable values.",
+      "Do keep primary work surfaces flat, bordered, and easy to scan."
+    ],
+    "donts": [
+      "Don't treat the provisional AI-generated palette as approved brand identity.",
+      "Don't introduce gradients, glass, glow, or decorative motion that obscure operational state.",
+      "Don't hide errors, revocations, expiry, conflicts, or non-authoritative boundaries behind a nominal success state.",
+      "Don't use a client-side status or color as proof of server authorization.",
+      "Don't force the React and Flutter surfaces into one token system without an explicit design decision."
+    ]
+  }
+}
