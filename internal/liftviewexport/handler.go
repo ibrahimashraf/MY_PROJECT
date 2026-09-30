@@ -217,6 +217,49 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if r.URL.Path == "/api/v1/liftviews/evaluate4d" {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", "POST")
+			httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
+			return
+		}
+		if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+			httputil.WriteProblem(w, r, http.StatusUnsupportedMediaType, "Unsupported Media Type", "Content-Type must be application/json")
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<20) // 4 MiB for OBJ payload
+		var req4d struct {
+			Crane1  engine.CraneKinematics `json:"crane1"`
+			Crane2  engine.CraneKinematics `json:"crane2"`
+			Load    engine.MassSpec        `json:"load"`
+			Stages  []engine.LiftStage     `json:"stages"`
+			OBJData string                 `json:"obj_data"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req4d); err != nil {
+			httputil.WriteProblem(w, r, http.StatusBadRequest, "Bad Request", "invalid evaluate4d JSON")
+			return
+		}
+		if len(req4d.Stages) == 0 {
+			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "at least one lift stage is required")
+			return
+		}
+		result, err := engine.Solve4DLiftSequence(req4d.Crane1, req4d.Crane2, req4d.Load, req4d.Stages)
+		if err != nil {
+			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "4D solve refused: "+err.Error())
+			return
+		}
+		if result.Passed && req4d.OBJData != "" {
+			mesh, err := engine.ParseOBJMesh(req4d.OBJData)
+			if err == nil && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
+				result.Passed = false
+				result.FailReason = "OBJ spatial clearance violation at t=" + strconv.FormatFloat(result.FailTimeS, 'f', 2, 64) + "s"
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(result)
+		return
+	}
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
@@ -372,23 +415,23 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"duty_chart_status":    crane1Ref.DutyChartStatus,
 		"certification_scope":  scopeStamp,
 		"rigging_field_notice": riggingNotice,
-		"hazards":           req.Hazards,
-		"method_steps":      req.MethodSteps,
-		"hook_span_m":       res.HookSpanMeters,
-		"clearance_m":       res.MinBoomClearanceM,
-		"share1_pct":        res.LoadShareCrane1,
-		"share2_pct":        res.LoadShareCrane2,
-		"crane_util":        verdict.CraneUtil,
-		"crane1_gross_load": crane1GrossHookLoad,
-		"crane2_gross_load": crane2GrossHookLoad,
-		"rigging_util":      verdict.RiggingUtil,
-		"leg_tension":       legT,
-		"max_share_t":       maxShare,
-		"dhl_t":             dhl,
-		"fos1":              fos[0],
-		"fos2":              fos[1],
-		"renderer":          "integin-engines/v1",
-		"total_pages":       req.Pages,
+		"hazards":              req.Hazards,
+		"method_steps":         req.MethodSteps,
+		"hook_span_m":          res.HookSpanMeters,
+		"clearance_m":          res.MinBoomClearanceM,
+		"share1_pct":           res.LoadShareCrane1,
+		"share2_pct":           res.LoadShareCrane2,
+		"crane_util":           verdict.CraneUtil,
+		"crane1_gross_load":    crane1GrossHookLoad,
+		"crane2_gross_load":    crane2GrossHookLoad,
+		"rigging_util":         verdict.RiggingUtil,
+		"leg_tension":          legT,
+		"max_share_t":          maxShare,
+		"dhl_t":                dhl,
+		"fos1":                 fos[0],
+		"fos2":                 fos[1],
+		"renderer":             "integin-engines/v1",
+		"total_pages":          req.Pages,
 	})
 	if err != nil {
 		fail("meta render failed")

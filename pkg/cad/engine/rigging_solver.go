@@ -9,13 +9,13 @@ import (
 
 // CraneKinematics defines the geometric and loading parameters for a single crane.
 type CraneKinematics struct {
-	BasePosition       dxf.Point3D `json:"base_position"`
-	BoomLengthMeters   float64     `json:"boom_length_meters"`
-	BoomAngleDeg       float64     `json:"boom_angle_deg"`
-	SlewAngleDeg       float64     `json:"slew_angle_deg"`
-	CounterweightTonne float64     `json:"counterweight_tonne"`
-	OutriggerSpreadXM  float64     `json:"outrigger_spread_x_m"` // e.g. 8.5m
-	OutriggerSpreadZM  float64     `json:"outrigger_spread_z_m"` // e.g. 8.5m
+	BasePosition         dxf.Point3D `json:"base_position"`
+	BoomLengthMeters     float64     `json:"boom_length_meters"`
+	BoomAngleDeg         float64     `json:"boom_angle_deg"`
+	SlewAngleDeg         float64     `json:"slew_angle_deg"`
+	CounterweightTonne   float64     `json:"counterweight_tonne"`
+	OutriggerSpreadXM    float64     `json:"outrigger_spread_x_m"` // e.g. 8.5m
+	OutriggerSpreadZM    float64     `json:"outrigger_spread_z_m"` // e.g. 8.5m
 	ChassisWeightTonne   float64     `json:"chassis_weight_tonne"` // e.g. 60t
 	HookBlockWeightTonne float64     `json:"hook_block_weight_tonne,omitempty"`
 }
