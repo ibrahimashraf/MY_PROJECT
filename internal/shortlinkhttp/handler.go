@@ -2,20 +2,32 @@ package shortlinkhttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"integin/internal/domain/shortlink"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
 	"integin/internal/shortlinksvc"
+)
+
+type contextKey string
+
+const (
+	ctxTenantID   contextKey = "shortlink_tenant_id"
+	ctxOrgID      contextKey = "shortlink_organization_id"
+	ctxActorID    contextKey = "shortlink_actor_id"
+	ctxMembership contextKey = "shortlink_membership"
 )
 
 // TokenValidator defines the contract for OIDC bearer token verification.
@@ -27,7 +39,7 @@ type Handler struct {
 	svc       *shortlinksvc.Service
 	validator TokenValidator
 	resolver  identity.Resolver
-	engine    *gin.Engine
+	router    chi.Router
 	initOnce  sync.Once
 }
 
@@ -44,101 +56,113 @@ func NewWithAuth(svc *shortlinksvc.Service, validator TokenValidator, resolver i
 		validator: validator,
 		resolver:  resolver,
 	}
-	gin.SetMode(gin.ReleaseMode)
-	engine := gin.New()
-	engine.Use(gin.Recovery())
-	h.RegisterRoutes(engine)
-	h.engine = engine
+	router := chi.NewRouter()
+	h.RegisterRoutes(router)
+	h.router = router
 	return h
 }
 
-func (h *Handler) RegisterRoutes(r *gin.Engine) {
+func (h *Handler) RegisterRoutes(r chi.Router) {
+	r.Use(chimiddleware.Recoverer)
+
 	// Public redirect
-	r.GET("/s/:code", h.RedirectHandler)
+	r.Get("/s/{code}", h.RedirectHandler)
 
 	// Admin API
-	admin := r.Group("/admin/api/v1/shortlinks")
-	admin.Use(h.AdminAuthMiddleware())
-	{
-		admin.POST("", h.CreateHandler)
-		admin.GET("", h.ListHandler)
-		admin.POST("/bulk", h.BulkCreateHandler)
-		admin.POST("/bulk/qr-zip", h.BulkQRZipHandler)
-		admin.POST("/import", h.BulkImportHandler)
-		admin.POST("/export", h.BulkExportHandler)
-		admin.GET("/:code", h.GetHandler)
-		admin.GET("/:code/stats", h.StatsHandler)
-		admin.DELETE("/:code", h.RevokeHandler)
+	r.Route("/admin/api/v1/shortlinks", func(admin chi.Router) {
+		admin.Use(h.AdminAuthMiddleware)
+
+		admin.Post("/", h.CreateHandler)
+		admin.Get("/", h.ListHandler)
+		admin.Post("/bulk", h.BulkCreateHandler)
+		admin.Post("/bulk/qr-zip", h.BulkQRZipHandler)
+		admin.Post("/import", h.BulkImportHandler)
+		admin.Post("/export", h.BulkExportHandler)
+		admin.Get("/{code}", h.GetHandler)
+		admin.Get("/{code}/stats", h.StatsHandler)
+		admin.Delete("/{code}", h.RevokeHandler)
 
 		// Webhook DLQ endpoints
-		admin.GET("/webhook/dlq", h.ListDLQHandler)
-		admin.POST("/webhook/dlq/:id/retry", h.RetryDLQHandler)
-		admin.POST("/webhook/dlq/:id/resolve", h.ResolveDLQHandler)
+		admin.Get("/webhook/dlq", h.ListDLQHandler)
+		admin.Post("/webhook/dlq/{id}/retry", h.RetryDLQHandler)
+		admin.Post("/webhook/dlq/{id}/resolve", h.ResolveDLQHandler)
 
 		// HMAC secret management
-		admin.POST("/hmac/secrets", h.CreateHMACSecretHandler)
-		admin.GET("/hmac/secrets", h.ListHMACSecretsHandler)
-		admin.GET("/hmac/secrets/:version", h.GetHMACSecretHandler)
-		admin.DELETE("/hmac/secrets/:version", h.RevokeHMACSecretHandler)
+		admin.Post("/hmac/secrets", h.CreateHMACSecretHandler)
+		admin.Get("/hmac/secrets", h.ListHMACSecretsHandler)
+		admin.Get("/hmac/secrets/{version}", h.GetHMACSecretHandler)
+		admin.Delete("/hmac/secrets/{version}", h.RevokeHMACSecretHandler)
 
 		// Anomaly detection endpoints
-		admin.POST("/anomaly/rules", h.CreateAnomalyRuleHandler)
-		admin.GET("/anomaly/rules", h.ListAnomalyRulesHandler)
-		admin.GET("/anomaly/rules/:id", h.GetAnomalyRuleHandler)
-		admin.PATCH("/anomaly/rules/:id", h.UpdateAnomalyRuleHandler)
-		admin.DELETE("/anomaly/rules/:id", h.DeleteAnomalyRuleHandler)
+		admin.Post("/anomaly/rules", h.CreateAnomalyRuleHandler)
+		admin.Get("/anomaly/rules", h.ListAnomalyRulesHandler)
+		admin.Get("/anomaly/rules/{id}", h.GetAnomalyRuleHandler)
+		admin.Patch("/anomaly/rules/{id}", h.UpdateAnomalyRuleHandler)
+		admin.Delete("/anomaly/rules/{id}", h.DeleteAnomalyRuleHandler)
 
-		admin.GET("/anomaly/alerts", h.ListAnomalyAlertsHandler)
-		admin.GET("/anomaly/alerts/:id", h.GetAnomalyAlertHandler)
-		admin.PATCH("/anomaly/alerts/:id", h.UpdateAnomalyAlertHandler)
-		admin.POST("/anomaly/alerts/:id/acknowledge", h.AcknowledgeAnomalyAlertHandler)
-		admin.POST("/anomaly/alerts/:id/resolve", h.ResolveAnomalyAlertHandler)
+		admin.Get("/anomaly/alerts", h.ListAnomalyAlertsHandler)
+		admin.Get("/anomaly/alerts/{id}", h.GetAnomalyAlertHandler)
+		admin.Patch("/anomaly/alerts/{id}", h.UpdateAnomalyAlertHandler)
+		admin.Post("/anomaly/alerts/{id}/acknowledge", h.AcknowledgeAnomalyAlertHandler)
+		admin.Post("/anomaly/alerts/{id}/resolve", h.ResolveAnomalyAlertHandler)
 
 		// Dashboard Analytics endpoints
-		analytics := admin.Group("/analytics")
-		{
-			analytics.GET("/overview", h.AnalyticsOverviewHandler)
-			analytics.GET("/timeseries", h.AnalyticsTimeSeriesHandler)
-			analytics.GET("/geo", h.AnalyticsGeoHandler)
-			analytics.GET("/devices", h.AnalyticsDevicesHandler)
-			analytics.GET("/funnel", h.AnalyticsFunnelHandler)
-			analytics.GET("/top-assets", h.AnalyticsTopAssetsHandler)
-		}
-	}
+		admin.Route("/analytics", func(analytics chi.Router) {
+			analytics.Get("/overview", h.AnalyticsOverviewHandler)
+			analytics.Get("/timeseries", h.AnalyticsTimeSeriesHandler)
+			analytics.Get("/geo", h.AnalyticsGeoHandler)
+			analytics.Get("/devices", h.AnalyticsDevicesHandler)
+			analytics.Get("/funnel", h.AnalyticsFunnelHandler)
+			analytics.Get("/top-assets", h.AnalyticsTopAssetsHandler)
+		})
+	})
 }
 
-func (h *Handler) RedirectHandler(c *gin.Context) {
-	code := c.Param("code")
+func (h *Handler) RedirectHandler(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
 	// Enforce custom_domain host routing if set
-	if sl, err := h.svc.GetStats(c.Request.Context(), code); err == nil && sl.CustomDomain != nil && *sl.CustomDomain != "" {
-		if c.Request.Host != *sl.CustomDomain && c.GetHeader("X-Forwarded-Host") != *sl.CustomDomain {
-			c.AbortWithStatus(http.StatusNotFound)
+	if sl, err := h.svc.GetStats(r.Context(), code); err == nil && sl.CustomDomain != nil && *sl.CustomDomain != "" {
+		if r.Host != *sl.CustomDomain && r.Header.Get("X-Forwarded-Host") != *sl.CustomDomain {
+			http.NotFound(w, r)
 			return
 		}
 	}
-	target, err := h.svc.ResolveShortLink(c.Request.Context(), code)
+	target, err := h.svc.ResolveShortLink(r.Context(), code)
 	if err != nil {
 		if errors.Is(err, shortlinksvc.ErrExpired) || errors.Is(err, shortlinksvc.ErrRevoked) {
-			c.AbortWithStatus(http.StatusGone)
+			w.WriteHeader(http.StatusGone)
 			return
 		}
-		c.AbortWithStatus(http.StatusNotFound)
+		http.NotFound(w, r)
 		return
 	}
-	c.Redirect(http.StatusFound, target)
+	http.Redirect(w, r, target, http.StatusFound)
 }
 
-func (h *Handler) CreateHandler(c *gin.Context) {
+func isValidURL(raw string) bool {
+	if strings.TrimSpace(raw) == "" {
+		return false
+	}
+	u, err := url.ParseRequestURI(raw)
+	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
+func (h *Handler) CreateHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		TargetURL     string `json:"target_url" binding:"required,url"`
+		TargetURL     string `json:"target_url"`
 		TTL           string `json:"ttl"`
 		WebhookURL    string `json:"webhook_url"`
 		CustomDomain  string `json:"custom_domain"`
 		HMACSecretRef string `json:"hmac_secret_ref"`
 		HMACAlgorithm string `json:"hmac_algorithm"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if !isValidURL(req.TargetURL) {
+		writeError(w, http.StatusBadRequest, "target_url: valid URL required")
 		return
 	}
 
@@ -146,7 +170,7 @@ func (h *Handler) CreateHandler(c *gin.Context) {
 	if req.TTL != "" {
 		d, err := time.ParseDuration(req.TTL)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ttl format"})
+			writeError(w, http.StatusBadRequest, "invalid ttl format")
 			return
 		}
 		ttl = d
@@ -169,7 +193,7 @@ func (h *Handler) CreateHandler(c *gin.Context) {
 		hmacAlgorithm = &req.HMACAlgorithm
 	}
 
-	code, err := h.svc.CreateShortLink(c.Request.Context(), shortlink.CreateRequest{
+	code, err := h.svc.CreateShortLink(r.Context(), shortlink.CreateRequest{
 		TargetURL:     req.TargetURL,
 		TTL:           ttl,
 		WebhookURL:    webhookURL,
@@ -178,87 +202,87 @@ func (h *Handler) CreateHandler(c *gin.Context) {
 		HMACAlgorithm: hmacAlgorithm,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	baseURL := getShortBaseURL(c.Request)
-	c.JSON(http.StatusCreated, gin.H{
+	baseURL := getShortBaseURL(r)
+	writeJSON(w, http.StatusCreated, map[string]any{
 		"code":       code,
 		"short_url":  baseURL + "/" + code,
 		"target_url": req.TargetURL,
 	})
 }
 
-func (h *Handler) ListHandler(c *gin.Context) {
-	links, err := h.svc.List(c.Request.Context(), 50, 0)
+func (h *Handler) ListHandler(w http.ResponseWriter, r *http.Request) {
+	links, err := h.svc.List(r.Context(), 50, 0)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, links)
+	writeJSON(w, http.StatusOK, links)
 }
 
-func (h *Handler) GetHandler(c *gin.Context) {
-	code := c.Param("code")
-	sl, err := h.svc.GetStats(c.Request.Context(), code)
+func (h *Handler) GetHandler(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+	sl, err := h.svc.GetStats(r.Context(), code)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		writeError(w, http.StatusNotFound, "not found")
 		return
 	}
-	c.JSON(http.StatusOK, sl)
+	writeJSON(w, http.StatusOK, sl)
 }
 
-func (h *Handler) StatsHandler(c *gin.Context) {
-	code := c.Param("code")
-	sl, err := h.svc.GetStats(c.Request.Context(), code)
+func (h *Handler) StatsHandler(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+	sl, err := h.svc.GetStats(r.Context(), code)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		writeError(w, http.StatusNotFound, "not found")
 		return
 	}
-	c.JSON(http.StatusOK, sl)
+	writeJSON(w, http.StatusOK, sl)
 }
 
-func (h *Handler) RevokeHandler(c *gin.Context) {
-	code := c.Param("code")
-	if err := h.svc.RevokeShortLink(c.Request.Context(), code); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (h *Handler) RevokeHandler(w http.ResponseWriter, r *http.Request) {
+	code := chi.URLParam(r, "code")
+	if err := h.svc.RevokeShortLink(r.Context(), code); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Status(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handler) ListDLQHandler(c *gin.Context) {
+func (h *Handler) ListDLQHandler(w http.ResponseWriter, r *http.Request) {
 	limit := 50
 	offset := 0
-	if l := c.Query("limit"); l != "" {
+	if l := r.URL.Query().Get("limit"); l != "" {
 		if _, err := fmt.Sscanf(l, "%d", &limit); err != nil || limit <= 0 || limit > 1000 {
 			limit = 50
 		}
 	}
-	if o := c.Query("offset"); o != "" {
+	if o := r.URL.Query().Get("offset"); o != "" {
 		if _, err := fmt.Sscanf(o, "%d", &offset); err != nil || offset < 0 {
 			offset = 0
 		}
 	}
 
 	var status *shortlink.WebhookDeliveryStatus
-	if s := c.Query("status"); s != "" {
+	if s := r.URL.Query().Get("status"); s != "" {
 		ws := shortlink.WebhookDeliveryStatus(s)
 		status = &ws
 	}
 
-	entries, total, err := h.svc.GetDLQEntries(c.Request.Context(), shortlink.ListDLQRequest{
+	entries, total, err := h.svc.GetDLQEntries(r.Context(), shortlink.ListDLQRequest{
 		Limit:  limit,
 		Offset: offset,
 		Status: status,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	writeJSON(w, http.StatusOK, map[string]any{
 		"entries": entries,
 		"total":   total,
 		"limit":   limit,
@@ -266,35 +290,35 @@ func (h *Handler) ListDLQHandler(c *gin.Context) {
 	})
 }
 
-func (h *Handler) RetryDLQHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) RetryDLQHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	err := h.svc.RetryDLQEntry(c.Request.Context(), shortlink.RetryDLQRequest{DeliveryID: id})
+	err := h.svc.RetryDLQEntry(r.Context(), shortlink.RetryDLQRequest{DeliveryID: id})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "retry scheduled"})
+	writeJSON(w, http.StatusOK, map[string]string{"message": "retry scheduled"})
 }
 
-func (h *Handler) ResolveDLQHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) ResolveDLQHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
 	// Require authenticated actor — never fall back to a ghost "admin"
-	org, ok := oidchttp.OrganizationContextFrom(c.Request.Context())
+	org, ok := oidchttp.OrganizationContextFrom(r.Context())
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		writeError(w, http.StatusUnauthorized, "authentication required")
 		return
 	}
 
@@ -302,30 +326,37 @@ func (h *Handler) ResolveDLQHandler(c *gin.Context) {
 	var req struct {
 		ResolvedBy string `json:"resolved_by"`
 	}
-	_ = c.ShouldBindJSON(&req)
+	_ = json.NewDecoder(r.Body).Decode(&req)
 	if req.ResolvedBy == "" {
 		req.ResolvedBy = org.ActorID
 	}
 
-	err := h.svc.ResolveDLQEntry(c.Request.Context(), id, req.ResolvedBy)
+	err := h.svc.ResolveDLQEntry(r.Context(), id, req.ResolvedBy)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "resolved"})
+	writeJSON(w, http.StatusOK, map[string]string{"message": "resolved"})
 }
 
 // getTenantID returns the authenticated tenant_id, enforcing tenant isolation.
 // If a caller explicitly specifies a tenant_id, it is validated against the authenticated tenant_id
 // to prevent cross-tenant access and organization takeover.
-func (h *Handler) getTenantID(c *gin.Context, requestedTenant string) (string, error) {
-	authTenant := c.GetString("tenant_id")
-	if authTenant != "" {
-		if requestedTenant != "" && requestedTenant != authTenant {
+func (h *Handler) getTenantID(r *http.Request, requestedTenant string) (string, error) {
+	if val := r.Context().Value(ctxTenantID); val != nil {
+		if authTenant, ok := val.(string); ok && authTenant != "" {
+			if requestedTenant != "" && requestedTenant != authTenant {
+				return "", errors.New("cross-tenant access prohibited")
+			}
+			return authTenant, nil
+		}
+	}
+	if org, ok := oidchttp.OrganizationContextFrom(r.Context()); ok && org.TenantID != "" {
+		if requestedTenant != "" && requestedTenant != org.TenantID {
 			return "", errors.New("cross-tenant access prohibited")
 		}
-		return authTenant, nil
+		return org.TenantID, nil
 	}
 	if requestedTenant != "" {
 		return requestedTenant, nil
@@ -333,119 +364,133 @@ func (h *Handler) getTenantID(c *gin.Context, requestedTenant string) (string, e
 	return "", errors.New("tenant_id is required")
 }
 
-func (h *Handler) CreateHMACSecretHandler(c *gin.Context) {
+func (h *Handler) CreateHMACSecretHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		TenantID  string `json:"tenant_id"`
-		Secret    string `json:"secret" binding:"required"`
+		Secret    string `json:"secret"`
 		Algorithm string `json:"algorithm"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	tenantID, err := h.getTenantID(c, req.TenantID)
+	if strings.TrimSpace(req.Secret) == "" {
+		writeError(w, http.StatusBadRequest, "secret is required")
+		return
+	}
+
+	tenantID, err := h.getTenantID(r, req.TenantID)
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
-	secret, err := h.svc.CreateHMACSecret(c.Request.Context(), tenantID, req.Secret, req.Algorithm)
+	secret, err := h.svc.CreateHMACSecret(r.Context(), tenantID, req.Secret, req.Algorithm)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, secret)
+	writeJSON(w, http.StatusCreated, secret)
 }
 
-func (h *Handler) ListHMACSecretsHandler(c *gin.Context) {
-	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+func (h *Handler) ListHMACSecretsHandler(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
-	secrets, err := h.svc.ListHMACSecrets(c.Request.Context(), tenantID)
+	secrets, err := h.svc.ListHMACSecrets(r.Context(), tenantID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, secrets)
+	writeJSON(w, http.StatusOK, secrets)
 }
 
-func (h *Handler) GetHMACSecretHandler(c *gin.Context) {
-	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+func (h *Handler) GetHMACSecretHandler(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
-	versionStr := c.Param("version")
+	versionStr := chi.URLParam(r, "version")
 	var version int
 	if versionStr == "latest" {
-		secret, err := h.svc.GetActiveHMACSecret(c.Request.Context(), tenantID)
+		secret, err := h.svc.GetActiveHMACSecret(r.Context(), tenantID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusOK, secret)
+		writeJSON(w, http.StatusOK, secret)
 		return
 	}
 
 	if _, err := fmt.Sscanf(versionStr, "%d", &version); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid version"})
+		writeError(w, http.StatusBadRequest, "invalid version")
 		return
 	}
 
-	secret, err := h.svc.GetHMACSecret(c.Request.Context(), tenantID, version)
+	secret, err := h.svc.GetHMACSecret(r.Context(), tenantID, version)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		writeError(w, http.StatusNotFound, "not found")
 		return
 	}
 
-	c.JSON(http.StatusOK, secret)
+	writeJSON(w, http.StatusOK, secret)
 }
 
-func (h *Handler) RevokeHMACSecretHandler(c *gin.Context) {
-	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+func (h *Handler) RevokeHMACSecretHandler(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
-	versionStr := c.Param("version")
+	versionStr := chi.URLParam(r, "version")
 	var version int
 	if _, err := fmt.Sscanf(versionStr, "%d", &version); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid version"})
+		writeError(w, http.StatusBadRequest, "invalid version")
 		return
 	}
 
-	err = h.svc.RevokeHMACSecret(c.Request.Context(), tenantID, version)
+	err = h.svc.RevokeHMACSecret(r.Context(), tenantID, version)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "revoked"})
+	writeJSON(w, http.StatusOK, map[string]string{"message": "revoked"})
 }
 
-func (h *Handler) BulkCreateHandler(c *gin.Context) {
+func (h *Handler) BulkCreateHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Links []struct {
-			TargetURL    string `json:"target_url" binding:"required,url"`
+			TargetURL    string `json:"target_url"`
 			TTL          string `json:"ttl"`
 			WebhookURL   string `json:"webhook_url"`
 			CustomDomain string `json:"custom_domain"`
-		} `json:"links" binding:"required"`
+		} `json:"links"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if len(req.Links) == 0 {
+		writeError(w, http.StatusBadRequest, "links: required and non-empty")
+		return
+	}
+
 	items := make([]shortlinksvc.BulkCreateItem, 0, len(req.Links))
 	for _, l := range req.Links {
+		if !isValidURL(l.TargetURL) {
+			writeError(w, http.StatusBadRequest, "target_url: valid URL required")
+			return
+		}
 		var ttl time.Duration
 		if l.TTL != "" {
 			ttl, _ = time.ParseDuration(l.TTL)
@@ -459,78 +504,77 @@ func (h *Handler) BulkCreateHandler(c *gin.Context) {
 		}
 		items = append(items, item)
 	}
-	resp, err := h.svc.BulkCreate(c.Request.Context(), shortlinksvc.BulkCreateRequest{Links: items})
+	resp, err := h.svc.BulkCreate(r.Context(), shortlinksvc.BulkCreateRequest{Links: items})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, resp)
+	writeJSON(w, http.StatusCreated, resp)
 }
 
-func (h *Handler) BulkImportHandler(c *gin.Context) {
-	data, err := c.GetRawData()
+func (h *Handler) BulkImportHandler(w http.ResponseWriter, r *http.Request) {
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	resp, err := h.svc.ImportCSV(c.Request.Context(), string(data))
+	resp, err := h.svc.ImportCSV(r.Context(), string(data))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusCreated, resp)
+	writeJSON(w, http.StatusCreated, resp)
 }
 
-func (h *Handler) BulkExportHandler(c *gin.Context) {
+func (h *Handler) BulkExportHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Format string `json:"format"`
 	}
-	_ = c.ShouldBindJSON(&req)
+	_ = json.NewDecoder(r.Body).Decode(&req)
 	expReq := shortlinksvc.ExportRequest{Format: req.Format}
 	if req.Format == "json" {
-		resp, err := h.svc.ExportJSON(c.Request.Context(), expReq)
+		resp, err := h.svc.ExportJSON(r.Context(), expReq)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, resp)
+		writeJSON(w, http.StatusOK, resp)
 		return
 	}
-	resp, err := h.svc.ExportCSV(c.Request.Context(), expReq)
+	resp, err := h.svc.ExportCSV(r.Context(), expReq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, resp)
 }
 
-func (h *Handler) BulkQRZipHandler(c *gin.Context) {
+func (h *Handler) BulkQRZipHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Codes []string `json:"codes" binding:"required"`
+		Codes []string `json:"codes"`
 		Size  int      `json:"size"`
 		Level string   `json:"level"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if len(req.Codes) == 0 || len(req.Codes) > 1000 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "codes: 1-1000 required"})
+		writeError(w, http.StatusBadRequest, "codes: 1-1000 required")
 		return
 	}
-	zipData, err := h.svc.GenerateQRZip(c.Request.Context(), req.Codes, req.Size, req.Level, getShortBaseURL(c.Request))
+	zipData, err := h.svc.GenerateQRZip(r.Context(), req.Codes, req.Size, req.Level, getShortBaseURL(r))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Header("Content-Type", "application/zip")
-	c.Header("Content-Disposition", "attachment; filename=\"qr-codes.zip\"")
-	c.Data(http.StatusOK, "application/zip", zipData)
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"qr-codes.zip\"")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(zipData)
 }
 
 func getShortBaseURL(r *http.Request) string {
-	// Use configured short base URL or derive from request
-	// TODO: use config
 	scheme := "https"
 	if r.TLS == nil {
 		scheme = "http"
@@ -540,12 +584,10 @@ func getShortBaseURL(r *http.Request) string {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.initOnce.Do(func() {
-		if h.engine == nil {
-			gin.SetMode(gin.ReleaseMode)
-			engine := gin.New()
-			engine.Use(gin.Recovery())
-			h.RegisterRoutes(engine)
-			h.engine = engine
+		if h.router == nil {
+			router := chi.NewRouter()
+			h.RegisterRoutes(router)
+			h.router = router
 		}
 	})
 
@@ -560,61 +602,72 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		*u2 = *r.URL
 		u2.Path = "/admin/api/v1/shortlinks" + trimmed
 		r2.URL = u2
-		h.engine.ServeHTTP(w, r2)
+		h.router.ServeHTTP(w, r2)
 		return
 	}
 
-	h.engine.ServeHTTP(w, r)
+	h.router.ServeHTTP(w, r)
 }
 
 // AdminAuthMiddleware validates callers via OIDC Bearer tokens and DB identity resolution,
 // strictly preventing header spoofing and organization takeover attacks.
-func (h *Handler) AdminAuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func (h *Handler) AdminAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If TokenValidator & Resolver are wired, enforce strict cryptographic OIDC & DB membership
 		if h.validator != nil && h.resolver != nil {
-			authHeader := c.GetHeader("Authorization")
+			authHeader := r.Header.Get("Authorization")
 			token, ok := extractBearer(authHeader)
 			if !ok {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication_required"})
+				writeError(w, http.StatusUnauthorized, "authentication_required")
 				return
 			}
 
-			principal, err := h.validator.Validate(c.Request.Context(), token)
+			principal, err := h.validator.Validate(r.Context(), token)
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid_token"})
+				writeError(w, http.StatusUnauthorized, "invalid_token")
 				return
 			}
 
-			membership, err := h.resolver.Resolve(c.Request.Context(), identity.PrincipalKey{
+			membership, err := h.resolver.Resolve(r.Context(), identity.PrincipalKey{
 				Issuer:  principal.Issuer,
 				Subject: principal.Subject,
 			})
 			if err != nil {
-				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+				writeError(w, http.StatusForbidden, "forbidden")
 				return
 			}
 
 			// Securely bind authenticated context
-			c.Set("tenant_id", membership.TenantID)
-			c.Set("organization_id", membership.OrganizationID)
-			c.Set("actor_id", membership.ActorID)
-			c.Set("membership", membership)
-			c.Next()
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, ctxTenantID, membership.TenantID)
+			ctx = context.WithValue(ctx, ctxOrgID, membership.OrganizationID)
+			ctx = context.WithValue(ctx, ctxActorID, membership.ActorID)
+			ctx = context.WithValue(ctx, ctxMembership, membership)
+			ctx = oidchttp.WithOrganizationContext(ctx, identity.OrganizationContext{
+				TenantID:       membership.TenantID,
+				OrganizationID: membership.OrganizationID,
+				ActorID:        membership.ActorID,
+			})
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
 		// Fallback for tests/unauthenticated standalone mode: require headers
-		tenant := c.GetHeader("X-Tenant-ID")
-		org := c.GetHeader("X-Organization-ID")
+		tenant := r.Header.Get("X-Tenant-ID")
+		org := r.Header.Get("X-Organization-ID")
 		if tenant == "" || org == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "X-Tenant-ID and X-Organization-ID required"})
+			writeError(w, http.StatusBadRequest, "X-Tenant-ID and X-Organization-ID required")
 			return
 		}
-		c.Set("tenant_id", tenant)
-		c.Set("organization_id", org)
-		c.Next()
-	}
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, ctxTenantID, tenant)
+		ctx = context.WithValue(ctx, ctxOrgID, org)
+		ctx = oidchttp.WithOrganizationContext(ctx, identity.OrganizationContext{
+			TenantID:       tenant,
+			OrganizationID: org,
+		})
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func extractBearer(header string) (string, bool) {
@@ -634,26 +687,31 @@ func extractBearer(header string) (string, bool) {
 
 // Anomaly Rule Handlers
 
-func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
+func (h *Handler) CreateAnomalyRuleHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		TenantID    string                `json:"tenant_id"`
-		Name        string                `json:"name" binding:"required"`
+		Name        string                `json:"name"`
 		Description string                `json:"description"`
-		Type        string                `json:"type" binding:"required"`
-		Config      shortlink.AlertConfig `json:"config" binding:"required"`
+		Type        string                `json:"type"`
+		Config      shortlink.AlertConfig `json:"config"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	tenantID, err := h.getTenantID(c, req.TenantID)
+	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Type) == "" {
+		writeError(w, http.StatusBadRequest, "name and type are required")
+		return
+	}
+
+	tenantID, err := h.getTenantID(r, req.TenantID)
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
-	rule, err := h.svc.CreateAnomalyRule(c.Request.Context(), shortlink.CreateAnomalyRuleRequest{
+	rule, err := h.svc.CreateAnomalyRule(r.Context(), shortlink.CreateAnomalyRuleRequest{
 		TenantID:    tenantID,
 		Name:        req.Name,
 		Description: req.Description,
@@ -661,47 +719,47 @@ func (h *Handler) CreateAnomalyRuleHandler(c *gin.Context) {
 		Config:      req.Config,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, rule)
+	writeJSON(w, http.StatusCreated, rule)
 }
 
-func (h *Handler) ListAnomalyRulesHandler(c *gin.Context) {
-	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+func (h *Handler) ListAnomalyRulesHandler(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
 	limit := 50
 	offset := 0
-	if l := c.Query("limit"); l != "" {
+	if l := r.URL.Query().Get("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
 	}
-	if o := c.Query("offset"); o != "" {
+	if o := r.URL.Query().Get("offset"); o != "" {
 		fmt.Sscanf(o, "%d", &offset)
 	}
 
 	var enabled *bool
-	if e := c.Query("enabled"); e != "" {
+	if e := r.URL.Query().Get("enabled"); e != "" {
 		val := e == "true"
 		enabled = &val
 	}
 
-	rules, total, err := h.svc.ListAnomalyRules(c.Request.Context(), shortlink.ListAnomalyRulesRequest{
+	rules, total, err := h.svc.ListAnomalyRules(r.Context(), shortlink.ListAnomalyRulesRequest{
 		TenantID: tenantID,
 		Limit:    limit,
 		Offset:   offset,
 		Enabled:  enabled,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	writeJSON(w, http.StatusOK, map[string]any{
 		"rules":  rules,
 		"total":  total,
 		"limit":  limit,
@@ -709,32 +767,32 @@ func (h *Handler) ListAnomalyRulesHandler(c *gin.Context) {
 	})
 }
 
-func (h *Handler) GetAnomalyRuleHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) GetAnomalyRuleHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	rule, err := h.svc.GetAnomalyRule(c.Request.Context(), id)
+	rule, err := h.svc.GetAnomalyRule(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, rule)
+	writeJSON(w, http.StatusOK, rule)
 }
 
-func (h *Handler) UpdateAnomalyRuleHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) UpdateAnomalyRuleHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -744,12 +802,12 @@ func (h *Handler) UpdateAnomalyRuleHandler(c *gin.Context) {
 		Config      *shortlink.AlertConfig `json:"config"`
 		Enabled     *bool                  `json:"enabled"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	rule, err := h.svc.UpdateAnomalyRule(c.Request.Context(), id, shortlink.UpdateAnomalyRuleRequest{
+	rule, err := h.svc.UpdateAnomalyRule(r.Context(), id, shortlink.UpdateAnomalyRuleRequest{
 		Name:        req.Name,
 		Description: req.Description,
 		Config:      req.Config,
@@ -757,83 +815,84 @@ func (h *Handler) UpdateAnomalyRuleHandler(c *gin.Context) {
 	})
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, rule)
+	writeJSON(w, http.StatusOK, rule)
 }
 
-func (h *Handler) DeleteAnomalyRuleHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) DeleteAnomalyRuleHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	err := h.svc.DeleteAnomalyRule(c.Request.Context(), id)
+	err := h.svc.DeleteAnomalyRule(r.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Anomaly Alert Handlers
 
-func (h *Handler) ListAnomalyAlertsHandler(c *gin.Context) {
-	tenantID, err := h.getTenantID(c, c.Query("tenant_id"))
+func (h *Handler) ListAnomalyAlertsHandler(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		writeError(w, http.StatusForbidden, err.Error())
 		return
 	}
 
 	limit := 50
 	offset := 0
-	if l := c.Query("limit"); l != "" {
+	if l := r.URL.Query().Get("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
 	}
-	if o := c.Query("offset"); o != "" {
+	if o := r.URL.Query().Get("offset"); o != "" {
 		fmt.Sscanf(o, "%d", &offset)
 	}
 
 	var shortLinkCode *string
-	if s := c.Query("short_link_code"); s != "" {
+	if s := r.URL.Query().Get("short_link_code"); s != "" {
 		shortLinkCode = &s
 	}
 
 	var ruleID *int64
-	if r := c.Query("rule_id"); r != "" {
+	if s := r.URL.Query().Get("rule_id"); s != "" {
 		var id int64
-		fmt.Sscanf(r, "%d", &id)
-		ruleID = &id
+		if _, err := fmt.Sscanf(s, "%d", &id); err == nil {
+			ruleID = &id
+		}
 	}
 
 	var status *shortlink.AlertStatus
-	if s := c.Query("status"); s != "" {
+	if s := r.URL.Query().Get("status"); s != "" {
 		val := shortlink.AlertStatus(s)
 		status = &val
 	}
 
 	var alertType *shortlink.AnomalyType
-	if t := c.Query("type"); t != "" {
+	if t := r.URL.Query().Get("type"); t != "" {
 		val := shortlink.AnomalyType(t)
 		alertType = &val
 	}
 
 	var since *time.Time
-	if s := c.Query("since"); s != "" {
+	if s := r.URL.Query().Get("since"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			since = &t
 		}
 	}
 
-	alerts, total, err := h.svc.ListAnomalyAlerts(c.Request.Context(), shortlink.ListAnomalyAlertsRequest{
+	alerts, total, err := h.svc.ListAnomalyAlerts(r.Context(), shortlink.ListAnomalyAlertsRequest{
 		TenantID:      tenantID,
 		ShortLinkCode: shortLinkCode,
 		RuleID:        ruleID,
@@ -844,11 +903,11 @@ func (h *Handler) ListAnomalyAlertsHandler(c *gin.Context) {
 		Offset:        offset,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	writeJSON(w, http.StatusOK, map[string]any{
 		"alerts": alerts,
 		"total":  total,
 		"limit":  limit,
@@ -856,32 +915,32 @@ func (h *Handler) ListAnomalyAlertsHandler(c *gin.Context) {
 	})
 }
 
-func (h *Handler) GetAnomalyAlertHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) GetAnomalyAlertHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
-	alert, err := h.svc.GetAnomalyAlert(c.Request.Context(), id)
+	alert, err := h.svc.GetAnomalyAlert(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, alert)
+	writeJSON(w, http.StatusOK, alert)
 }
 
-func (h *Handler) UpdateAnomalyAlertHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) UpdateAnomalyAlertHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
@@ -890,221 +949,231 @@ func (h *Handler) UpdateAnomalyAlertHandler(c *gin.Context) {
 		AcknowledgedBy *string                `json:"acknowledged_by"`
 		ResolvedBy     *string                `json:"resolved_by"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	alert, err := h.svc.UpdateAnomalyAlert(c.Request.Context(), id, shortlink.UpdateAnomalyAlertRequest{
+	alert, err := h.svc.UpdateAnomalyAlert(r.Context(), id, shortlink.UpdateAnomalyAlertRequest{
 		Status:         req.Status,
 		AcknowledgedBy: req.AcknowledgedBy,
 		ResolvedBy:     req.ResolvedBy,
 	})
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, alert)
+	writeJSON(w, http.StatusOK, alert)
 }
 
-func (h *Handler) AcknowledgeAnomalyAlertHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) AcknowledgeAnomalyAlertHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
 	var req struct {
-		AcknowledgedBy string `json:"acknowledged_by" binding:"required"`
+		AcknowledgedBy string `json:"acknowledged_by"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if strings.TrimSpace(req.AcknowledgedBy) == "" {
+		writeError(w, http.StatusBadRequest, "acknowledged_by is required")
 		return
 	}
 
 	status := shortlink.AlertStatusAcknowledged
-	alert, err := h.svc.UpdateAnomalyAlert(c.Request.Context(), id, shortlink.UpdateAnomalyAlertRequest{
+	alert, err := h.svc.UpdateAnomalyAlert(r.Context(), id, shortlink.UpdateAnomalyAlertRequest{
 		Status:         &status,
 		AcknowledgedBy: &req.AcknowledgedBy,
 	})
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, alert)
+	writeJSON(w, http.StatusOK, alert)
 }
 
-func (h *Handler) ResolveAnomalyAlertHandler(c *gin.Context) {
-	idStr := c.Param("id")
+func (h *Handler) ResolveAnomalyAlertHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	var id int64
 	if _, err := fmt.Sscanf(idStr, "%d", &id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		writeError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 
 	var req struct {
-		ResolvedBy string `json:"resolved_by" binding:"required"`
+		ResolvedBy string `json:"resolved_by"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if strings.TrimSpace(req.ResolvedBy) == "" {
+		writeError(w, http.StatusBadRequest, "resolved_by is required")
 		return
 	}
 
 	status := shortlink.AlertStatusResolved
-	alert, err := h.svc.UpdateAnomalyAlert(c.Request.Context(), id, shortlink.UpdateAnomalyAlertRequest{
+	alert, err := h.svc.UpdateAnomalyAlert(r.Context(), id, shortlink.UpdateAnomalyAlertRequest{
 		Status:     &status,
 		ResolvedBy: &req.ResolvedBy,
 	})
 	if err != nil {
 		if errors.Is(err, shortlink.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, alert)
+	writeJSON(w, http.StatusOK, alert)
 }
 
 // Dashboard Analytics Handlers
 
-func (h *Handler) AnalyticsOverviewHandler(c *gin.Context) {
-	req := h.parseAnalyticsRequest(c)
+func (h *Handler) AnalyticsOverviewHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseAnalyticsRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	analytics, err := h.svc.GetDashboardAnalytics(c.Request.Context(), req)
+	analytics, err := h.svc.GetDashboardAnalytics(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Add cache headers
-	c.Header("Cache-Control", "public, max-age=60")
-	c.Header("ETag", fmt.Sprintf(`"%d-%d"`, analytics.TotalScans, analytics.UniqueIPs))
+	w.Header().Set("Cache-Control", "public, max-age=60")
+	w.Header().Set("ETag", fmt.Sprintf(`"%d-%d"`, analytics.TotalScans, analytics.UniqueIPs))
 
-	c.JSON(http.StatusOK, analytics)
+	writeJSON(w, http.StatusOK, analytics)
 }
 
-func (h *Handler) AnalyticsTimeSeriesHandler(c *gin.Context) {
-	req := h.parseTimeSeriesRequest(c)
+func (h *Handler) AnalyticsTimeSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseTimeSeriesRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	points, err := h.svc.GetTimeSeries(c.Request.Context(), req)
+	points, err := h.svc.GetTimeSeries(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=60")
-	c.JSON(http.StatusOK, gin.H{"data": points})
+	w.Header().Set("Cache-Control", "public, max-age=60")
+	writeJSON(w, http.StatusOK, map[string]any{"data": points})
 }
 
-func (h *Handler) AnalyticsGeoHandler(c *gin.Context) {
-	req := h.parseGeoHeatmapRequest(c)
+func (h *Handler) AnalyticsGeoHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseGeoHeatmapRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	points, err := h.svc.GetGeoHeatmap(c.Request.Context(), req)
+	points, err := h.svc.GetGeoHeatmap(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=120")
-	c.JSON(http.StatusOK, gin.H{"data": points})
+	w.Header().Set("Cache-Control", "public, max-age=120")
+	writeJSON(w, http.StatusOK, map[string]any{"data": points})
 }
 
-func (h *Handler) AnalyticsDevicesHandler(c *gin.Context) {
-	req := h.parseDeviceAnalyticsRequest(c)
+func (h *Handler) AnalyticsDevicesHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseDeviceAnalyticsRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	devices, osList, browsers, err := h.svc.GetDeviceAnalytics(c.Request.Context(), req)
+	devices, osList, browsers, err := h.svc.GetDeviceAnalytics(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=120")
-	c.JSON(http.StatusOK, gin.H{
+	w.Header().Set("Cache-Control", "public, max-age=120")
+	writeJSON(w, http.StatusOK, map[string]any{
 		"devices":  devices,
 		"os":       osList,
 		"browsers": browsers,
 	})
 }
 
-func (h *Handler) AnalyticsFunnelHandler(c *gin.Context) {
-	req := h.parseFunnelRequest(c)
+func (h *Handler) AnalyticsFunnelHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseFunnelRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	funnel, err := h.svc.GetFunnel(c.Request.Context(), req)
+	funnel, err := h.svc.GetFunnel(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=60")
-	c.JSON(http.StatusOK, funnel)
+	w.Header().Set("Cache-Control", "public, max-age=60")
+	writeJSON(w, http.StatusOK, funnel)
 }
 
-func (h *Handler) AnalyticsTopAssetsHandler(c *gin.Context) {
-	req := h.parseTopAssetsRequest(c)
+func (h *Handler) AnalyticsTopAssetsHandler(w http.ResponseWriter, r *http.Request) {
+	req := h.parseTopAssetsRequest(r)
 	if req.TenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
+		writeError(w, http.StatusBadRequest, "tenant_id is required")
 		return
 	}
 
-	assets, err := h.svc.GetTopAssets(c.Request.Context(), req)
+	assets, err := h.svc.GetTopAssets(r.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=60")
-	c.JSON(http.StatusOK, gin.H{"data": assets})
+	w.Header().Set("Cache-Control", "public, max-age=60")
+	writeJSON(w, http.StatusOK, map[string]any{"data": assets})
 }
 
-func (h *Handler) parseAnalyticsRequest(c *gin.Context) shortlink.AnalyticsRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseAnalyticsRequest(r *http.Request) shortlink.AnalyticsRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
 	}
 	limit := 20
-	if l := c.Query("limit"); l != "" {
+	if l := r.URL.Query().Get("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
 	}
 
@@ -1117,21 +1186,21 @@ func (h *Handler) parseAnalyticsRequest(c *gin.Context) shortlink.AnalyticsReque
 	}
 }
 
-func (h *Handler) parseTimeSeriesRequest(c *gin.Context) shortlink.TimeSeriesRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseTimeSeriesRequest(r *http.Request) shortlink.TimeSeriesRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
 	}
-	interval := c.DefaultQuery("interval", "1h")
+	interval := defaultQuery(r.URL.Query(), "interval", "1h")
 
 	return shortlink.TimeSeriesRequest{
 		TenantID:    tenantID,
@@ -1142,16 +1211,16 @@ func (h *Handler) parseTimeSeriesRequest(c *gin.Context) shortlink.TimeSeriesReq
 	}
 }
 
-func (h *Handler) parseGeoHeatmapRequest(c *gin.Context) shortlink.GeoHeatmapRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseGeoHeatmapRequest(r *http.Request) shortlink.GeoHeatmapRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
@@ -1162,20 +1231,20 @@ func (h *Handler) parseGeoHeatmapRequest(c *gin.Context) shortlink.GeoHeatmapReq
 		TimeRange:   timeRange,
 		CustomStart: customStart,
 		CustomEnd:   customEnd,
-		Country:     c.Query("country"),
+		Country:     r.URL.Query().Get("country"),
 	}
 }
 
-func (h *Handler) parseDeviceAnalyticsRequest(c *gin.Context) shortlink.DeviceAnalyticsRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseDeviceAnalyticsRequest(r *http.Request) shortlink.DeviceAnalyticsRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
@@ -1189,16 +1258,16 @@ func (h *Handler) parseDeviceAnalyticsRequest(c *gin.Context) shortlink.DeviceAn
 	}
 }
 
-func (h *Handler) parseFunnelRequest(c *gin.Context) shortlink.FunnelRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseFunnelRequest(r *http.Request) shortlink.FunnelRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
@@ -1212,22 +1281,22 @@ func (h *Handler) parseFunnelRequest(c *gin.Context) shortlink.FunnelRequest {
 	}
 }
 
-func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsRequest {
-	tenantID, _ := h.getTenantID(c, c.Query("tenant_id"))
-	timeRange := shortlink.TimeRange(c.DefaultQuery("time_range", "24h"))
+func (h *Handler) parseTopAssetsRequest(r *http.Request) shortlink.TopAssetsRequest {
+	tenantID, _ := h.getTenantID(r, r.URL.Query().Get("tenant_id"))
+	timeRange := shortlink.TimeRange(defaultQuery(r.URL.Query(), "time_range", "24h"))
 	var customStart, customEnd *time.Time
-	if s := c.Query("custom_start"); s != "" {
+	if s := r.URL.Query().Get("custom_start"); s != "" {
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			customStart = &t
 		}
 	}
-	if e := c.Query("custom_end"); e != "" {
+	if e := r.URL.Query().Get("custom_end"); e != "" {
 		if t, err := time.Parse(time.RFC3339, e); err == nil {
 			customEnd = &t
 		}
 	}
 	limit := 20
-	if l := c.Query("limit"); l != "" {
+	if l := r.URL.Query().Get("limit"); l != "" {
 		fmt.Sscanf(l, "%d", &limit)
 	}
 
@@ -1238,4 +1307,21 @@ func (h *Handler) parseTopAssetsRequest(c *gin.Context) shortlink.TopAssetsReque
 		CustomEnd:   customEnd,
 		Limit:       limit,
 	}
+}
+
+func defaultQuery(q url.Values, key, fallback string) string {
+	if v := q.Get(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+func writeJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(data)
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
 }

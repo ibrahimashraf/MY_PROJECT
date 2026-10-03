@@ -148,3 +148,35 @@ func TestShortLinkHandler_MountNormalization(t *testing.T) {
 		t.Fatalf("expected path normalization to route successfully, got 404: %s", rec.Body.String())
 	}
 }
+
+func TestShortLinkHandler_ValidationRejection(t *testing.T) {
+	svc := shortlinksvc.New(nil, 6, "")
+	handler := shortlinkhttp.NewWithAuth(svc, nil, nil)
+
+	// Test 1: Invalid URL rejection in Create
+	req := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks", strings.NewReader(`{"target_url":"not-a-valid-url"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Tenant-ID", "tenant-1")
+	req.Header.Set("X-Organization-ID", "org-1")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request for invalid target_url, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Test 2: Missing Secret in HMAC creation
+	reqHMAC := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/hmac/secrets", strings.NewReader(`{"secret":""}`))
+	reqHMAC.Header.Set("Content-Type", "application/json")
+	reqHMAC.Header.Set("X-Tenant-ID", "tenant-1")
+	reqHMAC.Header.Set("X-Organization-ID", "org-1")
+
+	recHMAC := httptest.NewRecorder()
+	handler.ServeHTTP(recHMAC, reqHMAC)
+
+	if recHMAC.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request for empty secret, got %d: %s", recHMAC.Code, recHMAC.Body.String())
+	}
+}
+
