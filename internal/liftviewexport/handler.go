@@ -199,71 +199,84 @@ func methodPages(steps []MethodStep) [][]string {
 
 type Handler struct{}
 
-func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/api/v1/liftviews/cranes" {
-		if r.Method != http.MethodGet {
-			w.Header().Set("Allow", "GET")
-			httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: GET")
-			return
-		}
-		refs := craneCatalog()
-		if len(refs) == 0 {
-			httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(refs); err != nil {
-			httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
-		}
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/api/v1/liftviews/cranes":
+		h.ServeCranes(w, r)
+	case "/api/v1/liftviews/evaluate4d":
+		h.ServeEvaluate4D(w, r)
+	case "/api/v1/liftviews/export":
+		h.ServeExport(w, r)
+	default:
+		httputil.WriteProblem(w, r, http.StatusNotFound, "Not Found", "endpoint not found")
+	}
+}
+
+func (Handler) ServeCranes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: GET")
 		return
 	}
-	if r.URL.Path == "/api/v1/liftviews/evaluate4d" {
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", "POST")
-			httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
-			return
-		}
-		if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
-			httputil.WriteProblem(w, r, http.StatusUnsupportedMediaType, "Unsupported Media Type", "Content-Type must be application/json")
-			return
-		}
-		r.Body = http.MaxBytesReader(w, r.Body, 4<<20) // 4 MiB for OBJ payload
-		var req4d struct {
-			Crane1  engine.CraneKinematics `json:"crane1"`
-			Crane2  engine.CraneKinematics `json:"crane2"`
-			Load    engine.MassSpec        `json:"load"`
-			Stages  []engine.LiftStage     `json:"stages"`
-			OBJData string                 `json:"obj_data"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req4d); err != nil {
-			httputil.WriteProblem(w, r, http.StatusBadRequest, "Bad Request", "invalid evaluate4d JSON")
-			return
-		}
-		if len(req4d.Stages) == 0 {
-			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "at least one lift stage is required")
-			return
-		}
-		result, err := engine.Solve4DLiftSequence(req4d.Crane1, req4d.Crane2, req4d.Load, req4d.Stages)
+	refs := craneCatalog()
+	if len(refs) == 0 {
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(refs); err != nil {
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+	}
+}
+
+func (Handler) ServeEvaluate4D(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
+		return
+	}
+	if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		httputil.WriteProblem(w, r, http.StatusUnsupportedMediaType, "Unsupported Media Type", "Content-Type must be application/json")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<20) // 4 MiB for OBJ payload
+	var req4d struct {
+		Crane1  engine.CraneKinematics `json:"crane1"`
+		Crane2  engine.CraneKinematics `json:"crane2"`
+		Load    engine.MassSpec        `json:"load"`
+		Stages  []engine.LiftStage     `json:"stages"`
+		OBJData string                 `json:"obj_data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req4d); err != nil {
+		httputil.WriteProblem(w, r, http.StatusBadRequest, "Bad Request", "invalid evaluate4d JSON")
+		return
+	}
+	if len(req4d.Stages) == 0 {
+		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "at least one lift stage is required")
+		return
+	}
+	result, err := engine.Solve4DLiftSequence(req4d.Crane1, req4d.Crane2, req4d.Load, req4d.Stages)
+	if err != nil {
+		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "4D solve refused: "+err.Error())
+		return
+	}
+	if req4d.OBJData != "" {
+		mesh, err := engine.ParseOBJMesh(req4d.OBJData)
 		if err != nil {
-			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "4D solve refused: "+err.Error())
+			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "OBJ geometry refused: "+err.Error())
 			return
 		}
-		if req4d.OBJData != "" {
-			mesh, err := engine.ParseOBJMesh(req4d.OBJData)
-			if err != nil {
-				httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "OBJ geometry refused: "+err.Error())
-				return
-			}
-			if result.Passed && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
-				result.Passed = false
-				result.FailReason = "OBJ spatial clearance violation at t=" + strconv.FormatFloat(result.FailTimeS, 'f', 2, 64) + "s"
-			}
+		if result.Passed && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
+			result.Passed = false
+			result.FailReason = "OBJ spatial clearance violation at t=" + strconv.FormatFloat(result.FailTimeS, 'f', 2, 64) + "s"
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(result)
-		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(result)
+}
+
+func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", "POST")
 		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")

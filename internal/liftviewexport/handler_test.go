@@ -386,3 +386,12 @@ func TestAuthoritativeCraneCalculationUsesSimulationScope(t *testing.T) {
 		t.Fatalf("expected simulation-only scope, got %q", scope)
 	}
 }
+
+func TestUnknownPathReturnsNotFound(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/liftviews/unknown", nil)
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("code=%d want 404", rec.Code)
+	}
+}

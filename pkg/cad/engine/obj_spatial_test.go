@@ -51,3 +51,20 @@ func TestCheckClearanceRejectsHookCollision(t *testing.T) {
 		t.Fatalf("failure time=%v want 3", trajectory.FailTimeS)
 	}
 }
+
+func TestCheckClearanceRejectsFaceCentroidCollision(t *testing.T) {
+	// Vertices at (-3, 10, 0), (3, 10, 0), (0, 10, -3) are > 2.5m away from hook tip (0, 10, 0)
+	// But triangle centroid is (0, 10, -1), which directly penetrates hook/load space
+	mesh, err := ParseOBJMesh("v -3 10 0\nv 3 10 0\nv 0 10 -3\nf 1 2 3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	crane := CraneKinematics{BasePosition: dxf.Point3D{}, BoomLengthMeters: 10, BoomAngleDeg: 90}
+	trajectory := &Trajectory4DResult{Passed: true}
+	if CheckClearance(mesh, trajectory, []LiftStage{{TimeS: 5, Crane1Angle: 90}}, crane, crane, MassSpec{LengthM: 4, RadiusM: 1}) {
+		t.Fatal("face centroid collision must fail clearance")
+	}
+	if trajectory.FailTimeS != 5 {
+		t.Fatalf("failure time=%v want 5", trajectory.FailTimeS)
+	}
+}
