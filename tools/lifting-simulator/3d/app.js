@@ -582,7 +582,7 @@
             scene.add(group);
 
             // Call server for authoritative spatial clearance
-            fetch('/api/v1/liftviews/evaluate4d', {
+            apiFetch('/api/v1/liftviews/evaluate4d', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -634,6 +634,7 @@
         const craneMat1 = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
         const craneMat2 = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
         const boomMat1 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const boomMat2 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
         const craneMat3 = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
         const craneMat4 = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.4 });
         const boomMat3 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
@@ -1214,13 +1215,20 @@
     // estimation (offline fallback). Ratings arrive from the engines.
     const API_BASE = window.location.port === '18080' ? '' : 'http://127.0.0.1:18080';
 
+    function apiFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = typeof window.INTEGIN_API_TOKEN === 'string' ? window.INTEGIN_API_TOKEN.trim() : '';
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+        return fetch(url, { ...options, headers });
+    }
+
     async function loadCraneModels() {
         const bindings = [
             { select: document.getElementById('crane1-model-select'), label: document.getElementById('crane1-model-label'), key: 'crane1Model' },
             { select: document.getElementById('crane2-model-select'), label: document.getElementById('crane2-model-label'), key: 'crane2Model' }
         ];
         try {
-            const res = await fetch(`${API_BASE}/api/v1/liftviews/cranes`);
+            const res = await apiFetch(`${API_BASE}/api/v1/liftviews/cranes`);
             if (!res.ok) throw new Error(`catalog ${res.status}`);
             const refs = await res.json();
             for (const binding of bindings) {
@@ -1262,7 +1270,7 @@
         if (verdictTimer) clearTimeout(verdictTimer);
         verdictTimer = setTimeout(async () => {
             try {
-                const res = await fetch(`${API_BASE}/api/v1/liftviews/export?mode=verdict`, {
+                const res = await apiFetch(`${API_BASE}/api/v1/liftviews/export?mode=verdict`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(verdictPayload())
@@ -1629,7 +1637,7 @@
         // Raw scene state only: all ratings happen server-side in the engines.
         const payload = verdictPayload();
         try {
-            const res = await fetch(`${API_BASE}/api/v1/liftviews/export`, {
+            const res = await apiFetch(`${API_BASE}/api/v1/liftviews/export?mode=simulation`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -1644,7 +1652,7 @@
             a.download = 'liftview-export.zip';
             a.click();
             setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-            statusEl.textContent = 'downloaded';
+            statusEl.textContent = 'simulation pack downloaded';
         } catch (e) {
             statusEl.textContent = 'error: server unreachable';
         }

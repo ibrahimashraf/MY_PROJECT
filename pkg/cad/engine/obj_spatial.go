@@ -1,8 +1,18 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
+)
+
+var ErrInvalidOBJ = errors.New("invalid OBJ geometry")
+
+const (
+	maxOBJVertices = 100000
+	maxOBJFaces    = 200000
 )
 
 type Vertex struct {
@@ -15,28 +25,63 @@ type OBJMesh struct {
 }
 
 func ParseOBJMesh(data string) (*OBJMesh, error) {
-	lines := strings.Split(data, "\n")
+	if strings.TrimSpace(data) == "" {
+		return nil, ErrInvalidOBJ
+	}
 	mesh := &OBJMesh{}
-	fCount := 0
-	for _, line := range lines {
-		if strings.HasPrefix(line, "v ") {
-			var v Vertex
-			parts := strings.Fields(line)
-			if len(parts) >= 4 {
-				fmt.Sscanf(parts[1]+" "+parts[2]+" "+parts[3], "%f %f %f", &v.X, &v.Y, &v.Z)
-				mesh.Vertices = append(mesh.Vertices, v)
+	faceCount := 0
+	for _, line := range strings.Split(data, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 || strings.HasPrefix(fields[0], "#") {
+			continue
+		}
+		switch fields[0] {
+		case "v":
+			if len(fields) < 4 {
+				return nil, fmt.Errorf("%w: vertex requires three coordinates", ErrInvalidOBJ)
 			}
-		} else if strings.HasPrefix(line, "f ") {
-			fCount++
+			x, err := strconv.ParseFloat(fields[1], 64)
+			if err != nil {
+				return nil, fmt.Errorf("%w: vertex x coordinate", ErrInvalidOBJ)
+			}
+			y, err := strconv.ParseFloat(fields[2], 64)
+			if err != nil {
+				return nil, fmt.Errorf("%w: vertex y coordinate", ErrInvalidOBJ)
+			}
+			z, err := strconv.ParseFloat(fields[3], 64)
+			if err != nil {
+				return nil, fmt.Errorf("%w: vertex z coordinate", ErrInvalidOBJ)
+			}
+			if !finiteOBJValue(x) || !finiteOBJValue(y) || !finiteOBJValue(z) {
+				return nil, fmt.Errorf("%w: vertex coordinates must be finite", ErrInvalidOBJ)
+			}
+			mesh.Vertices = append(mesh.Vertices, Vertex{X: x, Y: y, Z: z})
+			if len(mesh.Vertices) > maxOBJVertices {
+				return nil, fmt.Errorf("%w: vertex limit exceeded", ErrInvalidOBJ)
+			}
+		case "f":
+			if len(fields) < 4 {
+				return nil, fmt.Errorf("%w: face requires at least three vertices", ErrInvalidOBJ)
+			}
+			faceCount++
+			if faceCount > maxOBJFaces {
+				return nil, fmt.Errorf("%w: face limit exceeded", ErrInvalidOBJ)
+			}
 		}
 	}
-	mesh.Faces = fCount
+	if len(mesh.Vertices) == 0 || faceCount == 0 {
+		return nil, fmt.Errorf("%w: geometry has no vertices or faces", ErrInvalidOBJ)
+	}
+	mesh.Faces = faceCount
 	return mesh, nil
 }
 
 func CheckClearance(mesh *OBJMesh, trajectory *Trajectory4DResult, stages []LiftStage, c1, c2 CraneKinematics, load MassSpec) bool {
-	if len(mesh.Vertices) == 0 {
-		return true
+	if mesh == nil || len(mesh.Vertices) == 0 || trajectory == nil || len(stages) == 0 {
+		return false
+	}
+	if !finiteOBJValue(load.LengthM) || load.LengthM <= 0 || !finiteOBJValue(load.RadiusM) || load.RadiusM <= 0 {
+		return false
 	}
 	for _, stage := range stages {
 		c1Temp := c1
@@ -78,4 +123,8 @@ func CheckClearance(mesh *OBJMesh, trajectory *Trajectory4DResult, stages []Lift
 		}
 	}
 	return true
+}
+
+func finiteOBJValue(value float64) bool {
+	return !math.IsNaN(value) && !math.IsInf(value, 0)
 }

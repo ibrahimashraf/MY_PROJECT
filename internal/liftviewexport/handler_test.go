@@ -86,7 +86,7 @@ func post(t *testing.T, body any) *httptest.ResponseRecorder {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/export", bytes.NewReader(raw))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/export?mode=simulation", bytes.NewReader(raw))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	Handler{}.ServeHTTP(rec, req)
@@ -198,6 +198,9 @@ func TestExportIncludesHIRARCAndMethodPages(t *testing.T) {
 	if !strings.Contains(string(meta), "\"hazards\"") || !strings.Contains(string(meta), "\"method_steps\"") {
 		t.Fatalf("export metadata missing planning sections: %s", meta)
 	}
+	if !strings.Contains(string(meta), "SIMULATION ONLY") || !strings.Contains(string(meta), "\"simulation\":true") {
+		t.Fatalf("export metadata must be marked simulation-only: %s", meta)
+	}
 }
 
 func TestExportZIP(t *testing.T) {
@@ -261,6 +264,42 @@ func TestVerdictMode(t *testing.T) {
 	}
 }
 
+func TestExportRefusesImplicitCertification(t *testing.T) {
+	raw, err := json.Marshal(simRequest())
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/export", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestEvaluate4DRejectsMalformedOBJ(t *testing.T) {
+	sim := simRequest()
+	payload := map[string]any{
+		"crane1":   sim.Crane1,
+		"crane2":   sim.Crane2,
+		"load":     engine.MassSpec{MassTonnes: 45, LengthM: 12, RadiusM: 1.5},
+		"stages":   []engine.LiftStage{{TimeS: 0, Crane1Angle: 65, Crane2Angle: 60}},
+		"obj_data": "v 1 2\\n",
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/evaluate4d", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestExportMethodNotAllowed(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/liftviews/export", nil)
 	rec := httptest.NewRecorder()
@@ -313,7 +352,7 @@ func TestTackleDeductionsRefuseOverload(t *testing.T) {
 	}
 }
 
-func TestTadanoAndDemagAuthoritativeCalculation(t *testing.T) {
+func TestAuthoritativeCraneCalculationUsesSimulationScope(t *testing.T) {
 	req := simRequest()
 	req.Crane1Model = "TADANO_ATF_200G_5"
 	req.Crane1.BoomLengthMeters = 30.6
@@ -343,7 +382,7 @@ func TestTadanoAndDemagAuthoritativeCalculation(t *testing.T) {
 		t.Fatal(err)
 	}
 	scope := meta["certification_scope"].(string)
-	if !strings.Contains(scope, "SEALED CERTIFICATION: AUTHORITATIVE OEM") {
-		t.Fatalf("expected authoritative OEM certification scope, got %q", scope)
+	if !strings.Contains(scope, "SIMULATION ONLY") {
+		t.Fatalf("expected simulation-only scope, got %q", scope)
 	}
 }

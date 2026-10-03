@@ -248,9 +248,13 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "4D solve refused: "+err.Error())
 			return
 		}
-		if result.Passed && req4d.OBJData != "" {
+		if req4d.OBJData != "" {
 			mesh, err := engine.ParseOBJMesh(req4d.OBJData)
-			if err == nil && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
+			if err != nil {
+				httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "OBJ geometry refused: "+err.Error())
+				return
+			}
+			if result.Passed && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
 				result.Passed = false
 				result.FailReason = "OBJ spatial clearance violation at t=" + strconv.FormatFloat(result.FailTimeS, 'f', 2, 64) + "s"
 			}
@@ -281,6 +285,12 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fail := func(msg string) {
 		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", msg)
 	}
+	mode := r.URL.Query().Get("mode")
+	if mode != "verdict" && mode != "simulation" {
+		fail("certification export is unavailable until server-side rigging and ground evidence are registered; use mode=simulation")
+		return
+	}
+	scopeStamp := "SIMULATION ONLY: NOT A CERTIFIED LIFT PLAN"
 	crane1Ref, crane1OK := findCraneReference(req.Crane1Model)
 	crane2Ref, crane2OK := findCraneReference(req.Crane2Model)
 	if !crane1OK || !crane2OK {
@@ -378,11 +388,11 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 6. Seal the pack PDF through the one shared engine.
-	scopeStamp := "SEALED CERTIFICATION: AUTHORITATIVE OEM CRANE KINEMATICS & LOAD CHARTS"
-	if crane1Ref.DutyChartStatus != "AUTHORITATIVE_OEM" || crane2Ref.DutyChartStatus != "AUTHORITATIVE_OEM" {
-		scopeStamp = "CONDITIONAL VERDICT: CONTAINS UNVERIFIED CRANE DUTY REFERENCE"
-	}
 	riggingNotice := "FIELD NOTICE: TACKLE & GROUND BEARING REQUIRE APPOINTED PERSON PHYSICAL SIGN-OFF"
+	executionLabel := "simulation export"
+	if mode == "verdict" {
+		executionLabel = "simulation verdict"
+	}
 
 	pages := [][]string{
 		{"TANDEM LIFT PLAN — solved, not drawn", scopeStamp, riggingNotice},
@@ -395,7 +405,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		{"ELEVATION", "see elevation.dxf"},
 		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart " + crane1Ref.DutyChartStatus, crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart " + crane2Ref.DutyChartStatus},
 		{"GROUND", "bearing gates passed"},
-		{"EXECUTION", "sealed export", scopeStamp},
+		{"EXECUTION", executionLabel, scopeStamp},
 	}
 	pages = append(pages, hazardPages(req.Hazards)...)
 	pages = append(pages, methodPages(req.MethodSteps)...)
@@ -431,6 +441,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"fos1":                 fos[0],
 		"fos2":                 fos[1],
 		"renderer":             "integin-engines/v1",
+		"simulation":           true,
 		"total_pages":          req.Pages,
 	})
 	if err != nil {
