@@ -60,47 +60,44 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ### Sprint 2 Deliverables Matrix & Technical Acceptance Gates:
 
-#### Deliverable 2.1: Computational Nanocell (`pkg/rulesengine`) 🚀 *(IMMEDIATE FOCUS)*
-*   [ ] **Step 1: Add Google CEL Dependency**: Add `github.com/google/cel-go` v0.20+ to `integin-pilot-source/go.mod`.
-*   [ ] **Step 2: Implement Data Model (`pkg/rulesengine/schema.go`)**:
-    *   Implement `DynamicStandardDefinition`, `DynamicRule` with fields `RuleID`, `Description`, `Expression`, `Severity` (`CRITICAL_QUARANTINE` / `WARNING`).
-    *   Implement `ChecklistSchema map[string]interface{}` for dynamic form bindings.
-*   [ ] **Step 3: Implement Ruleset Versioning (`pkg/rulesengine/versioning.go`)**:
+#### Deliverable 2.1: Computational Nanocell (`pkg/rulesengine`) ✅ *(COMPLETE)*
+*   [x] **Step 1: Add Google CEL Dependency**: Added `github.com/google/cel-go` to `integin-pilot-source/go.mod`.
+*   [x] **Step 2: Implement Data Model (`pkg/rulesengine/schema.go`)**:
+    *   Implemented `DynamicStandardDefinition`, `DynamicRule` with fields `RuleID`, `Description`, `Expression`, `Severity` (`CRITICAL_QUARANTINE` / `WARNING`).
+    *   Implemented `ChecklistSchema map[string]interface{}` for dynamic form bindings.
+*   [x] **Step 3: Implement Ruleset Versioning (`pkg/rulesengine/versioning.go`)**:
     *   Lifecycle states: `DRAFT`, `ACTIVE`, `DEPRECATED`.
     *   State transition validation with immutable activation timestamps.
-*   [ ] **Step 4: Implement Evaluator Kernel (`pkg/rulesengine/evaluator.go`)**:
-    *   Initialize sandboxed CEL environment with strict 4MB heap limit.
+*   [x] **Step 4: Implement Evaluator Kernel (`pkg/rulesengine/evaluator.go`)**:
+    *   Initialized sandboxed CEL environment with strict 4MB heap limit.
     *   Zero network access, zero filesystem access, zero OS thread spawning.
-*   [ ] **Step 5: Implement ASME B30.5 Mobile Crane Proof-Load Model**:
+*   [x] **Step 5: Implement ASME B30.5 Mobile Crane Proof-Load Model**:
     *   Formula: $P_{\text{test}} = C \le 20\text{t} ? C \times 1.25 : (C \le 50\text{t} ? C \times 1.20 : C \times 1.15)$.
-    *   Evaluate dynamically against load chart radius and outrigger span variables.
-*   [ ] **Step 6: Implement ISO 4309 Wire-Rope Discard Criteria Model**:
-    *   Evaluate broken outer wires threshold ($n_{\text{broken}} \ge 6d$) and diameter reduction ($\Delta d > 7\%$).
-*   [ ] **Step 7: High-Performance Benchmark Suite (`evaluator_bench_test.go`)**:
-    *   Assert evaluation latency strictly $< 50\mu\text{s}$ per call (target $< 15\mu\text{s}$).
-    *   Assert zero memory escapes (`0 allocs/op`) on hot evaluation paths.
-*   [ ] **Step 8: Security & Isolation Unit Tests (`evaluator_test.go`)**:
-    *   Assert non-Turing complete termination (no infinite loops possible).
-    *   Assert rejection of malformed or unauthorized variable bindings.
-*   [ ] **Step 9: Rigging Vector & Geotechnical Ground Bearing Pressure Engine (`pkg/rulesengine/rigging.go`, `geotech.go`)**:
-    *   Implement 2D sling tension vector calculations with automatic critical angle ($<30^\circ$) derating lockout.
-    *   Implement outrigger Ground Bearing Pressure (GBP) Boussinesq equations ($\sigma_{\text{actual}} = \frac{P_i}{A_{\text{mat}}} \le \sigma_{\text{allowable}}$).
+    *   Evaluates dynamically against load chart radius and outrigger span variables.
+*   [x] **Step 6: Implement ISO 4309 Wire-Rope Discard Criteria Model**:
+    *   Evaluates broken outer wires threshold ($n_{\text{broken}} \ge 6d$) and diameter reduction ($\Delta d > 7\%$).
+*   [x] **Step 7: High-Performance Benchmark Suite (`evaluator_bench_test.go`)**:
+    *   Evaluation latency strictly $< 50\mu\text{s}$ per call; zero memory escapes on hot path.
+*   [x] **Step 8: Security & Isolation Unit Tests (`evaluator_test.go`)**:
+    *   Asserted non-Turing complete termination; rejection of malformed or unauthorized variable bindings.
+*   [x] **Step 9: Rigging Vector & Geotechnical Ground Bearing Pressure Engine (`pkg/rulesengine/rigging.go`, `geotech.go`)**:
+    *   Implemented 2D sling tension vector calculations with critical angle derating lockout.
+    *   Implemented outrigger Ground Bearing Pressure (GBP) Boussinesq equations.
 
-#### Deliverable 2.2: Stripe-Grade Global Idempotency (`internal/idempotency`)
-*   [ ] **Step 1: Database Migration (`migrations/0071_sync_idempotency_cache.sql`)**:
-    *   Create `sync_idempotency_cache` with columns `key_hash`, `tenant_id`, `organization_id`, `endpoint`, `request_hash`, `status`, `response_payload`, `http_status`, `created_at`, `expires_at`.
-    *   Enforce 24-hour TTL automatic eviction and composite tenant RLS with transaction-scoped `is_local = true`.
-*   [ ] **Step 2: Middleware Contract (`internal/idempotency/middleware.go`)**:
-    *   Enforce mandatory `Idempotency-Key` HTTP header with atomic PostgreSQL advisory/row locking.
-*   [ ] **Step 3: Outcome Replay Engine**:
-    *   Cache structured outcomes (`APPLIED`, `DUPLICATE`, `HELD`, `CONFLICT`, `SECURITY_FAILURE`).
-    *   Replay cached responses in $< 5\text{ms}$ with zero downstream DB execution.
-*   [ ] **Step 4: Wire to Server Mux**:
-    *   Connect middleware in `internal/app/server/server.go` for all `/sync` and `/evidence` endpoints.
-*   [ ] **Step 5: Concurrent Race & Chaos Tests**:
-    *   Assert rejection of concurrent mutations with identical keys (`409 Conflict`).
-*   [ ] **Step 6: River Poison-Pill Quarantine (DLQ)**:
-    *   Create `migrations/0072_river_poison_quarantine.sql` and worker interceptor to catch fatal unhandled payload panics, preventing queue stall while preserving forensic evidence.
+#### Deliverable 2.2: Stripe-Grade Global Idempotency (`internal/idempotency`) ✅ *(COMPLETE)*
+*   [x] **Step 1: Database Migration (`migrations/0071_sync_idempotency_cache.sql`)**:
+    *   Created `sync_idempotency_cache` with composite tenant RLS and 24-hour TTL automatic eviction.
+*   [x] **Step 2: Middleware Contract (`internal/idempotency/middleware.go`)**:
+    *   Enforced mandatory `Idempotency-Key` HTTP header with atomic PostgreSQL row locking.
+*   [x] **Step 3: Outcome Replay Engine**:
+    *   Cached structured outcomes (`APPLIED`, `DUPLICATE`, `HELD`, `CONFLICT`, `SECURITY_FAILURE`).
+    *   Replayed cached responses in $< 5\text{ms}$ with zero downstream DB execution.
+*   [x] **Step 4: Wire to Server Mux**:
+    *   Connected middleware in `internal/server/http.go` for `/sync` and `/evidence` endpoints.
+*   [x] **Step 5: Concurrent Race & Chaos Tests**:
+    *   Asserted rejection of concurrent mutations with identical keys (`409 Conflict`).
+*   [x] **Step 6: River Poison-Pill Quarantine (DLQ)**:
+    *   Created `migrations/0072_river_poison_quarantine.sql` and worker interceptor (`internal/queue/poison_quarantine.go`) to preserve forensic evidence on panic.
 
 #### Deliverable 2.3: Copyright-Safe Standards Discovery Engine (`pkg/standardsync`)
 *   [ ] **Step 1: Standards Metadata Model (`pkg/standardsync/schema.go`)**:
