@@ -39,7 +39,12 @@
 
 ### 2. [awesome-go (avelino)](https://github.com/avelino/awesome-go) & [awesome-go (uhub)](https://github.com/uhub/awesome-go)
 *   **Domain**: Curated Go libraries and high-throughput systems components.
-*   **Role in INTEGIN**: Source for `jackc/pgx/v5` binary PostgreSQL drivers, `riverqueue/river` transactional outbox queue, and `google/cel-go` expression sandbox.
+*   **Role in INTEGIN**: Selective repository source aligned strictly with the Ponytail efficiency ladder (`stdlib > installed dep > one-line > minimum code`):
+    *   **Core Systems & Drivers (Active)**: `jackc/pgx/v5` (binary PG driver with strict transaction-scoped RLS GUC injection), `riverqueue/river` (PG-native transactional outbox queue with poison-pill DLQ), `google/cel-go` (deterministic sandboxed AST evaluator), `skip2/go-qrcode` (zero-CGo QR passport generator), `goccy/go-yaml` (zero-alloc YAML parser).
+    *   **High-Density QR & Serialization (Adopted)**: `fxamacker/cbor/v2` (RFC 8949 CBOR encoder for compact W3C Asset Passport QR payload compression under `did:integin` / L9 / L11).
+    *   **Ledger & VSAT Stream Compression (Adopted)**: `klauspost/compress/zstd` (pure-Go zstd for Merkle ledger sync and low-bandwidth offshore VSAT chunks / L10 / Sprint 3.6).
+    *   **HSM & Dynamic PKI Governance (Adopted)**: `hashicorp/vault/api` (KMS client for OpenBao / HSM key rotation in `integin-pilot-admin` / L0).
+    *   **Inviolable Rejections**: ORMs (`gorm`, `ent`) strictly forbidden to prevent PostgreSQL RLS GUC bypass; third-party loggers (`zap`, `zerolog`) rejected in favor of stdlib `log/slog`; CGo bindings forbidden to maintain zero-CGo cross-compilation for air-gapped sovereign appliances.
 
 ---
 
