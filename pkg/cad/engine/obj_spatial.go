@@ -10,11 +10,17 @@ import (
 	"integin/pkg/cad/dxf"
 )
 
-var ErrInvalidOBJ = errors.New("invalid OBJ geometry")
+var (
+	ErrInvalidOBJ          = errors.New("invalid OBJ geometry")
+	ErrVertexLimitExceeded = errors.New("vertex limit exceeded")
+	ErrFaceLimitExceeded   = errors.New("face limit exceeded")
+)
 
 const (
-	maxOBJVertices = 100000
-	maxOBJFaces    = 200000
+	// MaxOBJVertices defines the hard memory boundary to guarantee execution within 4MB heap limit.
+	MaxOBJVertices = 100000
+	// MaxOBJFaces defines the upper face boundary for real-time spatial collision checks.
+	MaxOBJFaces = 200000
 
 	// DefaultHookClearanceRadiusM defines the spatial clearance boundary around the crane hook.
 	DefaultHookClearanceRadiusM = 2.0
@@ -28,10 +34,15 @@ type Face struct {
 	V1, V2, V3 int // 0-based indices into Vertices
 }
 
+type BoundingBox struct {
+	Min, Max Vertex
+}
+
 type OBJMesh struct {
 	Vertices      []Vertex
 	Faces         int
 	FaceTriangles []Face
+	Bounds        BoundingBox
 }
 
 func parseVertexIndex(field string, totalVertices int) (int, error) {
@@ -88,17 +99,40 @@ func ParseOBJMesh(data string) (*OBJMesh, error) {
 			if !finiteOBJValue(x) || !finiteOBJValue(y) || !finiteOBJValue(z) {
 				return nil, fmt.Errorf("%w: vertex coordinates must be finite", ErrInvalidOBJ)
 			}
-			mesh.Vertices = append(mesh.Vertices, Vertex{X: x, Y: y, Z: z})
-			if len(mesh.Vertices) > maxOBJVertices {
-				return nil, fmt.Errorf("%w: vertex limit exceeded", ErrInvalidOBJ)
+			v := Vertex{X: x, Y: y, Z: z}
+			if len(mesh.Vertices) == 0 {
+				mesh.Bounds = BoundingBox{Min: v, Max: v}
+			} else {
+				if x < mesh.Bounds.Min.X {
+					mesh.Bounds.Min.X = x
+				}
+				if y < mesh.Bounds.Min.Y {
+					mesh.Bounds.Min.Y = y
+				}
+				if z < mesh.Bounds.Min.Z {
+					mesh.Bounds.Min.Z = z
+				}
+				if x > mesh.Bounds.Max.X {
+					mesh.Bounds.Max.X = x
+				}
+				if y > mesh.Bounds.Max.Y {
+					mesh.Bounds.Max.Y = y
+				}
+				if z > mesh.Bounds.Max.Z {
+					mesh.Bounds.Max.Z = z
+				}
+			}
+			mesh.Vertices = append(mesh.Vertices, v)
+			if len(mesh.Vertices) > MaxOBJVertices {
+				return nil, fmt.Errorf("%w: %w (count=%d max=%d)", ErrInvalidOBJ, ErrVertexLimitExceeded, len(mesh.Vertices), MaxOBJVertices)
 			}
 		case "f":
 			if len(fields) < 4 {
 				return nil, fmt.Errorf("%w: face requires at least three vertices", ErrInvalidOBJ)
 			}
 			faceCount++
-			if faceCount > maxOBJFaces {
-				return nil, fmt.Errorf("%w: face limit exceeded", ErrInvalidOBJ)
+			if faceCount > MaxOBJFaces {
+				return nil, fmt.Errorf("%w: %w (count=%d max=%d)", ErrInvalidOBJ, ErrFaceLimitExceeded, faceCount, MaxOBJFaces)
 			}
 			indices := make([]int, len(fields)-1)
 			for i := 1; i < len(fields); i++ {
@@ -158,6 +192,20 @@ func CheckClearance(mesh *OBJMesh, trajectory *Trajectory4DResult, stages []Lift
 		c2Temp.BoomAngleDeg = stage.Crane2Angle
 		c2Temp.SlewAngleDeg = stage.Crane2Slew
 		h2 := c2Temp.ComputeHookPosition()
+
+		// AABB culling: early-pass stage if mesh bounds do not intersect reach zone
+		stageMinX := math.Min(h1.HookTip.X, h2.HookTip.X) - load.RadiusM - DefaultHookClearanceRadiusM
+		stageMaxX := math.Max(h1.HookTip.X, h2.HookTip.X) + load.RadiusM + DefaultHookClearanceRadiusM
+		stageMinY := math.Min(h1.HookTip.Y, h2.HookTip.Y) - load.RadiusM - DefaultHookClearanceRadiusM
+		stageMaxY := math.Max(h1.HookTip.Y, h2.HookTip.Y) + load.RadiusM + DefaultHookClearanceRadiusM
+		stageMinZ := math.Min(h1.HookTip.Z, h2.HookTip.Z) - load.LengthM - DefaultHookClearanceRadiusM
+		stageMaxZ := math.Max(h1.HookTip.Z, h2.HookTip.Z) + DefaultHookClearanceRadiusM
+
+		if mesh.Bounds.Max.X < stageMinX || mesh.Bounds.Min.X > stageMaxX ||
+			mesh.Bounds.Max.Y < stageMinY || mesh.Bounds.Min.Y > stageMaxY ||
+			mesh.Bounds.Max.Z < stageMinZ || mesh.Bounds.Min.Z > stageMaxZ {
+			continue
+		}
 
 		// 1. Direct vertex check
 		for _, v := range mesh.Vertices {

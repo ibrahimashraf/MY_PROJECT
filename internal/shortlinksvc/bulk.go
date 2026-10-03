@@ -95,6 +95,9 @@ func (s *Service) BulkCreate(ctx context.Context, req BulkCreateRequest) (BulkCr
 }
 
 func (s *Service) ExportCSV(ctx context.Context, req ExportRequest) (ExportResponse, error) {
+	if s == nil || s.repo == nil {
+		return ExportResponse{}, ErrRepositoryNotConfigured
+	}
 	links, err := s.repo.List(ctx, 10000, 0) // Large limit for export
 	if err != nil {
 		return ExportResponse{}, err
@@ -149,6 +152,9 @@ func (s *Service) ExportCSV(ctx context.Context, req ExportRequest) (ExportRespo
 }
 
 func (s *Service) ExportJSON(ctx context.Context, req ExportRequest) (ExportResponse, error) {
+	if s == nil || s.repo == nil {
+		return ExportResponse{}, ErrRepositoryNotConfigured
+	}
 	links, err := s.repo.List(ctx, 10000, 0)
 	if err != nil {
 		return ExportResponse{}, err

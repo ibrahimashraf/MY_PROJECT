@@ -27,10 +27,11 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("short link not found")
-	ErrRevoked       = errors.New("short link revoked")
-	ErrExpired       = errors.New("short link expired")
-	ErrCodeCollision = errors.New("code collision")
+	ErrNotFound                = errors.New("short link not found")
+	ErrRevoked                 = errors.New("short link revoked")
+	ErrExpired                 = errors.New("short link expired")
+	ErrCodeCollision           = errors.New("code collision")
+	ErrRepositoryNotConfigured = errors.New("shortlink: repository not configured")
 )
 
 type pgError interface {
@@ -710,6 +711,9 @@ func (s *Service) DeleteAnomalyRule(ctx context.Context, id int64) error {
 }
 
 func (s *Service) ListAnomalyRules(ctx context.Context, req shortlink.ListAnomalyRulesRequest) ([]shortlink.AnomalyRule, int, error) {
+	if s == nil || s.repo == nil {
+		return nil, 0, ErrRepositoryNotConfigured
+	}
 	return s.repo.ListAnomalyRules(ctx, req)
 }
 

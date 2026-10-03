@@ -326,7 +326,10 @@ func (h *Handler) ResolveDLQHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ResolvedBy string `json:"resolved_by"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := decodeOptionalJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json payload: "+err.Error())
+		return
+	}
 	if req.ResolvedBy == "" {
 		req.ResolvedBy = org.ActorID
 	}
@@ -530,7 +533,10 @@ func (h *Handler) BulkExportHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Format string `json:"format"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := decodeOptionalJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json payload: "+err.Error())
+		return
+	}
 	expReq := shortlinksvc.ExportRequest{Format: req.Format}
 	if req.Format == "json" {
 		resp, err := h.svc.ExportJSON(r.Context(), expReq)
@@ -1325,3 +1331,15 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
+
+func decodeOptionalJSON(r *http.Request, dst any) error {
+	if r.Body == nil {
+		return nil
+	}
+	err := json.NewDecoder(r.Body).Decode(dst)
+	if err == nil || errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
+}
+

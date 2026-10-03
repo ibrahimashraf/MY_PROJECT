@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"errors"
+	"strings"
 	"testing"
 
 	"integin/pkg/cad/dxf"
@@ -66,5 +68,50 @@ func TestCheckClearanceRejectsFaceCentroidCollision(t *testing.T) {
 	}
 	if trajectory.FailTimeS != 5 {
 		t.Fatalf("failure time=%v want 5", trajectory.FailTimeS)
+	}
+}
+
+func TestParseOBJMeshRejectsVertexLimitExceeded(t *testing.T) {
+	var sb strings.Builder
+	for i := 0; i <= MaxOBJVertices+1; i++ {
+		sb.WriteString("v 1.0 1.0 1.0\n")
+	}
+	sb.WriteString("f 1 2 3\n")
+	_, err := ParseOBJMesh(sb.String())
+	if err == nil {
+		t.Fatal("expected error for exceeding vertex limit")
+	}
+	if !errors.Is(err, ErrVertexLimitExceeded) {
+		t.Fatalf("expected ErrVertexLimitExceeded, got %v", err)
+	}
+}
+
+func TestParseOBJMeshRejectsFaceLimitExceeded(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString("v 0 0 0\nv 1 0 0\nv 0 1 0\n")
+	for i := 0; i <= MaxOBJFaces+1; i++ {
+		sb.WriteString("f 1 2 3\n")
+	}
+	_, err := ParseOBJMesh(sb.String())
+	if err == nil {
+		t.Fatal("expected error for exceeding face limit")
+	}
+	if !errors.Is(err, ErrFaceLimitExceeded) {
+		t.Fatalf("expected ErrFaceLimitExceeded, got %v", err)
+	}
+}
+
+func TestCheckClearanceAABBDiscardsDistantMeshFast(t *testing.T) {
+	mesh, err := ParseOBJMesh("v 100 10 0\nv 101 10 0\nv 100 11 0\nf 1 2 3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	crane := CraneKinematics{BasePosition: dxf.Point3D{}, BoomLengthMeters: 10, BoomAngleDeg: 90}
+	trajectory := &Trajectory4DResult{Passed: true}
+	if !CheckClearance(mesh, trajectory, []LiftStage{{TimeS: 0, Crane1Angle: 90}}, crane, crane, MassSpec{LengthM: 2, RadiusM: 1}) {
+		t.Fatal("distant mesh outside AABB must pass clearance")
+	}
+	if !trajectory.Passed {
+		t.Fatal("trajectory must remain passed")
 	}
 }

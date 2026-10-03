@@ -180,3 +180,34 @@ func TestShortLinkHandler_ValidationRejection(t *testing.T) {
 	}
 }
 
+func TestShortLinkHandler_OptionalBodyValidation(t *testing.T) {
+	svc := shortlinksvc.New(nil, 6, "")
+	handler := shortlinkhttp.NewWithAuth(svc, nil, nil)
+
+	// Test 1: Malformed JSON in optional body endpoint must return 400
+	reqBad := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/export", strings.NewReader(`{malformed_json`))
+	reqBad.Header.Set("Content-Type", "application/json")
+	reqBad.Header.Set("X-Tenant-ID", "tenant-1")
+	reqBad.Header.Set("X-Organization-ID", "org-1")
+
+	recBad := httptest.NewRecorder()
+	handler.ServeHTTP(recBad, reqBad)
+
+	if recBad.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request for malformed json in optional body, got %d: %s", recBad.Code, recBad.Body.String())
+	}
+
+	// Test 2: Empty body in optional body endpoint is accepted (does not return 400)
+	reqEmpty := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/export", nil)
+	reqEmpty.Header.Set("X-Tenant-ID", "tenant-1")
+	reqEmpty.Header.Set("X-Organization-ID", "org-1")
+
+	recEmpty := httptest.NewRecorder()
+	handler.ServeHTTP(recEmpty, reqEmpty)
+
+	if recEmpty.Code == http.StatusBadRequest {
+		t.Fatalf("expected empty body to be accepted without 400, got: %s", recEmpty.Body.String())
+	}
+}
+
+
