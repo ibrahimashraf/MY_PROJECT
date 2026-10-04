@@ -16,7 +16,7 @@
 ├──────────────────────┬──────────────────────┬───────────────────┬──────────────────────┤
 │ Phase 1: Core PKI &  │ Phase 2: Hybrid      │ Phase 3: Hardware │ Phase 4: K8s Svc Mesh│
 │ Dynamic Licensing    │ Standards Discovery  │ & Audit Ledger    │ & Global Verification│
-│ (Sprint 1)           │ (Sprint 2 - ACTIVE)  │ (Sprint 3)        │ (Sprint 4)           │
+│ (Sprint 1)           │ (Sprint 2)           │ (Sprint 3)        │ (Sprint 4)           │
 ├──────────────────────┼──────────────────────┼───────────────────┼──────────────────────┤
 │ • pkg/domain & DIDs  │ • pkg/rulesengine    │ • Tool Registry   │ • Stateless Resolver │
 │ • pkg/licensing      │ • pkg/standardsync   │ • Merkle-CRDT Log │ • Public Verifier App│
@@ -56,9 +56,9 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 3. ⚡ Current Active Sprint: Sprint 2 (Hybrid Standards & Dynamic Rules Engine)
+## 3. ⚡ Master Sprint Delivery Matrix: Sprints 1–4 (Phase 1–4) ✅ *(ALL COMPLETE)*
 
-### Sprint 2 Deliverables Matrix & Technical Acceptance Gates:
+### Sprint 2 Deliverables Matrix & Technical Acceptance Gates ✅ *(COMPLETE)*:
 
 #### Deliverable 2.1: Computational Nanocell (`pkg/rulesengine`) ✅ *(COMPLETE)*
 *   [x] **Step 1: Add Google CEL Dependency**: Added `github.com/google/cel-go` to `integin-pilot-source/go.mod`.
@@ -134,7 +134,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 4. 📅 Upcoming Sprints Backlog (Sprint 3 & Sprint 4)
+## 4. 📅 Completed Milestone Sprints (Sprint 3 & Sprint 4) ✅
 
 ### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger ✅ *(COMPLETE)*
 *   [x] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`, `internal/platform/calibration`)** ✅:
@@ -189,6 +189,22 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Harmonic micro-ripple frequency analysis and tool-to-enclave BLE pairing preventing counterfeit load cell spoofing.
 *   [x] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)** ✅:
     *   Volumetric Three.js obstacle clearance, soil stress heatmaps, and time-stepped ($t_0 \rightarrow t_{\text{final}}$) dual-crane load-share simulation with 1-click execution binding.
+
+### Sprint 5: Autonomous Robotic Trust, Real-Time Fleet Telemetry & Parametric Damage Collateral (ACTIVE 🚀)
+*Master Objective: Bridge Physical Matter to Mathematical Law via Autonomous Robotics, Mill Provenance, & High-Frequency Telemetric Feedback Loops.*
+
+*   [ ] **5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)**:
+    *   M2M zero-touch edge attestation for autonomous quadrupeds (Boston Dynamics Spot / ANYmal) and aerial inspection drones.
+    *   Automated non-human sensor ingestion with hardware-backed enclave signing and raw video photogrammetry keyframe hashing.
+*   [ ] **5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`, `did:integin:heat:<heat_no>`)**:
+    *   W3C Digital Product Passport (DPP) sub-schema binding steel mill heat certificates (EN 10204 3.1/3.2) directly to Asset DIDs.
+    *   Fatigue accumulation tracking: calculate cyclic stress reversals ($S$-$N$ curves, Miner's Rule) updating remaining safe working life.
+*   [ ] **5.3: High-Frequency Sensor Stream Ingestion & CQRS Telemetry Buffer (`internal/telemetrystream`)**:
+    *   Real-time ingest pipeline writing to partitioned `sensor_telemetry_stream` (Migration 0074) at $\ge 5{,}000$ points/sec.
+    *   In-memory dynamic jitter and anomaly detection filter routing critical overload alerts directly to River queue.
+*   [ ] **5.4: Parametric Industrial Risk & Real-Time Underwriter Collateral Engine (`pkg/riskengine`)**:
+    *   Continuous actuarial risk scoring ($R_{\text{operational}} \in [0.0, 1.0]$) derived from real-time inspection records, tool calibration states, and fatigue fractions.
+    *   Automated parametric insurance rebate token issuer generating verifiable cryptographic discount claims.
 
 ---
 
@@ -350,6 +366,19 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   `flutter test test/location_work_order_cloning_test.dart` $\longrightarrow$ **PASS (4/4 tests, 0 failures)**.
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
 
+#### Horizon 2: Multi-Inspector Scope Closeout & Commercial Release
+*   **Per-Inspector Scope Closeout (`internal/domain/workorder/closeout.go`)**:
+    *   Added `InspectorScopeSummary` capturing personal hours, travel, completed count, and blocker count.
+    *   Added `CloseInspectorScope()`: closes target assignment without prematurely closing the shared order while co-inspectors have active scope.
+    *   Transitions `WorkOrder.ExecutionState = ExecutionCompleted` and `CommercialState = CommercialReadyForOfficeReview` only after ALL assignments in the shared order are resolved.
+*   **Combined Report & Office Commercial Release (`CompileCombinedReport`, `ReleaseCommercialForInvoice`)**:
+    *   Compiles `CombinedCompletionReport` aggregating billable hours and scope counts across all inspectors.
+    *   Releases commercial state to `CommercialReleasedForInvoice` and creates `InvoiceDraft`.
+    *   Guarantees strict technical isolation: commercial billing creation CANNOT mutate technical findings, evidence, reviews, or certificate states.
+*   **Verification Evidence**:
+    *   `go test -v -count=1 ./internal/domain/workorder/...` $\longrightarrow$ **PASS (35/35 tests, 0.020s)**.
+    *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
 ---
 
 ## 10. 💡 Architectural Findings & Discoveries
@@ -380,24 +409,19 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ---
 
-## 11. 🎯 Operational Readiness & Master Release Gate
+## 11. 🎯 Current Active Execution: Sprint 5 (Autonomous Robotic Trust & Fleet Telemetry)
 
-All 4 Master Transition Roadmap Phases (Sprints 1–4) and all 12 Architectural Tiers (L0–L11) are **100% COMPLETE ✅**.
+All 4 Master Transition Roadmap Phases (Sprints 1–4) and all 12 Architectural Tiers (L0–L11) are **100% COMPLETE & VERIFIED ✅**.
 
-### Next Immediate Operational Actions:
-1. **Live Matrix End-to-End Validation**:
-   ```powershell
-   cd c:\MY_PROJECT\integin-pilot-source
-   go run ./cmd/integin-live-matrix seed
-   go run ./cmd/integin-live-matrix exercise
-   ```
-2. **Formal Release Gate & Checkpoint Verification**:
-   ```powershell
-   cd c:\MY_PROJECT\integin-pilot-source
-   go run ./cmd/release-gate
-   ```
-3. **Continuous Clean-Cache Quality Suite**:
-   ```powershell
-   go test -count=1 ./...
-   go vet ./...
-   ```
+### Active Workstream:
+- **Deliverable 5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)**
+  - M2M zero-touch edge attestation for robotic ground & aerial inspection platforms
+  - Hardware-backed telemetry keyframe hashing & autonomous execution envelopes
+- **Deliverable 5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`)**
+- **Deliverable 5.3: High-Frequency Sensor Stream Ingestion (`internal/telemetrystream`)**
+- **Deliverable 5.4: Parametric Industrial Risk Engine (`pkg/riskengine`)**
+
+### Continuous Quality & Verification Gates:
+1. `go test -count=1 ./...`
+2. `go vet ./...`
+3. `go run ./cmd/release-gate verify -in release_record_v3.3.0.json`
