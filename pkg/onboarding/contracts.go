@@ -1,6 +1,10 @@
 package onboarding
 
 import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -75,7 +79,8 @@ type TenantOnboardingDraft struct {
 		PublicVerifyURL    string `json:"public_verify_url"`
 	} `json:"certificate_policy"`
 
-	ActiveDisciplines []string `json:"active_disciplines"`
+	ActiveDisciplines []string               `json:"active_disciplines"`
+	CalibratedTools   []CalibratedToolRecord `json:"calibrated_tools,omitempty"`
 }
 
 // StagedAssetRecord represents a client asset sitting in the isolation quarantine before live commit.
@@ -214,6 +219,7 @@ type WorkPackageManifest struct {
 	ValidUntil         time.Time `json:"valid_until"`
 	PackageHash        string    `json:"package_hash"`
 	AuthoritySignature string    `json:"authority_signature"`
+	RequiredToolIDs    []string  `json:"required_tool_ids,omitempty"`
 }
 
 // SignedInspectionReceipt is the sealed artifact returned by the offline tablet.
@@ -227,4 +233,110 @@ type SignedInspectionReceipt struct {
 	PayloadDigest      string    `json:"payload_digest"`
 	DeviceSignature    string    `json:"device_signature"`
 	ClientRepSignature string    `json:"client_rep_signature,omitempty"`
+	CalibratedToolIDs  []string  `json:"calibrated_tool_ids,omitempty"`
+}
+
+// ToolCalibrationStatus represents the lifecycle state of measurement tools under ISO 17020 §6.2.
+type ToolCalibrationStatus string
+
+const (
+	ToolCalibrationActive      ToolCalibrationStatus = "ACTIVE"
+	ToolCalibrationExpired     ToolCalibrationStatus = "EXPIRED"
+	ToolCalibrationSuperseded  ToolCalibrationStatus = "SUPERSEDED"
+	ToolCalibrationQuarantined ToolCalibrationStatus = "QUARANTINED"
+)
+
+var (
+	ErrToolCalibrationExpired  = errors.New("tool calibration expired")
+	ErrToolCalibrationInvalid  = errors.New("tool calibration record invalid")
+	ErrToolNotFound            = errors.New("calibrated tool not found")
+	ErrToolQuarantined         = errors.New("tool calibration is quarantined")
+	ErrToolSuperseded          = errors.New("tool calibration is superseded")
+	ErrToolTenantScopeMismatch = errors.New("calibrated tool tenant scope mismatch")
+)
+
+var sha256HexPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
+
+// CalibratedToolRecord models inspection measurement equipment requiring calibration
+// traceability under ISO 17020 Section 6.2 (e.g. load cells, torque wrenches, UT thickness gauges).
+type CalibratedToolRecord struct {
+	ToolID               string                `json:"tool_id"`
+	TenantID             string                `json:"tenant_id"`
+	OrganizationID       string                `json:"organization_id"`
+	SerialNumber         string                `json:"serial_number"`
+	ToolType             string                `json:"tool_type"` // e.g. LOAD_CELL, ULTRASONIC_GAUGE, TORQUE_WRENCH, CALIPER, PRESSURE_TRANSDUCER
+	Manufacturer         string                `json:"manufacturer"`
+	Model                string                `json:"model"`
+	StandardReference    string                `json:"standard_reference"` // e.g. ISO-17020, ISO-17025, ASME-B30.5
+	LabCertificateRef    string                `json:"lab_certificate_ref"`
+	LabCertificateDigest string                `json:"lab_certificate_digest"` // SHA-256 digest of calibration certificate PDF
+	UncertaintyTolerance string                `json:"uncertainty_tolerance"`  // e.g. "±0.5% FS"
+	CalibrationDate      time.Time             `json:"calibration_date"`
+	NextDueDate          time.Time             `json:"next_due_date"`
+	IssuingLab           string                `json:"issuing_lab"`
+	TechnicianID         string                `json:"technician_id"`
+	Result               string                `json:"result"` // PASS, ACCEPTABLE
+	Status               ToolCalibrationStatus `json:"status"`
+	RegisteredAt         time.Time             `json:"registered_at"`
+}
+
+func (r CalibratedToolRecord) Validate() error {
+	for name, val := range map[string]string{
+		"tool_id":             r.ToolID,
+		"tenant_id":           r.TenantID,
+		"organization_id":     r.OrganizationID,
+		"serial_number":       r.SerialNumber,
+		"tool_type":           r.ToolType,
+		"standard_reference":  r.StandardReference,
+		"lab_certificate_ref": r.LabCertificateRef,
+		"technician_id":       r.TechnicianID,
+	} {
+		if strings.TrimSpace(val) == "" {
+			return fmt.Errorf("%w: %s is required", ErrToolCalibrationInvalid, name)
+		}
+	}
+	if r.CalibrationDate.IsZero() || r.NextDueDate.IsZero() {
+		return fmt.Errorf("%w: calibration dates are required", ErrToolCalibrationInvalid)
+	}
+	if !r.NextDueDate.After(r.CalibrationDate) {
+		return fmt.Errorf("%w: next due date must be after calibration date", ErrToolCalibrationInvalid)
+	}
+	if r.LabCertificateDigest != "" && !sha256HexPattern.MatchString(r.LabCertificateDigest) {
+		return fmt.Errorf("%w: lab certificate digest must be 64-char hex SHA-256", ErrToolCalibrationInvalid)
+	}
+	switch r.Status {
+	case ToolCalibrationActive, ToolCalibrationExpired, ToolCalibrationSuperseded, ToolCalibrationQuarantined:
+	default:
+		return fmt.Errorf("%w: invalid status %s", ErrToolCalibrationInvalid, r.Status)
+	}
+	return nil
+}
+
+func (r CalibratedToolRecord) IsExpired(at time.Time) bool {
+	if at.IsZero() {
+		at = time.Now()
+	}
+	return at.After(r.NextDueDate) || r.Status == ToolCalibrationExpired
+}
+
+func (r CalibratedToolRecord) CanBeUsedForInspection(at time.Time) error {
+	if err := r.Validate(); err != nil {
+		return err
+	}
+	if at.IsZero() {
+		at = time.Now()
+	}
+	if r.Status == ToolCalibrationQuarantined {
+		return fmt.Errorf("%w: tool %s is under safety quarantine", ErrToolQuarantined, r.ToolID)
+	}
+	if r.Status == ToolCalibrationSuperseded {
+		return fmt.Errorf("%w: tool %s calibration has been superseded", ErrToolSuperseded, r.ToolID)
+	}
+	if r.IsExpired(at) {
+		return fmt.Errorf("%w: tool %s calibration expired at %s (next due: %s)", ErrToolCalibrationExpired, r.ToolID, at.UTC().Format(time.RFC3339), r.NextDueDate.UTC().Format(time.RFC3339))
+	}
+	if r.Status != ToolCalibrationActive {
+		return fmt.Errorf("%w: tool %s is not active (status=%s)", ErrToolCalibrationInvalid, r.ToolID, r.Status)
+	}
+	return nil
 }

@@ -17,6 +17,7 @@ type EnrollmentSimulator struct {
 	deviceStore   map[string]DeviceTrustRecord
 	challenges    map[string]DeviceEnrollmentChallenge
 	manifests     map[string]WorkPackageManifest
+	toolStore     map[string]CalibratedToolRecord
 }
 
 func NewEnrollmentSimulator() (*EnrollmentSimulator, error) {
@@ -30,6 +31,7 @@ func NewEnrollmentSimulator() (*EnrollmentSimulator, error) {
 		deviceStore:   make(map[string]DeviceTrustRecord),
 		challenges:    make(map[string]DeviceEnrollmentChallenge),
 		manifests:     make(map[string]WorkPackageManifest),
+		toolStore:     make(map[string]CalibratedToolRecord),
 	}, nil
 }
 
@@ -149,8 +151,48 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 	return &record, nil
 }
 
+// RegisterCalibratedTool registers or updates a calibrated tool record for a tenant.
+func (s *EnrollmentSimulator) RegisterCalibratedTool(tool CalibratedToolRecord) error {
+	if err := tool.Validate(); err != nil {
+		return err
+	}
+	key := tool.TenantID + "|" + tool.ToolID
+	s.toolStore[key] = tool
+	return nil
+}
+
+// GetCalibratedTool retrieves a registered tool by tenant ID and tool ID.
+func (s *EnrollmentSimulator) GetCalibratedTool(tenantID, toolID string) (*CalibratedToolRecord, error) {
+	key := tenantID + "|" + toolID
+	tool, exists := s.toolStore[key]
+	if !exists {
+		return nil, fmt.Errorf("%w: %s for tenant %s", ErrToolNotFound, toolID, tenantID)
+	}
+	return &tool, nil
+}
+
+// ValidateToolsForReceipt validates that all cited tools exist and are valid under ISO 17020 §6.2
+// at the moment of inspection completion.
+func (s *EnrollmentSimulator) ValidateToolsForReceipt(tenantID string, toolIDs []string, at time.Time) error {
+	for _, toolID := range toolIDs {
+		tool, err := s.GetCalibratedTool(tenantID, toolID)
+		if err != nil {
+			return err
+		}
+		if err := tool.CanBeUsedForInspection(at); err != nil {
+			return fmt.Errorf("ISO 17020 §6.2 compliance check failed for tool %s: %w", toolID, err)
+		}
+	}
+	return nil
+}
+
 // 3. IssueWorkPackageManifest signs a work package bundle for the paired device.
 func (s *EnrollmentSimulator) IssueWorkPackageManifest(tenantID, workOrderID, deviceID, inspectorID string, checklistJSON string) (*WorkPackageManifest, error) {
+	return s.IssueWorkPackageManifestWithTools(tenantID, workOrderID, deviceID, inspectorID, checklistJSON, nil)
+}
+
+// IssueWorkPackageManifestWithTools signs a work package bundle specifying required calibrated tools.
+func (s *EnrollmentSimulator) IssueWorkPackageManifestWithTools(tenantID, workOrderID, deviceID, inspectorID string, checklistJSON string, requiredToolIDs []string) (*WorkPackageManifest, error) {
 	dev, exists := s.deviceStore[deviceID]
 	if !exists || !dev.IsActive {
 		return nil, errors.New("device not enrolled or inactive")
@@ -181,6 +223,7 @@ func (s *EnrollmentSimulator) IssueWorkPackageManifest(tenantID, workOrderID, de
 		ValidUntil:         validUntil,
 		PackageHash:        packageHash,
 		AuthoritySignature: hex.EncodeToString(sig),
+		RequiredToolIDs:    requiredToolIDs,
 	}
 	s.manifests[manifestID] = manifest
 	return &manifest, nil
@@ -202,6 +245,14 @@ func (s *EnrollmentSimulator) VerifyOfflineReceipt(receipt SignedInspectionRecei
 	// ingress guard): ReceiptID|ManifestID|AssetID|OverallResult|PayloadDigest.
 	if err := verifyReceiptSignature(receipt, dev.DevicePublicKey); err != nil {
 		return false, err
+	}
+
+	// ISO 17020 §6.2 Equipment Calibration Gating:
+	// Verify that any calibrated tools cited in the receipt were valid and unexpired at CompletedAt.
+	if len(receipt.CalibratedToolIDs) > 0 {
+		if err := s.ValidateToolsForReceipt(manifest.TenantID, receipt.CalibratedToolIDs, receipt.CompletedAt); err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
