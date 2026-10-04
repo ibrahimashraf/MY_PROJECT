@@ -14,6 +14,7 @@ var (
 	ErrSoftwareOriginRejected  = errors.New("attestation: policy requires hardware attestation (enclave, strongbox, or TEE)")
 	ErrBiometricBindingMissing = errors.New("attestation: biometric binding required but not asserted")
 	ErrStrongBoxMandated       = errors.New("attestation: site policy strictly mandates discrete StrongBox hardware")
+	ErrFIPS140_3NonCompliant   = errors.New("attestation: policy requires FIPS 140-3 validated hardware (StrongBox or Secure Enclave with biometric binding)")
 )
 
 func (k KeyOrigin) Known() bool {
@@ -69,6 +70,7 @@ type AttestationPolicy struct {
 	RequireHardware         bool `json:"require_hardware"`
 	RequireStrongBox        bool `json:"require_strongbox"` // Strict floor for life-safety components
 	RequireBiometricBinding bool `json:"require_biometric_binding"`
+	RequireFIPS140_3        bool `json:"require_fips_140_3"` // Mandates FIPS 140-3 validated hardware + biometric identity
 }
 
 // VerifyClaim validates a claim and enforces the policy. Unknown future
@@ -107,6 +109,11 @@ func CheckPosture(origin string, biometricBound bool, policy AttestationPolicy) 
 	}
 	if policy.RequireBiometricBinding && !biometricBound {
 		return ErrBiometricBindingMissing
+	}
+	if policy.RequireFIPS140_3 {
+		if (keyOrigin != KeyOriginStrongBox && keyOrigin != KeyOriginSecureEnclave) || !biometricBound {
+			return fmt.Errorf("%w: origin=%s biometric_bound=%v", ErrFIPS140_3NonCompliant, origin, biometricBound)
+		}
 	}
 	return nil
 }

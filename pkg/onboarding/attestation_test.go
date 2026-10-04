@@ -139,6 +139,62 @@ func TestEnrollmentAcceptsHardwareClaimAndRecordsPosture(t *testing.T) {
 	if !record.AttestationBiometricBound {
 		t.Fatalf("biometric binding not recorded")
 	}
+	if !record.FIPS140_3Compliant {
+		t.Fatalf("expected FIPS 140-3 compliance for biometric-bound Secure Enclave")
+	}
+	if record.FIPSLevel != "FIPS_140_3_LEVEL_2" {
+		t.Fatalf("expected FIPS_140_3_LEVEL_2, got %q", record.FIPSLevel)
+	}
+}
+
+func TestAttestationPolicyFIPS140_3(t *testing.T) {
+	policy := AttestationPolicy{RequireFIPS140_3: true}
+
+	// 1. Android StrongBox with Biometric -> PASS (FIPS 140-3 Level 3)
+	strongBoxBound := AttestationClaim{
+		KeyOrigin:       KeyOriginStrongBox,
+		BiometricBound:  true,
+		OSVersion:       "Android 14",
+		AttestationBlob: "strongbox-blob",
+	}
+	if err := VerifyClaim(strongBoxBound, policy); err != nil {
+		t.Fatalf("expected StrongBox bound to satisfy FIPS 140-3 policy: %v", err)
+	}
+
+	// 2. Apple Secure Enclave with Biometric -> PASS (FIPS 140-3 Level 2)
+	enclaveBound := AttestationClaim{
+		KeyOrigin:       KeyOriginSecureEnclave,
+		BiometricBound:  true,
+		OSVersion:       "iOS 17.4",
+		AttestationBlob: "enclave-blob",
+	}
+	if err := VerifyClaim(enclaveBound, policy); err != nil {
+		t.Fatalf("expected Secure Enclave bound to satisfy FIPS 140-3 policy: %v", err)
+	}
+
+	// 3. StrongBox WITHOUT Biometric -> FAILS with ErrFIPS140_3NonCompliant
+	strongBoxUnbound := strongBoxBound
+	strongBoxUnbound.BiometricBound = false
+	if err := VerifyClaim(strongBoxUnbound, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
+		t.Fatalf("expected ErrFIPS140_3NonCompliant for unbound StrongBox, got %v", err)
+	}
+
+	// 4. Android TEE -> FAILS with ErrFIPS140_3NonCompliant (not discrete StrongBox / Enclave)
+	teeClaim := AttestationClaim{
+		KeyOrigin:       KeyOriginTEE,
+		BiometricBound:  true,
+		OSVersion:       "Android 14",
+		AttestationBlob: "tee-blob",
+	}
+	if err := VerifyClaim(teeClaim, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
+		t.Fatalf("expected ErrFIPS140_3NonCompliant for TEE, got %v", err)
+	}
+
+	// 5. Software -> FAILS with ErrFIPS140_3NonCompliant
+	softwareClaim := AttestationClaim{KeyOrigin: KeyOriginSoftware}
+	if err := VerifyClaim(softwareClaim, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
+		t.Fatalf("expected ErrFIPS140_3NonCompliant for Software, got %v", err)
+	}
 }
 
 // (c)(d) hardware-without-blob, spoofed NONE, and unknown origins are rejected.

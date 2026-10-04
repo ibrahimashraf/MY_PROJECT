@@ -193,6 +193,15 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/retention-policies/", d.WorkbenchHandler)
 		mux.Handle("/api/v1/exports/approvals", d.WorkbenchHandler)
 	}
+	if d.JurisdictionHandler != nil {
+		mux.Handle("/api/v1/jurisdictions", d.JurisdictionHandler)
+		mux.Handle("/api/v1/jurisdictions/", d.JurisdictionHandler)
+	}
+	if d.QueryHandler != nil {
+		gated := requireOIDCAuth(d.Validator, d.QueryHandler)
+		mux.Handle("/api/v1/query", gated)
+		mux.Handle("/api/v1/query/", gated)
+	}
 }
 
 func requireOIDCAuth(validator TokenValidator, next http.Handler) http.Handler {

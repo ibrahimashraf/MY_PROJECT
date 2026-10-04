@@ -180,6 +180,50 @@ class FindingDraft {
       };
 }
 
+class HardwareAttestationClaim {
+  const HardwareAttestationClaim({
+    required this.keyOrigin,
+    required this.biometricBound,
+    required this.fips140_3Compliant,
+    required this.deviceFingerprint,
+    this.fipsLevel,
+    this.hardwareSignature,
+    this.attestationCertificateChain = const [],
+  });
+
+  final String keyOrigin;
+  final bool biometricBound;
+  final bool fips140_3Compliant;
+  final String deviceFingerprint;
+  final String? fipsLevel;
+  final String? hardwareSignature;
+  final List<String> attestationCertificateChain;
+
+  factory HardwareAttestationClaim.fromJson(Map<String, Object?> json) => HardwareAttestationClaim(
+        keyOrigin: json['key_origin'] as String,
+        biometricBound: json['biometric_bound'] as bool? ?? false,
+        fips140_3Compliant: json['fips_140_3_compliant'] as bool? ?? false,
+        deviceFingerprint: json['device_fingerprint'] as String? ?? '',
+        fipsLevel: json['fips_level'] as String?,
+        hardwareSignature: json['hardware_signature'] as String?,
+        attestationCertificateChain: (json['attestation_certificate_chain'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+      );
+
+  Map<String, Object?> toJson() => {
+        'key_origin': keyOrigin,
+        'biometric_bound': biometricBound,
+        'fips_140_3_compliant': fips140_3Compliant,
+        'device_fingerprint': deviceFingerprint,
+        if (fipsLevel != null) 'fips_level': fipsLevel,
+        if (hardwareSignature != null) 'hardware_signature': hardwareSignature,
+        if (attestationCertificateChain.isNotEmpty)
+          'attestation_certificate_chain': attestationCertificateChain,
+      };
+}
+
 class OfflineMutation {
   OfflineMutation({
     required this.transactionId,
@@ -197,6 +241,8 @@ class OfflineMutation {
     this.protocolVersion = 'v1',
     this.signatureAlgorithm = 'HMAC-SHA256',
     this.keyId,
+    this.hardwareAttestation,
+    this.biometricVerified = false,
   }) : payloadHash = sha256.convert(utf8.encode(canonicalJson(payload))).toString();
 
   final String protocolVersion;
@@ -215,6 +261,8 @@ class OfflineMutation {
   final String? keyId;
   final String signature;
   final String payloadHash;
+  final HardwareAttestationClaim? hardwareAttestation;
+  final bool biometricVerified;
 
   factory OfflineMutation.fromJson(Map<String, Object?> json) {
     final payload = Map<String, Object?>.from(json['payload'] as Map);
@@ -234,6 +282,12 @@ class OfflineMutation {
       signatureAlgorithm: json['signature_algorithm'] as String? ?? 'HMAC-SHA256',
       keyId: json['key_id'] as String?,
       signature: json['signature'] as String,
+      hardwareAttestation: json['hardware_attestation'] == null
+          ? null
+          : HardwareAttestationClaim.fromJson(
+              Map<String, Object?>.from(json['hardware_attestation'] as Map),
+            ),
+      biometricVerified: json['biometric_verified'] as bool? ?? false,
     );
     if (mutation.payloadHash != json['payload_hash']) {
       throw const FormatException('offline mutation payload hash mismatch');
@@ -258,6 +312,8 @@ class OfflineMutation {
         'signature_algorithm': signatureAlgorithm,
         if (keyId != null) 'key_id': keyId,
         'signature': signature,
+        if (hardwareAttestation != null) 'hardware_attestation': hardwareAttestation!.toJson(),
+        if (biometricVerified) 'biometric_verified': biometricVerified,
       };
 }
 

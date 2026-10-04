@@ -87,6 +87,8 @@ type Dependencies struct {
 	PilotEnrollHandler      http.Handler
 	WorkbenchHandler        http.Handler
 	DeviceEnrollmentHandler http.Handler
+	JurisdictionHandler     http.Handler
+	QueryHandler            http.Handler
 	Readiness               func(context.Context) error
 	ReadinessTimeout        time.Duration
 }

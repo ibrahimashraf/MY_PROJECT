@@ -33,8 +33,10 @@ import (
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/certificaterender"
+	"integin/internal/certtemplatepg"
 	"integin/internal/deviceenrollhttp"
 	domainrender "integin/internal/domain/certificaterender"
+	"integin/internal/domain/certificatetemplate"
 	"integin/internal/domain/device_trust"
 	"integin/internal/domain/dpp"
 	"integin/internal/domain/scheduling"
@@ -46,11 +48,13 @@ import (
 	"integin/internal/formdefinitionhttp"
 	"integin/internal/formdefinitionpg"
 	"integin/internal/identity"
+	"integin/internal/jurisdictionhttp"
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
 	"integin/internal/qrnfchttp"
 	"integin/internal/qrnfcpg"
+	"integin/internal/queryenginehttp"
 	"integin/internal/queue"
 	"integin/internal/server"
 	"integin/internal/shared/types"
@@ -65,7 +69,9 @@ import (
 	"integin/pkg/contextground"
 	"integin/pkg/engine/cognitive"
 	"integin/pkg/engine/eventbus"
+	"integin/pkg/jurisdictions"
 	"integin/pkg/onboarding"
+	"integin/pkg/queryengine"
 )
 
 func durEnvSeconds(key string, fallback time.Duration) time.Duration {
@@ -451,6 +457,26 @@ func Run() {
 	workbenchHandler = workbenchhttp.NewHandler(database, devices)
 	advisoryHandler = advisoryhttp.NewHandler(advisory.NewRegistry())
 
+	var jurisdictionHandler http.Handler
+	jurisdictionsRegistry, jErr := jurisdictions.NewRegistry(jurisdictions.TopJurisdictions())
+	if jErr != nil {
+		log.Fatalf("failed to initialize jurisdictions registry: %v", jErr)
+	}
+	jurisdictionHandler = jurisdictionhttp.NewHandler(jurisdictionsRegistry)
+
+	var queryHandler http.Handler
+	queryRegistry, qErr := queryengine.NewSchemaRegistry(queryenginehttp.CanonicalSchema())
+	if qErr != nil {
+		log.Fatalf("failed to initialize query engine schema registry: %v", qErr)
+	}
+	queryHandler = queryenginehttp.NewHandler(queryRegistry, database)
+
+	if database != nil {
+		if _, ctErr := certtemplatepg.NewRepository(database, certificatetemplate.DefaultCatalog()); ctErr != nil {
+			log.Printf("warning: certtemplatepg repository initialization failed: %v", ctErr)
+		}
+	}
+
 	var shortLinkHandler http.Handler
 	var riverQueue *queue.Queue
 	var qrnfcHandler http.Handler
@@ -631,6 +657,8 @@ func Run() {
 		WorkOrderHandoverHandler: workOrderHandoverHandler,
 		WorkbenchHandler:        workbenchHandler,
 		AdvisoryHandler:         advisoryHandler,
+		JurisdictionHandler:     jurisdictionHandler,
+		QueryHandler:            queryHandler,
 		PilotEnrollHandler:      enrollHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {

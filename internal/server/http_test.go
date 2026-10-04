@@ -15,6 +15,7 @@ import (
 
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
+	"integin/internal/oidcauth"
 	"integin/internal/workbenchhttp"
 )
 
@@ -423,3 +424,56 @@ type stubResolver struct{}
 func (s stubResolver) Resolve(ctx context.Context, key identity.PrincipalKey) (identity.Membership, error) {
 	return identity.Membership{TenantID: "tenant-1", ActorID: "session-1"}, nil
 }
+
+func TestNewMux_MountsJurisdictionAndQueryRoutes(t *testing.T) {
+	var jCalls, qCalls int
+	jHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jCalls++
+		w.WriteHeader(http.StatusOK)
+	})
+	qHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		qCalls++
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// Unauthenticated /api/v1/query should fail with 401 Unauthorized
+	unauthMux := NewMux(Dependencies{
+		JurisdictionHandler: jHandler,
+		QueryHandler:        qHandler,
+	})
+
+	rec := httptest.NewRecorder()
+	unauthMux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/jurisdictions", nil))
+	if rec.Code != http.StatusOK || jCalls != 1 {
+		t.Fatalf("jurisdictions mounted status=%d calls=%d, want 200/1", rec.Code, jCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	unauthMux.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/query", nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("query unauthenticated status=%d, want 401", rec.Code)
+	}
+
+	// Authenticated /api/v1/query with stub validator
+	authMux := NewMux(Dependencies{
+		Validator:    stubValidator{},
+		QueryHandler: qHandler,
+	})
+	authReq := httptest.NewRequest(http.MethodGet, "/api/v1/query", nil)
+	authReq.Header.Set("Authorization", "Bearer valid-token")
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, authReq)
+	if rec.Code != http.StatusOK || qCalls != 1 {
+		t.Fatalf("query authenticated status=%d calls=%d, want 200/1", rec.Code, qCalls)
+	}
+}
+
+type stubValidator struct{}
+
+func (s stubValidator) Validate(ctx context.Context, token string) (oidcauth.Principal, error) {
+	if token == "valid-token" {
+		return oidcauth.Principal{Subject: "user-1", Issuer: "https://issuer.example.com"}, nil
+	}
+	return oidcauth.Principal{}, errors.New("invalid token")
+}
+

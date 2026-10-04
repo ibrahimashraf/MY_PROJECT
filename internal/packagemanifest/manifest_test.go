@@ -133,3 +133,32 @@ func validPackage() workpackage.Package {
 		PackageHash:     "sha256:manifest-test-package-hash",
 	}
 }
+
+func TestManifestIssuerEnforcesFIPS140_3Policy(t *testing.T) {
+	now := time.Date(2026, time.August, 17, 10, 0, 0, 0, time.UTC)
+	pkg := validPackage()
+	store := manifestStore{assignment: validAssignment(now.Add(2 * time.Hour)), pkg: pkg}
+	_, issuer := newTestIssuerWithKey(t, store)
+
+	policy := HardwarePolicy{
+		RequireHardware:   true,
+		RequireFIPS140_3:  true,
+		RequiredKeyOrigin: "STRONGBOX",
+	}
+	issuer.SetHardwarePolicy(policy)
+
+	manifest, err := issuer.Issue(context.Background(), verifiedContext(now), "inspection-1", now)
+	if err != nil {
+		t.Fatalf("unexpected issue error: %v", err)
+	}
+
+	if !manifest.RequireHardwareAttestation {
+		t.Fatal("expected manifest to require hardware attestation")
+	}
+	if !manifest.RequireFIPS140_3 {
+		t.Fatal("expected manifest to require FIPS 140-3 compliance")
+	}
+	if manifest.RequiredKeyOrigin != "STRONGBOX" {
+		t.Fatalf("expected STRONGBOX, got %q", manifest.RequiredKeyOrigin)
+	}
+}

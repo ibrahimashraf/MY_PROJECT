@@ -205,7 +205,9 @@ type DeviceTrustRecord struct {
 	// claim's attestation was verified offline against a configured root at
 	// enrollment. It is audit evidence for receipt policy — the origin-based
 	// checkPosture remains the only enforcement axis.
-	AttestationVerified bool `json:"attestation_verified,omitempty"`
+	AttestationVerified bool   `json:"attestation_verified,omitempty"`
+	FIPS140_3Compliant  bool   `json:"fips_140_3_compliant"`
+	FIPSLevel           string `json:"fips_level,omitempty"`
 }
 
 // WorkPackageManifest is the server-signed bundle dispatched to the offline tablet.

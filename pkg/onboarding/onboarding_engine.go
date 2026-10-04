@@ -130,6 +130,14 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 	// "field-" + first 32 hex chars of SHA-256(public_key_bytes).
 	hash := sha256.Sum256(devPubBytes)
 	deviceID := fmt.Sprintf("field-%s", hex.EncodeToString(hash[:])[:32])
+	fipsCompliant := (sub.Attestation.KeyOrigin == KeyOriginStrongBox || sub.Attestation.KeyOrigin == KeyOriginSecureEnclave) && sub.Attestation.BiometricBound
+	fipsLevel := ""
+	if sub.Attestation.KeyOrigin == KeyOriginStrongBox && sub.Attestation.BiometricBound {
+		fipsLevel = "FIPS_140_3_LEVEL_3"
+	} else if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && sub.Attestation.BiometricBound {
+		fipsLevel = "FIPS_140_3_LEVEL_2"
+	}
+
 	record := DeviceTrustRecord{
 		DeviceID:                  deviceID,
 		TenantID:                  chal.TenantID,
@@ -144,6 +152,8 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 		AttestationOrigin:         string(sub.Attestation.KeyOrigin),
 		AttestationBiometricBound: sub.Attestation.BiometricBound,
 		AttestationVerified:       attestationVerified,
+		FIPS140_3Compliant:        fipsCompliant,
+		FIPSLevel:                 fipsLevel,
 	}
 
 	s.deviceStore[deviceID] = record
