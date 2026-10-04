@@ -137,8 +137,8 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 ## 4. 📅 Upcoming Sprints Backlog (Sprint 3 & Sprint 4)
 
 ### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger
-*   [ ] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)**:
-    *   Automatic calibration expiry gating: hard-block work order submission if inspection tool calibration has expired.
+*   [x] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)** ✅ *(COMPLETE)*:
+    *   Automatic calibration expiry gating: hard-block work order submission and offline receipts if inspection tool calibration has expired.
     *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances.
 *   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)**:
     *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
