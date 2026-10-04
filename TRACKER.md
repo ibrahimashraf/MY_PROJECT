@@ -379,6 +379,18 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   `go test -v -count=1 ./internal/domain/workorder/...` $\longrightarrow$ **PASS (35/35 tests, 0.020s)**.
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
 
+#### Horizon 3: Corrective Action Requests (CAR) & Re-Inspection Lifecycle
+*   **Corrective Action Request Lifecycle (`internal/domain/reinspection/car.go`)**:
+    *   `IssueCAR()`: Automatically triggered by `MAJOR` or `CRITICAL` findings. Fails closed on minor/advisory issues.
+    *   `SubmitRemediation()`: Requires client explanation and at least 1 mandatory proof-of-repair evidence reference.
+    *   `ScheduleReinspection()`: Binds follow-up reinspection to open CAR.
+    *   `VerifyOutcome()`: Technical authority evaluates targeted recheck. `PASS` -> `CARVerifiedClosed`; persisting defect -> `CARRejected` with required re-work.
+    *   `ReinspectionBinding`: Emits immutable forward audit link connecting original inspection ID, CAR ID, and reinspection record.
+*   **Verification Evidence**:
+    *   `go test -v -count=1 ./internal/domain/reinspection/...` $\longrightarrow$ **PASS (3/3 tests, 0.034s)**.
+    *   `go test -v -count=1 ./pkg/robotictrust/...` $\longrightarrow$ **PASS (3/3 tests, 0.037s)**.
+    *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
 ---
 
 ## 10. 💡 Architectural Findings & Discoveries
