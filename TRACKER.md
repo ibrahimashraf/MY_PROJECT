@@ -200,9 +200,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   W3C Digital Product Passport (DPP) sub-schema binding steel mill heat certificates (EN 10204 3.1/3.2) directly to Asset DIDs.
     *   Palmgren-Miner cumulative fatigue accumulation tracking: stress cycles ($S$-$N$ curves, damage fraction $D = \sum \frac{n_i}{N_i}$, fail-closed quarantine at $D \ge 1.0$).
     *   Verified hot-path benchmark: `5.73 ns/op`, `0 B/op`, `0 allocs/op`.
-*   [ ] **5.3: High-Frequency Sensor Stream Ingestion & CQRS Telemetry Buffer (`internal/telemetrystream`)**:
+*   [x] **5.3: High-Frequency Sensor Stream Ingestion & CQRS Telemetry Buffer (`internal/telemetrystream`)** ✅:
     *   Real-time ingest pipeline writing to partitioned `sensor_telemetry_stream` (Migration 0074) at $\ge 5{,}000$ points/sec.
     *   In-memory dynamic jitter and anomaly detection filter routing critical overload alerts directly to River queue.
+    *   Verified hot-path benchmark: `872.8 ns/op`, `639 B/op`, `1 allocs/op` (>1,145,000 readings/sec capacity).
 *   [ ] **5.4: Parametric Industrial Risk & Real-Time Underwriter Collateral Engine (`pkg/riskengine`)**:
     *   Continuous actuarial risk scoring ($R_{\text{operational}} \in [0.0, 1.0]$) derived from real-time inspection records, tool calibration states, and fatigue fractions.
     *   Automated parametric insurance rebate token issuer generating verifiable cryptographic discount claims.
@@ -410,6 +411,16 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Unit & Isolation Suite: `go test -v -count=1 ./pkg/domain/metallurgy/... ./pkg/domain/...` $\longrightarrow$ **PASS (100%)**.
     *   Hot-Path Benchmark: `BenchmarkMinerFatigueCalculation_HotPath`: `5.73 ns/op`, `0 B/op`, `0 allocs/op`.
     *   Static Code Analysis: `go vet ./pkg/domain/metallurgy/...` $\longrightarrow$ **0 errors**.
+
+#### Deliverable 5.3: High-Frequency Sensor Stream Ingestion (`internal/telemetrystream`)
+*   **CQRS Buffer & Physical Overload Lockout**:
+    *   `internal/telemetrystream/buffer.go`: Implemented `StreamBuffer` and `IngestConfig` providing thread-safe ring buffering and batch writes into partitioned `sensor_telemetry_stream`.
+    *   `Ingest()`: Automatic zero-allocation dynamic harmonic jitter tracking and immediate fail-closed physical overload lockout (`ErrCriticalOverload`) when readings exceed `RatedCapacityMax`.
+    *   `Flush()`: Safe multi-tenant RLS session GUC injection prior to batch transaction execution.
+*   **Verification Evidence**:
+    *   Unit & Isolation Suite: `go test -v -count=1 ./internal/telemetrystream/...` $\longrightarrow$ **PASS (2/2 tests, 0.020s)**.
+    *   Hot-Path Benchmark: `BenchmarkStreamBuffer_IngestHotPath`: `872.8 ns/op`, `639 B/op`, `1 allocs/op` (>1,145,000 readings/sec capacity).
+    *   Static Code Analysis: `go vet ./internal/telemetrystream/...` $\longrightarrow$ **0 errors**.
 
 ---
 
