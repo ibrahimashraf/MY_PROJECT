@@ -246,13 +246,14 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 | Component | Container Name | Host Port | Target / Role / Credentials | Health Check |
 |---|---|:---:|---|---|
-| **PostgreSQL 16** | `integin-dev-postgres` | `15432` | DB: `integin_dev`, User: `integin_runtime`, Pass: `integin_live_run_2026` | `pg_isready -p 15432 -U integin_runtime` |
-| **Keycloak IAM** | `integin-pilot-keycloak` | `18180` | App/Admin HTTP: `http://127.0.0.1:18180/admin/`, Token endpoint | `curl http://127.0.0.1:18180/realms/integin-pilot` |
-| **Keycloak Metrics**| `integin-pilot-keycloak` | `19090` | Internal metrics & health only (`/health`, `/metrics`) | `curl http://127.0.0.1:19090/health` |
-| **RustFS Object Store** | `integin-pilot-rustfs` | `19000` | S3 API endpoint, Bucket: `integin-pilot-evidence` | `curl http://127.0.0.1:19000/minio/health/live` |
-| **RustFS Web Console** | `integin-pilot-rustfs` | `19001` | S3 Admin Web Console: `http://127.0.0.1:19001` | Browser navigation |
-| **PgCat Pooler** | `integin-pgcat` | `6432` | Transaction connection pooler for high-throughput scaling | TCP connect |
-| **integin-server** | Native Process | `18080` | Core API Server: `http://127.0.0.1:18080` | `curl http://127.0.0.1:18080/health` |
+| **PostgreSQL 18** | `appliance-postgres` | `5432` (internal) | DB: `integin_appliance`, User: `integin_appliance_user` | `docker exec appliance-postgres pg_isready` |
+| **Casdoor IAM** | `appliance-casdoor` | `18181` | IAM HTTP: `http://127.0.0.1:18181/` | `curl http://127.0.0.1:18181/` |
+| **RustFS Object Store** | `appliance-rustfs` | `9000` / `9001` | S3 API: `http://127.0.0.1:9000`, Console: `http://127.0.0.1:9001` | `curl http://127.0.0.1:9000/health` |
+| **PgCat Pooler** | `appliance-pgcat` | `6432` | Transaction pooler for high-throughput scaling | TCP connect |
+| **HAProxy Ingress** | `appliance-haproxy` | `80` / `443` | Reverse proxy routing & TLS termination | `curl http://127.0.0.1:80/` |
+| **integin-server** | `appliance-integin-server` | `8080` / `18080` | Core API Server: `http://127.0.0.1:8080` (`v3.5.0`) | `curl http://127.0.0.1:8080/healthz` |
+| **PostgreSQL 16 (Dev)** | `integin-dev-postgres` | `15432` | DB: `integin_dev`, User: `integin_runtime` | `pg_isready -p 15432 -U integin_runtime` |
+
 
 ---
 
