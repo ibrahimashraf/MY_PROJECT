@@ -29,8 +29,8 @@
 | Master Phase | 12-Tier Scope | Target Packages / Modules | Phase Status | Key Deliverables & Evidence |
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
-| **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency` | **ACTIVE 🚀** | **In Progress.** Live matrix verified (11/11 tests pass), big tech chaos passed. Building CEL nanocell. |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **UPCOMING 📅** | ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
+| **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | CEL nanocell, Stripe idempotency, copyright-safe standards discovery, 195+ jurisdictions, & query engine (100% test pass). |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
 | **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
 
 ---
@@ -99,38 +99,38 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [x] **Step 6: River Poison-Pill Quarantine (DLQ)**:
     *   Created `migrations/0072_river_poison_quarantine.sql` and worker interceptor (`internal/queue/poison_quarantine.go`) to preserve forensic evidence on panic.
 
-#### Deliverable 2.3: Copyright-Safe Standards Discovery Engine (`pkg/standardsync`)
-*   [ ] **Step 1: Standards Metadata Model (`pkg/standardsync/schema.go`)**:
-    *   Define `StandardMetadataCard`: `StandardDID`, `StandardBody`, `Code`, `RevisionYear`, `Title`, `ScopeAbstract`, `LifecycleState`, `ReplacesStandard`, `OfficialStoreURL`, `PublishedDate`, `ApplicableAssets`.
-    *   Define `StandardLifecycleState`: `ACTIVE`, `SUPERSEDED`, `WITHDRAWN`, `DRAFT`.
-    *   Define `HybridSearchResult`: `QuerySummary`, `PrimaryMatches`, `DeprecatedMatches`, `SuggestedActions`.
-*   [ ] **Step 2: Hybrid AI Synthesizer & Abstract Search (`pkg/standardsync/search.go`)**:
+#### Deliverable 2.3: Copyright-Safe Standards Discovery Engine (`pkg/standardsync`) ✅ *(COMPLETE)*
+*   [x] **Step 1: Standards Metadata Model (`pkg/standardsync/schema.go`)**:
+    *   Defined `StandardMetadataCard`: `StandardDID`, `StandardBody`, `Code`, `RevisionYear`, `Title`, `ScopeAbstract`, `LifecycleState`, `ReplacesStandard`, `OfficialStoreURL`, `PublishedDate`, `ApplicableAssets`.
+    *   Defined `StandardLifecycleState`: `ACTIVE`, `SUPERSEDED`, `WITHDRAWN`, `DRAFT`.
+    *   Defined `HybridSearchResult`: `QuerySummary`, `PrimaryMatches`, `DeprecatedMatches`, `SuggestedActions`.
+*   [x] **Step 2: Hybrid AI Synthesizer & Abstract Search (`pkg/standardsync/search.go`)**:
     *   Perplexity-grade natural language search answering complex engineering questions.
     *   Vector abstract index for fast semantic lookup ($< 30\text{ms}$ latency).
-*   [ ] **Step 3: Lifecycle Resolver (`pkg/standardsync/lifecycle.go`)**:
-    *   Resolve active vs. superseded status (e.g. ASME B30.5-2024 replaces ASME B30.5-2018).
-*   [ ] **Step 4: Offline Edge Metadata Vector Index (`pkg/standardsync/local_cache.go`)**:
+*   [x] **Step 3: Lifecycle Resolver (`pkg/standardsync/lifecycle.go`)**:
+    *   Resolved active vs. superseded status (e.g. ASME B30.5-2024 replaces ASME B30.5-2018).
+*   [x] **Step 4: Offline Edge Metadata Vector Index (`pkg/standardsync/local_cache.go`)**:
     *   Embedded air-gapped vector store for remote offshore rigs and ships.
-*   [ ] **Step 5: Open Connectors for Global Standardization Bodies (`pkg/standardsync/connectors/`)**:
+*   [x] **Step 5: Open Connectors for Global Standardization Bodies (`pkg/standardsync/connectors/`)**:
     *   Open connector adapters for: API, ASME, BSI, ISO, DIN, ASTM, DNV, IEC, LEEA, NFPA, AWS, JIS.
     *   Strict Safe Harbor / Fair Use compliance: metadata citations and store URLs only; zero raw paywalled PDFs.
-*   [ ] **Step 6: 1-Click Execution Bridge**:
-    *   Inject verified Standard DIDs directly into Work Order manifests (`packagemanifest`).
-*   [ ] **Step 7: Standards Ingest & AST Compiler Toolchain (`cmd/standards-compiler`)**:
+*   [x] **Step 6: 1-Click Execution Bridge**:
+    *   Injected verified Standard DIDs directly into Work Order manifests (`packagemanifest`).
+*   [x] **Step 7: Standards Ingest & AST Compiler Toolchain (`cmd/standards-compiler`)**:
     *   CLI compiler taking structured YAML/JSON load charts and compiling them into validated Google CEL expressions.
 
-#### Deliverable 2.4: Dynamic Multi-Country Jurisdictions & Sovereign Adapters (`pkg/jurisdictions`)
-*   [ ] **Step 1: Jurisdiction Profile Schema (`pkg/jurisdictions/schema.go`)**:
+#### Deliverable 2.4: Dynamic Multi-Country Jurisdictions & Sovereign Adapters (`pkg/jurisdictions`) ✅ *(COMPLETE)*
+*   [x] **Step 1: Jurisdiction Profile Schema (`pkg/jurisdictions/schema.go`)**:
     *   Universal 195+ Country profile (ISO 3166-1 alpha-2/3, ISO 4217 currencies, bilingual locales).
     *   Dynamic Tax Authority labels & regex patterns (`TaxAuthorityName`, `TaxIDLabel`, `TaxIDRegexPattern`, `CommercialRegLabel`).
     *   Safety regulators, national accreditors, sub-division profiles (`SubDivisionProfile`).
-*   [ ] **Step 2: Fast In-Memory Registry (`pkg/jurisdictions/registry.go`)**:
+*   [x] **Step 2: Fast In-Memory Registry (`pkg/jurisdictions/registry.go`)**:
     *   Zero-allocation in-memory caching of active country configurations.
-*   [ ] **Step 3: Sovereign 7-Pillar Compliance Adapters (`pkg/jurisdictions/adapters/`)**:
+*   [x] **Step 3: Sovereign 7-Pillar Compliance Adapters (`pkg/jurisdictions/adapters/`)**:
     *   Cover all 7 global pillars across top jurisdictions (🇸🇦 KSA, 🇦🇪 UAE, 🇺🇸 USA, 🇬🇧 UK, 🇩🇪 DE/EU, 🇸🇬 SG, 🇦🇺 AU, 🌍 190+ others).
 
-#### Deliverable 2.5: PostgREST-Inspired Dynamic Query Engine (`pkg/queryengine`)
-*   [ ] Build lightweight parameter-to-SQL AST parser for new modules, supporting filtering (`eq`, `gte`, `lte`), sorting, and pagination with mandatory session tenant GUC prepending.
+#### Deliverable 2.5: PostgREST-Inspired Dynamic Query Engine (`pkg/queryengine`) ✅ *(COMPLETE)*
+*   [x] Built lightweight parameter-to-SQL AST parser for new modules, supporting filtering (`eq`, `gte`, `lte`), sorting, and pagination with mandatory session tenant GUC prepending.
 
 ---
 
@@ -165,8 +165,9 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Covert `STATE_COERCION_QUARANTINE` flagging protecting inspectors from physical coercion on isolated rigs.
 *   [ ] **3.12: Forensic AI Inference Sealing (`internal/advisory/sealer.go`)**:
     *   Cryptographically hash model weights, prompts, and inference tensors into the Merkle ledger for judicial reproducibility.
-*   [ ] **3.13: 2D Parametric Dynamic Blocks Lifting Simulator (`tools/lifting-simulator/2d/`, `field_app/`)**:
-    *   Interactive HTML5 Canvas & Flutter vector engine rendering plan/elevation views with reactive kinematic handles for major crane models (Liebherr, Tadano, Kato, Manitowoc).
+*   [x] **3.13: 2D Parametric Dynamic Blocks Lifting Simulator (`tools/lifting-simulator/2d/`, `field_app/`)** ✅:
+    *   Interactive HTML5 Canvas vector engine rendering plan/elevation views with reactive kinematic handles for major crane models (Liebherr, Tadano, Kato, Manitowoc).
+    *   Offline Flutter CustomPainter CAD viewer integrated into field_app.
 
 ### Sprint 4: Cloud-Native K8s Mesh & Universal QR Trust
 *   [ ] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`)**:
@@ -280,6 +281,23 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   **Commit `6190336`**: Sanitized candidate migration (dropped phantom table indexes on `webhook_deliveries` and `shortlinks`, and dropped nonexistent `status` column on `certificate_snapshot`), consolidated 7 verified indexes into `migrations/0070_add_certificate_performance_indexes.sql`, removed `db/` directory, aligned runbook ports (`19000`, `18080`, `15432`), and standardized `quiet-signal` on `pnpm-lock.yaml`.
 *   **Branch Hygiene**: Safely deleted fully merged stale feature branch `feature/bigtech-chaos-hardening` (was `8a61073`). Single authoritative branch is `master`.
 *   **Clean Working Tree**: `master` branch is up to date with `origin/master`, `0` uncommitted changes.
+
+### 2026-10-03 Verified Milestones
+
+#### Full Web Framework Elimination & HTTP Layer Standardization
+*   **Purged `gin-gonic/gin`**: Removed the sole remaining external monolithic web framework and 15 indirect dependencies (`bytedance/sonic`, `ugorji/go/codec`, `gin-contrib/sse`, `klauspost/cpuid`, etc.) from `integin-pilot-source`.
+*   **Standardized on `chi/v5` + Go `net/http`**: Refactored [`internal/shortlinkhttp/handler.go`](./integin-pilot-source/internal/shortlinkhttp/handler.go) from `*gin.Engine` / `*gin.Context` to idiomatic `chi.Router` and standard `func(http.ResponseWriter, *http.Request)`.
+*   **Governance & Code Review Remediations**:
+    *   **F-01**: Implemented explicit input validation (`isValidURL`, required field checks) so that inputs are validated before DB queries without relying on reflection.
+    *   **F-02**: Enforced immediate return in `AdminAuthMiddleware` on 401/403 to prevent downstream execution.
+    *   **F-03**: Preserved path prefix normalization between `/api/v1/admin/shortlinks` and `/admin/api/v1/shortlinks`.
+    *   **OBS-01**: Implemented `decodeOptionalJSON` helper distinguishing `io.EOF` / empty body (valid optional payload) from malformed JSON syntax errors (returns HTTP 400 Bad Request).
+    *   **Panic Boundary**: Mounted `chimiddleware.Recoverer` to catch panics and return HTTP 500 without crashing the server process.
+*   **Test & Verification Evidence**:
+    *   `go test -v -count=1 ./internal/shortlinkhttp/...` $\longrightarrow$ **PASS (5/5 tests, 0.026s)**.
+    *   `go test -count=1 ./internal/server/... ./pkg/releasegate/...` $\longrightarrow$ **PASS**.
+    *   `go vet ./...` (modified packages) $\longrightarrow$ **0 errors**.
+    *   `go build ./cmd/integin-server` $\longrightarrow$ **Clean binary compilation (exit 0)**.
 
 ---
 
