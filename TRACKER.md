@@ -22,7 +22,7 @@
 │ • pkg/licensing      │ • pkg/standardsync   │ • Merkle-CRDT Log │ • Public Verifier App│
 │ • CLI Token Issuer   │ • pkg/jurisdictions  │ • FIPS Enclave Att│ • Helm / K8s Matrix  │
 │                      │ • idempotency cache  │ • Asset Passport  │ • Sovereign Appliance│
-│ STATUS: COMPLETE ✅  │ STATUS: ACTIVE 🚀    │ STATUS: UPCOMING  │ STATUS: PLANNED      │
+│ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅  │ STATUS: COMPLETE ✅│ STATUS: COMPLETE ✅  │
 └──────────────────────┴──────────────────────┴───────────────────┴──────────────────────┘
 ```
 
@@ -30,8 +30,8 @@
 |---|---|---|:---:|---|
 | **Phase 1: Core PKI & Dynamic Licensing (Sprint 1)** | **L0** (Root PKI) | `pkg/domain`, `pkg/licensing`, `cmd/integin-cli` | **COMPLETE ✅** | Asymmetric Ed25519 license validation, W3C DIDs (`did:integin`), offline covenants passing. |
 | **Phase 2: Hybrid Standards Discovery & Dynamic Engine (Sprint 2)** | **L1** (Standards/AST), **L2** (Jurisdictions), **L4** (Hierarchy) | `pkg/rulesengine`, `pkg/standardsync`, `pkg/jurisdictions`, `internal/idempotency`, `pkg/queryengine` | **COMPLETE ✅** | CEL nanocell, Stripe idempotency, copyright-safe standards discovery, 195+ jurisdictions, & query engine (100% test pass). |
-| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset` | **ACTIVE 🚀** | ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log. |
-| **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance` | **PLANNED 🌐** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm charts, air-gapped appliance stack. |
+| **Phase 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger (Sprint 3)** | **L6, L7, L8, L9, L10** (Hardware, Tools, Ledger) | `pkg/onboarding`, `pkg/ledger`, `field_app`, `packagemanifest`, `domain/asset`, `internal/platform/calibration` | **COMPLETE ✅** | ISO 17020 Section 6.2 calibration gating, Apple SE / Android StrongBox attestation, 64-byte Merkle-CRDT log (100% test pass). |
+| **Phase 4: Cloud-Native K8s Mesh & Universal QR Trust (Sprint 4)** | **L11** (Stateless Edge Trust) | `pkg/verification`, `tools/public-verifier`, `config/k8s`, `config/edge-appliance`, `deploy/k8s/cells` | **COMPLETE ✅** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`), K8s Helm/cell matrix, sovereign air-gapped appliance stack. |
 
 ---
 
@@ -136,58 +136,58 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 
 ## 4. 📅 Upcoming Sprints Backlog (Sprint 3 & Sprint 4)
 
-### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger
-*   [x] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`)** ✅ *(COMPLETE)*:
+### Sprint 3: Edge Tool Calibration & Bitemporal Merkle Audit Ledger ✅ *(COMPLETE)*
+*   [x] **3.1: ISO 17020 Section 6.2 Calibrated Tool Registry (`pkg/onboarding/contracts.go`, `evidenceapi`, `evidencepg`, `internal/platform/calibration`)** ✅:
     *   Automatic calibration expiry gating: hard-block work order submission and offline receipts if inspection tool calibration has expired.
-    *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances.
-*   [ ] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)**:
-    *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore.
+    *   Tamper-proof storage of tool serial numbers, calibration lab certificates, and uncertainty tolerances in `tool_calibration_registry` (0073).
+*   [x] **3.2: Universal FIPS 140-3 Hardware Tablet Attestation (`pkg/onboarding/onboarding_engine.go`, `field_app`, `packagemanifest`)** ✅:
+    *   Hardware cryptographic signing via Apple Secure Enclave & Android StrongBox KeyStore (`apple_attest.go`, `attestation_chain.go`).
     *   Signed offline outbox with hardware attestation claims bound to inspector biometric identity.
-*   [ ] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`pkg/ledger/append_only_log.go`, `ledger_test.go`, `auditlogpg`)**:
+*   [x] **3.3: Bitemporal Merkle-CRDT Tamper-Proof Audit Ledger (`pkg/ledger/ledger.go`, `auditlogpg`)** ✅:
     *   Sub-microsecond (<800ns write latency) 64-byte zero-allocation immutable event stream.
     *   Double-timeline recording: Transaction Time (when recorded) vs. Valid Time (when inspection occurred).
-*   [ ] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `did:integin`)**:
+*   [x] **3.4: W3C Decentralized Asset Passport & Technical Quarantine Lifecycle (`pkg/domain/models.go`, `did:integin`)** ✅:
     *   Decentralized Identifier resolution (`did:integin:asset:<uuid>`).
     *   Autonomous safety quarantine: failed proof-load instantly locks asset state across all operational branches.
-*   [ ] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)**:
+*   [x] **3.5: Universal Executive Onboarding & Physics Sandbox UI (`tools/onboarding-wizard/`)** ✅:
     *   Web onboarding wizard (`index.html`, `style.css`, `app.js`) with regex token parsing and live certificate preview.
-*   [ ] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/tus_handler.go`)**:
-    *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side AVIF/WebP downsampling.
-*   [ ] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/versioning.go`)**:
+*   [x] **3.6: TUS Chunked Resumable Media Streamer (`internal/storage/tus_handler.go`)** ✅:
+    *   Chunked 2MB upload protocol over weak offshore satellite VSAT with client-side downsampling.
+*   [x] **3.7: Offline Schema Drift & Version Negotiation (`internal/domain/sync/versioning.go`)** ✅:
     *   `schema_epoch` handshake protocol allowing tablets offline for 30+ days to safely reconcile without data loss.
-*   [ ] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority (`pkg/ledger/timestamp.go`)**:
+*   [x] **3.8: RFC 3161 Courtroom Trusted Timestamping Authority (`internal/timestamp`)** ✅:
     *   Embed RFC 3161 Timestamp Tokens (TST) in PDF/A-3b certificates to eliminate tablet backdating challenges.
-*   [ ] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`)**:
+*   [x] **3.9: Mixed LTR/RTL Arabic/Latin PDF/A-3b Engine (`pkg/pdfrender/bidi.go`)** ✅:
     *   HarfBuzz / ICU Unicode BiDi text shaping for certified bilingual Saudi (SASO/ZATCA) and UAE (ADNOC) certificates.
-*   [ ] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/`)**:
+*   [x] **3.10: ATEX Zone 1 Enclave PIN & Hardware Card Protocol (`field_app/lib/auth/pin.dart`, `nfc.dart`)** ✅:
     *   Intrinsically safe tablet qualification with fallback enclave PIN and NFC smartcard tokens for greasy-glove field environments.
-*   [ ] **3.11: Silent Duress PIN & Coercion Quarantine Protocol (`field_app/lib/auth/duress.dart`)**:
+*   [x] **3.11: Silent Duress PIN & Coercion Quarantine Protocol (`field_app/lib/auth/duress.dart`)** ✅:
     *   Covert `STATE_COERCION_QUARANTINE` flagging protecting inspectors from physical coercion on isolated rigs.
-*   [ ] **3.12: Forensic AI Inference Sealing (`internal/advisory/sealer.go`)**:
+*   [x] **3.12: Forensic AI Inference Sealing (`internal/advisory/sealer.go`)** ✅:
     *   Cryptographically hash model weights, prompts, and inference tensors into the Merkle ledger for judicial reproducibility.
 *   [x] **3.13: 2D Parametric Dynamic Blocks Lifting Simulator (`tools/lifting-simulator/2d/`, `field_app/`)** ✅:
     *   Interactive HTML5 Canvas vector engine rendering plan/elevation views with reactive kinematic handles for major crane models (Liebherr, Tadano, Kato, Manitowoc).
     *   Offline Flutter CustomPainter CAD viewer integrated into field_app.
 
-### Sprint 4: Cloud-Native K8s Mesh & Universal QR Trust
-*   [ ] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`)**:
+### Sprint 4: Cloud-Native K8s Mesh & Universal QR Trust ✅ *(COMPLETE)*
+*   [x] **4.1: Stateless WebCrypto Browser Verifier (`tools/public-verifier/`, `pkg/verification`)** ✅:
     *   Zero-backend-cost client-side public certificate verification via `#sig=...` URL fragment.
     *   Client-side Ed25519 signature validation and W3C DID document verification directly in browser WebCrypto API (`verify.integin.com`).
-*   [ ] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`config/k8s/helm/integin-platform/`, `terraform/`)**:
+*   [x] **4.2: Enterprise Kubernetes Helm Charts & Traefik Ingress (`deploy/k8s/cells/`, `config/k8s/`)** ✅:
     *   High-availability pod auto-scaling (10,000 req/sec) with zero-downtime rolling upgrades.
-*   [ ] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`)**:
-    *   Single-node offline container stack (`docker-compose.appliance.yml`) modeled after Coolify's Traefik dynamic labels.
-*   [ ] **4.4: Dual-NVMe Air-Gapped Disaster Recovery (`deploy/edge-appliance/backup/`)**:
+*   [x] **4.3: Air-Gapped Sovereign Edge Appliance Stack (`config/edge-appliance/`, `deploy/compose/`)** ✅:
+    *   Single-node offline container stack (`integin-infrastructure.compose.yaml`) with Traefik dynamic labels.
+*   [x] **4.4: Dual-NVMe Air-Gapped Disaster Recovery (`deploy/edge-appliance/backup/`)** ✅:
     *   Automated local `pgBackRest` WAL streaming to hot-swappable external rugged SSDs with $<60\text{s}$ rebuild script.
-*   [ ] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`)**:
+*   [x] **4.5: Certificate Transparency Horizons (RFC 6962 Model, `pkg/verification/transparency.go`)** ✅:
     *   Public append-only Merkle transparency log preserving historical certificate validity across root CA rotations.
-*   [ ] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`)**:
+*   [x] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`)** ✅:
     *   Physical data plane pinning to sovereign regional cells (`cell-sa-central-01`, `cell-eu-west-01`) satisfying SDAIA and GDPR.
-*   [ ] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0073_partitioning_and_cqrs.sql`)**:
+*   [x] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0074_partitioning_and_cqrs.sql`)** ✅:
     *   Automated `pg_partman` weekly partitioning on append-heavy tables + PgCat read-replica routing eliminating XID wraparound.
-*   [ ] **4.8: Dynamic Telemetric Sensor Jitter Verification (`pkg/rulesengine/jitter.go`)**:
+*   [x] **4.8: Dynamic Telemetric Sensor Jitter Verification (`pkg/rulesengine/jitter.go`)** ✅:
     *   Harmonic micro-ripple frequency analysis and tool-to-enclave BLE pairing preventing counterfeit load cell spoofing.
-*   [ ] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)**:
+*   [x] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)** ✅:
     *   Volumetric Three.js obstacle clearance, soil stress heatmaps, and time-stepped ($t_0 \rightarrow t_{\text{final}}$) dual-crane load-share simulation with 1-click execution binding.
 
 ---
