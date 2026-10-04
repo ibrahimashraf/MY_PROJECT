@@ -24,6 +24,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/riverqueue/river"
 
+	"integin/internal/advisory"
+	"integin/internal/advisoryhttp"
 	"integin/internal/assetentitlementhttp"
 	"integin/internal/assetentitlementpg"
 	"integin/internal/assurancehttp"
@@ -59,6 +61,7 @@ import (
 	"integin/internal/syncapi"
 	"integin/internal/syncstate"
 	"integin/internal/timestamp"
+	"integin/internal/workbenchhttp"
 	"integin/pkg/contextground"
 	"integin/pkg/engine/cognitive"
 	"integin/pkg/engine/eventbus"
@@ -285,12 +288,15 @@ func Run() {
 	var workOrderHandler http.Handler
 	var workOrderEvidenceHandler http.Handler
 	var workOrderAssignmentHandler http.Handler
+	var workOrderHandoverHandler http.Handler
 	var evidenceRegistrationHandler http.Handler
 	var certificateHandler http.Handler
 	var certificatePublicHandler http.Handler
 	var tusHandler http.Handler
 	var schedulingHandler http.Handler
 	var deviceEnrollmentHandler http.Handler
+	var workbenchHandler http.Handler
+	var advisoryHandler http.Handler
 	var certificateRepository *certificatepg.Repository
 	if database != nil {
 		repository, certificateErr := certificatepg.NewRepository(database)
@@ -385,6 +391,10 @@ func Run() {
 		if handlerErr != nil {
 			log.Fatal(handlerErr)
 		}
+		workOrderHandoverHandler, handlerErr = server.NewWorkOrderHandoverHandler(database, sessionAwareValidator, activeResolver)
+		if handlerErr != nil {
+			log.Fatal(handlerErr)
+		}
 		if evidenceStore != nil {
 			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, activeResolver, evidenceStore)
 			if handlerErr != nil {
@@ -438,6 +448,8 @@ func Run() {
 	analyticsHandler, _ := server.NewAnalyticsHandler(database)
 	reportsHandler, _ := server.NewReportsHandler(database)
 	liftViewExportHandler, _ := server.NewLiftViewExportHandler()
+	workbenchHandler = workbenchhttp.NewHandler(database, devices)
+	advisoryHandler = advisoryhttp.NewHandler(advisory.NewRegistry())
 
 	var shortLinkHandler http.Handler
 	var riverQueue *queue.Queue
@@ -616,6 +628,9 @@ func Run() {
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr, UploadAuthorityRegistry: pilotAuthorityRegistry,
 		DeviceEnrollmentHandler: deviceEnrollmentHandler,
+		WorkOrderHandoverHandler: workOrderHandoverHandler,
+		WorkbenchHandler:        workbenchHandler,
+		AdvisoryHandler:         advisoryHandler,
 		PilotEnrollHandler:      enrollHandler,
 		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {

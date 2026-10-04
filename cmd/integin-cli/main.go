@@ -276,6 +276,7 @@ func handleAssetDID(args []string) {
 	model := fs.String("model", "", "Model (e.g. NK-1000)")
 	serial := fs.String("serial", "", "Serial Number")
 	epoch := fs.Int64("epoch", 1700000000, "Base registration unix epoch")
+	cborHex := fs.Bool("cbor", false, "Output compact CBOR hex for QR encoding")
 
 	_ = fs.Parse(args)
 
@@ -286,4 +287,23 @@ func handleAssetDID(args []string) {
 
 	did := domain.GenerateAssetDID(*mfg, *model, *serial, *epoch)
 	fmt.Printf("Generated W3C Asset DID:\n%s\n", did.String())
+
+	if *cborHex {
+		passport := domain.UniversalAssetPassport{
+			AssetDID:          did.String(),
+			Manufacturer:      *mfg,
+			ModelNumber:       *model,
+			ChassisSerial:     *serial,
+			EquipmentCategory: "INDUSTRIAL_ASSET",
+			CurrentStatus:     domain.AssetStatusOperational,
+			RegisteredAt:      time.Unix(*epoch, 0).UTC(),
+			Epoch:             uint64(*epoch),
+		}
+		cborBytes, err := passport.ToCBOR()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to encode CBOR: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("CBOR Payload (hex, %d bytes):\n%s\n", len(cborBytes), hex.EncodeToString(cborBytes))
+	}
 }
