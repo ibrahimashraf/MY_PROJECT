@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INTEGIN 2D Parametric Dynamic Blocks Lifting Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="top-banner">
+        ⚠️ <strong>ENGINEERING RIGGING NOTICE:</strong> Dynamic 2D blocks simulation for clearance and capacity estimation. Final lift plan requires Appointed Person sign-off and site geotechnical verification.
+    </div>
+
+    <header id="header">
+        <div class="brand">
+            <span style="font-size: 18px;">🏗️</span>
+            <h1>INTEGIN 2D Dynamic Blocks Simulator</h1>
+        </div>
+
+        <div class="telemetry-hud">
+            <div class="telemetry-item">
+                <span class="label">Radius (R)</span>
+                <span id="val-radius" class="value">14.0 m</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">Boom Angle (α)</span>
+                <span id="val-angle" class="value">67.8°</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">ASME B30.5 Capacity</span>
+                <span id="val-capacity" class="value val-safe">44.1% (45t / 102t)</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">Ground Bearing FoS</span>
+                <span id="val-gbp" class="value val-safe">PASS (FoS 2.14)</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="label">Sling Tension</span>
+                <span id="val-sling" class="value val-safe">29.9t @ 60°</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="workspace">
+        <div id="viewport-container">
+            <div class="canvas-panel">
+                <div class="panel-title">PLAN VIEW (TOP-DOWN X-Z CAD)</div>
+                <canvas id="canvas-plan"></canvas>
+            </div>
+            <div class="canvas-panel">
+                <div class="panel-title">ELEVATION VIEW (SIDE PROFILE X-Y CAD)</div>
+                <canvas id="canvas-elevation"></canvas>
+            </div>
+        </div>
+
+        <aside id="sidebar">
+            <div class="control-section">
+                <span class="section-head">Crane Model & Block Selection</span>
+                <div class="input-row">
+                    <label for="select-crane">Model</label>
+                    <select id="select-crane" style="width: 180px;">
+                        <option value="LIEBHERR_LTM_1500">Liebherr LTM 1500-8.1</option>
+                        <option value="LIEBHERR_LTM_1100">Liebherr LTM 1100-4.2</option>
+                        <option value="TADANO_ATF_400G">Tadano ATF 400G-6</option>
+                        <option value="TADANO_ATF_200G_5">Tadano ATF 200G-5</option>
+                        <option value="DEMAG_AC_200_1">Demag AC 200-1</option>
+                        <option value="KATO_CR_250">Kato CR-250</option>
+                        <option value="MANITOWOC_MLC300">Manitowoc MLC300</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label for="select-boom-len">Boom Length</label>
+                    <select id="select-boom-len" style="width: 100px;"></select>
+                </div>
+                <div class="input-row">
+                    <label for="select-cw">Counterweight</label>
+                    <select id="select-cw" style="width: 100px;"></select>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <span class="section-head">Kinematic Handles</span>
+                <div class="input-row">
+                    <label for="range-radius">Working Radius</label>
+                    <input type="range" id="range-radius" min="4" max="50" step="0.5" value="14">
+                </div>
+                <div class="input-row">
+                    <label for="range-slew">Slew Azimuth</label>
+                    <input type="range" id="range-slew" min="-180" max="180" step="5" value="25">
+                </div>
+                <div class="input-row">
+                    <label>Outriggers</label>
+                    <div class="btn-group" id="group-outriggers">
+                        <button class="btn-option active" data-val="100%">100%</button>
+                        <button class="btn-option" data-val="75%">75%</button>
+                        <button class="btn-option" data-val="50%">50%</button>
+                        <button class="btn-option" data-val="0%">0%</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <span class="section-head">Rigging & Load Setup</span>
+                <div class="input-row">
+                    <label for="range-load">Gross Load (t)</label>
+                    <input type="range" id="range-load" min="1" max="150" step="1" value="45">
+                </div>
+                <div class="input-row">
+                    <label for="range-sling-angle">Sling Angle (°)</label>
+                    <input type="range" id="range-sling-angle" min="20" max="90" step="5" value="60">
+                </div>
+                <div class="input-row">
+                    <label for="range-mat-area">Mat Area (m²)</label>
+                    <input type="range" id="range-mat-area" min="1.0" max="8.0" step="0.5" value="4.0">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <span class="section-head">1-Click Server Export</span>
+                <p class="hint-text">Binds verified 2D state into full server-side engineering package with DXF views, ASME B30.5 verification, and PDF report.</p>
+                <button id="btn-export" class="btn-primary">Export Solved Pack (.zip)</button>
+                <span id="export-status" class="hint-text" style="color: #38bdf8;">Status: idle</span>
+            </div>
+        </aside>
+    </div>
+
+    <script src="blocks_catalog.js"></script>
+    <script src="engine2d.js"></script>
+    <script>
+        // State
+        const state = {
+            craneId: 'LIEBHERR_LTM_1500',
+            boomLenM: 36.9,
+            counterweightT: 90,
+            workingRadiusM: 14.0,
+            boomAngleDeg: 67.8,
+            slewAngleDeg: 25.0,
+            outriggerExt: '100%',
+            grossLoadT: 45.0,
+            slingAngleDeg: 60.0,
+            matAreaM2: 4.0
+        };
+
+        const planCanvas = document.getElementById('canvas-plan');
+        const elevCanvas = document.getElementById('canvas-elevation');
+        let planVP, elevVP;
+
+        function resizeCanvases() {
+            const rectPlan = planCanvas.parentElement.getBoundingClientRect();
+            planCanvas.width = rectPlan.width;
+            planCanvas.height = rectPlan.height;
+
+            const rectElev = elevCanvas.parentElement.getBoundingClientRect();
+            elevCanvas.width = rectElev.width;
+            elevCanvas.height = rectElev.height;
+
+            if (planVP) {
+                planVP.pan.x = planCanvas.width / 2;
+                planVP.pan.y = planCanvas.height / 2;
+            }
+            if (elevVP) {
+                elevVP.pan.x = elevCanvas.width / 3;
+                elevVP.pan.y = elevCanvas.height - 80;
+            }
+            render();
+        }
+
+        function init() {
+            planVP = new CADViewport(planCanvas, true);
+            elevVP = new CADViewport(elevCanvas, false);
+
+            populateSelectors();
+            setupEvents();
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+        }
+
+        function populateSelectors() {
+            const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+            const boomSelect = document.getElementById('select-boom-len');
+            boomSelect.innerHTML = '';
+            crane.boom.sections.forEach(len => {
+                const opt = document.createElement('option');
+                opt.value = len;
+                opt.textContent = `${len.toFixed(1)} m`;
+                if (Math.abs(len - state.boomLenM) < 0.1) opt.selected = true;
+                boomSelect.appendChild(opt);
+            });
+
+            const cwSelect = document.getElementById('select-cw');
+            cwSelect.innerHTML = '';
+            crane.counterweights.forEach(cw => {
+                const opt = document.createElement('option');
+                opt.value = cw;
+                opt.textContent = `${cw} t`;
+                if (cw === state.counterweightT) opt.selected = true;
+                cwSelect.appendChild(opt);
+            });
+        }
+
+        function updatePhysics() {
+            const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+            state.boomAngleDeg = LIFT_PHYSICS.radiusToBoomAngle(state.workingRadiusM, state.boomLenM, crane.boom.pivotOffset.x);
+
+            const capacityT = LIFT_PHYSICS.getRatedCapacity(crane, state.boomLenM, state.workingRadiusM);
+            const utilPct = capacityT > 0 ? (state.grossLoadT / capacityT) * 100 : 999.0;
+            const sling = LIFT_PHYSICS.calculateSlingTension(state.grossLoadT, state.slingAngleDeg);
+            const gbp = LIFT_PHYSICS.calculateOutriggers(crane, state, state.grossLoadT);
+
+            // Update UI telemetry
+            document.getElementById('val-radius').textContent = `${state.workingRadiusM.toFixed(1)} m`;
+            document.getElementById('val-angle').textContent = `${state.boomAngleDeg.toFixed(1)}°`;
+
+            const capEl = document.getElementById('val-capacity');
+            capEl.textContent = `${utilPct.toFixed(1)}% (${state.grossLoadT}t / ${capacityT.toFixed(1)}t)`;
+            capEl.className = 'value ' + (utilPct > 100 ? 'val-fail' : (utilPct > 85 ? 'val-warn' : 'val-safe'));
+
+            const gbpEl = document.getElementById('val-gbp');
+            gbpEl.textContent = `${gbp.status} (FoS ${gbp.fos.toFixed(2)})`;
+            gbpEl.className = 'value ' + (gbp.fos < 1.0 ? 'val-fail' : (gbp.fos < 1.5 ? 'val-warn' : 'val-safe'));
+
+            const slingEl = document.getElementById('val-sling');
+            slingEl.textContent = `${sling.legTensionT}t @ ${state.slingAngleDeg}°`;
+            slingEl.className = 'value ' + (sling.criticalDerated ? 'val-fail' : 'val-safe');
+        }
+
+        function render() {
+            updatePhysics();
+            renderPlanView();
+            renderElevationView();
+        }
+
+        function renderPlanView() {
+            planVP.clear();
+            const ctx = planVP.ctx;
+            const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+
+            // 1. Outrigger Beams & Mats
+            const extFactor = crane.outriggers.extensions[state.outriggerExt] || 1.0;
+            const hx = (crane.outriggers.spanXM * extFactor) / 2.0;
+            const hz = (crane.outriggers.spanZM * extFactor) / 2.0;
+            const matHalf = Math.sqrt(state.matAreaM2) / 2.0;
+
+            const corners = [
+                { x: -hx, z: -hz }, { x: hx, z: -hz },
+                { x: hx, z: hz }, { x: -hx, z: hz }
+            ];
+
+            ctx.lineWidth = 1.5;
+            corners.forEach(c => {
+                // Outrigger beam
+                const s0 = planVP.worldToScreen(0, 0);
+                const sC = planVP.worldToScreen(c.x, c.z);
+                ctx.strokeStyle = '#475569';
+                ctx.beginPath();
+                ctx.moveTo(s0.x, s0.y); ctx.lineTo(sC.x, sC.y);
+                ctx.stroke();
+
+                // Timber mat
+                const m0 = planVP.worldToScreen(c.x - matHalf, c.z - matHalf);
+                const m1 = planVP.worldToScreen(c.x + matHalf, c.z + matHalf);
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(m0.x, m0.y, m1.x - m0.x, m1.y - m0.y);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.strokeRect(m0.x, m0.y, m1.x - m0.x, m1.y - m0.y);
+            });
+
+            // 2. Chassis
+            const chW = crane.chassis.widthM;
+            const chL = crane.chassis.lengthM;
+            const ch0 = planVP.worldToScreen(-chL / 2, -chW / 2);
+            const ch1 = planVP.worldToScreen(chL / 2, chW / 2);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(ch0.x, ch0.y, ch1.x - ch0.x, ch1.y - ch0.y);
+            ctx.strokeStyle = '#64748b';
+            ctx.strokeRect(ch0.x, ch0.y, ch1.x - ch0.x, ch1.y - ch0.y);
+
+            // 3. Working Radius Circle
+            const center = planVP.worldToScreen(0, 0);
+            const rPx = state.workingRadiusM * planVP.scale;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, rPx, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 4. Slewed Boom Line
+            const slewRad = (state.slewAngleDeg * Math.PI) / 180.0;
+            const hookX = state.workingRadiusM * Math.cos(slewRad);
+            const hookZ = state.workingRadiusM * Math.sin(slewRad);
+            const hookScreen = planVP.worldToScreen(hookX, hookZ);
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(hookScreen.x, hookScreen.y);
+            ctx.stroke();
+
+            // 5. Kinematic Grip at Hook
+            planVP.registerGrip('radius_slew', new Vector2D(hookX, hookZ), 10, 'active');
+        }
+
+        function renderElevationView() {
+            elevVP.clear();
+            const ctx = elevVP.ctx;
+            const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+
+            // 1. Chassis
+            const chW = crane.chassis.lengthM;
+            const chH = 2.4;
+            const c0 = elevVP.worldToScreen(-chW / 2, chH);
+            const c1 = elevVP.worldToScreen(chW / 2, 0);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(c0.x, c0.y, c1.x - c0.x, c1.y - c0.y);
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(c0.x, c0.y, c1.x - c0.x, c1.y - c0.y);
+
+            // 2. Outrigger pads
+            const extFactor = crane.outriggers.extensions[state.outriggerExt] || 1.0;
+            const halfSpan = (crane.outriggers.spanXM * extFactor) / 2.0;
+            const matHalf = Math.sqrt(state.matAreaM2) / 2.0;
+
+            [-halfSpan, halfSpan].forEach(px => {
+                const m0 = elevVP.worldToScreen(px - matHalf, 0.4);
+                const m1 = elevVP.worldToScreen(px + matHalf, 0);
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(m0.x, m0.y, m1.x - m0.x, m1.y - m0.y);
+            });
+
+            // 3. Boom Pivot & Telescoping Boom
+            const pivot = crane.boom.pivotOffset;
+            const pivScreen = elevVP.worldToScreen(pivot.x, pivot.y);
+
+            const rad = (state.boomAngleDeg * Math.PI) / 180.0;
+            const tipX = pivot.x + state.boomLenM * Math.cos(rad);
+            const tipY = pivot.y + state.boomLenM * Math.sin(rad);
+            const tipScreen = elevVP.worldToScreen(tipX, tipY);
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(pivScreen.x, pivScreen.y);
+            ctx.lineTo(tipScreen.x, tipScreen.y);
+            ctx.stroke();
+
+            // 4. Hoist Line & Hook Block
+            const hookH = 5.0; // Suspended height above ground
+            const hookScreen = elevVP.worldToScreen(tipX, hookH);
+
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(tipScreen.x, tipScreen.y);
+            ctx.lineTo(hookScreen.x, hookScreen.y);
+            ctx.stroke();
+
+            // Hook block
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillRect(hookScreen.x - 5, hookScreen.y - 8, 10, 16);
+
+            // 5. Rigging Slings & Suspended Load
+            const slingLen = 3.0;
+            const slingRad = (state.slingAngleDeg * Math.PI) / 180.0;
+            const loadW = 6.0;
+            const loadH = 2.0;
+            const loadTopY = hookH - slingLen * Math.sin(slingRad);
+
+            const load0 = elevVP.worldToScreen(tipX - loadW / 2, loadTopY);
+            const load1 = elevVP.worldToScreen(tipX + loadW / 2, loadTopY - loadH);
+
+            // Slings
+            ctx.strokeStyle = state.slingAngleDeg < 30 ? '#ef4444' : '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(hookScreen.x, hookScreen.y + 8);
+            ctx.lineTo(load0.x, load0.y);
+            ctx.moveTo(hookScreen.x, hookScreen.y + 8);
+            ctx.lineTo(load1.x, load0.y);
+            ctx.stroke();
+
+            // Load body
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(load0.x, load0.y, load1.x - load0.x, load1.y - load0.y);
+            ctx.strokeStyle = '#ffffff';
+            ctx.strokeRect(load0.x, load0.y, load1.x - load0.x, load1.y - load0.y);
+
+            // 6. Kinematic Grip at Hook
+            elevVP.registerGrip('hook_radius', new Vector2D(tipX, tipY), 10, 'active');
+        }
+
+        function setupEvents() {
+            // Sliders & Selectors
+            document.getElementById('select-crane').addEventListener('change', e => {
+                state.craneId = e.target.value;
+                const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+                state.boomLenM = crane.boom.sections[Math.floor(crane.boom.sections.length / 2)];
+                state.counterweightT = crane.counterweights[crane.counterweights.length - 1];
+                populateSelectors();
+                render();
+            });
+
+            document.getElementById('select-boom-len').addEventListener('change', e => {
+                state.boomLenM = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('select-cw').addEventListener('change', e => {
+                state.counterweightT = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('range-radius').addEventListener('input', e => {
+                state.workingRadiusM = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('range-slew').addEventListener('input', e => {
+                state.slewAngleDeg = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('range-load').addEventListener('input', e => {
+                state.grossLoadT = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('range-sling-angle').addEventListener('input', e => {
+                state.slingAngleDeg = parseFloat(e.target.value);
+                render();
+            });
+
+            document.getElementById('range-mat-area').addEventListener('input', e => {
+                state.matAreaM2 = parseFloat(e.target.value);
+                render();
+            });
+
+            document.querySelectorAll('#group-outriggers .btn-option').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    document.querySelectorAll('#group-outriggers .btn-option').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.outriggerExt = btn.dataset.val;
+                    render();
+                });
+            });
+
+            // Interactive Dragging on Plan View
+            let draggingPlan = false;
+            planCanvas.addEventListener('mousedown', e => {
+                const rect = planCanvas.getBoundingClientRect();
+                const grip = planVP.findGrip(e.clientX - rect.left, e.clientY - rect.top);
+                if (grip) draggingPlan = true;
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!draggingPlan) return;
+                const rect = planCanvas.getBoundingClientRect();
+                const worldPos = planVP.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+                const r = Math.hypot(worldPos.x, worldPos.y);
+                const slew = (Math.atan2(worldPos.y, worldPos.x) * 180.0) / Math.PI;
+
+                state.workingRadiusM = Math.max(4, Math.min(state.boomLenM - 2, Math.round(r * 2) / 2));
+                state.slewAngleDeg = Math.round(slew);
+
+                document.getElementById('range-radius').value = state.workingRadiusM;
+                document.getElementById('range-slew').value = state.slewAngleDeg;
+                render();
+            });
+
+            window.addEventListener('mouseup', () => {
+                draggingPlan = false;
+            });
+
+            // Export Button
+            document.getElementById('btn-export').addEventListener('click', async () => {
+                const statusEl = document.getElementById('export-status');
+                statusEl.textContent = 'Contacting server...';
+                try {
+                    const payload = {
+                        crane1: {
+                            boom_length_meters: state.boomLenM,
+                            boom_angle_deg: state.boomAngleDeg,
+                            slew_angle_deg: state.slewAngleDeg,
+                            counterweight_tonne: state.counterweightT,
+                            outrigger_spread_x_m: 8.5,
+                            outrigger_spread_z_m: 8.5,
+                            chassis_weight_tonne: 60
+                        },
+                        crane2: {
+                            boom_length_meters: state.boomLenM * 0.9,
+                            boom_angle_deg: state.boomAngleDeg * 0.95,
+                            slew_angle_deg: -state.slewAngleDeg,
+                            counterweight_tonne: state.counterweightT * 0.8,
+                            outrigger_spread_x_m: 8.5,
+                            outrigger_spread_z_m: 8.5,
+                            chassis_weight_tonne: 60
+                        },
+                        crane1_model: state.craneId,
+                        crane2_model: 'TADANO_ATF_200G_5',
+                        total_load_t: state.grossLoadT,
+                        cog_offset_m: 0,
+                        mat_area_m2: state.matAreaM2,
+                        allowable_kp: 220,
+                        crane1_cap_t: 100,
+                        crane2_cap_t: 80,
+                        sling_angle_d: state.slingAngleDeg,
+                        sling_mbl_t: 80,
+                        rigging_t: 2,
+                        hazards: [{ id: "H-01", hazard: "Suspended load", risk: "Struck-by", control: "Exclusion zone", owner: "AP" }],
+                        method_steps: [{ sequence: 1, action: "Pre-lift trial", hold_point: "Sign-off", stop_condition: "Tilt" }],
+                        pages: 8
+                    };
+
+                    const token = typeof window.INTEGIN_API_TOKEN === 'string' ? window.INTEGIN_API_TOKEN.trim() : '';
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                    const res = await fetch('/api/v1/liftviews/export?mode=simulation', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `liftview-2d-${state.craneId}.zip`;
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    statusEl.textContent = 'Pack downloaded ✅';
+                } catch (err) {
+                    statusEl.textContent = `Export failed: ${err.message}`;
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
