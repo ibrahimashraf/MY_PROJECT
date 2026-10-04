@@ -137,7 +137,8 @@ void main() {
 
       // Tap Save
       await tester.tap(find.text('Save Form to Canonical Outbox'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       // Verify onSave was called with values
       expect(savedValues, isNotNull);
