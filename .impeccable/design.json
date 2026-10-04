@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T02:17:00Z",
+  "title": "Design System: INTEGIN",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Safety Amber", "canonical": "#f59e0b", "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a"] },
+      "primary-hover": { "role": "primary", "displayName": "Amber Deep", "canonical": "#d97706", "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a"] },
+      "surface-chassis": { "role": "neutral", "displayName": "Deep Chassis", "canonical": "#0b0f19", "tonalRamp": ["#030712", "#0b0f19", "#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af"] },
+      "surface-card": { "role": "neutral", "displayName": "Card Surface", "canonical": "#1e293b", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"] },
+      "surface-border": { "role": "neutral", "displayName": "Surface Border", "canonical": "#334155", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"] },
+      "text-primary": { "role": "neutral", "displayName": "Text Primary", "canonical": "#f8fafc", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f8fafc"] },
+      "text-muted": { "role": "neutral", "displayName": "Text Muted", "canonical": "#94a3b8", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f8fafc"] },
+      "status-verified": { "role": "secondary", "displayName": "Verified Emerald", "canonical": "#10b981", "tonalRamp": ["#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"] },
+      "status-defect": { "role": "tertiary", "displayName": "Defect Crimson", "canonical": "#ef4444", "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5"] },
+      "status-neutral": { "role": "neutral", "displayName": "Status Neutral", "canonical": "#64748b", "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Top-level inspection headings, asset integrity status banners." },
+      "headline": { "displayName": "Headline", "purpose": "Section containers, equipment group headers, work order titles." },
+      "title": { "displayName": "Title", "purpose": "Inspection prompt labels, tool calibration headers, modal titles." },
+      "body": { "displayName": "Body", "purpose": "Descriptive notes, inspector witness text, procedure instructions." },
+      "label": { "displayName": "Label / Monospace", "purpose": "DIDs, Merkle roots, ISO calibration dates, GPS coordinates." }
+    },
+    "shadows": [
+      { "name": "tactile-lift", "value": "0 4px 6px -1px rgba(0, 0, 0, 0.5)", "purpose": "Floating action buttons and active modal dialogs." }
+    ],
+    "motion": [
+      { "name": "ease-tactile", "value": "cubic-bezier(0.2, 0, 0, 1)", "purpose": "Immediate mechanical snap for buttons and switches." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-contrast 48dp tactile action button for field execution and scope commit.",
+      "html": "<button class=\"ds-btn-primary\">COMMIT INSPECTION SCOPE</button>",
+      "css": ".ds-btn-primary { background: #f59e0b; color: #0b0f19; min-height: 48px; padding: 14px 28px; font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: background 0.15s ease; } .ds-btn-primary:hover { background: #d97706; }"
+    },
+    {
+      "name": "Verification Badge",
+      "kind": "chip",
+      "refersTo": "badge-verified",
+      "description": "Cryptographic tamper-evident status indicator for verified DIDs and Merkle inclusion.",
+      "html": "<span class=\"ds-badge-verified\">✓ VERIFIED SEALED</span>",
+      "css": ".ds-badge-verified { display: inline-flex; align-items: center; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; }"
+    },
+    {
+      "name": "Asset Scope Container",
+      "kind": "card",
+      "refersTo": "card-chassis",
+      "description": "High-density inspection panel grouping prompt items and calibration status.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">CALIBRATED TOOL #6.2</div><div class=\"ds-card-body\">Fluke 289 DMM (Cal Due: 2026-11-30)</div></div>",
+      "css": ".ds-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px 20px; color: #f8fafc; font-family: system-ui, sans-serif; } .ds-card-title { font-size: 13px; font-weight: 600; color: #f59e0b; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; } .ds-card-body { font-size: 15px; color: #94a3b8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Industrial Rig & High-Contrast Safety",
+    "overview": "INTEGIN operates in unforgiving physical and technical environments: harsh offshore rigs under direct blinding sunlight glare, explosive ATEX Zone 1 hazardous atmospheres, oily-gloved field operators, and cryptographic zero-knowledge third-party audit verifiers. The visual design system rejects decorative fluff, low-contrast pastel gradients, and delicate micro-interactions in favor of high-density utility, extreme contrast ratios, and tactile reliability.\n\nEvery screen embodies structural rigidity and tamper-evident authenticity. The visual foundation is built on deep structural slate (#0B0F19, #1E293B) paired with high-visibility safety amber (#F59E0B), verified emerald (#10B981), and unequivocal defect crimson (#EF4444). All primary interactive touchpoints adhere strictly to physical affordances—minimum 48×48dp target bounding boxes, clear mechanical state feedback, and monospaced cryptographic hashes.",
+    "keyCharacteristics": [
+      "High-Visibility Industrial Contrast: Designed to remain legible at 10,000+ lux ambient daylight on ruggedized field tablets.",
+      "Greasy-Glove Affordance: All interactive controls maintain minimum 48dp tactile hit regions with 4px distinct border separation.",
+      "Tamper-Evident State Hierarchy: Cryptographic verifications, calibrated tool validity, and defect severities carry unmistakable color codes.",
+      "Monospace Cryptographic Clarity: Envelope signatures, DID hashes, and Merkle proofs render exclusively in tabular monospace."
+    ],
+    "rules": [
+      { "name": "The Sunlight Glare Rule", "body": "Interactive elements and state indicators must achieve a minimum contrast ratio of 7:1 against their immediate chassis background.", "section": "colors" },
+      { "name": "The Tri-Color Safety Doctrine", "body": "Emerald (#10B981), Amber (#F59E0B), and Crimson (#EF4444) are reserved strictly for verification state, active warning/guidance, and non-conformity. They may never be used for purely aesthetic decoration.", "section": "colors" },
+      { "name": "The Cryptographic Monospace Rule", "body": "Any value representing a cryptographic proof, hash, signature, or tool serial number must render in monospaced font with tabular numerals.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Depth is established through tonal step (#0B0F19 base → #1E293B panel → #334155 border), never through decorative multi-layer blur shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do maintain a minimum 48×48dp hit target on all clickable and tappable elements in field workflows.",
+      "Do format all cryptographic hashes, DIDs, signatures, and calibration serial numbers in monospaced font.",
+      "Do enforce 7:1 minimum contrast on all critical telemetry and status indicators.",
+      "Do use tonal surface steps (#0B0F19 to #1E293B) to establish hierarchy."
+    ],
+    "donts": [
+      "Don't use soft decorative pastels, low-contrast grey-on-grey text, or subtle multi-layer drop shadows.",
+      "Don't use amber, emerald, or red colors for decorative or non-status elements.",
+      "Don't allow interactive buttons smaller than 40px in mobile/field contexts.",
+      "Don't trap field inspectors in non-dismissible modal loops or multi-page wizards without offline state persistence."
+    ]
+  }
+}
