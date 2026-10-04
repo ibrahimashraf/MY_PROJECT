@@ -389,8 +389,18 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   `ReinspectionBinding`: Emits immutable forward audit link connecting original inspection ID, CAR ID, and reinspection record.
 *   **Verification Evidence**:
     *   `go test -v -count=1 ./internal/domain/reinspection/...` $\longrightarrow$ **PASS (3/3 tests, 0.034s)**.
-    *   `go test -v -count=1 ./pkg/robotictrust/...` $\longrightarrow$ **PASS (3/3 tests, 0.037s)**.
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
+#### Deliverable 5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)
+
+*   **Hardware Attestation & Envelope Enforcement**:
+    *   `pkg/robotictrust/models.go`: Added `PlatformType` (`QUADRUPED_CRAWLER`, `AERIAL_UAV`, `SUBSEA_ROV`, `PIPE_CRAWLER`), `RoboticAttestationClaim`, `ExecutionEnvelope`, `SpatialFrameProof`, and `RoboticInspectionReceipt`.
+    *   `ValidateRoboticSubmission()`: Enforces fail-closed verification of discrete TPM 2.0 signatures, firmware hash whitelist, altitude ceiling, and velocity safety corridors.
+    *   `internal/robotics/adapter.go`: Implemented `IngressService` adapting attested robotic telemetry and optical/LiDAR keyframe digests into standard `SignedInspectionReceipt` for ledger pipeline.
+*   **Verification Evidence**:
+    *   Unit & Isolation Suite: `go test -v -count=1 ./pkg/robotictrust/... ./internal/robotics/...` $\longrightarrow$ **PASS (4/4 tests, 0.042s)**.
+    *   Hot-Path Benchmark: `BenchmarkValidateRoboticSubmission_HotPath`: `3358 ns/op`, `0 B/op`, `0 allocs/op` (strict $< 50\mu\text{s}$ nanocell SLA met).
+    *   Static Code Analysis: `go vet ./pkg/robotictrust/... ./internal/robotics/...` $\longrightarrow$ **0 errors**.
 
 ---
 
