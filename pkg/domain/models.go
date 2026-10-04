@@ -52,6 +52,8 @@ type UniversalAssetPassport struct {
 	RegisteredAt      time.Time              `json:"registered_at"`
 	Epoch             uint64                 `json:"epoch"`
 	ChainOfCustody    []CustodyTransferEvent `json:"chain_of_custody"`
+	MillHeatDIDs      []string               `json:"mill_heat_dids,omitempty"` // EN 10204 3.1/3.2 mill heat certificates
+	DamageIndex       float64                `json:"damage_index,omitempty"`   // Cumulative Palmgren-Miner fatigue fraction D
 }
 
 // Validate ensures all required foundational identity fields are satisfied.
