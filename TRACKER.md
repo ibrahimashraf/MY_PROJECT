@@ -338,6 +338,18 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Submodule tagged `v3.4.0` at commit `b5dff79`.
     *   Parent workspace synchronized and tagged `v3.4.0`.
 
+#### Horizon 1: High-Volume Work-Order UX & Safe Asset Cloning
+*   **Location-First Scope Grouping (`internal/domain/workorder/cloning.go`, `field_app/lib/domain/work_order_cloning.dart`)**:
+    *   Added `LocationSection` and `GroupByLocation()` clustering scope items by controlled location/zone deterministically.
+    *   Added `LocationScopeGroup` in Flutter client domain.
+*   **Proof-Isolated Asset Cloning (`CloneInspectionDraft`, `SafeDraftCloner`)**:
+    *   Enforces ISO 17020 §6.2 proof isolation: copies prompts, editable answers, measurements, tolerances, and defect findings while strictly purging photos (`EvidenceRefs`), attachment hashes, signatures, and receipts.
+    *   Sets cloned draft state to `DRAFT` / `SCHEDULED` with audit markers (`IsClonedDraft: true`).
+*   **Verification Evidence**:
+    *   `go test -v -count=1 ./internal/domain/workorder/...` $\longrightarrow$ **PASS (33/33 tests, 0.037s)**.
+    *   `flutter test test/location_work_order_cloning_test.dart` $\longrightarrow$ **PASS (4/4 tests, 0 failures)**.
+    *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
 ---
 
 ## 10. 💡 Architectural Findings & Discoveries
