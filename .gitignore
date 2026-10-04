@@ -58,3 +58,7 @@ docs/evidence/pilot-backups/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Project-local configs & bench directories
+.npmrc
+bench_pdf/
