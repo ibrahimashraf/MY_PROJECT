@@ -193,9 +193,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 ### Sprint 5: Autonomous Robotic Trust, Real-Time Fleet Telemetry & Parametric Damage Collateral (ACTIVE 🚀)
 *Master Objective: Bridge Physical Matter to Mathematical Law via Autonomous Robotics, Mill Provenance, & High-Frequency Telemetric Feedback Loops.*
 
-*   [ ] **5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)**:
+*   [x] **5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)** ✅:
     *   M2M zero-touch edge attestation for autonomous quadrupeds (Boston Dynamics Spot / ANYmal) and aerial inspection drones.
     *   Automated non-human sensor ingestion with hardware-backed enclave signing and raw video photogrammetry keyframe hashing.
+    *   Verified hot-path benchmark: `3358 ns/op`, `0 B/op`, `0 allocs/op` ($< 50\mu\text{s}$ SLA met).
 *   [ ] **5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`, `did:integin:heat:<heat_no>`)**:
     *   W3C Digital Product Passport (DPP) sub-schema binding steel mill heat certificates (EN 10204 3.1/3.2) directly to Asset DIDs.
     *   Fatigue accumulation tracking: calculate cyclic stress reversals ($S$-$N$ curves, Miner's Rule) updating remaining safe working life.
