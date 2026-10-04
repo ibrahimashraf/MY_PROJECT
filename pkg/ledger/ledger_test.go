@@ -46,3 +46,22 @@ func TestShimSentinelsAlias(t *testing.T) {
 		t.Fatal("ErrChainBroken is not the auditlog sentinel")
 	}
 }
+
+func BenchmarkAppendRecord(b *testing.B) {
+	entry := shimEntry()
+	prev := GenesisHash()
+	var rec Record
+	var err error
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		rec, err = AppendRecord(prev, entry)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	b.StopTimer()
+	_ = rec
+}
+
+
