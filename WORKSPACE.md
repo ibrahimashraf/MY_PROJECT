@@ -1,9 +1,10 @@
 # 🌐 INTEGIN Master Workspace Specification & Single Source of Truth (SSOT)
 
 **Workspace Root:** `C:\MY_PROJECT`  
-**Document Version:** 3.0.0 (Unified Canonical Standard)  
-**Last Reconciled:** 2026-09-07  
+**Document Version:** 3.4.0 (Unified Canonical Standard)  
+**Last Reconciled:** 2026-10-05  
 **Authority:** The single permanent reference document for all human engineers and AI agents (Claude, Gemini, Codex, Manus).
+
 
 ---
 
@@ -147,17 +148,18 @@ INTEGIN is an **Integrated Inspection & Assurance Platform** designed for worldw
 | Tier | Name | Key Components & Scope | Active Packages / Status |
 |---|---|---|---|
 | **L0** | **Root PKI & Licensing** | Asymmetric Ed25519 license keys, offline covenants, feature flags | `pkg/licensing`, `licensehttp`, `licensepg` ✅ |
-| **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` 🚀 *(In Progress)* |
-| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `identity`, `tenant` 🚀 *(Planned)* |
+| **L1** | **Hybrid Standards Engine** | Copyright-safe standards discovery, Google CEL formula AST evaluator | `pkg/standardsync`, `pkg/rulesengine` ✅ |
+| **L2** | **Dynamic Jurisdictions** | Multi-country tax, currency, and regulatory matrices (ZATCA, OSHA, CE) | `pkg/jurisdictions`, `internal/jurisdictionhttp` ✅ |
 | **L3** | **Discipline Package Scoping**| Inspector competency gating, training validation, courses | `traininghttp`, `trainingpg`, `equipment` ✅ |
 | **L4** | **Operational Hierarchy** | Work orders, assignments, hierarchical branch/area/zone registers | `workorderhttp`, `workorderpg`, `domain/workorder` ✅ |
 | **L5** | **Certificate Governance** | Deterministic PDF rendering, 4-eyes review, authority lifecycle | `certificatehttp`, `certificatepg`, `certificaterender` ✅ |
 | **L6** | **Competency Matrix** | Dynamic scheduling calendar, qualification tracking | `scheduling`, `identity` ✅ |
-| **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `evidenceapi`, `evidenceexport`, `evidencepg` ✅ |
-| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `packagemanifest`, `workpackageenforcement`, `pkg/onboarding` ✅ |
+| **L7** | **Calibrated Tool Registry** | ISO 17020 Sec 6.2 calibration gating, encrypted evidence metadata | `evidenceapi`, `pkg/onboarding`, `internal/evidencepg` ✅ |
+| **L8** | **Hardware Tablet Attestation**| Apple Secure Enclave & Android StrongBox signing, signed outbox | `packagemanifest`, `pkg/onboarding`, `field_app` ✅ |
 | **L9** | **Decentralized Asset Passport**| W3C DIDs (`did:integin:...`), equipment quarantine lifecycles | `pkg/domain` ✅ |
-| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `auditloghttp`, `eventstore`, `searchpg` 🚀 *(Planned)* |
-| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification` 🚀 *(Planned)* |
+| **L10**| **Bitemporal Audit Ledger** | Immutable append-only transaction log, full-text search | `pkg/ledger`, `internal/domain/auditlog`, `eventstore` ✅ |
+| **L11**| **Stateless Edge Trust** | Zero-backend-cost browser WebCrypto QR verification (`verify.integin.com`)| `pkg/verification`, `tools/public-verifier/` ✅ |
+
 
 ---
 
