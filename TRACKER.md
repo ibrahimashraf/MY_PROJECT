@@ -204,9 +204,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Real-time ingest pipeline writing to partitioned `sensor_telemetry_stream` (Migration 0074) at $\ge 5{,}000$ points/sec.
     *   In-memory dynamic jitter and anomaly detection filter routing critical overload alerts directly to River queue.
     *   Verified hot-path benchmark: `872.8 ns/op`, `639 B/op`, `1 allocs/op` (>1,145,000 readings/sec capacity).
-*   [ ] **5.4: Parametric Industrial Risk & Real-Time Underwriter Collateral Engine (`pkg/riskengine`)**:
+*   [x] **5.4: Parametric Industrial Risk & Real-Time Underwriter Collateral Engine (`pkg/riskengine`)** ✅:
     *   Continuous actuarial risk scoring ($R_{\text{operational}} \in [0.0, 1.0]$) derived from real-time inspection records, tool calibration states, and fatigue fractions.
-    *   Automated parametric insurance rebate token issuer generating verifiable cryptographic discount claims.
+    *   Automated parametric insurance rebate token issuer generating verifiable cryptographic discount claims (`did:integin:rebate:<uuid>`).
+    *   Verified hot-path benchmark: `50.74 ns/op`, `0 B/op`, `0 allocs/op` (strict 0-alloc nanocell SLA met).
 
 ---
 
@@ -421,6 +422,16 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Unit & Isolation Suite: `go test -v -count=1 ./internal/telemetrystream/...` $\longrightarrow$ **PASS (2/2 tests, 0.020s)**.
     *   Hot-Path Benchmark: `BenchmarkStreamBuffer_IngestHotPath`: `872.8 ns/op`, `639 B/op`, `1 allocs/op` (>1,145,000 readings/sec capacity).
     *   Static Code Analysis: `go vet ./internal/telemetrystream/...` $\longrightarrow$ **0 errors**.
+
+#### Deliverable 5.4: Parametric Industrial Risk & Real-Time Underwriter Collateral Engine (`pkg/riskengine`)
+*   **Actuarial Risk Vector & Cryptographic Rebate Vouchers**:
+    *   `pkg/riskengine/models.go`: Added `ComputeOperationalRisk()` aggregating Palmgren-Miner fatigue, calibration states, and defect counts into $R_{\text{operational}} \in [0.0, 1.0]$.
+    *   Fail-closed safety gates: immediate `ErrFatigueQuarantineTriggered` on $D \ge 1.0$, `ErrUncalibratedToolBreach`, and `ErrCriticalDefectsPresent`.
+    *   `IssueRebateVoucher()` & `VerifyRebateVoucher()`: Issues and verifies Ed25519-signed vouchers (`did:integin:rebate:<uuid>`) providing up to 25.00% (2500 bps) premium rebates.
+*   **Verification Evidence**:
+    *   Unit & Isolation Suite: `go test -v -count=1 ./pkg/riskengine/...` $\longrightarrow$ **PASS (2/2 tests, 0.055s)**.
+    *   Hot-Path Benchmark: `BenchmarkComputeOperationalRisk_HotPath`: `50.74 ns/op`, `0 B/op`, `0 allocs/op`.
+    *   Static Code Analysis: `go vet ./pkg/riskengine/...` $\longrightarrow$ **0 errors**.
 
 ---
 
