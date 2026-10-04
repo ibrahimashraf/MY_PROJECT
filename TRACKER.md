@@ -196,10 +196,10 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [x] **5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)** ✅:
     *   M2M zero-touch edge attestation for autonomous quadrupeds (Boston Dynamics Spot / ANYmal) and aerial inspection drones.
     *   Automated non-human sensor ingestion with hardware-backed enclave signing and raw video photogrammetry keyframe hashing.
-    *   Verified hot-path benchmark: `3358 ns/op`, `0 B/op`, `0 allocs/op` ($< 50\mu\text{s}$ SLA met).
-*   [ ] **5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`, `did:integin:heat:<heat_no>`)**:
+*   [x] **5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`, `did:integin:heat:<heat_no>`)** ✅:
     *   W3C Digital Product Passport (DPP) sub-schema binding steel mill heat certificates (EN 10204 3.1/3.2) directly to Asset DIDs.
-    *   Fatigue accumulation tracking: calculate cyclic stress reversals ($S$-$N$ curves, Miner's Rule) updating remaining safe working life.
+    *   Palmgren-Miner cumulative fatigue accumulation tracking: stress cycles ($S$-$N$ curves, damage fraction $D = \sum \frac{n_i}{N_i}$, fail-closed quarantine at $D \ge 1.0$).
+    *   Verified hot-path benchmark: `5.73 ns/op`, `0 B/op`, `0 allocs/op`.
 *   [ ] **5.3: High-Frequency Sensor Stream Ingestion & CQRS Telemetry Buffer (`internal/telemetrystream`)**:
     *   Real-time ingest pipeline writing to partitioned `sensor_telemetry_stream` (Migration 0074) at $\ge 5{,}000$ points/sec.
     *   In-memory dynamic jitter and anomaly detection filter routing critical overload alerts directly to River queue.
@@ -392,7 +392,6 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
 
 #### Deliverable 5.1: Autonomous Robotic Inspection Ingress (`pkg/robotictrust`, `internal/robotics`)
-
 *   **Hardware Attestation & Envelope Enforcement**:
     *   `pkg/robotictrust/models.go`: Added `PlatformType` (`QUADRUPED_CRAWLER`, `AERIAL_UAV`, `SUBSEA_ROV`, `PIPE_CRAWLER`), `RoboticAttestationClaim`, `ExecutionEnvelope`, `SpatialFrameProof`, and `RoboticInspectionReceipt`.
     *   `ValidateRoboticSubmission()`: Enforces fail-closed verification of discrete TPM 2.0 signatures, firmware hash whitelist, altitude ceiling, and velocity safety corridors.
@@ -401,6 +400,16 @@ The following matrix tracks the live implementation status, Go packages, and Pos
     *   Unit & Isolation Suite: `go test -v -count=1 ./pkg/robotictrust/... ./internal/robotics/...` $\longrightarrow$ **PASS (4/4 tests, 0.042s)**.
     *   Hot-Path Benchmark: `BenchmarkValidateRoboticSubmission_HotPath`: `3358 ns/op`, `0 B/op`, `0 allocs/op` (strict $< 50\mu\text{s}$ nanocell SLA met).
     *   Static Code Analysis: `go vet ./pkg/robotictrust/... ./internal/robotics/...` $\longrightarrow$ **0 errors**.
+
+#### Deliverable 5.2: Cradle-to-Grave Metallurgical Provenance (`pkg/domain/metallurgy`)
+*   **EN 10204 Standards & Palmgren-Miner Fatigue Tracking**:
+    *   `pkg/domain/metallurgy/schema.go`: Added `MillHeatCertificate` supporting EN 10204 3.1 / 3.2, `ChemicalComposition` with IIW Carbon Equivalent (CEV) calculation, `MechanicalProperties`, `StressCycle`, and `CumulativeFatigueState`.
+    *   `RemainingSafeWorkingLifeFraction()`: Implemented Palmgren-Miner linear cumulative damage rule ($D = \sum \frac{n_i}{N_i}$), failing closed with `ErrFatigueLifeExceeded` at $D \ge 1.0$.
+    *   `pkg/domain/models.go`: Extended `UniversalAssetPassport` with `MillHeatDIDs` and `DamageIndex`.
+*   **Verification Evidence**:
+    *   Unit & Isolation Suite: `go test -v -count=1 ./pkg/domain/metallurgy/... ./pkg/domain/...` $\longrightarrow$ **PASS (100%)**.
+    *   Hot-Path Benchmark: `BenchmarkMinerFatigueCalculation_HotPath`: `5.73 ns/op`, `0 B/op`, `0 allocs/op`.
+    *   Static Code Analysis: `go vet ./pkg/domain/metallurgy/...` $\longrightarrow$ **0 errors**.
 
 ---
 
