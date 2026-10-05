@@ -81,6 +81,11 @@ func (cb *CircuitBreaker) RecordFailure() {
 // variables 'integin.tenant_id' and 'integin.organization_id' with local transaction scope (is_local = true).
 // If any step fails, the transaction is safely rolled back and the error is returned.
 func BeginScope(ctx context.Context, db *sql.DB, tenantID, organizationID string) (*sql.Tx, error) {
+	return BeginScopeOpts(ctx, db, tenantID, organizationID, nil)
+}
+
+// BeginScopeOpts begins a new transaction on db with custom TxOptions and configures PostgreSQL session variables.
+func BeginScopeOpts(ctx context.Context, db *sql.DB, tenantID, organizationID string, opts *sql.TxOptions) (*sql.Tx, error) {
 	if err := defaultBreaker.Allow(); err != nil {
 		return nil, err
 	}
@@ -90,7 +95,7 @@ func BeginScope(ctx context.Context, db *sql.DB, tenantID, organizationID string
 	if strings.TrimSpace(tenantID) == "" || strings.TrimSpace(organizationID) == "" {
 		return nil, ErrInvalidScope
 	}
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, opts)
 	if err != nil {
 		defaultBreaker.RecordFailure()
 		return nil, err

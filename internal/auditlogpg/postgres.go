@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"integin/internal/domain/auditlog"
+	"integin/internal/shared/pgtx"
 )
 
 var ErrNilDB = errors.New("audit log postgres repository requires a database")
@@ -29,15 +30,7 @@ func (r *Repository) beginTenant(ctx context.Context, tenantID, organizationID s
 	if readOnly {
 		opts.ReadOnly = true
 	}
-	tx, err := r.db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, organizationID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScopeOpts(ctx, r.db, tenantID, organizationID, opts)
 }
 
 func (r *Repository) Append(ctx context.Context, entry auditlog.Entry) (auditlog.Entry, error) {

@@ -128,9 +128,32 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 		return item.limiter
 	}
 
-	// Enforce max map size to prevent OOM (HARDEN-001)
+	// Enforce max map size with targeted LRU eviction instead of catastrophic flush
 	if len(shard.limiters) >= rl.maxMapSize {
-		shard.limiters = make(map[string]*limiterItem)
+		// Evict oldest 25% entries to make room while preserving active rate limits
+		evictCount := rl.maxMapSize / 4
+		if evictCount < 1 {
+			evictCount = 1
+		}
+		type keyAge struct {
+			k string
+			t time.Time
+		}
+		candidates := make([]keyAge, 0, len(shard.limiters))
+		for k, it := range shard.limiters {
+			candidates = append(candidates, keyAge{k: k, t: it.lastSeen})
+		}
+		// Sort oldest first
+		for i := 0; i < evictCount && i < len(candidates); i++ {
+			oldestIdx := i
+			for j := i + 1; j < len(candidates); j++ {
+				if candidates[j].t.Before(candidates[oldestIdx].t) {
+					oldestIdx = j
+				}
+			}
+			candidates[i], candidates[oldestIdx] = candidates[oldestIdx], candidates[i]
+			delete(shard.limiters, candidates[i].k)
+		}
 	}
 
 	// Cap concurrent tenant creation to prevent map growth spikes
@@ -241,9 +264,9 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 			}
 		} else if rawTenant := strings.TrimSpace(r.Header.Get("X-Tenant-ID")); rawTenant != "" {
 			// Unauthenticated request with client-supplied X-Tenant-ID:
-			// Do NOT trust as verified tenant; sanitize and prefix with unauth_tenant:
+			// Bind to client IP to prevent spoofed tenant IDs from resetting the burst bucket
 			sanitized := sanitizeLimiterKey(rawTenant)
-			limiterKey = "unauth_tenant:" + sanitized
+			limiterKey = "unauth_tenant:" + extractClientIP(r) + ":" + sanitized
 		} else if authHdr := strings.TrimSpace(r.Header.Get("Authorization")); strings.HasPrefix(strings.ToLower(authHdr), "bearer ") {
 			// Bearer token present without resolved OrganizationContext: partition by SHA-256 hash
 			token := strings.TrimSpace(authHdr[7:])
