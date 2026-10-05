@@ -13,6 +13,7 @@ import (
 
 	"integin/internal/domain/shortlink"
 	leimenv "integin/internal/shared/env"
+	"integin/internal/shared/pgtx"
 )
 
 type Repository struct {
@@ -21,6 +22,10 @@ type Repository struct {
 
 func New(db *sql.DB) *Repository {
 	return &Repository{db: db}
+}
+
+func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
+	return pgtx.BeginScope(ctx, r.db, tenantID, orgID)
 }
 
 var webhookRetryIntervals = getWebhookRetryIntervals()

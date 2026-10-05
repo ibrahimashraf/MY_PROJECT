@@ -111,6 +111,115 @@ func (c *CraneKinematics) ComputeOutriggerPressures(hookLoadTonne float64) Outri
 	}
 }
 
+// ComputeRelaxedOutriggerPressures implements iterative contact relaxation (lift-off detection):
+// If calculated reaction P_i <= 0, that pad loses ground contact. The solver drops that constraint
+// and re-equilibrates forces diagonally across active contact points, detecting impending tipping.
+func (c *CraneKinematics) ComputeRelaxedOutriggerPressures(hookLoadTonne float64, additionalMomentTonneM float64) (OutriggerPressures, bool) {
+	hs := c.ComputeHookPosition()
+	totalLoad := c.ChassisWeightTonne + c.CounterweightTonne + hookLoadTonne
+
+	if c.OutriggerSpreadXM <= 0.1 || c.OutriggerSpreadZM <= 0.1 {
+		p := totalLoad / 4.0
+		return OutriggerPressures{FrontLeft: p, FrontRight: p, RearLeft: p, RearRight: p, MaxLoad: p}, false
+	}
+
+	slewRad := c.SlewAngleDeg * math.Pi / 180.0
+	loadDx := hs.WorkingRadius * math.Sin(slewRad)
+	loadDz := hs.WorkingRadius * math.Cos(slewRad)
+
+	cwRadius := 4.5
+	cwDx := -cwRadius * math.Sin(slewRad)
+	cwDz := -cwRadius * math.Cos(slewRad)
+
+	mx := (hookLoadTonne * loadDz) + (c.CounterweightTonne * cwDz)
+	mz := (hookLoadTonne * loadDx) + (c.CounterweightTonne * cwDx) + additionalMomentTonneM
+
+	baseP := totalLoad / 4.0
+	deltaZ := mx / (2.0 * c.OutriggerSpreadZM)
+	deltaX := mz / (2.0 * c.OutriggerSpreadXM)
+
+	rawFL := baseP + deltaZ - deltaX
+	rawFR := baseP + deltaZ + deltaX
+	rawRL := baseP - deltaZ - deltaX
+	rawRR := baseP - deltaZ + deltaX
+
+	// Check for lift-off
+	if rawFL > 0 && rawFR > 0 && rawRL > 0 && rawRR > 0 {
+		maxL := math.Max(math.Max(rawFL, rawFR), math.Max(rawRL, rawRR))
+		return OutriggerPressures{
+			FrontLeft:  rawFL,
+			FrontRight: rawFR,
+			RearLeft:   rawRL,
+			RearRight:  rawRR,
+			MaxLoad:    maxL,
+		}, false
+	}
+
+	// Lift-off detected: re-equilibrate across active triangle
+	w := totalLoad
+	spreadX := c.OutriggerSpreadXM
+	spreadZ := c.OutriggerSpreadZM
+
+	var fl, fr, rl, rr float64
+
+	switch {
+	case rawRL <= 0:
+		// RL lifted off -> active points FL, FR, RR
+		rr = math.Max(0, 0.5*w - mx/spreadZ)
+		sumFront := w - rr
+		diffFront := (2.0*mz/spreadX) - rr
+		fr = math.Max(0, 0.5*(sumFront+diffFront))
+		fl = math.Max(0, sumFront-fr)
+		rl = 0.0
+
+	case rawRR <= 0:
+		// RR lifted off -> active points FL, FR, RL
+		rl = math.Max(0, 0.5*w - mx/spreadZ)
+		sumFront := w - rl
+		diffFront := (2.0*mz/spreadX) + rl
+		fr = math.Max(0, 0.5*(sumFront+diffFront))
+		fl = math.Max(0, sumFront-fr)
+		rr = 0.0
+
+	case rawFL <= 0:
+		// FL lifted off -> active points FR, RL, RR
+		fr = math.Max(0, 0.5*w + mx/spreadZ)
+		sumRear := w - fr
+		diffRear := (2.0*mz/spreadX) - fr
+		rr = math.Max(0, 0.5*(sumRear+diffRear))
+		rl = math.Max(0, sumRear-rr)
+		fl = 0.0
+
+	default: // rawFR <= 0
+		// FR lifted off -> active points FL, RL, RR
+		fl = math.Max(0, 0.5*w + mx/spreadZ)
+		sumRear := w - fl
+		diffRear := (2.0*mz/spreadX) + fl
+		rr = math.Max(0, 0.5*(sumRear+diffRear))
+		rl = math.Max(0, sumRear-rr)
+		fr = 0.0
+	}
+
+	// Re-normalize sum to strictly preserve total vertical load equilibrium
+	activeSum := fl + fr + rl + rr
+	if activeSum > 0 {
+		scale := w / activeSum
+		fl *= scale
+		fr *= scale
+		rl *= scale
+		rr *= scale
+	}
+
+	maxL := math.Max(math.Max(fl, fr), math.Max(rl, rr))
+	return OutriggerPressures{
+		FrontLeft:  fl,
+		FrontRight: fr,
+		RearLeft:   rl,
+		RearRight:  rr,
+		MaxLoad:    maxL,
+	}, true
+}
+
 // TandemLiftResult contains load distribution and spatial clearances.
 type TandemLiftResult struct {
 	Hook1State        HookState          `json:"crane1_hook"`
