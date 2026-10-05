@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"integin/internal/shared/pgtx"
 )
 
 var ErrConflict = errors.New("sync-state record conflicts with existing data")
@@ -90,18 +92,7 @@ func (r *PostgresRepository) ListDevices(ctx context.Context, tenantID string) (
 }
 
 func (r *PostgresRepository) beginTenantOrg(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
-	if r == nil || r.DB == nil {
-		return nil, errors.New("database handle is required")
-	}
-	tx, err := r.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.DB, tenantID, orgID)
 }
 
 func (r *PostgresRepository) SaveDevice(ctx context.Context, device DeviceRecord) error {

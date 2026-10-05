@@ -10,6 +10,7 @@ import (
 
 	domain "integin/internal/domain/reports"
 	csvgen "integin/internal/reports"
+	"integin/internal/shared/pgtx"
 )
 
 var (
@@ -28,15 +29,7 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 }
 
 func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.db, tenantID, orgID)
 }
 
 func (r *Repository) ListConfigs(ctx context.Context, tenantID, orgID string) ([]domain.ReportConfig, error) {

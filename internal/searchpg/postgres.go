@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"integin/internal/domain/search"
+	"integin/internal/shared/pgtx"
 )
 
 type Repository struct {
@@ -18,15 +19,7 @@ func New(db *sql.DB) *Repository {
 }
 
 func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
-	tx, err := r.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.DB, tenantID, orgID)
 }
 
 func (r *Repository) Search(ctx context.Context, req search.SearchRequest) (search.SearchResponse, error) {
