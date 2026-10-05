@@ -26,11 +26,7 @@ func NewCalibration(p1, p2 dxf.Point3D, realDistanceMeters float64) (*Calibratio
 		return nil, ErrInvalidRealDistance
 	}
 
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-	dz := p2.Z - p1.Z
-	dist := math.Sqrt(dx*dx + dy*dy + dz*dz)
-
+	dist := p1.DistanceTo(p2)
 	if dist <= 1e-9 {
 		return nil, ErrZeroCalibrationDistance
 	}
@@ -70,10 +66,8 @@ type MeasurementResult struct {
 
 // MeasureDistance computes 3D Euclidean and component distances with optional real-world scaling.
 func MeasureDistance(p1, p2 dxf.Point3D, cal *Calibration) MeasurementResult {
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-	dz := p2.Z - p1.Z
-	dist := math.Sqrt(dx*dx + dy*dy + dz*dz)
+	delta := p2.Sub(p1)
+	dist := p1.DistanceTo(p2)
 
 	realDist := dist
 	if cal != nil {
@@ -83,9 +77,9 @@ func MeasureDistance(p1, p2 dxf.Point3D, cal *Calibration) MeasurementResult {
 	return MeasurementResult{
 		DrawingDistance:    dist,
 		RealDistanceMeters: realDist,
-		DeltaX:             dx,
-		DeltaY:             dy,
-		DeltaZ:             dz,
+		DeltaX:             delta.X,
+		DeltaY:             delta.Y,
+		DeltaZ:             delta.Z,
 	}
 }
 
@@ -116,11 +110,7 @@ func ExtractSnapPoints(entities []dxf.Entity) []SnapPoint {
 				SnapPoint{Point: v.Start, Type: SnapEndpoint, EntityIndex: i},
 				SnapPoint{Point: v.End, Type: SnapEndpoint, EntityIndex: i},
 				SnapPoint{
-					Point: dxf.Point3D{
-						X: (v.Start.X + v.End.X) * 0.5,
-						Y: (v.Start.Y + v.End.Y) * 0.5,
-						Z: (v.Start.Z + v.End.Z) * 0.5,
-					},
+					Point:       v.Start.MidpointTo(v.End),
 					Type:        SnapMidpoint,
 					EntityIndex: i,
 				},
@@ -139,22 +129,14 @@ func ExtractSnapPoints(entities []dxf.Entity) []SnapPoint {
 				if vi < n-1 {
 					next := v.Vertices[vi+1].Point
 					snaps = append(snaps, SnapPoint{
-						Point: dxf.Point3D{
-							X: (vert.Point.X + next.X) * 0.5,
-							Y: (vert.Point.Y + next.Y) * 0.5,
-							Z: (vert.Point.Z + next.Z) * 0.5,
-						},
+						Point:       vert.Point.MidpointTo(next),
 						Type:        SnapMidpoint,
 						EntityIndex: i,
 					})
 				} else if v.IsClosed && n > 1 {
 					first := v.Vertices[0].Point
 					snaps = append(snaps, SnapPoint{
-						Point: dxf.Point3D{
-							X: (vert.Point.X + first.X) * 0.5,
-							Y: (vert.Point.Y + first.Y) * 0.5,
-							Z: (vert.Point.Z + first.Z) * 0.5,
-						},
+						Point:       vert.Point.MidpointTo(first),
 						Type:        SnapMidpoint,
 						EntityIndex: i,
 					})

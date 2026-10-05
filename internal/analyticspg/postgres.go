@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"integin/internal/domain/analytics"
+	"integin/internal/shared/pgtx"
 )
 
 var ErrNilDB = errors.New("analytics postgres repository requires a database")
@@ -31,15 +32,7 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 }
 
 func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*sql.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := tx.ExecContext(ctx, `SELECT set_config('integin.tenant_id', $1, true), set_config('integin.organization_id', $2, true)`, tenantID, orgID); err != nil {
-		_ = tx.Rollback()
-		return nil, err
-	}
-	return tx, nil
+	return pgtx.BeginScope(ctx, r.db, tenantID, orgID)
 }
 
 func (r *Repository) GetDashboard(ctx context.Context, req analytics.DashboardRequest) (analytics.DashboardResponse, error) {

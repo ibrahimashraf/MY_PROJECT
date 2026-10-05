@@ -1,6 +1,10 @@
 package rulesengine
 
-import "cel.dev/cel-go/cel"
+import (
+	"fmt"
+
+	"cel.dev/cel-go/cel"
+)
 
 // DesignBasis selects the deterministic design-verification philosophy for a
 // structural check. ASD (Allowable Stress Design) folds the factor of safety
@@ -89,16 +93,25 @@ func DesignLRFDFoldedVars() map[string]*cel.Type {
 	}
 }
 
-// DesignGate returns the CEL rule card for the chosen design basis so
-// callers evaluate the switch declaratively without branching on thresholds
-// themselves.
-func DesignGate(b DesignBasis) (ruleID string, expression string, vars map[string]*cel.Type) {
+// FindDesignGate returns the CEL rule card for the chosen design basis or an error on unknown bases.
+func FindDesignGate(b DesignBasis) (ruleID string, expression string, vars map[string]*cel.Type, err error) {
 	switch b {
 	case DesignBasisLRFD:
-		return DesignLRFDPartialFactorsRuleID, DesignLRFDGateExpression, DesignLRFDVars()
+		return DesignLRFDPartialFactorsRuleID, DesignLRFDGateExpression, DesignLRFDVars(), nil
 	case DesignBasisASD:
-		return DesignASDCapacityUtilizationRuleID, CapacityUtilizationGateExpression, CapacityUtilizationVars()
+		return DesignASDCapacityUtilizationRuleID, CapacityUtilizationGateExpression, CapacityUtilizationVars(), nil
 	default:
-		panic("rulesengine: unknown design basis " + string(b))
+		return "", "", nil, fmt.Errorf("rulesengine: unknown design basis %q", b)
 	}
+}
+
+// DesignGate returns the CEL rule card for the chosen design basis so
+// callers evaluate the switch declaratively without branching on thresholds
+// themselves. Panics if basis is unknown.
+func DesignGate(b DesignBasis) (ruleID string, expression string, vars map[string]*cel.Type) {
+	ruleID, expression, vars, err := FindDesignGate(b)
+	if err != nil {
+		panic(err.Error())
+	}
+	return ruleID, expression, vars
 }

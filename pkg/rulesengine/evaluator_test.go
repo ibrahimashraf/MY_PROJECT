@@ -367,3 +367,26 @@ func TestBS5975MatStructuralCheck(t *testing.T) {
 		t.Fatal("pad >= mat size must refuse")
 	}
 }
+
+func TestVarSetSafeSet(t *testing.T) {
+	v := NewVarSet("foo", "bar")
+	if err := v.Set("foo", 42); err != nil {
+		t.Fatalf("expected nil error on valid key, got %v", err)
+	}
+	if err := v.Set("unknown_var", 100); err == nil {
+		t.Fatal("expected error on unknown key, got nil")
+	}
+}
+
+func TestFindDesignGate(t *testing.T) {
+	if _, _, _, err := FindDesignGate(DesignBasisASD); err != nil {
+		t.Fatalf("expected valid gate for ASD, got %v", err)
+	}
+	if _, _, _, err := FindDesignGate(DesignBasisLRFD); err != nil {
+		t.Fatalf("expected valid gate for LRFD, got %v", err)
+	}
+	if _, _, _, err := FindDesignGate(DesignBasis("INVALID")); err == nil {
+		t.Fatal("expected error for invalid design basis, got nil")
+	}
+}
+

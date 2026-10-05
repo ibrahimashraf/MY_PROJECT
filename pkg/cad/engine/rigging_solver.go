@@ -139,10 +139,7 @@ func SolveTandemLift(
 	h2 := crane2.ComputeHookPosition()
 
 	// Hook-to-hook distance (Rigging span)
-	dx := h2.HookTip.X - h1.HookTip.X
-	dy := h2.HookTip.Y - h1.HookTip.Y
-	dz := h2.HookTip.Z - h1.HookTip.Z
-	span := math.Sqrt(dx*dx + dy*dy + dz*dz)
+	span := h1.HookTip.DistanceTo(h2.HookTip)
 
 	if span < 1.0 {
 		return nil, errors.New("crane hooks are too close together (<1.0m)")

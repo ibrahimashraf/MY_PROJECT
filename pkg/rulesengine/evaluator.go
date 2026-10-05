@@ -138,13 +138,20 @@ func NewVarSet(keys ...string) *VarSet {
 // interpreter's per-eval NativeToValue fast-path returns them unboxed and the
 // hot loop stays allocation-free.
 func (v *VarSet) Put(key string, val any) {
+	if err := v.Set(key, val); err != nil {
+		panic(err.Error())
+	}
+}
+
+// Set binds a value safely, returning an error instead of panicking on unknown keys.
+func (v *VarSet) Set(key string, val any) error {
 	for i, k := range v.keys {
 		if k == key {
 			v.vals[i] = adaptInput(val)
-			return
+			return nil
 		}
 	}
-	panic(fmt.Sprintf("rulesengine: unknown variable %q (expected one of %v)", key, v.keys))
+	return fmt.Errorf("rulesengine: unknown variable %q (expected one of %v)", key, v.keys)
 }
 
 // adaptInput converts canonical scalar Go values to their CEL-native forms once

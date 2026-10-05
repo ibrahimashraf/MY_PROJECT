@@ -99,3 +99,63 @@ func TestThermodynamicsStefanBoltzmannAndFourier(t *testing.T) {
 		t.Fatalf("Fourier heat flux mismatch: expected 328000, got %v", heatFlux)
 	}
 }
+
+func TestEvaluateHydrostatic(t *testing.T) {
+	// Surface seawater at 15°C, 35 PSU: c ≈ 1507.4 m/s, P = 101.325 kPa
+	surface := EvaluateHydrostatic(0, 15.0, 35.0)
+	if math.Abs(surface.PressurePa-SeaLevelPressurePa) > 1e-3 {
+		t.Fatalf("Surface seawater pressure mismatch: %v", surface.PressurePa)
+	}
+	if math.Abs(surface.SpeedOfSoundMs-1507.4) > 1.0 {
+		t.Fatalf("Surface seawater sound speed mismatch: %v", surface.SpeedOfSoundMs)
+	}
+
+	// 1000m depth at 4°C, 35 PSU: P ≈ 101.325 kPa + 1025*9.80665*1000 ≈ 10.15 MPa
+	deep := EvaluateHydrostatic(1000.0, 4.0, 35.0)
+	expectedP := SeaLevelPressurePa + (1025.0 * StandardGravity * 1000.0)
+	if math.Abs(deep.PressurePa-expectedP) > 1.0 {
+		t.Fatalf("1000m hydrostatic pressure mismatch: expected %v, got %v", expectedP, deep.PressurePa)
+	}
+	// At 1000m depth, sound speed increases with pressure (~1490 m/s)
+	if deep.SpeedOfSoundMs < 1470 || deep.SpeedOfSoundMs > 1510 {
+		t.Fatalf("Deep sound speed out of expected range: %v", deep.SpeedOfSoundMs)
+	}
+}
+
+func TestEvaluatePlanetaryCore(t *testing.T) {
+	// 1. Center of Earth (r = 0): Maximum pressure (~364 GPa), zero gravity, solid inner core
+	center := EvaluatePlanetaryCore(0)
+	if center.LayerName != "INNER_CORE_SOLID" {
+		t.Fatalf("Expected INNER_CORE_SOLID at center, got %s", center.LayerName)
+	}
+	if math.Abs(center.PressurePa-EarthCenterPressurePa) > 1e9 {
+		t.Fatalf("Center pressure mismatch: expected ~%v, got %v", EarthCenterPressurePa, center.PressurePa)
+	}
+	if center.GravityMs2 != 0 {
+		t.Fatalf("Gravity at center must be 0, got %v", center.GravityMs2)
+	}
+	if center.SWaveVelocityMs <= 0 {
+		t.Fatalf("Inner core must support shear waves, got %v", center.SWaveVelocityMs)
+	}
+
+	// 2. Liquid Outer Core (r = 2,500 km): Shear wave cutoff (Vs = 0)
+	outerCore := EvaluatePlanetaryCore(2500000.0)
+	if outerCore.LayerName != "OUTER_CORE_LIQUID" {
+		t.Fatalf("Expected OUTER_CORE_LIQUID, got %s", outerCore.LayerName)
+	}
+	if outerCore.SWaveVelocityMs != 0.0 {
+		t.Fatalf("Liquid outer core must have Vs == 0, got %v", outerCore.SWaveVelocityMs)
+	}
+	if outerCore.PressurePa < 1e11 {
+		t.Fatalf("Outer core pressure out of range: %v", outerCore.PressurePa)
+	}
+
+	// 3. Lithospheric surface (r = EarthRadiusM)
+	surface := EvaluatePlanetaryCore(EarthRadiusM)
+	if surface.LayerName != "CRUST_LITHOSPHERE" {
+		t.Fatalf("Expected CRUST_LITHOSPHERE at surface, got %s", surface.LayerName)
+	}
+	if surface.DepthM != 0 {
+		t.Fatalf("Surface depth must be 0, got %v", surface.DepthM)
+	}
+}

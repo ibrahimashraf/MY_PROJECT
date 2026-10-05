@@ -30,6 +30,15 @@ type Vertex struct {
 	X, Y, Z float64
 }
 
+// MidpointTo returns the geometric midpoint between two vertices.
+func (v Vertex) MidpointTo(other Vertex) Vertex {
+	return Vertex{
+		X: (v.X + other.X) * 0.5,
+		Y: (v.Y + other.Y) * 0.5,
+		Z: (v.Z + other.Z) * 0.5,
+	}
+}
+
 type Face struct {
 	V1, V2, V3 int // 0-based indices into Vertices
 }
@@ -234,9 +243,9 @@ func CheckClearance(mesh *OBJMesh, trajectory *Trajectory4DResult, stages []Lift
 			}
 
 			// Edge midpoints
-			m1 := Vertex{X: (v1.X + v2.X) * 0.5, Y: (v1.Y + v2.Y) * 0.5, Z: (v1.Z + v2.Z) * 0.5}
-			m2 := Vertex{X: (v2.X + v3.X) * 0.5, Y: (v2.Y + v3.Y) * 0.5, Z: (v2.Z + v3.Z) * 0.5}
-			m3 := Vertex{X: (v3.X + v1.X) * 0.5, Y: (v3.Y + v1.Y) * 0.5, Z: (v3.Z + v1.Z) * 0.5}
+			m1 := v1.MidpointTo(v2)
+			m2 := v2.MidpointTo(v3)
+			m3 := v3.MidpointTo(v1)
 			if pointCollides(m1, h1.HookTip, load.LengthM, loadRadiusSq, hookRadiusSq) ||
 				pointCollides(m1, h2.HookTip, load.LengthM, loadRadiusSq, hookRadiusSq) ||
 				pointCollides(m2, h1.HookTip, load.LengthM, loadRadiusSq, hookRadiusSq) ||

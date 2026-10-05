@@ -1,6 +1,9 @@
 package dxf
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // Point3D represents a 3D coordinate point in CAD space.
 type Point3D struct {
@@ -11,6 +14,49 @@ type Point3D struct {
 
 func (p Point3D) String() string {
 	return fmt.Sprintf("(%.4f, %.4f, %.4f)", p.X, p.Y, p.Z)
+}
+
+// DistanceSquared calculates the squared Euclidean distance between two points.
+func (p Point3D) DistanceSquared(other Point3D) float64 {
+	dx := other.X - p.X
+	dy := other.Y - p.Y
+	dz := other.Z - p.Z
+	return dx*dx + dy*dy + dz*dz
+}
+
+// DistanceTo calculates Euclidean distance between two Point3D points.
+func (p Point3D) DistanceTo(other Point3D) float64 {
+	return math.Sqrt(p.DistanceSquared(other))
+}
+
+// MidpointTo calculates the 3D midpoint between two points.
+func (p Point3D) MidpointTo(other Point3D) Point3D {
+	return Point3D{
+		X: (p.X + other.X) * 0.5,
+		Y: (p.Y + other.Y) * 0.5,
+		Z: (p.Z + other.Z) * 0.5,
+	}
+}
+
+// Add returns vector addition of two points.
+func (p Point3D) Add(v Point3D) Point3D {
+	return Point3D{X: p.X + v.X, Y: p.Y + v.Y, Z: p.Z + v.Z}
+}
+
+// Sub returns vector subtraction (p - other).
+func (p Point3D) Sub(other Point3D) Point3D {
+	return Point3D{X: p.X - other.X, Y: p.Y - other.Y, Z: p.Z - other.Z}
+}
+
+// RotateZ rotates point around a pivot in the XY plane by cosA/sinA.
+func (p Point3D) RotateZ(pivot Point3D, cosA, sinA float64) Point3D {
+	dx := p.X - pivot.X
+	dy := p.Y - pivot.Y
+	return Point3D{
+		X: pivot.X + (dx*cosA - dy*sinA),
+		Y: pivot.Y + (dx*sinA + dy*cosA),
+		Z: p.Z,
+	}
 }
 
 // Layer defines a CAD organization layer with color and line properties.

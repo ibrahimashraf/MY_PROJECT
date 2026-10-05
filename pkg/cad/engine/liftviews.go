@@ -119,7 +119,7 @@ func PlanView(c1, c2 CraneKinematics, res *TandemLiftResult) (*dxf.Drawing, erro
 	h1 := dxf.Point3D{X: res.Hook1State.HookTip.X, Y: res.Hook1State.HookTip.Z}
 	h2 := dxf.Point3D{X: res.Hook2State.HookTip.X, Y: res.Hook2State.HookTip.Z}
 	d.Entities = append(d.Entities, liftLine(LayerRigging, h1, h2))
-	mid := dxf.Point3D{X: (h1.X + h2.X) / 2, Y: (h1.Y + h2.Y) / 2}
+	mid := h1.MidpointTo(h2)
 	d.Entities = append(d.Entities, liftText(LayerAnnot,
 		dxf.Point3D{X: mid.X, Y: mid.Y + th}, th,
 		fmt.Sprintf("SPAN %.2fm CLEAR %.2fm", res.HookSpanMeters, res.MinBoomClearanceM)))

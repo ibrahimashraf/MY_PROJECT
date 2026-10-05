@@ -177,34 +177,20 @@ func applyScale(e dxf.Entity, scaleFactor float64) dxf.Entity {
 func applyTranslate(e dxf.Entity, offset dxf.Point3D) dxf.Entity {
 	switch v := e.(type) {
 	case *dxf.Line:
-		v.Start.X += offset.X
-		v.Start.Y += offset.Y
-		v.Start.Z += offset.Z
-		v.End.X += offset.X
-		v.End.Y += offset.Y
-		v.End.Z += offset.Z
+		v.Start = v.Start.Add(offset)
+		v.End = v.End.Add(offset)
 	case *dxf.Circle:
-		v.Center.X += offset.X
-		v.Center.Y += offset.Y
-		v.Center.Z += offset.Z
+		v.Center = v.Center.Add(offset)
 	case *dxf.Polyline:
 		for i := range v.Vertices {
-			v.Vertices[i].Point.X += offset.X
-			v.Vertices[i].Point.Y += offset.Y
-			v.Vertices[i].Point.Z += offset.Z
+			v.Vertices[i].Point = v.Vertices[i].Point.Add(offset)
 		}
 	}
 	return e
 }
 
 func rotatePoint(p, pivot dxf.Point3D, cosA, sinA float64) dxf.Point3D {
-	dx := p.X - pivot.X
-	dy := p.Y - pivot.Y
-	return dxf.Point3D{
-		X: pivot.X + (dx*cosA - dy*sinA),
-		Y: pivot.Y + (dx*sinA + dy*cosA),
-		Z: p.Z,
-	}
+	return p.RotateZ(pivot, cosA, sinA)
 }
 
 func containsInt(slice []int, val int) bool {
