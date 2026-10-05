@@ -11,25 +11,25 @@ import (
 
 // PadeyeParams defines geometric and material properties per ASME BTH-1 / AISC 360.
 type PadeyeParams struct {
-	PinDiameterM       float64 `json:"pin_diameter_m"`
-	HoleDiameterM      float64 `json:"hole_diameter_m"`
-	MainPlateThickM    float64 `json:"main_plate_thick_m"`
-	CheekPlateThickM   float64 `json:"cheek_plate_thick_m"` // Sum of cheek plates
-	EdgeDistanceM      float64 `json:"edge_distance_m"`     // From hole center to plate edge
-	YieldStrengthPa    float64 `json:"yield_strength_pa"`
-	WeldLengthM        float64 `json:"weld_length_m"`
-	WeldLegSizeM       float64 `json:"weld_leg_size_m"`
+	PinDiameterM     float64 `json:"pin_diameter_m"`
+	HoleDiameterM    float64 `json:"hole_diameter_m"`
+	MainPlateThickM  float64 `json:"main_plate_thick_m"`
+	CheekPlateThickM float64 `json:"cheek_plate_thick_m"` // Sum of cheek plates
+	EdgeDistanceM    float64 `json:"edge_distance_m"`     // From hole center to plate edge
+	YieldStrengthPa  float64 `json:"yield_strength_pa"`
+	WeldLengthM      float64 `json:"weld_length_m"`
+	WeldLegSizeM     float64 `json:"weld_leg_size_m"`
 }
 
 // PadeyeEvaluationResult holds ASME BTH-1 stress verifications.
 type PadeyeEvaluationResult struct {
-	BearingStressPa     float64 `json:"bearing_stress_pa"`
-	BearingUtilization  float64 `json:"bearing_utilization"`
-	TearOutStressPa     float64 `json:"tear_out_stress_pa"`
-	TearOutUtilization  float64 `json:"tear_out_utilization"`
-	WeldShearStressPa   float64 `json:"weld_shear_stress_pa"`
-	WeldUtilization      float64 `json:"weld_utilization"`
-	PassAllChecks       bool    `json:"pass_all_checks"`
+	BearingStressPa    float64 `json:"bearing_stress_pa"`
+	BearingUtilization float64 `json:"bearing_utilization"`
+	TearOutStressPa    float64 `json:"tear_out_stress_pa"`
+	TearOutUtilization float64 `json:"tear_out_utilization"`
+	WeldShearStressPa  float64 `json:"weld_shear_stress_pa"`
+	WeldUtilization    float64 `json:"weld_utilization"`
+	PassAllChecks      bool    `json:"pass_all_checks"`
 }
 
 // EvaluatePadeyeStress checks ASME BTH-1 pin bearing, hole tear-out, and weld shear.
@@ -119,7 +119,7 @@ func EvaluateSpreaderBeam(p SpreaderBeamParams, axialCompressN float64) (Spreade
 	mMax := (q * math.Pow(p.SpanLengthM, 2)) / 8.0
 
 	// Extreme fiber distance: assume symmetric section c = sqrt(I / A) * 1.5 approx
-	c := math.Sqrt(p.MomentOfInertia / p.CrossSectionArea) * 1.732
+	c := math.Sqrt(p.MomentOfInertia/p.CrossSectionArea) * 1.732
 	bendingStress := (mMax * c) / p.MomentOfInertia
 
 	// Interaction equation: P / P_allow + M / M_allow
@@ -138,11 +138,11 @@ func EvaluateSpreaderBeam(p SpreaderBeamParams, axialCompressN float64) (Spreade
 
 // SlingGrommetParams models sling efficiency per IMCA M 179 / DNV-ST-N001.
 type SlingGrommetParams struct {
-	NominalMBLN         float64 `json:"nominal_mbl_n"`
-	IsCableLaid         bool    `json:"is_cable_laid"`
-	ChokeAngleDeg       float64 `json:"choke_angle_deg"`       // 180 = straight, <120 = derated
-	OperatingTempC      float64 `json:"operating_temp_c"`
-	IsSyntheticHMPE     bool    `json:"is_synthetic_hmpe"`
+	NominalMBLN     float64 `json:"nominal_mbl_n"`
+	IsCableLaid     bool    `json:"is_cable_laid"`
+	ChokeAngleDeg   float64 `json:"choke_angle_deg"` // 180 = straight, <120 = derated
+	OperatingTempC  float64 `json:"operating_temp_c"`
+	IsSyntheticHMPE bool    `json:"is_synthetic_hmpe"`
 }
 
 // SlingEvaluationResult contains derated capacity and safety factor.
@@ -203,7 +203,7 @@ type SheaveReevingParams struct {
 
 // SheaveEvaluationResult holds contact pressure and fleet angle verifications.
 type SheaveEvaluationResult struct {
-	ContactPressurePa float64 `json:"contact_pressure_pa"`
+	ContactPressurePa  float64 `json:"contact_pressure_pa"`
 	FleetAngleLimitDeg float64 `json:"fleet_angle_limit_deg"`
 	FleetAngleValid    bool    `json:"fleet_angle_valid"`
 	PassAllChecks      bool    `json:"pass_all_checks"`
@@ -239,19 +239,19 @@ func EvaluateSheaveReeving(p SheaveReevingParams, lineTensionN float64) (SheaveE
 
 // HookWinklerBachParams models curved beam flexural stresses per DIN 15401 / DIN 15402.
 type HookWinklerBachParams struct {
-	ThroatRadiusM  float64 `json:"throat_radius_m"` // Inner radius r_i
-	DepthM         float64 `json:"depth_m"`         // Radial cross-section depth h
-	WidthM         float64 `json:"width_m"`         // Cross-section width b
+	ThroatRadiusM   float64 `json:"throat_radius_m"` // Inner radius r_i
+	DepthM          float64 `json:"depth_m"`         // Radial cross-section depth h
+	WidthM          float64 `json:"width_m"`         // Cross-section width b
 	YieldStrengthPa float64 `json:"yield_strength_pa"`
 }
 
 // HookStressResult holds inner/outer fiber flexural stresses via Winkler-Bach curved beam theory.
 type HookStressResult struct {
-	InnerFiberStressPa  float64 `json:"inner_fiber_stress_pa"`
-	OuterFiberStressPa  float64 `json:"outer_fiber_stress_pa"`
-	MaxStressPa         float64 `json:"max_stress_pa"`
-	StressUtilization   float64 `json:"stress_utilization"`
-	PassCheck           bool    `json:"pass_check"`
+	InnerFiberStressPa float64 `json:"inner_fiber_stress_pa"`
+	OuterFiberStressPa float64 `json:"outer_fiber_stress_pa"`
+	MaxStressPa        float64 `json:"max_stress_pa"`
+	StressUtilization  float64 `json:"stress_utilization"`
+	PassCheck          bool    `json:"pass_check"`
 }
 
 // EvaluateHookCrossSection evaluates Winkler-Bach curved beam stress distribution.
@@ -307,14 +307,14 @@ type CoupledEnvironmentalCraneConfig struct {
 
 // CoupledCraneAnalysisResult holds multi-physics reaction, environmental loads, and formal proof.
 type CoupledCraneAnalysisResult struct {
-	EffectiveHookLoadTonne float64                `json:"effective_hook_load_tonne"`
-	DAF                    float64                `json:"daf"`
-	WindDragBoomN          float64                `json:"wind_drag_boom_n"`
-	WindDragLoadN          float64                `json:"wind_drag_load_n"`
-	OutriggerReactions     OutriggerPressures     `json:"outrigger_reactions"`
-	CraneMatPunchShearPa   float64                `json:"crane_mat_punch_shear_pa"`
-	LiftOffDetected        bool                   `json:"lift_off_detected"`
-	Proof                  symbolic.ProofWitness  `json:"proof_witness"`
+	EffectiveHookLoadTonne float64               `json:"effective_hook_load_tonne"`
+	DAF                    float64               `json:"daf"`
+	WindDragBoomN          float64               `json:"wind_drag_boom_n"`
+	WindDragLoadN          float64               `json:"wind_drag_load_n"`
+	OutriggerReactions     OutriggerPressures    `json:"outrigger_reactions"`
+	CraneMatPunchShearPa   float64               `json:"crane_mat_punch_shear_pa"`
+	LiftOffDetected        bool                  `json:"lift_off_detected"`
+	Proof                  symbolic.ProofWitness `json:"proof_witness"`
 }
 
 // SolveCoupledEnvironmentalLift integrates aerodynamics, hydrodynamics, and indeterminate ground contact.

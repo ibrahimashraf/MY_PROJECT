@@ -338,4 +338,13 @@ func TestCurzonStAndBBVLiftPlans(t *testing.T) {
 	if err != nil || math.Abs(lateral-0.72) > 1e-6 {
 		t.Fatalf("Lateral load failed: %v, got %.2f", err, lateral)
 	}
+
+	// Dynamic offshore DAF estimation for subsea / high sea-state
+	dynDAF, err := EstimateDynamicDAF(24000.0, 2.5e7, 1.5)
+	if err != nil {
+		t.Fatalf("EstimateDynamicDAF failed: %v", err)
+	}
+	if dynDAF <= 1.0 {
+		t.Fatalf("expected dynamic DAF > 1.0, got %v", dynDAF)
+	}
 }

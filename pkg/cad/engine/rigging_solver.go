@@ -165,36 +165,36 @@ func (c *CraneKinematics) ComputeRelaxedOutriggerPressures(hookLoadTonne float64
 	switch {
 	case rawRL <= 0:
 		// RL lifted off -> active points FL, FR, RR
-		rr = math.Max(0, 0.5*w - mx/spreadZ)
+		rr = math.Max(0, 0.5*w-mx/spreadZ)
 		sumFront := w - rr
-		diffFront := (2.0*mz/spreadX) - rr
+		diffFront := (2.0 * mz / spreadX) - rr
 		fr = math.Max(0, 0.5*(sumFront+diffFront))
 		fl = math.Max(0, sumFront-fr)
 		rl = 0.0
 
 	case rawRR <= 0:
 		// RR lifted off -> active points FL, FR, RL
-		rl = math.Max(0, 0.5*w - mx/spreadZ)
+		rl = math.Max(0, 0.5*w-mx/spreadZ)
 		sumFront := w - rl
-		diffFront := (2.0*mz/spreadX) + rl
+		diffFront := (2.0 * mz / spreadX) + rl
 		fr = math.Max(0, 0.5*(sumFront+diffFront))
 		fl = math.Max(0, sumFront-fr)
 		rr = 0.0
 
 	case rawFL <= 0:
 		// FL lifted off -> active points FR, RL, RR
-		fr = math.Max(0, 0.5*w + mx/spreadZ)
+		fr = math.Max(0, 0.5*w+mx/spreadZ)
 		sumRear := w - fr
-		diffRear := (2.0*mz/spreadX) - fr
+		diffRear := (2.0 * mz / spreadX) - fr
 		rr = math.Max(0, 0.5*(sumRear+diffRear))
 		rl = math.Max(0, sumRear-rr)
 		fl = 0.0
 
 	default: // rawFR <= 0
 		// FR lifted off -> active points FL, RL, RR
-		fl = math.Max(0, 0.5*w + mx/spreadZ)
+		fl = math.Max(0, 0.5*w+mx/spreadZ)
 		sumRear := w - fl
-		diffRear := (2.0*mz/spreadX) + fl
+		diffRear := (2.0 * mz / spreadX) + fl
 		rr = math.Max(0, 0.5*(sumRear+diffRear))
 		rl = math.Max(0, sumRear-rr)
 		fr = 0.0

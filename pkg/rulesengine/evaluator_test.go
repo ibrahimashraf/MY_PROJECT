@@ -389,4 +389,3 @@ func TestFindDesignGate(t *testing.T) {
 		t.Fatal("expected error for invalid design basis, got nil")
 	}
 }
-

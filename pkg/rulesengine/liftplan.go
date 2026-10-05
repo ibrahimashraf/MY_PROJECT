@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"cel.dev/cel-go/cel"
+	"integin/pkg/engine/physics"
 )
 
 // Lift-plan physics core: the deterministic gates behind every number a lift
@@ -289,4 +290,18 @@ func LiftPlanDAFGateVars() map[string]*cel.Type {
 		"hs_m": cel.DoubleType,
 		"daf":  cel.DoubleType,
 	}
+}
+
+// EstimateDynamicDAF computes the API 2C & DNV-ST-N001 offshore dynamic amplification factor
+// when sea state exceeds the tabulated-DAF ceiling (Hs > 2.5m) or for subsea splash-zone lifts.
+func EstimateDynamicDAF(liftedMassKg, riggingStiffnessNm, relativeVelocityMs float64) (float64, error) {
+	res, err := physics.EvaluateOffshoreDAF(physics.OffshoreLiftParams{
+		LiftedMassKg:       liftedMassKg,
+		RiggingStiffnessNm: riggingStiffnessNm,
+		RelativeVelocityMs: relativeVelocityMs,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("liftplan: dynamic DAF estimation failed: %w", err)
+	}
+	return res.DAF, nil
 }
