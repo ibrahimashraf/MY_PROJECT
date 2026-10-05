@@ -162,6 +162,13 @@ func TestSPMTStability(t *testing.T) {
 	if outLiftOff.CriticalAxis != "LIFT_OFF_DETECTED" {
 		t.Fatalf("expected LIFT_OFF_DETECTED critical axis, got %s", outLiftOff.CriticalAxis)
 	}
+
+	// Unsupported support type check
+	unsuppCfg := cfg4
+	unsuppCfg.SupportType = "INVALID-TYPE"
+	if _, err := EvaluateSPMTStability(unsuppCfg); err == nil {
+		t.Fatalf("expected error on unsupported SPMT support type")
+	}
 }
 
 func TestDarcyWeisbachPressureDrop(t *testing.T) {
