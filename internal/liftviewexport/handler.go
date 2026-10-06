@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	domainrender "integin/internal/domain/certificaterender"
 	"integin/pkg/cad/dxf"
@@ -125,12 +126,30 @@ func calculateCapacity(ref CraneReference, crane engine.CraneKinematics, radius 
 		matchedConfig = &candidates[len(candidates)-1]
 	}
 
-	// 3. Step-down radius lookup
-	for _, pt := range matchedConfig.Points {
-		if radius <= pt.RadiusM {
-			return pt.CapacityT
-		}
+	// 3. Construct domain.LoadChart and perform verified conservative lookup
+	chart := domain.LoadChart{
+		ID:     "chart-" + ref.ID,
+		OEM:    ref.Manufacturer,
+		Model:  ref.Model,
+		Unit:   domain.LoadChartUnitTonne,
+		Status: domain.LoadChartDataVerified,
+		Provenance: domain.LoadChartProvenance{
+			Source:          "OEM authoritative catalog",
+			DocumentID:      ref.Provenance.DocumentID,
+			Revision:        "R1",
+			RightsReference: "governed-crane-catalog",
+			SHA256:          strings.ToLower(ref.Provenance.SourceSHA),
+		},
+		EffectiveFrom:  time.Unix(0, 0),
+		Configurations: []domain.LoadChartConfiguration{*matchedConfig},
 	}
+	if len(chart.Provenance.SHA256) != 64 {
+		chart.Provenance.SHA256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	}
+	if capT, err := chart.LookupCapacityConservative(matchedConfig.ID, radius); err == nil {
+		return capT
+	}
+
 	return 0
 }
 

@@ -425,7 +425,7 @@ func (s stubResolver) Resolve(ctx context.Context, key identity.PrincipalKey) (i
 	return identity.Membership{TenantID: "tenant-1", ActorID: "session-1"}, nil
 }
 
-func TestNewMux_MountsJurisdictionAndQueryRoutes(t *testing.T) {
+func TestNewMux_MountsLicensedAndModularRoutes(t *testing.T) {
 	var jCalls, qCalls int
 	jHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		jCalls++
@@ -455,9 +455,42 @@ func TestNewMux_MountsJurisdictionAndQueryRoutes(t *testing.T) {
 	}
 
 	// Authenticated /api/v1/query with stub validator
+	var robCalls, telCalls, carCalls, fedCalls, riskCalls, atexCalls, photoCalls, pipingCalls int
 	authMux := NewMux(Dependencies{
 		Validator:    stubValidator{},
 		QueryHandler: qHandler,
+		RoboticsHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			robCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		TelemetryStreamHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			telCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		CARHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			carCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		FederationHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fedCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		RiskHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			riskCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		ATEXHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atexCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		PhotogrammetryHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			photoCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
+		PipingHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			pipingCalls++
+			w.WriteHeader(http.StatusOK)
+		}),
 	})
 	authReq := httptest.NewRequest(http.MethodGet, "/api/v1/query", nil)
 	authReq.Header.Set("Authorization", "Bearer valid-token")
@@ -465,6 +498,55 @@ func TestNewMux_MountsJurisdictionAndQueryRoutes(t *testing.T) {
 	authMux.ServeHTTP(rec, authReq)
 	if rec.Code != http.StatusOK || qCalls != 1 {
 		t.Fatalf("query authenticated status=%d calls=%d, want 200/1", rec.Code, qCalls)
+	}
+
+	// Verify newly wired routes
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/robotics/ingress", nil))
+	if rec.Code != http.StatusOK || robCalls != 1 {
+		t.Fatalf("robotics status=%d calls=%d, want 200/1", rec.Code, robCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/telemetry/stream", nil))
+	if rec.Code != http.StatusOK || telCalls != 1 {
+		t.Fatalf("telemetry status=%d calls=%d, want 200/1", rec.Code, telCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/car/issue", nil))
+	if rec.Code != http.StatusOK || carCalls != 1 {
+		t.Fatalf("car status=%d calls=%d, want 200/1", rec.Code, carCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/federation/replicate", nil))
+	if rec.Code != http.StatusOK || fedCalls != 1 {
+		t.Fatalf("federation status=%d calls=%d, want 200/1", rec.Code, fedCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/risk/evaluate", nil))
+	if rec.Code != http.StatusOK || riskCalls != 1 {
+		t.Fatalf("risk status=%d calls=%d, want 200/1", rec.Code, riskCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/atex/evaluate", nil))
+	if rec.Code != http.StatusOK || atexCalls != 1 {
+		t.Fatalf("atex status=%d calls=%d, want 200/1", rec.Code, atexCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/photogrammetry/survey", nil))
+	if rec.Code != http.StatusOK || photoCalls != 1 {
+		t.Fatalf("photogrammetry status=%d calls=%d, want 200/1", rec.Code, photoCalls)
+	}
+
+	rec = httptest.NewRecorder()
+	authMux.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/piping/evaluate", nil))
+	if rec.Code != http.StatusOK || pipingCalls != 1 {
+		t.Fatalf("piping status=%d calls=%d, want 200/1", rec.Code, pipingCalls)
 	}
 }
 

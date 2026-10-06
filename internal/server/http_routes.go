@@ -202,6 +202,38 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/query", gated)
 		mux.Handle("/api/v1/query/", gated)
 	}
+	if d.RoboticsHandler != nil {
+		mux.Handle("/api/v1/robotics", d.RoboticsHandler)
+		mux.Handle("/api/v1/robotics/", d.RoboticsHandler)
+	}
+	if d.TelemetryStreamHandler != nil {
+		mux.Handle("/api/v1/telemetry", d.TelemetryStreamHandler)
+		mux.Handle("/api/v1/telemetry/", d.TelemetryStreamHandler)
+	}
+	if d.CARHandler != nil {
+		mux.Handle("/api/v1/car", d.CARHandler)
+		mux.Handle("/api/v1/car/", d.CARHandler)
+	}
+	if d.FederationHandler != nil {
+		mux.Handle("/api/v1/federation", d.FederationHandler)
+		mux.Handle("/api/v1/federation/", d.FederationHandler)
+	}
+	if d.RiskHandler != nil {
+		mux.Handle("/api/v1/risk", d.RiskHandler)
+		mux.Handle("/api/v1/risk/", d.RiskHandler)
+	}
+	if d.ATEXHandler != nil {
+		mux.Handle("/api/v1/atex", d.ATEXHandler)
+		mux.Handle("/api/v1/atex/", d.ATEXHandler)
+	}
+	if d.PhotogrammetryHandler != nil {
+		mux.Handle("/api/v1/photogrammetry", d.PhotogrammetryHandler)
+		mux.Handle("/api/v1/photogrammetry/", d.PhotogrammetryHandler)
+	}
+	if d.PipingHandler != nil {
+		mux.Handle("/api/v1/piping", d.PipingHandler)
+		mux.Handle("/api/v1/piping/", d.PipingHandler)
+	}
 }
 
 func requireOIDCAuth(validator TokenValidator, next http.Handler) http.Handler {

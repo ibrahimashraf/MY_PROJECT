@@ -45,6 +45,9 @@ import (
 	"integin/internal/dpppg"
 	"integin/internal/evidencepackhttp"
 	"integin/internal/evidencepackpg"
+	"integin/internal/federation"
+	"integin/internal/federationhttp"
+	"integin/internal/atexhttp"
 	"integin/internal/formdefinitionhttp"
 	"integin/internal/formdefinitionpg"
 	"integin/internal/identity"
@@ -52,10 +55,15 @@ import (
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
+	"integin/internal/photogrammetryhttp"
+	"integin/internal/pipinghttp"
 	"integin/internal/qrnfchttp"
 	"integin/internal/qrnfcpg"
 	"integin/internal/queryenginehttp"
 	"integin/internal/queue"
+	"integin/internal/reinspectionhttp"
+	"integin/internal/riskhttp"
+	"integin/internal/robotichttp"
 	"integin/internal/server"
 	"integin/internal/shared/types"
 	"integin/internal/shortlinkhttp"
@@ -64,6 +72,8 @@ import (
 	"integin/internal/storage"
 	"integin/internal/syncapi"
 	"integin/internal/syncstate"
+	"integin/internal/telemetrystream"
+	"integin/internal/telemetrystreamhttp"
 	"integin/internal/timestamp"
 	"integin/internal/workbenchhttp"
 	"integin/pkg/contextground"
@@ -646,6 +656,22 @@ func Run() {
 		go tusManager.RunJanitor(context.Background(), 0, nil)
 	}
 	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil, evidenceStore != nil)
+
+	roboticsHandler := robotichttp.NewHandler(nil)
+	telemetryBuffer := telemetrystream.NewStreamBuffer(database, telemetrystream.DefaultIngestConfig())
+	telemetryHandler := telemetrystreamhttp.NewHandler(telemetryBuffer)
+	carHandler := reinspectionhttp.NewHandler(nil)
+	localCell := federation.CellSaudiCentral01
+	if cell := os.Getenv("INTEGIN_SOVEREIGN_CELL_ID"); cell != "" {
+		localCell = federation.SovereignCellID(cell)
+	}
+	fedGate := federation.NewFederationGatekeeper(localCell)
+	federationHandler := federationhttp.NewHandler(fedGate)
+	riskHandler := riskhttp.NewHandler()
+	atexHandler := atexhttp.NewHandler()
+	photogrammetryHandler := photogrammetryhttp.NewHandler()
+	pipingHandler := pipinghttp.NewHandler()
+
 	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, SessionRevocationHandler: sessionRevocationHandler, SessionRevokeAllHandler: sessionRevokeAllHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler, WorkOrderReconciliationHandler: server.NewWorkOrderReconciliationHandler(),
 		PilotManifestHandler: pilotManifestHandler,
 		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
@@ -653,14 +679,22 @@ func Run() {
 		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
 		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
 		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr, UploadAuthorityRegistry: pilotAuthorityRegistry,
-		DeviceEnrollmentHandler: deviceEnrollmentHandler,
+		DeviceEnrollmentHandler:  deviceEnrollmentHandler,
 		WorkOrderHandoverHandler: workOrderHandoverHandler,
-		WorkbenchHandler:        workbenchHandler,
-		AdvisoryHandler:         advisoryHandler,
-		JurisdictionHandler:     jurisdictionHandler,
-		QueryHandler:            queryHandler,
-		PilotEnrollHandler:      enrollHandler,
-		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
+		WorkbenchHandler:         workbenchHandler,
+		AdvisoryHandler:          advisoryHandler,
+		JurisdictionHandler:      jurisdictionHandler,
+		QueryHandler:             queryHandler,
+		RoboticsHandler:          roboticsHandler,
+		TelemetryStreamHandler:   telemetryHandler,
+		CARHandler:               carHandler,
+		FederationHandler:        federationHandler,
+		RiskHandler:              riskHandler,
+		ATEXHandler:              atexHandler,
+		PhotogrammetryHandler:    photogrammetryHandler,
+		PipingHandler:            pipingHandler,
+		PilotEnrollHandler:       enrollHandler,
+		ContextGroundHandler:     contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
 		log.Printf("pilot enrollment server mounted at /enroll/")
 	}

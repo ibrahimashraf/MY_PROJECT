@@ -89,6 +89,14 @@ type Dependencies struct {
 	DeviceEnrollmentHandler http.Handler
 	JurisdictionHandler     http.Handler
 	QueryHandler            http.Handler
+	RoboticsHandler         http.Handler
+	TelemetryStreamHandler  http.Handler
+	CARHandler              http.Handler
+	FederationHandler       http.Handler
+	RiskHandler             http.Handler
+	ATEXHandler             http.Handler
+	PhotogrammetryHandler   http.Handler
+	PipingHandler           http.Handler
 	Readiness               func(context.Context) error
 	ReadinessTimeout        time.Duration
 }
