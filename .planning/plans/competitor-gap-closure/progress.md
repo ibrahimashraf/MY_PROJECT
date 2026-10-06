@@ -10,8 +10,10 @@
 | 2026-09-28 | Implemented live assurance rule evaluation in `field_app` (`dynamic_form_view.dart`, `compliance_result_card.dart`, `inspection_draft.dart`, `field_app_controller.dart`). | Form evaluations run against rule bundles with tenant shadowing; outbox payloads carry signed outcomes; 23/23 tests pass. | Evaluator uses offline rule bundles with tenant shadowing and `SecureKeyValueStore`. | Connect backend live assurance sync endpoints. |
 | 2026-09-28 | Added conservative step-down and linear interpolation capacity lookups to `pkg/domain/loadchart.go` (`LookupCapacityConservative`, `LookupCapacityLinear`). | Safe solver interpolation within valid radius envelopes; out-of-envelope radii fail closed (`ErrLoadChartRadiusOutOfRange`). | Tests in `pkg/domain/loadchart_test.go` pass 100%; `gofmt` and `go vet` clean. | Connect `LoadChart` methods to `internal/liftviewexport` solver. |
 
+| 2026-10-06 | Integrated `domain.LoadChart` verified conservative capacity lookup into `internal/liftviewexport` server handler. | Server export handler now executes typed `domain.LoadChart.LookupCapacityConservative` with fail-closed bounds checking; all 15 tests in `internal/liftviewexport` pass (100%). | Ready for Phase 3 2D production workflow & offline field tablet lift plan integration. | Select first pilot lift template for offline field tablet preview. |
+
 ## Continuity checkpoint
 
 | Current phase | Last validated action | Unresolved decision or limitation | Next safe action |
 |---|---|---|---|
-| Phase 1 & 2 — rated-data & solver foundations | Conservative and linear capacity lookups pass in `pkg/domain/loadchart_test.go`. Field app live assurance evaluation passes 23 tests. | Integration of `domain.LoadChart` into `internal/liftviewexport` server handler. | Wire `LoadChart` lookup into `internal/liftviewexport` handler. |
+| Phase 2 & 3 — authoritative solver & 2D workflow | `domain.LoadChart` conservative capacity solver wired into `internal/liftviewexport` server handler (`PASS: 15/15 tests`). | Offline field tablet 2D lift plan integration and pilot template selection. | Wire offline 2D lift plan preview into `field_app/` or begin Sprint 8 scope. |
