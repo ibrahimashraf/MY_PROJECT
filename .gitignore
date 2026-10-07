@@ -54,11 +54,15 @@ docs/evidence/pilot-backups/
 # ==============================================================================
 # IDE & System Files
 # ==============================================================================
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db
 
 # Project-local configs & bench directories
 .npmrc
-bench_pdf/
+bench_pdf/*.pdf
+bench_pdf/*.png

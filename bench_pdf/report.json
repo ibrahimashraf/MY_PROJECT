@@ -1,0 +1,776 @@
+{
+ "cv": {
+  "src": "D:\\IBRAHIM ELDOFY.pdf",
+  "mb": 0.01,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.26,
+    "chars": 3270,
+    "tokens_est": 817,
+    "table_lines": 1,
+    "headings": 2
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.02,
+    "pages": 2,
+    "chars": 3479,
+    "tokens_est": 869,
+    "table_lines": 6,
+    "headings": 7
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.43,
+    "chars": 3253,
+    "tokens_est": 813,
+    "table_lines": 1,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 4.09,
+    "chars": 3432,
+    "tokens_est": 858,
+    "table_lines": 1,
+    "headings": 9
+   }
+  }
+ },
+ "cover": {
+  "src": "D:\\Ibrahim Eldofy - Cover letter.pdf",
+  "mb": 0.11,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.08,
+    "chars": 3049,
+    "tokens_est": 762,
+    "table_lines": 0,
+    "headings": 1
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.02,
+    "pages": 2,
+    "chars": 3133,
+    "tokens_est": 783,
+    "table_lines": 0,
+    "headings": 1
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.4,
+    "chars": 3018,
+    "tokens_est": 754,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 3.73,
+    "chars": 3067,
+    "tokens_est": 766,
+    "table_lines": 0,
+    "headings": 1
+   }
+  }
+ },
+ "catalog-crosby": {
+  "src": "D:\\New folder (3)\\Crosby & Gunnebo Industries Catalog - Metric 2025-2026.pdf",
+  "mb": 60.21,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 8.25,
+    "chars": 1152763,
+    "tokens_est": 288190,
+    "table_lines": 9538,
+    "headings": 1321
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 15.14,
+    "pages": 433,
+    "chars": 1240098,
+    "tokens_est": 310024,
+    "table_lines": 4236,
+    "headings": 1326
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 180.93,
+    "chars": 1494276,
+    "tokens_est": 373569,
+    "table_lines": 6196,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": false,
+    "seconds": 600,
+    "error": "timeout"
+   }
+  }
+ },
+ "std-bs6166": {
+  "src": "D:\\Work\\standards\\Slings\\Wire rope slings\\BS 6166-1 1986 Lifting slings, Methods of rating.pdf",
+  "mb": 0.71,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.3,
+    "chars": 369,
+    "tokens_est": 92,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.14,
+    "pages": 12,
+    "chars": 35379,
+    "tokens_est": 8844,
+    "table_lines": 0,
+    "headings": 35
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 3.02,
+    "chars": 35717,
+    "tokens_est": 8929,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 17.74,
+    "chars": 1453,
+    "tokens_est": 363,
+    "table_lines": 0,
+    "headings": 0
+   }
+  }
+ },
+ "std-wiremaint": {
+  "src": "D:\\Work\\standards\\Slings\\BS ISO 4309-2004 Wire Rope Maintance.pdf",
+  "mb": 3.85,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 1.81,
+    "chars": 1069,
+    "tokens_est": 267,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.05,
+    "pages": 47,
+    "chars": 1058,
+    "tokens_est": 264,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.18,
+    "chars": 0,
+    "tokens_est": 0,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 38.9,
+    "chars": 0,
+    "tokens_est": 0,
+    "table_lines": 0,
+    "headings": 0
+   }
+  }
+ },
+ "handbook": {
+  "src": "D:\\New folder (3)\\64Gram Desktop\\Rigging_Handbook.pdf",
+  "mb": 6.8,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 3.01,
+    "chars": 443633,
+    "tokens_est": 110908,
+    "table_lines": 1006,
+    "headings": 429
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 1.7,
+    "pages": 353,
+    "chars": 480340,
+    "tokens_est": 120085,
+    "table_lines": 114,
+    "headings": 47
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 33.18,
+    "chars": 523132,
+    "tokens_est": 130783,
+    "table_lines": 724,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 299.38,
+    "chars": 482627,
+    "tokens_est": 120656,
+    "table_lines": 587,
+    "headings": 364
+   }
+  }
+ },
+ "checklist": {
+  "src": "D:\\New folder (3)\\64Gram Desktop\\Overhead-Crane-Daily-Inspection-Checklist.pdf",
+  "mb": 0.15,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.46,
+    "chars": 1302,
+    "tokens_est": 325,
+    "table_lines": 19,
+    "headings": 0
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.01,
+    "pages": 1,
+    "chars": 1334,
+    "tokens_est": 333,
+    "table_lines": 0,
+    "headings": 1
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.23,
+    "chars": 1243,
+    "tokens_est": 310,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 3.14,
+    "chars": 1448,
+    "tokens_est": 362,
+    "table_lines": 19,
+    "headings": 1
+   }
+  }
+ },
+ "arabic-reg": {
+  "src": "D:\\New folder (3)\\ABDM\\Documents\\اللائحة الفنية للمصاعد الكهربائية للمباني والمنشآت.pdf",
+  "mb": 0.98,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.2,
+    "chars": 84688,
+    "tokens_est": 21172,
+    "table_lines": 226,
+    "headings": 14
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.85,
+    "pages": 50,
+    "chars": 90350,
+    "tokens_est": 22587,
+    "table_lines": 44,
+    "headings": 452
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 16.85,
+    "chars": 94339,
+    "tokens_est": 23584,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 56.42,
+    "chars": 86049,
+    "tokens_est": 21512,
+    "table_lines": 76,
+    "headings": 6
+   }
+  }
+ },
+ "arabic-rigging": {
+  "src": "D:\\Work\\standards\\Lifting equipment\\Slings and Grommets\\Rigging_and_slinging_arabic.pdf",
+  "mb": 38.24,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 4.1,
+    "chars": 23551,
+    "tokens_est": 5887,
+    "table_lines": 44,
+    "headings": 217
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.62,
+    "pages": 126,
+    "chars": 24651,
+    "tokens_est": 6162,
+    "table_lines": 13,
+    "headings": 531
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 3.96,
+    "chars": 21302,
+    "tokens_est": 5325,
+    "table_lines": 41,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 77.84,
+    "chars": 24626,
+    "tokens_est": 6156,
+    "table_lines": 0,
+    "headings": 47
+   }
+  }
+ },
+ "form-wire": {
+  "src": "D:\\New folder (3)\\Wire Rope Inspection Sheet-Full-01Feb2024.pdf",
+  "mb": 0.63,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 1.77,
+    "chars": 1970,
+    "tokens_est": 492,
+    "table_lines": 22,
+    "headings": 1
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.03,
+    "pages": 1,
+    "chars": 1860,
+    "tokens_est": 465,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.36,
+    "chars": 3722,
+    "tokens_est": 930,
+    "table_lines": 15,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 3.38,
+    "chars": 2005,
+    "tokens_est": 501,
+    "table_lines": 0,
+    "headings": 1
+   }
+  }
+ },
+ "guide-esta": {
+  "src": "D:\\New folder (3)\\ESTA-Best-Practice-Guide-Transport-and-Installation-onshore-WTG-systems.pdf",
+  "mb": 2.05,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.12,
+    "chars": 173658,
+    "tokens_est": 43414,
+    "table_lines": 534,
+    "headings": 90
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.55,
+    "pages": 52,
+    "chars": 165607,
+    "tokens_est": 41401,
+    "table_lines": 110,
+    "headings": 110
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 7.93,
+    "chars": 168404,
+    "tokens_est": 42101,
+    "table_lines": 145,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 74.42,
+    "chars": 164130,
+    "tokens_est": 41032,
+    "table_lines": 301,
+    "headings": 127
+   }
+  }
+ },
+ "reg-l113": {
+  "src": "D:\\New folder (3)\\l113.pdf",
+  "mb": 1.0,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 1.97,
+    "chars": 186379,
+    "tokens_est": 46594,
+    "table_lines": 249,
+    "headings": 308
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.9,
+    "pages": 72,
+    "chars": 202654,
+    "tokens_est": 50663,
+    "table_lines": 90,
+    "headings": 383
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 12.75,
+    "chars": 186722,
+    "tokens_est": 46680,
+    "table_lines": 12,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 114.92,
+    "chars": 200081,
+    "tokens_est": 50020,
+    "table_lines": 201,
+    "headings": 99
+   }
+  }
+ },
+ "chart-casing": {
+  "src": "D:\\RIGGING PICTURES\\صور اخري\\API Casing Chart.pdf",
+  "mb": 0.11,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 3.14,
+    "chars": 5058,
+    "tokens_est": 1264,
+    "table_lines": 80,
+    "headings": 6
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.08,
+    "pages": 2,
+    "chars": 5511,
+    "tokens_est": 1377,
+    "table_lines": 0,
+    "headings": 1
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.76,
+    "chars": 7506,
+    "tokens_est": 1876,
+    "table_lines": 55,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 14.98,
+    "chars": 5989,
+    "tokens_est": 1497,
+    "table_lines": 79,
+    "headings": 1
+   }
+  }
+ },
+ "std-dnv": {
+  "src": "D:\\New folder (3)\\64Gram Desktop\\DNV-ST-E271  March 2023.pdf",
+  "mb": 3.64,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 15.05,
+    "chars": 233558,
+    "tokens_est": 58389,
+    "table_lines": 591,
+    "headings": 255
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 6.41,
+    "pages": 109,
+    "chars": 245882,
+    "tokens_est": 61470,
+    "table_lines": 371,
+    "headings": 55
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 112.14,
+    "chars": 247688,
+    "tokens_est": 61922,
+    "table_lines": 270,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 209.87,
+    "chars": 246239,
+    "tokens_est": 61559,
+    "table_lines": 637,
+    "headings": 385
+   }
+  }
+ },
+ "notes-plm": {
+  "src": "D:\\PLM EXAM NOTES.pdf",
+  "mb": 1.63,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 3.56,
+    "chars": 36540,
+    "tokens_est": 9135,
+    "table_lines": 40,
+    "headings": 1
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.4,
+    "pages": 24,
+    "chars": 38489,
+    "tokens_est": 9622,
+    "table_lines": 61,
+    "headings": 21
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 6.18,
+    "chars": 36523,
+    "tokens_est": 9130,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 23.07,
+    "chars": 39735,
+    "tokens_est": 9933,
+    "table_lines": 52,
+    "headings": 35
+   }
+  }
+ },
+ "small-sling": {
+  "src": "D:\\Lifting sling.pdf",
+  "mb": 0.14,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 1.66,
+    "chars": 995,
+    "tokens_est": 248,
+    "table_lines": 0,
+    "headings": 2
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.01,
+    "pages": 1,
+    "chars": 1032,
+    "tokens_est": 258,
+    "table_lines": 0,
+    "headings": 7
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.12,
+    "chars": 969,
+    "tokens_est": 242,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 2.31,
+    "chars": 1033,
+    "tokens_est": 258,
+    "table_lines": 0,
+    "headings": 5
+   }
+  }
+ },
+ "arabic-book": {
+  "src": "D:\\الحياة الزوجية السعيدة والثقافة الجنسية.pdf",
+  "mb": 2.11,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.06,
+    "chars": 140546,
+    "tokens_est": 35136,
+    "table_lines": 0,
+    "headings": 4
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.87,
+    "pages": 115,
+    "chars": 145756,
+    "tokens_est": 36439,
+    "table_lines": 0,
+    "headings": 1788
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 8.41,
+    "chars": 142752,
+    "tokens_est": 35688,
+    "table_lines": 20,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 94.29,
+    "chars": 141395,
+    "tokens_est": 35348,
+    "table_lines": 0,
+    "headings": 14
+   }
+  }
+ },
+ "std-iso9927": {
+  "src": "D:\\New folder (3)\\64Gram Desktop\\ISO 9927-1-2013 , Cranes , Inspections-3rd Ed.pdf",
+  "mb": 1.03,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.07,
+    "chars": 36068,
+    "tokens_est": 9017,
+    "table_lines": 78,
+    "headings": 50
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.54,
+    "pages": 22,
+    "chars": 48419,
+    "tokens_est": 12104,
+    "table_lines": 10,
+    "headings": 24
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 16.48,
+    "chars": 47723,
+    "tokens_est": 11930,
+    "table_lines": 42,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 36.13,
+    "chars": 49875,
+    "tokens_est": 12468,
+    "table_lines": 85,
+    "headings": 64
+   }
+  }
+ },
+ "scan-attend": {
+  "src": "D:\\Astron\\Reda Ibrahim El-Awady's files - AG_RTM_Lifting\\Training\\2025 Records\\Training_Attendance_sheet_9.9.2025_.pdf",
+  "mb": 0.95,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 2.95,
+    "chars": 3349,
+    "tokens_est": 837,
+    "table_lines": 15,
+    "headings": 2
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 0.04,
+    "pages": 3,
+    "chars": 4348,
+    "tokens_est": 1087,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 0.74,
+    "chars": 3316,
+    "tokens_est": 829,
+    "table_lines": 0,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": true,
+    "seconds": 9.39,
+    "chars": 3256,
+    "tokens_est": 814,
+    "table_lines": 31,
+    "headings": 1
+   }
+  }
+ },
+ "std-asme": {
+  "src": "D:\\Work\\standards\\ASME\\ASME B30.30.pdf",
+  "mb": 5.27,
+  "tools": {
+   "anymd": {
+    "ok": true,
+    "seconds": 3.95,
+    "chars": 11534,
+    "tokens_est": 2883,
+    "table_lines": 138,
+    "headings": 3
+   },
+   "pdf_oxide": {
+    "ok": true,
+    "seconds": 2.02,
+    "pages": 42,
+    "chars": 161808,
+    "tokens_est": 40452,
+    "table_lines": 53,
+    "headings": 0
+   },
+   "markitdown": {
+    "ok": true,
+    "seconds": 10.21,
+    "chars": 173183,
+    "tokens_est": 43295,
+    "table_lines": 732,
+    "headings": 0
+   },
+   "pdf2mj": {
+    "ok": false,
+    "seconds": 600,
+    "error": "timeout"
+   }
+  }
+ }
+}

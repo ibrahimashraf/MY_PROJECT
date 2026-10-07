@@ -1,0 +1,518 @@
+{
+ "cv": {
+  "anymd": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 3270
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 3253
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 3432
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 3479
+  }
+ },
+ "cover": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 3049
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 3018
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 3067
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 3133
+  }
+ },
+ "catalog-crosby": {
+  "anymd": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 1152763
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 1494276
+  },
+  "pdf2mj": {
+   "converted": false,
+   "score": 0
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "2/2",
+   "arabic_chars": 0,
+   "chars": 1240098
+  }
+ },
+ "std-bs6166": {
+  "anymd": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 369
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 35717
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 1453
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 35379
+  }
+ },
+ "std-wiremaint": {
+  "anymd": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 1069
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 0
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 0
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 0,
+   "chars": 1058
+  }
+ },
+ "handbook": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 443633
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 523132
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 482627
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 480340
+  }
+ },
+ "checklist": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1302
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1243
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1448
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1334
+  }
+ },
+ "arabic-reg": {
+  "anymd": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 58389,
+   "chars": 84688
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 59825,
+   "chars": 94339
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 54884,
+   "chars": 86049
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 60144,
+   "chars": 90350
+  }
+ },
+ "arabic-rigging": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 14542,
+   "chars": 23551
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 14542,
+   "chars": 21302
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 14629,
+   "chars": 24626
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 14656,
+   "chars": 24651
+  }
+ },
+ "form-wire": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1970
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 3722
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 2005
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1860
+  }
+ },
+ "guide-esta": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 173658
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 168404
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 164130
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 165607
+  }
+ },
+ "reg-l113": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 186379
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 186722
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 200081
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 202654
+  }
+ },
+ "chart-casing": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 5058
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 7506
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 5989
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 5511
+  }
+ },
+ "std-dnv": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 233558
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 247688
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 246239
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 245882
+  }
+ },
+ "notes-plm": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 36540
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 36523
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 39735
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 38489
+  }
+ },
+ "small-sling": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 995
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 969
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1033
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 1032
+  }
+ },
+ "arabic-book": {
+  "anymd": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 104882,
+   "chars": 140546
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "0/1",
+   "arabic_chars": 108662,
+   "chars": 142752
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 106063,
+   "chars": 141395
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 104752,
+   "chars": 145756
+  }
+ },
+ "std-iso9927": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 36068
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 47723
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 49875
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 48419
+  }
+ },
+ "scan-attend": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 12,
+   "chars": 3349
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 12,
+   "chars": 3316
+  },
+  "pdf2mj": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 12,
+   "chars": 3256
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 12,
+   "chars": 4348
+  }
+ },
+ "std-asme": {
+  "anymd": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 11534
+  },
+  "markitdown": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 173183
+  },
+  "pdf2mj": {
+   "converted": false,
+   "score": 0
+  },
+  "pdf_oxide": {
+   "converted": true,
+   "qa": "1/1",
+   "arabic_chars": 0,
+   "chars": 161808
+  }
+ }
+}
