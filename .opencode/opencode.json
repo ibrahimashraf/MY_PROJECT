@@ -4,6 +4,7 @@
     "opencode-mem",
     "opencode-handoff",
     "opencode-telemetry",
-    "@slkiser/opencode-quota"
+    "@slkiser/opencode-quota",
+    "superpowers@git+https://github.com/obra/superpowers.git"
   ]
 }
