@@ -548,6 +548,30 @@ All 7 Master Sprints (Sprints 1–7), all 12 Architectural Tiers (L0–L11), and
 - **Deliverable 7.1: Post-Quantum Hybrid Cryptographic Receipts (`pkg/crypto/pq`)** ✅
 - **Deliverable 7.2: ASME B31.3 / API 570 Piping System Life Assessment (`pkg/domain/piping`)** ✅
 
+#### Horizon 4: Production Runtime Wiring & Boundary Integration (2026-10-06) ✅
+*   **Autonomous Robotics Ingress (`internal/robotichttp`)**:
+    *   Wired `POST /api/v1/robotics/ingress` adapting attested robotic telemetry and optical/LiDAR digests into standard signed inspection receipts.
+*   **High-Frequency Sensor Stream Ingestion (`internal/telemetrystreamhttp`)**:
+    *   Wired `POST /api/v1/telemetry/stream` ingesting sensor measurements into ring-buffer with fail-closed overload lockout (`ErrCriticalOverload`).
+*   **Corrective Action Request Lifecycle (`internal/reinspectionhttp`)**:
+    *   Wired `POST /api/v1/car/issue`, `POST /api/v1/car/remediate`, `POST /api/v1/car/verify` for CAR lifecycle state management.
+*   **Sovereign Multi-Region Federation (`internal/federationhttp`)**:
+    *   Wired `POST /api/v1/federation/replicate` with regional data residency policy checking and replay prevention.
+*   **Parametric Industrial Risk Engine (`internal/riskhttp`)**:
+    *   Wired `POST /api/v1/risk/evaluate` calculating actuarial risk and rebate qualification.
+*   **ATEX / IECEx Intrinsic Safety Gate (`internal/atexhttp`)**:
+    *   Wired `POST /api/v1/atex/evaluate` verifying entity parameters and thermal limits.
+*   **Volumetric Aerial Photogrammetry (`internal/photogrammetryhttp`)**:
+    *   Wired `POST /api/v1/photogrammetry/survey` calculating point-cloud volumes and deflection tolerances.
+*   **ASME B31.3 / API 570 Piping Life Assessment (`internal/pipinghttp`)**:
+    *   Wired `POST /api/v1/piping/evaluate` calculating minimum required wall thickness ($t_{\text{min}}$) and remaining life.
+*   **Server Composition & Routing**:
+    *   Integrated into `internal/server/http.go` (`Dependencies`), `internal/server/http_routes.go`, and `internal/serverboot/run.go`.
+*   **Verification Evidence**:
+    *   `go test -v ./internal/robotichttp ./internal/telemetrystreamhttp ./internal/reinspectionhttp ./internal/federationhttp ./internal/riskhttp ./internal/atexhttp ./internal/photogrammetryhttp ./internal/pipinghttp ./internal/server` $\longrightarrow$ **PASS (100%)**.
+    *   `go vet ./...` $\longrightarrow$ **0 errors**.
+    *   `go build ./cmd/integin-server` $\longrightarrow$ **Clean binary compilation (exit 0)**.
+
 ### Continuous Quality & Verification Gates:
 1. `go test -count=1 ./...` $\longrightarrow$ **PASS (0 failures across all packages)**
 2. `go vet ./...` $\longrightarrow$ **0 errors**

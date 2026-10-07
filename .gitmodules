@@ -4,3 +4,4 @@
 [submodule "integin-pilot-source"]
 	path = integin-pilot-source
 	url = https://github.com/ibrahimashraf/MY_PROJECT.git
+	branch = pilot-source
