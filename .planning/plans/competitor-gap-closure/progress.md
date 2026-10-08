@@ -11,9 +11,10 @@
 | 2026-09-28 | Added conservative step-down and linear interpolation capacity lookups to `pkg/domain/loadchart.go` (`LookupCapacityConservative`, `LookupCapacityLinear`). | Safe solver interpolation within valid radius envelopes; out-of-envelope radii fail closed (`ErrLoadChartRadiusOutOfRange`). | Tests in `pkg/domain/loadchart_test.go` pass 100%; `gofmt` and `go vet` clean. | Connect `LoadChart` methods to `internal/liftviewexport` solver. |
 
 | 2026-10-06 | Integrated `domain.LoadChart` verified conservative capacity lookup into `internal/liftviewexport` server handler. | Server export handler now executes typed `domain.LoadChart.LookupCapacityConservative` with fail-closed bounds checking; all 15 tests in `internal/liftviewexport` pass (100%). | Ready for Phase 3 2D production workflow & offline field tablet lift plan integration. | Select first pilot lift template for offline field tablet preview. |
+| 2026-10-08 | Wired offline 2D `LiftPlan2DView` preview into `field_app/` home page (`_LiftPlanPreviewCard`). | Offline field tablet supports plan/elevation toggle, live telemetry bar, and vector CAD canvas; submodule commit `e5979e8`. | Field app has offline 2D preview wired; ready for Phase 4 3D/4D simulation & Sprint 8 scope. | Advance Phase 4 / Sprint 8 deliverables. |
 
 ## Continuity checkpoint
 
 | Current phase | Last validated action | Unresolved decision or limitation | Next safe action |
 |---|---|---|---|
-| Phase 2 & 3 — authoritative solver & 2D workflow | `domain.LoadChart` conservative capacity solver wired into `internal/liftviewexport` server handler (`PASS: 15/15 tests`). | Offline field tablet 2D lift plan integration and pilot template selection. | Wire offline 2D lift plan preview into `field_app/` or begin Sprint 8 scope. |
+| Phase 3 — 2D production workflow complete | Wired offline 2D `LiftPlan2DView` preview into `field_app/` (`_LiftPlanPreviewCard`, commit `e5979e8`). | Phase 4 3D/4D simulation & collision integration. | Begin Phase 4 neutral scene import / collision or Sprint 8 scope. |
