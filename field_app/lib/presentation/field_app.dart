@@ -10,6 +10,7 @@ import 'adaptive_scaffold.dart';
 import 'custody_handover_view.dart';
 import 'dynamic_form_view.dart';
 import 'enrollment_screen.dart';
+import 'lift_plan_2d_view.dart';
 import '../sync/in_app_camera.dart';
 
 
@@ -205,6 +206,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
                   }
                 },
               ),
+              const SizedBox(height: 16),
+              const _LiftPlanPreviewCard(),
             ],
             const SizedBox(height: 16),
             _PilotOperatorReviewCard(
@@ -836,6 +839,70 @@ class _StationLiveEventsCard extends StatelessWidget {
                     ],
                   ),
                 )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LiftPlanPreviewCard extends StatefulWidget {
+  const _LiftPlanPreviewCard();
+
+  @override
+  State<_LiftPlanPreviewCard> createState() => _LiftPlanPreviewCardState();
+}
+
+class _LiftPlanPreviewCardState extends State<_LiftPlanPreviewCard> {
+  bool _showPlanView = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFF1E293B)),
+      ),
+      color: const Color(0xFF0F172A),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Offline 2D Lift Plan Preview (Phase 3)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => setState(() => _showPlanView = !_showPlanView),
+                  icon: Icon(_showPlanView ? Icons.layers_outlined : Icons.landscape_outlined, size: 16),
+                  label: Text(_showPlanView ? 'Elevation' : 'Plan View'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 280,
+              child: LiftPlan2DView(
+                craneModel: 'Liebherr LTM 1500-8.1',
+                boomLengthMeters: 36.9,
+                workingRadiusMeters: 14.0,
+                boomAngleDeg: 63.4,
+                slewAngleDeg: 25.0,
+                grossLoadTonnes: 45.0,
+                ratedCapacityTonnes: 102.0,
+                groundBearingFoS: 1.68,
+                showPlanView: _showPlanView,
+              ),
+            ),
           ],
         ),
       ),
