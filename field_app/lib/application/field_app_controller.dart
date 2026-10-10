@@ -419,7 +419,11 @@ class FieldAppController extends ChangeNotifier {
     }
     final completeness = draft.validateLocally();
     if (!completeness.isComplete) {
-      lastError = 'Complete every required checklist item before queuing.';
+      if (completeness.calibrationError != null) {
+        lastError = completeness.calibrationError;
+      } else {
+        lastError = 'Complete every required checklist item before queuing.';
+      }
       notifyListeners();
       return false;
     }
@@ -497,7 +501,11 @@ class FieldAppController extends ChangeNotifier {
     }
     final completeness = draft.validateLocally();
     if (!completeness.isComplete) {
-      lastError = 'Complete every required checklist item before queuing.';
+      if (completeness.calibrationError != null) {
+        lastError = completeness.calibrationError;
+      } else {
+        lastError = 'Complete every required checklist item before queuing.';
+      }
       notifyListeners();
       return false;
     }

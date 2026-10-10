@@ -50,11 +50,18 @@ class InspectionWorkPack {
 }
 
 class LocalCompletenessResult {
-  const LocalCompletenessResult({required this.missingItemIds});
+  const LocalCompletenessResult({
+    required this.missingItemIds,
+    this.expiredToolIds = const [],
+    this.calibrationError,
+  });
 
   final List<String> missingItemIds;
+  final List<String> expiredToolIds;
+  final String? calibrationError;
 
-  bool get isComplete => missingItemIds.isEmpty;
+  bool get isComplete =>
+      missingItemIds.isEmpty && expiredToolIds.isEmpty && calibrationError == null;
 }
 
 class InspectionDraft {
@@ -70,11 +77,17 @@ class InspectionDraft {
   final String recordedBy;
   final DateTime createdAt;
   final Map<String, FindingDraft> findings = {};
+  final List<ToolCalibrationReference> toolCalibrations = [];
   InspectionStatus status = InspectionStatus.inProgress;
   String? notes;
   EvaluationOutcome? evaluationOutcome;
   String? unsealedFromTxId;
   int? unsealedSequenceNumber;
+
+  void registerToolCalibration(ToolCalibrationReference tool) {
+    toolCalibrations.removeWhere((t) => t.toolId == tool.toolId);
+    toolCalibrations.add(tool);
+  }
 
   void recordResponse({
     required ChecklistItem item,
@@ -99,13 +112,32 @@ class InspectionDraft {
     );
   }
 
-  LocalCompletenessResult validateLocally() {
+  LocalCompletenessResult validateLocally([DateTime? at]) {
+    final now = at ?? DateTime.now().toUtc();
     final missing = workPack.items
         .where((item) =>
             item.required && (findings[item.id]?.response ?? '').isEmpty)
         .map((item) => item.id)
         .toList(growable: false);
-    return LocalCompletenessResult(missingItemIds: missing);
+
+    final expiredTools = <String>[];
+    for (final tool in toolCalibrations) {
+      if (tool.isExpired(now)) {
+        expiredTools.add(tool.toolId);
+      }
+    }
+
+    String? calErr;
+    if (expiredTools.isNotEmpty) {
+      calErr =
+          'ISO/IEC 17020 §6.2 Calibration Lockout: M&TE calibration expired for tool(s): ${expiredTools.join(', ')}. Submission blocked.';
+    }
+
+    return LocalCompletenessResult(
+      missingItemIds: missing,
+      expiredToolIds: expiredTools,
+      calibrationError: calErr,
+    );
   }
 
   Map<String, Object?> toPayload() => {
@@ -121,6 +153,8 @@ class InspectionDraft {
         'status': status.name.toUpperCase(),
         'notes': notes,
         'findings': findings.values.map((finding) => finding.toJson()).toList(),
+        if (toolCalibrations.isNotEmpty)
+          'tool_calibrations': toolCalibrations.map((t) => t.toJson()).toList(),
         if (evaluationOutcome != null) 'evaluation_outcome': evaluationOutcome!.toJson(),
       };
 
@@ -131,6 +165,8 @@ class InspectionDraft {
         'status': status.name,
         'notes': notes,
         'findings': findings.map((k, v) => MapEntry(k, v.toJson())),
+        if (toolCalibrations.isNotEmpty)
+          'tool_calibrations': toolCalibrations.map((t) => t.toJson()).toList(),
         if (evaluationOutcome != null) 'evaluation_outcome': evaluationOutcome!.toJson(),
       };
 

@@ -332,3 +332,47 @@ String canonicalJson(Object? value) {
 
   return jsonEncode(normalize(value));
 }
+
+/// Tool calibration reference conforming to ISO/IEC 17020 §6.2.
+class ToolCalibrationReference {
+  const ToolCalibrationReference({
+    required this.toolId,
+    required this.serialNumber,
+    required this.standardReference,
+    required this.calibrationDate,
+    required this.expiryDate,
+    this.status = 'ACTIVE',
+  });
+
+  final String toolId;
+  final String serialNumber;
+  final String standardReference;
+  final DateTime calibrationDate;
+  final DateTime expiryDate;
+  final String status;
+
+  bool isExpired([DateTime? at]) {
+    final checkAt = at ?? DateTime.now().toUtc();
+    return checkAt.isAfter(expiryDate) || status.toUpperCase() == 'EXPIRED';
+  }
+
+  Map<String, Object?> toJson() => {
+        'tool_id': toolId,
+        'serial_number': serialNumber,
+        'standard_reference': standardReference,
+        'calibration_date': calibrationDate.toUtc().toIso8601String(),
+        'expiry_date': expiryDate.toUtc().toIso8601String(),
+        'status': status,
+      };
+
+  factory ToolCalibrationReference.fromJson(Map<String, Object?> json) =>
+      ToolCalibrationReference(
+        toolId: json['tool_id'] as String,
+        serialNumber: json['serial_number'] as String? ?? '',
+        standardReference: json['standard_reference'] as String? ?? '',
+        calibrationDate: DateTime.parse(json['calibration_date'] as String),
+        expiryDate: DateTime.parse(json['expiry_date'] as String),
+        status: json['status'] as String? ?? 'ACTIVE',
+      );
+}
+
