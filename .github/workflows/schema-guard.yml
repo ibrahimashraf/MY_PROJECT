@@ -1,0 +1,83 @@
+name: Database Schema & Migration Guard
+
+on:
+  pull_request:
+    paths:
+      - 'integin-pilot-source/migrations/**'
+      - 'integin-pilot-source/cmd/integin-server/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'integin-pilot-source/migrations/**'
+      - 'integin-pilot-source/cmd/integin-server/**'
+
+jobs:
+  schema-guard:
+    name: Schema Ledger & Reversibility Gate
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: '0'
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: integin_ci_test
+          POSTGRES_USER: integin_runtime
+          POSTGRES_PASSWORD: ci_secret_password_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go Runtime
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: integin-pilot-source/go.sum
+
+      - name: Verify Migration Contracts & Checksum Drift
+        working-directory: integin-pilot-source
+        run: |
+          go test -v -count=1 ./migrations
+
+      - name: Build INTEGIN Server Binary
+        working-directory: integin-pilot-source
+        run: |
+          go build -v -o integin-server ./cmd/integin-server
+
+      - name: Execute Live Migration Forward Cycle
+        working-directory: integin-pilot-source
+        env:
+          INTEGIN_MIGRATION_DB_URL: "postgres://integin_runtime:ci_secret_password_2026@127.0.0.1:5432/integin_ci_test?sslmode=disable"
+        run: |
+          ./integin-server migrate
+
+      - name: Test Deterministic Rollback Cycle
+        working-directory: integin-pilot-source
+        env:
+          INTEGIN_MIGRATION_DB_URL: "postgres://integin_runtime:ci_secret_password_2026@127.0.0.1:5432/integin_ci_test?sslmode=disable"
+        run: |
+          ./integin-server migrate --rollback
+
+      - name: Re-apply Forward Migration Replay
+        working-directory: integin-pilot-source
+        env:
+          INTEGIN_MIGRATION_DB_URL: "postgres://integin_runtime:ci_secret_password_2026@127.0.0.1:5432/integin_ci_test?sslmode=disable"
+        run: |
+          ./integin-server migrate
+
+      - name: Assert Zero Remaining Drift
+        working-directory: integin-pilot-source
+        env:
+          INTEGIN_MIGRATION_DB_URL: "postgres://integin_runtime:ci_secret_password_2026@127.0.0.1:5432/integin_ci_test?sslmode=disable"
+        run: |
+          ./integin-server migrate

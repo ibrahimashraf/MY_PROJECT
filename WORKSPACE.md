@@ -68,11 +68,11 @@ c:\MY_PROJECT\
 ```
 
 ### The 5 Inviolable Safety Invariants
-1. **Go + PostgreSQL is Sole Authority**: Business logic, tenant isolation, certificate issuance, and cryptographic verification are strictly server-authoritative.
+1. **Go + PostgreSQL is Sole Authority (DEC-RUST-02)**: Business logic, tenant isolation, certificate issuance, and cryptographic verification are strictly server-authoritative. Pure Go runtime with `CGO_ENABLED=0` strictly enforced across all builds and CI; in-process FFI / C-ABI linkage is forbidden.
 2. **PostgreSQL Multi-Tenant RLS**: Every query on domain tables must execute under `SET LOCAL integin.tenant_id` and `integin.organization_id` with `FORCE ROW LEVEL SECURITY`.
 3. **Non-Blocking Advisory AI**: The Python advisory service (`ai_service`) is read-only (`blocking=false`). AI is strictly prohibited from setting verdicts, issuing certificates, or altering workflow state.
 4. **Opaque Private Material**: Never inspect, print, log, upload, or commit anything inside `c:\MY_PROJECT\private\`.
-5. **Verified Verification Gate**: Every Go change must pass `go test -count=1 ./...` and `go vet ./...` before being considered complete.
+5. **Verified Verification Gate**: Every Go change must pass `CGO_ENABLED=0 go test -count=1 ./...` and `go vet ./...` before being considered complete.
 
 ---
 
@@ -194,6 +194,7 @@ cd c:\MY_PROJECT\integin-pilot-source
 go vet ./...
 
 # 3. Clean-Cache Unit & Package Tests
+$env:CGO_ENABLED = "0"
 go test -count=1 ./...
 
 # 4. Run live end-to-end matrix against local containers

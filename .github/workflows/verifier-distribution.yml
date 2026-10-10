@@ -1,0 +1,75 @@
+name: Standalone Verifier Packaging & Distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+    paths:
+      - 'integin-pilot-source/tools/integin-export-verifier/**'
+      - '.github/workflows/verifier-distribution.yml'
+  pull_request:
+    paths:
+      - 'integin-pilot-source/tools/integin-export-verifier/**'
+      - '.github/workflows/verifier-distribution.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-package:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            use_cross: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            use_cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            use_cross: true
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl-tools (Linux)
+        if: matrix.os == 'ubuntu-latest' && !matrix.use_cross
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install Cross for ARM64 Emulation
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build & Package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        working-directory: integin-pilot-source/tools/integin-export-verifier
+        run: |
+          .\package.ps1 -Target ${{ matrix.target }} -OutputDir dist
+
+      - name: Build & Package (Linux musl)
+        if: matrix.os == 'ubuntu-latest' && !matrix.use_cross
+        working-directory: integin-pilot-source/tools/integin-export-verifier
+        run: |
+          TARGET=${{ matrix.target }} sh package.sh
+
+      - name: Build & Package (ARM64 via Cross)
+        if: matrix.use_cross
+        working-directory: integin-pilot-source/tools/integin-export-verifier
+        run: |
+          cross build --release --target ${{ matrix.target }}
+          TARGET=${{ matrix.target }} sh package.sh
+
+      - name: Upload Packaged Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: verifier-${{ matrix.target }}
+          path: integin-pilot-source/tools/integin-export-verifier/dist/*
