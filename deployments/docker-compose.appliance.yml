@@ -184,7 +184,7 @@ services:
     networks:
       - appliance-network
     depends_on:
-      - pgcat
+      - pgdog
       - rustfs
       - casdoor
     deploy:

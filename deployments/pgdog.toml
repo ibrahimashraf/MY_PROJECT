@@ -8,15 +8,9 @@ name = "integin_migration_test"
 host = "172.17.0.2"
 port = 5432
 role = "primary"
-pool_mode = "transaction"
-query_parser_enabled = false
-primary_reads_enabled = true
 
 [[databases]]
 name = "integin_appliance"
 host = "appliance-postgres"
 port = 5432
 role = "primary"
-pool_mode = "transaction"
-query_parser_enabled = false
-primary_reads_enabled = true

@@ -29,9 +29,9 @@ func TestPgDogApplianceConfigReconciled(t *testing.T) {
 	// Validate pgdog.toml general and database definitions
 	requiredDbSettings := []string{
 		`port = 6432`,
+		`default_pool_size = 80`,
 		`name = "integin_appliance"`,
 		`host = "appliance-postgres"`,
-		`pool_mode = "transaction"`,
 		`name = "integin_migration_test"`,
 	}
 	for _, want := range requiredDbSettings {
