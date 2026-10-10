@@ -1,6 +1,6 @@
 # Air-Gapped Sovereign Edge Appliance Stack
 # Complete Pure FOSS Architecture (Zero Freemium, Zero Open-Core, Zero Cloud Callbacks)
-# Components: HAProxy 3.1 + Casdoor IdP + PgCat Pooler + PostgreSQL 18 + RustFS S3 + INTEGIN Server Monolith
+# Components: HAProxy 3.1 + Casdoor IdP + PgDog Pooler + PostgreSQL 18 + RustFS S3 + INTEGIN Server Monolith
 
 services:
   # 1. Edge Ingress Proxy & WAF (GPL-2.0 / LGPL-2.1)
@@ -92,19 +92,22 @@ services:
         limits:
           memory: 1024M
 
-  # 4. Multi-Threaded Connection Pooler (MIT)
-  # Rust-native multiplexer for transaction-mode pooling & read/write splitting
-  pgcat:
-    image: ghcr.io/postgresml/pgcat:latest
-    container_name: appliance-pgcat
+  # 4. Multi-Threaded Connection Pooler & Query Router (MIT / Apache 2.0)
+  # Rust-native PgDog proxy for transaction-mode pooling & read/write splitting
+  pgdog:
+    image: ghcr.io/pgdogdev/pgdog:main
+    container_name: appliance-pgdog
     restart: unless-stopped
     volumes:
-      - ./pgcat.toml:/etc/pgcat/pgcat.toml:ro
+      - ./pgdog.toml:/pgdog/pgdog.toml:ro
+      - ./users.toml:/pgdog/users.toml:ro
     ports:
       - "6432:6432"
-    command: ["pgcat", "/etc/pgcat/pgcat.toml"]
     networks:
-      - appliance-network
+      appliance-network:
+        aliases:
+          - appliance-pgdog
+          - appliance-pgcat
     depends_on:
       - postgres
     deploy:
@@ -157,7 +160,7 @@ services:
     restart: unless-stopped
     environment:
       INTEGIN_HTTP_ADDR: "0.0.0.0:8080"
-      INTEGIN_DB_URL: "postgres://integin_owner:integin_sovereign_db_secret@appliance-pgcat:6432/integin_appliance?sslmode=disable&default_query_exec_mode=simple_protocol"
+      INTEGIN_DB_URL: "postgres://integin_owner:integin_sovereign_db_secret@appliance-pgdog:6432/integin_appliance?sslmode=disable&default_query_exec_mode=simple_protocol"
       INTEGIN_EVIDENCE_STORE: "rustfs"
       INTEGIN_RUSTFS_ENDPOINT: "http://appliance-rustfs:9000"
       INTEGIN_RUSTFS_REGION: "sovereign-edge"

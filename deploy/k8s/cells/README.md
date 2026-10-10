@@ -31,7 +31,7 @@ To satisfy statutory national data protection and data residency mandates (e.g. 
    Workloads are strictly pinned via `integin.com/sovereign-cell: <cell-id>` and `topology.kubernetes.io/region` labels. Pods will never be scheduled on physical hardware outside the legal boundary.
 
 2. **NetworkPolicy Egress Containment**:
-   All cells enforce a strict **default-deny egress policy**. Intra-cluster communication is restricted to local cell microservices (INTEGIN Server, PgCat, PostgreSQL, RustFS S3). Direct internet egress across national borders is prohibited at the kernel packet filter layer.
+   All cells enforce a strict **default-deny egress policy**. Intra-cluster communication is restricted to local cell microservices (INTEGIN Server, PgDog, PostgreSQL, RustFS S3). Direct internet egress across national borders is prohibited at the kernel packet filter layer.
 
 3. **Multi-Tenant RLS & GUC Synchronization**:
    Every database node in the cell runs PostgreSQL 18 with table-level `ROW LEVEL SECURITY (ENABLE + FORCE)`. The local cell configuration injects jurisdiction and residency policies into runtime transaction contexts.

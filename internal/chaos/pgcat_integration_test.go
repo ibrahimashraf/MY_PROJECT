@@ -24,7 +24,10 @@ import (
 //  3. Row-level security (RLS) under integin_test_runtime prevents cross-tenant reads even when
 //     dozens of goroutines alternate rapid transactions across the shared PgCat pool.
 func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
-	pgcatURL := os.Getenv("INTEGIN_PGCAT_URL")
+	pgcatURL := os.Getenv("INTEGIN_PGDOG_URL")
+	if pgcatURL == "" {
+		pgcatURL = os.Getenv("INTEGIN_PGCAT_URL")
+	}
 	if pgcatURL == "" {
 		pgcatURL = "postgres://postgres:postgres_local_test_password@127.0.0.1:6432/integin_migration_test?sslmode=disable&default_query_exec_mode=exec"
 	}

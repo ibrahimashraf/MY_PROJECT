@@ -559,7 +559,7 @@ func TestSubmissionSeal_Verify_P256NormalizationAndGate(t *testing.T) {
 
 func TestEvaluateExecutionGate_GranularCompetency(t *testing.T) {
 	now := time.Now().UTC()
-	inspectorID := "insp-leims-77"
+	inspectorID := "insp-integin-77"
 
 	lease := domain.SubAssemblyLease{
 		SubAssemblyID:    "CRANE-01:HOIST_ROPE",

@@ -16,7 +16,7 @@ spec:
         - protocol: TCP
           port: 8080 # integin-server
         - protocol: TCP
-          port: 6432 # pgcat connection pooler
+          port: 6432 # pgdog connection pooler
         - protocol: TCP
           port: 5432 # postgres core
         - protocol: TCP
