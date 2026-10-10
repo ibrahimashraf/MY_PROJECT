@@ -44,7 +44,7 @@ CREATE POLICY sensor_telemetry_stream_tenant_isolation ON sensor_telemetry_strea
 CREATE INDEX IF NOT EXISTS sensor_telemetry_stream_query_idx
     ON sensor_telemetry_stream (tenant_id, sensor_id, reading_timestamp DESC);
 
--- 4. CQRS Replication Outbox Stream (for PgCat / logical replication routing)
+-- 4. CQRS Replication Outbox Stream (for PgDog / logical replication routing)
 CREATE TABLE IF NOT EXISTS cqrs_replication_outbox (
     sequence_id     BIGSERIAL PRIMARY KEY,
     tenant_id       TEXT NOT NULL,

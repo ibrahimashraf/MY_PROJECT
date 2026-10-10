@@ -13,8 +13,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// TestPgCatTransactionPoolingAndZeroGUCLeakProof executes a high-concurrency proof of
-// isolation against PgCat (port 6432) operating in transaction pooling mode.
+// TestPgDogTransactionPoolingAndZeroGUCLeakProof executes a high-concurrency proof of
+// isolation against PgDog (port 6432) operating in transaction pooling mode.
 //
 // It verifies:
 //  1. Transaction-local GUCs (set_config('integin.tenant_id', ..., true)) are completely discarded
@@ -22,23 +22,20 @@ import (
 //  2. Client connections configured with default_query_exec_mode=exec or simple_protocol
 //     operate without prepared statement collisions (SQLSTATE 26000) under high connection multiplexing.
 //  3. Row-level security (RLS) under integin_test_runtime prevents cross-tenant reads even when
-//     dozens of goroutines alternate rapid transactions across the shared PgCat pool.
-func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
-	pgcatURL := os.Getenv("INTEGIN_PGDOG_URL")
-	if pgcatURL == "" {
-		pgcatURL = os.Getenv("INTEGIN_PGCAT_URL")
-	}
-	if pgcatURL == "" {
-		pgcatURL = "postgres://postgres:postgres_local_test_password@127.0.0.1:6432/integin_migration_test?sslmode=disable&default_query_exec_mode=exec"
+//     dozens of goroutines alternate rapid transactions across the shared PgDog pool.
+func TestPgDogTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
+	pgdogURL := os.Getenv("INTEGIN_PGDOG_URL")
+	if pgdogURL == "" {
+		pgdogURL = "postgres://postgres:postgres_local_test_password@127.0.0.1:6432/integin_migration_test?sslmode=disable&default_query_exec_mode=exec"
 	}
 
-	db, err := sql.Open("pgx", pgcatURL)
+	db, err := sql.Open("pgx", pgdogURL)
 	if err != nil {
-		t.Skipf("PgCat pooler not available: %v", err)
+		t.Skipf("PgDog pooler not available: %v", err)
 	}
 	defer db.Close()
 
-	// High pool size on client side to maximize multiplexing through PgCat's backend pool
+	// High pool size on client side to maximize multiplexing through PgDog's backend pool
 	db.SetMaxOpenConns(50)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
@@ -47,7 +44,7 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-		t.Skipf("PgCat ping failed at %s: %v", pgcatURL, err)
+		t.Skipf("PgDog ping failed at %s: %v", pgdogURL, err)
 	}
 
 	const (
@@ -66,9 +63,9 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 	fixtures := make([]tenantFixture, numTenants)
 	for i := 0; i < numTenants; i++ {
 		fixtures[i] = tenantFixture{
-			tenantID:    fmt.Sprintf("pgcat-tenant-%d", i),
-			orgID:       fmt.Sprintf("pgcat-org-%d", i),
-			workOrderID: fmt.Sprintf("wo-pgcat-%d", i),
+			tenantID:    fmt.Sprintf("pgdog-tenant-%d", i),
+			orgID:       fmt.Sprintf("pgdog-org-%d", i),
+			workOrderID: fmt.Sprintf("wo-pgdog-%d", i),
 		}
 	}
 
@@ -92,7 +89,7 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 				id, tenant_id, organization_id, client_id, job_number,
 				request_state, execution_state, commercial_state, certificate_state, revision, created_by, updated_by
 			) VALUES (
-				$1, $2, $3, 'client-p', 'JOB-PGCAT', 'accepted', 'in_progress', 'ready_for_office_confirmation', 'pending_validation', 1, 'seeder', 'seeder'
+				$1, $2, $3, 'client-p', 'JOB-PGDOG', 'accepted', 'in_progress', 'ready_for_office_confirmation', 'pending_validation', 1, 'seeder', 'seeder'
 			)
 		`, f.workOrderID, f.tenantID, f.orgID)
 		if err != nil {
@@ -221,10 +218,10 @@ func TestPgCatTransactionPoolingAndZeroGUCLeakProof(t *testing.T) {
 
 	if len(errs) > 0 {
 		for _, e := range errs {
-			t.Errorf("PgCat pooler test error: %v", e)
+			t.Errorf("PgDog pooler test error: %v", e)
 		}
-		t.Fatalf("FAILED: Encountered %d errors under PgCat transaction pooling", len(errs))
+		t.Fatalf("FAILED: Encountered %d errors under PgDog transaction pooling", len(errs))
 	}
 
-	t.Logf("SUCCESS: Executed %d transactions across %d concurrent workers through PgCat with ZERO GUC leaks and 100%% RLS isolation.", concurrency*iterations, concurrency)
+	t.Logf("SUCCESS: Executed %d transactions across %d concurrent workers through PgDog with ZERO GUC leaks and 100%% RLS isolation.", concurrency*iterations, concurrency)
 }

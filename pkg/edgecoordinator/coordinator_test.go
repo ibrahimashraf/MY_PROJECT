@@ -1,7 +1,7 @@
 // Package edgecoordinator integration tests.
 //
 // DB-backed blocks require a reachable PostgreSQL (env
-// INTEGIN_EDGE_TEST_DB_URL, else the local pgcat-backed migration test DB)
+// INTEGIN_EDGE_TEST_DB_URL, else the local pgdog-backed migration test DB)
 // and skip cleanly otherwise, per repo convention. The symlink containment
 // block runs everywhere without a database.
 package edgecoordinator

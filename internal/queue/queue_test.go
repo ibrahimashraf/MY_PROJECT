@@ -160,21 +160,21 @@ func TestRiverAtomicTransactionRollbackAndCommitIntegration(t *testing.T) {
 	_, _ = db.ExecContext(ctx, "DELETE FROM river_job WHERE args->>'certificate_id' = $1", uniqueCertID)
 }
 
-// TestRiverWorkerExecutionThroughPgCatIntegration tests that a River worker pool
-// can connect through the PgCat pooler (port 6432), pick up a job, process it,
+// TestRiverWorkerExecutionThroughPgDogIntegration tests that a River worker pool
+// can connect through the PgDog pooler (port 6432), pick up a job, process it,
 // and transition its state to completed without statement collisions.
-func TestRiverWorkerExecutionThroughPgCatIntegration(t *testing.T) {
-	pgcatURL := "postgres://postgres:postgres_local_test_password@127.0.0.1:6432/integin_migration_test?sslmode=disable&default_query_exec_mode=exec"
-	db, err := sql.Open("pgx", pgcatURL)
+func TestRiverWorkerExecutionThroughPgDogIntegration(t *testing.T) {
+	pgdogURL := "postgres://postgres:postgres_local_test_password@127.0.0.1:6432/integin_migration_test?sslmode=disable&default_query_exec_mode=exec"
+	db, err := sql.Open("pgx", pgdogURL)
 	if err != nil {
-		t.Skip("skipping PgCat worker test; db open failed")
+		t.Skip("skipping PgDog worker test; db open failed")
 	}
 	defer db.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := db.PingContext(ctx); err != nil {
-		t.Skipf("skipping PgCat worker test; ping failed: %v", err)
+		t.Skipf("skipping PgDog worker test; ping failed: %v", err)
 	}
 
 	executedCh := make(chan string, 1)
@@ -183,16 +183,16 @@ func TestRiverWorkerExecutionThroughPgCatIntegration(t *testing.T) {
 
 	q, err := queue.NewQueue(ctx, db, workers)
 	if err != nil {
-		t.Fatalf("failed to initialize queue via PgCat: %v", err)
+		t.Fatalf("failed to initialize queue via PgDog: %v", err)
 	}
 
-	uniqueCertID := "cert-pgcat-worker-" + time.Now().Format("20060102150405.000000000")
+	uniqueCertID := "cert-pgdog-worker-" + time.Now().Format("20060102150405.000000000")
 	jobArgs := queue.CertificateRenderJobArgs{
-		TenantID:       "tenant-pgcat",
-		OrganizationID: "org-pgcat",
+		TenantID:       "tenant-pgdog",
+		OrganizationID: "org-pgdog",
 		CertificateID:  uniqueCertID,
-		InspectionID:   "insp-pgcat",
-		ActorUserID:    "user-pgcat",
+		InspectionID:   "insp-pgdog",
+		ActorUserID:    "user-pgdog",
 	}
 
 	// Start River client
@@ -224,7 +224,7 @@ func TestRiverWorkerExecutionThroughPgCatIntegration(t *testing.T) {
 		if id != uniqueCertID {
 			t.Fatalf("unexpected certificate id executed: got %s, want %s", id, uniqueCertID)
 		}
-		t.Logf("PASS: Worker successfully processed job %s via PgCat!", id)
+		t.Logf("PASS: Worker successfully processed job %s via PgDog!", id)
 	case <-time.After(5 * time.Second):
 		t.Fatal("TIMED OUT: Worker failed to process job within 5 seconds")
 	}

@@ -61,7 +61,7 @@ func TestQRNFC4PillarsIntegration(t *testing.T) {
 
 	// Seed required relational parents for foreign key constraints:
 	// work_order -> work_order_scope_item -> asset_entitlement
-	// RLS-scoped seeds: PgCat transaction pooling drops session GUCs between
+	// RLS-scoped seeds: PgDog transaction pooling drops session GUCs between
 	// statements, so all seeds share one explicit transaction.
 	seedTx, seedTxErr := db.BeginTx(ctx, nil)
 	if seedTxErr != nil {

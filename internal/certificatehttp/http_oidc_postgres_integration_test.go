@@ -492,7 +492,7 @@ func TestSignedOIDCCertificateLifecycleIntegration(t *testing.T) {
 		t.Fatalf("issue result missing data: %+v", issueResult)
 	}
 
-	// Verify the certificate was actually persisted. RLS-scoped read: PgCat
+	// Verify the certificate was actually persisted. RLS-scoped read: PgDog
 	// transaction pooling drops session GUCs between statements, so bind one
 	// connection inside an explicit transaction.
 	persistConn, persistConnErr := db.Conn(ctx)

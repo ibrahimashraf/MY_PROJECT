@@ -317,7 +317,7 @@ func assertHTTPSubmissionPersistence(t *testing.T, ctx context.Context, database
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	// PgCat transaction pooling drops session GUCs between statements, so scope
+	// PgDog transaction pooling drops session GUCs between statements, so scope
 	// every read inside one explicit transaction on the bound connection.
 	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
@@ -522,7 +522,7 @@ func postEvidenceReference(t *testing.T, baseURL, token, workOrderID string, bod
 
 func assertEvidenceReferencePersistence(t *testing.T, ctx context.Context, database *sql.DB, workOrderID, evidenceID, contentHash, referenceURL, createdBy string) {
 	t.Helper()
-	// RLS-scoped read: PgCat transaction pooling drops session GUCs between
+	// RLS-scoped read: PgDog transaction pooling drops session GUCs between
 	// statements, so bind one connection inside an explicit transaction.
 	evidenceConn, evidenceConnErr := database.Conn(ctx)
 	if evidenceConnErr != nil {
