@@ -13,6 +13,33 @@ import 'enrollment_screen.dart';
 import '../sync/in_app_camera.dart';
 
 
+List<DynamicFormFieldDefinition> formFieldsForWorkPack(InspectionWorkPack pack) {
+  return pack.items.map((item) {
+    FieldPrimitiveType type;
+    switch (item.responseType) {
+      case ChecklistResponseType.number:
+        type = FieldPrimitiveType.numericTolerance;
+        break;
+      case ChecklistResponseType.boolean:
+      case ChecklistResponseType.passFailNA:
+        type = FieldPrimitiveType.booleanPassFail;
+        break;
+      case ChecklistResponseType.choice:
+      case ChecklistResponseType.text:
+      default:
+        type = FieldPrimitiveType.textInput;
+        break;
+    }
+    return DynamicFormFieldDefinition(
+      fieldId: item.id,
+      label: '[${item.sectionId}] ${item.prompt}',
+      type: type,
+      required: item.required,
+      helpText: 'Asset: ${item.assetId} · Standard/Section: ${item.sectionId}',
+    );
+  }).toList(growable: false);
+}
+
 class FieldHomePage extends StatefulWidget {
   const FieldHomePage({super.key, required this.controller});
 
@@ -35,8 +62,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
     workPack = InspectionWorkPack(
       inspectionId: 'assigned-inspection',
       rootAssetId: 'assigned-asset',
-      inspectionType: 'Lifting equipment inspection',
-      procedureVersion: 'prepared-work-pack',
+      inspectionType: 'Multi-Discipline Engineering Inspection',
+      procedureVersion: 'prepared-work-pack-v2',
       packageId: 'assigned-work-package',
       packageVersion: 1,
       schemaVersion: 1,
@@ -44,10 +71,39 @@ class _FieldHomePageState extends State<FieldHomePage> {
       scheduledDate: DateTime.now().toUtc(),
       items: const [
         ChecklistItem(
-          id: 'hook-condition',
-          sectionId: 'lifting-hook',
-          prompt: 'Record the observed hook condition.',
-          assetId: 'assigned-asset',
+          id: 'shackle-pin-diameter',
+          sectionId: 'lifting-tackle-shackle',
+          prompt: 'Measure shackle pin diameter and crown wear (BS EN 13889 / ISO 2415).',
+          assetId: 'shackle-asset-01',
+          responseType: ChecklistResponseType.number,
+        ),
+        ChecklistItem(
+          id: 'sling-fiber-integrity',
+          sectionId: 'lifting-tackle-sling',
+          prompt: 'Verify synthetic webbing sling cuts, abrasion, and core integrity (BS EN 1492 / ISO 4878).',
+          assetId: 'sling-asset-02',
+          responseType: ChecklistResponseType.passFailNA,
+        ),
+        ChecklistItem(
+          id: 'pipe-wall-thickness',
+          sectionId: 'process-piping',
+          prompt: 'Record minimum measured UT pipe spool wall thickness in mm (ASME B31.3 / API 570).',
+          assetId: 'pipe-spool-03',
+          responseType: ChecklistResponseType.number,
+        ),
+        ChecklistItem(
+          id: 'vessel-shell-distortion',
+          sectionId: 'pressure-vessel',
+          prompt: 'Record pressure vessel shell surface pitting, corrosion allowance, and relief tag (API 510).',
+          assetId: 'vessel-asset-04',
+          responseType: ChecklistResponseType.passFailNA,
+        ),
+        ChecklistItem(
+          id: 'atex-enclosure-gap',
+          sectionId: 'atex-motor',
+          prompt: 'Verify Ex d flameproof enclosure joint gap clearance and bolt torques (BS EN IEC 60079-17).',
+          assetId: 'motor-ex-05',
+          responseType: ChecklistResponseType.number,
         ),
       ],
     );
@@ -136,36 +192,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
               ),
               const SizedBox(height: 16),
               DynamicFormEngineView(
-                formTitle: 'Lifting Hook Geometry Verification (0052)',
-                fields: const [
-                  DynamicFormFieldDefinition(
-                    fieldId: 'throat_opening_mm',
-                    label: 'Hook Throat Opening (mm)',
-                    type: FieldPrimitiveType.numericTolerance,
-                    minValue: 45.0,
-                    maxValue: 55.0,
-                    unit: 'mm',
-                    helpText: 'Tolerance within +/- 10% of nominal',
-                  ),
-                  DynamicFormFieldDefinition(
-                    fieldId: 'latch_engagement',
-                    label: 'Safety Latch Lock Engagement',
-                    type: FieldPrimitiveType.booleanPassFail,
-                    helpText: 'Latch must self-lock under spring tension',
-                  ),
-                  DynamicFormFieldDefinition(
-                    fieldId: 'hook_tag_scan',
-                    label: 'NFC/RFID Asset Identification Tag',
-                    type: FieldPrimitiveType.qrConfirmation,
-                    helpText: 'Verify physical asset tag against 0054 manifest',
-                  ),
-                  DynamicFormFieldDefinition(
-                    fieldId: 'hook_crack_photo',
-                    label: 'Critical Hook Throat Stress Concentration Photo',
-                    type: FieldPrimitiveType.photoEvidence,
-                    helpText: 'Encrypted close-up photograph under high illumination',
-                  ),
-                ],
+                formTitle: '${(draft?.workPack ?? workPack).inspectionType} Form',
+                fields: formFieldsForWorkPack(draft?.workPack ?? workPack),
                 tenantId: controller.context.tenantId,
                 tusClient: controller.tusClient,
                 onPickPhoto: InAppCameraPhotoService(context).pickImage,
@@ -505,20 +533,46 @@ class _CaptureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final item = draft.workPack.items.first;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Capture inspection',
+            Text('Capture inspection (${draft.workPack.items.length} items)',
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
-            Text(item.prompt),
-            const SizedBox(height: 12),
-            _TypedResponseInput(item: item, controller: responseController),
-            const SizedBox(height: 12),
+            for (final item in draft.workPack.items) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '[${item.sectionId}] Asset: ${item.assetId}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.blueGrey),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(item.prompt, style: const TextStyle(fontSize: 15)),
+                    const SizedBox(height: 10),
+                    _ItemResponseField(
+                      item: item,
+                      controller: controller,
+                      draft: draft,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
             TextField(
                 controller: notesController,
                 decoration: const InputDecoration(
@@ -529,13 +583,6 @@ class _CaptureCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                OutlinedButton(
-                  onPressed: () => controller.recordResponse(
-                      item: item,
-                      response: responseController.text,
-                      note: notesController.text),
-                  child: const Text('Save response locally'),
-                ),
                 FilledButton.icon(
                   onPressed: () async {
                     if (controller.connectivity == ConnectivityState.online) {
@@ -554,7 +601,7 @@ class _CaptureCard extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Icons.cloud_upload_outlined),
-                  label: const Text('Submit / Queue'),
+                  label: const Text('Submit / Queue Inspection'),
                 ),
               ],
             ),
@@ -568,6 +615,133 @@ class _CaptureCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ItemResponseField extends StatefulWidget {
+  const _ItemResponseField({
+    required this.item,
+    required this.controller,
+    required this.draft,
+  });
+
+  final ChecklistItem item;
+  final FieldAppController controller;
+  final InspectionDraft draft;
+
+  @override
+  State<_ItemResponseField> createState() => _ItemResponseFieldState();
+}
+
+class _ItemResponseFieldState extends State<_ItemResponseField> {
+  late final TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.draft.findings[widget.item.id]?.response ?? '';
+    _textController = TextEditingController(text: existing);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ItemResponseField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final existing = widget.draft.findings[widget.item.id]?.response ?? '';
+    if (_textController.text != existing) {
+      _textController.text = existing;
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String val) {
+    widget.controller.recordResponse(
+      item: widget.item,
+      response: val,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (widget.item.responseType) {
+      case ChecklistResponseType.number:
+        return TextField(
+          controller: _textController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Measurement / Value',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: _onChanged,
+        );
+      case ChecklistResponseType.boolean:
+        return CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Confirmed'),
+          value: _textController.text == 'true',
+          onChanged: (val) {
+            final str = val == true ? 'true' : 'false';
+            setState(() => _textController.text = str);
+            _onChanged(str);
+          },
+        );
+      case ChecklistResponseType.choice:
+        return DropdownButtonFormField<String>(
+          initialValue: widget.item.options.contains(_textController.text)
+              ? _textController.text
+              : null,
+          decoration: const InputDecoration(
+            labelText: 'Select approved value',
+            border: OutlineInputBorder(),
+          ),
+          items: widget.item.options
+              .map((option) =>
+                  DropdownMenuItem(value: option, child: Text(option)))
+              .toList(growable: false),
+          onChanged: (val) {
+            final str = val ?? '';
+            setState(() => _textController.text = str);
+            _onChanged(str);
+          },
+        );
+      case ChecklistResponseType.passFailNA:
+        const options = <String, String>{
+          'pass': 'Pass',
+          'fail': 'Fail',
+          'not_applicable': 'Not applicable',
+        };
+        return DropdownButtonFormField<String>(
+          initialValue: options.containsKey(_textController.text)
+              ? _textController.text
+              : null,
+          decoration: const InputDecoration(
+            labelText: 'Assessment',
+            border: OutlineInputBorder(),
+          ),
+          items: options.entries
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .toList(growable: false),
+          onChanged: (val) {
+            final str = val ?? '';
+            setState(() => _textController.text = str);
+            _onChanged(str);
+          },
+        );
+      case ChecklistResponseType.text:
+      default:
+        return TextField(
+          controller: _textController,
+          decoration: const InputDecoration(
+            labelText: 'Observation',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: _onChanged,
+        );
+    }
   }
 }
 
@@ -649,77 +823,6 @@ class _PilotOperatorReviewCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _TypedResponseInput extends StatelessWidget {
-  const _TypedResponseInput({required this.item, required this.controller});
-
-  final ChecklistItem item;
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    switch (item.responseType) {
-      case ChecklistResponseType.number:
-        return TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Measurement',
-            border: OutlineInputBorder(),
-          ),
-        );
-      case ChecklistResponseType.boolean:
-        return CheckboxListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Confirmed'),
-          value: controller.text == 'true',
-          onChanged: (value) =>
-              controller.text = value == true ? 'true' : 'false',
-        );
-      case ChecklistResponseType.choice:
-        return DropdownButtonFormField<String>(
-          initialValue:
-              item.options.contains(controller.text) ? controller.text : null,
-          decoration: const InputDecoration(
-            labelText: 'Select approved value',
-            border: OutlineInputBorder(),
-          ),
-          items: item.options
-              .map((option) =>
-                  DropdownMenuItem(value: option, child: Text(option)))
-              .toList(growable: false),
-          onChanged: (value) => controller.text = value ?? '',
-        );
-      case ChecklistResponseType.passFailNA:
-        const options = <String, String>{
-          'pass': 'Pass',
-          'fail': 'Fail',
-          'not_applicable': 'Not applicable',
-        };
-        return DropdownButtonFormField<String>(
-          initialValue:
-              options.containsKey(controller.text) ? controller.text : null,
-          decoration: const InputDecoration(
-            labelText: 'Assessment',
-            border: OutlineInputBorder(),
-          ),
-          items: options.entries
-              .map((entry) =>
-                  DropdownMenuItem(value: entry.key, child: Text(entry.value)))
-              .toList(growable: false),
-          onChanged: (value) => controller.text = value ?? '',
-        );
-      case ChecklistResponseType.text:
-        return TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Observation or measurement',
-            border: OutlineInputBorder(),
-          ),
-        );
-    }
   }
 }
 
