@@ -47,6 +47,8 @@ type Request struct {
 	Hazards     []HazardControl        `json:"hazards"`
 	MethodSteps []MethodStep           `json:"methodSteps"`
 	Pages       int                    `json:"pages"`
+	Branding    *ClientBranding        `json:"branding,omitempty"`
+	Revision    *RevisionRecord        `json:"revision,omitempty"`
 }
 
 type HazardControl struct {
@@ -230,6 +232,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.ServeEvaluate4D(w, r)
 	case "/api/v1/liftviews/export":
 		h.ServeExport(w, r)
+	case "/api/v1/liftviews/share":
+		h.ServeShare(w, r)
+	case "/api/v1/liftviews/renewal":
+		h.ServeRenewal(w, r)
 	default:
 		httputil.WriteProblem(w, r, http.StatusNotFound, "Not Found", "endpoint not found")
 	}
@@ -430,8 +436,13 @@ func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 		executionLabel = "simulation verdict"
 	}
 
+	titleLine := "TANDEM LIFT PLAN — solved, not drawn"
+	if req.Branding != nil && req.Branding.CustomHeader != "" {
+		titleLine = req.Branding.CustomHeader + " — " + titleLine
+	}
+
 	pages := [][]string{
-		{"TANDEM LIFT PLAN — solved, not drawn", scopeStamp, riggingNotice},
+		{titleLine, scopeStamp, riggingNotice},
 		{"span " + numeric(res.HookSpanMeters) + "m clear " +
 			numeric(res.MinBoomClearanceM) + "m share " +
 			numeric(res.LoadShareCrane1) + "/" + numeric(res.LoadShareCrane2) +
@@ -455,7 +466,7 @@ func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 		fail("pdf security refused")
 		return
 	}
-	meta, err := json.Marshal(map[string]any{
+	metaMap := map[string]any{
 		"crane1_model":         crane1Ref.ID,
 		"crane2_model":         crane2Ref.ID,
 		"duty_chart_status":    crane1Ref.DutyChartStatus,
@@ -479,7 +490,15 @@ func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 		"renderer":             "integin-engines/v1",
 		"simulation":           true,
 		"total_pages":          req.Pages,
-	})
+	}
+	ApplyBranding(metaMap, req.Branding)
+	if req.Revision != nil {
+		metaMap["revision"] = req.Revision
+	}
+	if r.URL.Query().Get("redacted") == "true" {
+		metaMap = RedactPlanMetadata(metaMap)
+	}
+	meta, err := json.Marshal(metaMap)
 	if err != nil {
 		fail("meta render failed")
 		return
