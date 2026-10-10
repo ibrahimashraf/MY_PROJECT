@@ -107,7 +107,6 @@ services:
       appliance-network:
         aliases:
           - appliance-pgdog
-          - appliance-pgcat
     depends_on:
       - postgres
     deploy:
