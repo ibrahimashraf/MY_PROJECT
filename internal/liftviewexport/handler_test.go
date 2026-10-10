@@ -212,14 +212,38 @@ func TestExportZIP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]bool{"plan.dxf": false, "elevation.dxf": false, "liftplan.pdf": false, "export-meta.json": false}
+	want := map[string]bool{
+		"plan.dxf":             false,
+		"elevation.dxf":        false,
+		"liftplan.pdf":         false,
+		"export-meta.json":     false,
+		"export-manifest.json": false,
+	}
+	var manifestData []byte
 	for _, f := range zr.File {
 		want[f.Name] = true
+		if f.Name == "export-manifest.json" {
+			rc, err := f.Open()
+			if err == nil {
+				manifestData, _ = io.ReadAll(rc)
+				_ = rc.Close()
+			}
+		}
 	}
 	for name, seen := range want {
 		if !seen {
 			t.Fatalf("zip missing %s", name)
 		}
+	}
+	var manifest SignedExportManifest
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		t.Fatalf("invalid export manifest JSON: %v", err)
+	}
+	if !strings.HasPrefix(manifest.TenantDID, "did:integin:tenant:") {
+		t.Errorf("expected tenant DID, got %s", manifest.TenantDID)
+	}
+	if manifest.Algorithm != "Ed25519" || manifest.SignatureHex == "" || manifest.PublicKeyHex == "" {
+		t.Errorf("manifest missing Ed25519 signature or public key: %+v", manifest)
 	}
 }
 

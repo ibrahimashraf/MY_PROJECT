@@ -1298,6 +1298,64 @@
         }, 400);
     }
 
+    let eval4dTimer = null;
+    function schedule4DEvaluation() {
+        if (eval4dTimer) clearTimeout(eval4dTimer);
+        eval4dTimer = setTimeout(async () => {
+            try {
+                const res = await apiFetch(`${API_BASE}/api/v1/liftviews/evaluate4d`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crane1: {
+                            base_position: { x: state.crane1.x, y: 0, z: state.crane1.z },
+                            boom_length_meters: state.crane1.boomLength,
+                            boom_angle_deg: state.crane1.boomAngle,
+                            slew_angle_deg: state.crane1.slewAngle,
+                            counterweight_tonne: state.plan.counterweight,
+                            outrigger_spread_x_m: state.plan.spread,
+                            outrigger_spread_z_m: state.plan.spread,
+                            chassis_weight_tonne: state.plan.chassis1
+                        },
+                        crane2: {
+                            base_position: { x: state.crane2.x, y: 0, z: state.crane2.z },
+                            boom_length_meters: state.crane2.boomLength,
+                            boom_angle_deg: state.crane2.boomAngle,
+                            slew_angle_deg: state.crane2.slewAngle,
+                            counterweight_tonne: state.plan.counterweight,
+                            outrigger_spread_x_m: state.plan.spread,
+                            outrigger_spread_z_m: state.plan.spread,
+                            chassis_weight_tonne: state.plan.chassis2
+                        },
+                        load: {
+                            mass_tonnes: state.load.massTonnes,
+                            length_m: state.load.length,
+                            radius_m: state.load.radius
+                        },
+                        stages: [
+                            {
+                                time_s: state.time,
+                                crane1_angle: state.crane1.boomAngle,
+                                crane2_angle: state.crane2.boomAngle,
+                                crane1_slew: state.crane1.slewAngle,
+                                crane2_slew: state.crane2.slewAngle
+                            }
+                        ]
+                    })
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const clearanceEl = document.getElementById('clearance-display');
+                if (clearanceEl && !data.passed) {
+                    clearanceEl.textContent = `4D INTERFERENCE: ${data.fail_reason} · LIVE`;
+                    clearanceEl.className = 'val danger';
+                }
+            } catch (e) {
+                // Offline fallback
+            }
+        }, 250);
+    }
+
     // Realistic 4D Lift Sequence Stages (t: 0 to 60s)
     // Stage 0: Rigging Pre-tension (on transport trailer, cables tension up)
     // Stage 1: Initial Lift-off & Hold (clear trailer bed, verify load share & brakes)
@@ -1443,6 +1501,7 @@
             if (s4) s4.value = stage.c2Slew;
 
             updateKinematics();
+            schedule4DEvaluation();
         });
         // Kinematic sliders (were dead inputs — now drive state).
         [['crane1-angle', 'crane1', 'boomAngle', 'crane1-angle-val', '°'],

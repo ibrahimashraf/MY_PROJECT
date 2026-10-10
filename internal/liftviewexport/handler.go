@@ -3,7 +3,11 @@ package liftviewexport
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -486,16 +490,31 @@ func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(meta)
 		return
 	}
+
+	tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID"))
+	fileMap := map[string][]byte{
+		"plan.dxf":         planBuf.Bytes(),
+		"elevation.dxf":    elevBuf.Bytes(),
+		"liftplan.pdf":     raw,
+		"export-meta.json": meta,
+	}
+	manifestBytes, err := buildSignedManifest(tenantID, fileMap)
+	if err != nil {
+		fail("manifest generation failed")
+		return
+	}
+
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	for _, f := range []struct {
 		name string
 		data []byte
 	}{
-		{"plan.dxf", planBuf.Bytes()},
-		{"elevation.dxf", elevBuf.Bytes()},
-		{"liftplan.pdf", raw},
-		{"export-meta.json", meta},
+		{"plan.dxf", fileMap["plan.dxf"]},
+		{"elevation.dxf", fileMap["elevation.dxf"]},
+		{"liftplan.pdf", fileMap["liftplan.pdf"]},
+		{"export-meta.json", fileMap["export-meta.json"]},
+		{"export-manifest.json", manifestBytes},
 	} {
 		fw, err := zw.Create(f.name)
 		if err != nil {
@@ -515,6 +534,52 @@ func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="liftview-export.zip"`)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(buf.Bytes())
+}
+
+type SignedExportManifest struct {
+	ManifestVersion string            `json:"manifest_version"`
+	ExportID        string            `json:"export_id"`
+	TenantDID       string            `json:"tenant_did"`
+	CreatedAt       string            `json:"created_at"`
+	Files           map[string]string `json:"files"`
+	Algorithm       string            `json:"algorithm"`
+	PublicKeyHex    string            `json:"public_key_hex"`
+	SignatureHex    string            `json:"signature_hex"`
+}
+
+func buildSignedManifest(tenantID string, files map[string][]byte) ([]byte, error) {
+	if tenantID == "" {
+		tenantID = "pilot-tenant"
+	}
+	tenantDID := fmt.Sprintf("did:integin:tenant:%s", tenantID)
+	now := time.Now().UTC().Format(time.RFC3339)
+	exportID := fmt.Sprintf("exp-%d", time.Now().UTC().UnixNano())
+
+	fileHashes := make(map[string]string)
+	for name, data := range files {
+		h := sha256.Sum256(data)
+		fileHashes[name] = hex.EncodeToString(h[:])
+	}
+
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	rawToSign := fmt.Sprintf("%s|%s|%s|%s", tenantDID, exportID, now, fileHashes["liftplan.pdf"])
+	sig := ed25519.Sign(priv, []byte(rawToSign))
+
+	manifest := SignedExportManifest{
+		ManifestVersion: "export-manifest/v1",
+		ExportID:        exportID,
+		TenantDID:       tenantDID,
+		CreatedAt:       now,
+		Files:           fileHashes,
+		Algorithm:       "Ed25519",
+		PublicKeyHex:    hex.EncodeToString(pub),
+		SignatureHex:    hex.EncodeToString(sig),
+	}
+	return json.MarshalIndent(manifest, "", "  ")
 }
 
 func numeric(v float64) string {
