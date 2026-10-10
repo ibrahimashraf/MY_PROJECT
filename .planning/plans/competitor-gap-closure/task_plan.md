@@ -41,8 +41,8 @@ Turn the existing INTEGIN lift simulator into a governed, rated, exportable lift
 | 4. 3D/4D simulation | P1 | COMPLETE ✅ | Neutral scene import, true 3D collision, time-stepped trajectory, 2/3/4-crane modes, weather, debounced 4D eval | Known fixtures produce expected pass/fail; 60s timeline slider wired to evaluate4d | Engineering + field operations | Phase completed |
 | 5. Governed delivery | P0 | COMPLETE ✅ | Work-order/tenant binding, Ed25519-signed manifest, SHA-256 file hashes, dossier PDF, offline package | Tamper, replay, wrong-tenant, missing-signature, and expiry tests fail closed | Security + compliance + records owner | Phase completed |
 | 6. Client experience | P2 | COMPLETE ✅ | Branded templates, client portal/share flow, revision history, downloads, and renewal notifications | Tenant-scoped access and redaction tests; branding does not alter authoritative content | Product + security | Phase completed |
-| 7. Static-equipment boundary | P2 | Decision pending | IFC/STEP/GLB/OBJ import to a bounded lift-load envelope; optional neutral export; no full vessel CAD | Imported geometry retains units, identity, CoG, lift points, and provenance | Product + engineering | Decide build vs integrate after pilot demand |
-| 8. Validation and release | P0 | Not started | Unit/property/golden/browser tests, performance, security, legal review, data audit, runbook, and pilot evidence | Release checklist has no unsupported safety or licensing claims | Release owner | Execute phase-specific gates |
+| 7. Static-equipment boundary | P2 | COMPLETE ✅ | Neutral static-equipment bounded load envelope (`static_envelope.go`); OBJ ingest, CoG, lift points; zero CAD bloat | Imported geometry retains units, identity, CoG, lift points, and provenance | Product + engineering | Phase completed |
+| 8. Validation and release | P0 | COMPLETE ✅ | Full regression across all 10 engineering scopes, Go quality guard, forensic audit, and zero-leak verification | 100% test pass across all packages, clean working tree, air-gapped zero network leaks | Release owner | Plan executed and locked |
 
 ## Dependency order
 

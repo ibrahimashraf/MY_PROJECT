@@ -59,7 +59,7 @@ c:\MY_PROJECT\
 │   ├── architecture/        # ADRs, design specs, [Global Architecture Plan](./docs/architecture/GLOBAL_ARCHITECTURE_PLAN.md), [GitHub Repos](./docs/architecture/GITHUB_REPOSITORIES_REFERENCE.md)
 │   └── governance/          # Controlled pilot evidence, audit matrices, and review records
 │
-├── operations/              # ⚙️ RUNTIME CONTROLS: Launchers, health checks, and Keycloak/RustFS configs
+├── operations/              # ⚙️ RUNTIME CONTROLS: Launchers, health checks, and Casdoor/RustFS configs
 ├── tools/                   # 🔧 DEV UTILITIES: Local CLI helpers, architecture graph analyzers, scripts
 ├── private/                 # 🔒 SECRETS BOUNDARY: Local credentials, test fixtures (OPAQUE — NEVER COMMIT)
 ├── archive/                 # 📦 ARCHIVES: Retained historical planning logs (>600KB) and superseded docs
@@ -84,11 +84,11 @@ c:\MY_PROJECT\
 |---|---|---|---|---|
 | **PostgreSQL 16** | `integin-dev-postgres` | `127.0.0.1:15432` | DB: `integin_dev`, User: `integin_runtime` | **UP (Active)** |
 | **PgDog Pooler** | `integin-pgdog` | `127.0.0.1:6432` | Multiplexes `integin_dev` with zero GUC leaks | **UP (Active)** |
-| **Keycloak IAM** | `integin-pilot-keycloak` | `127.0.0.1:18180` (HTTP)<br>`127.0.0.1:19090` (Health) | Realm: `integin-pilot`, Client: `integin-live-matrix` | **UP (Active)** |
+| **Casdoor IAM** | `appliance-casdoor` | `127.0.0.1:18181` (Appliance)<br>`127.0.0.1:18180` (Dev) | Org: `integin-pilot`, Client: `integin-live-matrix` | **STANDBY (Disposable)** |
 | **RustFS S3** | `integin-pilot-rustfs` | `127.0.0.1:19000` (S3 API)<br>`127.0.0.1:19001` (Console) | Bucket: `integin-pilot-evidence`, Region: `us-east-1` | **UP (Active)** |
 
 > [!NOTE]
-> Keycloak port `18180` is the HTTP application and admin console (`/admin/`, token endpoint). Port `19090` is management/metrics only (`/health`, `/metrics`) and returns an empty page in browsers.
+> Casdoor serves lightweight FOSS OIDC/OAuth2 authentication (RS256 JWT tokens). PostgreSQL remains sole authority for tenant isolation, organization membership, and RLS. Keycloak is retained solely as an external enterprise SSO integration target.
 
 ### Local Environment Variables Quick Reference
 
