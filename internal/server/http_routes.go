@@ -113,7 +113,8 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/admin/settings/", d.SettingsHandler)
 	}
 	if d.InspectionHandler != nil {
-		mux.Handle("/api/v1/inspections", d.InspectionHandler)
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.InspectionHandler)
+		mux.Handle("/api/v1/inspections", gated)
 	}
 	if d.SearchHandler != nil {
 		mux.Handle("/api/v1/search/", d.SearchHandler)
@@ -137,7 +138,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/reports/", d.ReportsHandler)
 	}
 	if d.LiftViewExportHandler != nil {
-		gated := requireOIDCAuth(d.Validator, d.LiftViewExportHandler)
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.LiftViewExportHandler)
 		mux.Handle("/api/v1/liftviews/export", gated)
 		mux.Handle("/api/v1/liftviews/cranes", gated)
 		mux.Handle("/api/v1/liftviews/evaluate4d", gated)
@@ -198,7 +199,7 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/jurisdictions/", d.JurisdictionHandler)
 	}
 	if d.QueryHandler != nil {
-		gated := requireOIDCAuth(d.Validator, d.QueryHandler)
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.QueryHandler)
 		mux.Handle("/api/v1/query", gated)
 		mux.Handle("/api/v1/query/", gated)
 	}
@@ -236,15 +237,27 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 }
 
-func requireOIDCAuth(validator TokenValidator, next http.Handler) http.Handler {
+func requireOIDCAuth(validator TokenValidator, resolver identity.Resolver, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Strip untrusted tenant/identity headers to prevent spoofing
+		request.Header.Del("X-Tenant-ID")
+		request.Header.Del("X-Organization-ID")
+		request.Header.Del("X-Actor-ID")
+
 		raw, ok := bearerToken(request.Header.Get("Authorization"))
 		if !ok {
 			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 			return
 		}
 		if validator != nil {
-			if _, err := validator.Validate(request.Context(), raw); err == nil {
+			if principal, err := validator.Validate(request.Context(), raw); err == nil {
+				if resolver != nil {
+					if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
+						request.Header.Set("X-Tenant-ID", membership.TenantID)
+						request.Header.Set("X-Organization-ID", membership.OrganizationID)
+						request.Header.Set("X-Actor-ID", membership.ActorID)
+					}
+				}
 				next.ServeHTTP(writer, request)
 				return
 			}

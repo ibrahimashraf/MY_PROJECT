@@ -559,3 +559,68 @@ func (s stubValidator) Validate(ctx context.Context, token string) (oidcauth.Pri
 	return oidcauth.Principal{}, errors.New("invalid token")
 }
 
+type tenantStubResolver struct {
+	membership identity.Membership
+}
+
+func (s tenantStubResolver) Resolve(ctx context.Context, principal identity.PrincipalKey) (identity.Membership, error) {
+	if principal.Subject == "user-1" {
+		return s.membership, nil
+	}
+	return identity.Membership{}, errors.New("unresolved")
+}
+
+func TestZeroTrustIngressTenantIsolation(t *testing.T) {
+	var capturedTenant, capturedOrg, capturedActor string
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedTenant = r.Header.Get("X-Tenant-ID")
+		capturedOrg = r.Header.Get("X-Organization-ID")
+		capturedActor = r.Header.Get("X-Actor-ID")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	resolver := tenantStubResolver{
+		membership: identity.Membership{
+			TenantID:       "genuine-tenant",
+			OrganizationID: "genuine-org",
+			ActorID:        "genuine-actor",
+		},
+	}
+
+	mux := NewMux(Dependencies{
+		Validator:         stubValidator{},
+		Resolver:          resolver,
+		InspectionHandler: handler,
+	})
+
+	// 1. Unauthenticated request must fail-closed (401)
+	unauthReq := httptest.NewRequest(http.MethodGet, "/api/v1/inspections", nil)
+	unauthRec := httptest.NewRecorder()
+	mux.ServeHTTP(unauthRec, unauthReq)
+	if unauthRec.Code != http.StatusUnauthorized {
+		t.Fatalf("unauth code=%d, want 401", unauthRec.Code)
+	}
+
+	// 2. Authenticated request with spoofed tenant headers must have them replaced with genuine claims
+	authReq := httptest.NewRequest(http.MethodGet, "/api/v1/inspections", nil)
+	authReq.Header.Set("Authorization", "Bearer valid-token")
+	authReq.Header.Set("X-Tenant-ID", "attacker-injected-tenant")
+	authReq.Header.Set("X-Organization-ID", "attacker-injected-org")
+	authReq.Header.Set("X-Actor-ID", "attacker-injected-actor")
+
+	authRec := httptest.NewRecorder()
+	mux.ServeHTTP(authRec, authReq)
+	if authRec.Code != http.StatusOK {
+		t.Fatalf("auth code=%d, want 200", authRec.Code)
+	}
+	if capturedTenant != "genuine-tenant" {
+		t.Errorf("expected genuine-tenant, got %s", capturedTenant)
+	}
+	if capturedOrg != "genuine-org" {
+		t.Errorf("expected genuine-org, got %s", capturedOrg)
+	}
+	if capturedActor != "genuine-actor" {
+		t.Errorf("expected genuine-actor, got %s", capturedActor)
+	}
+}
+
