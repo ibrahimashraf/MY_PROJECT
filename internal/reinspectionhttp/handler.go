@@ -2,6 +2,7 @@ package reinspectionhttp
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -62,6 +63,18 @@ type issueRequest struct {
 	Description        string         `json:"description"`
 }
 
+type FindingDefect struct {
+	FindingID   string         `json:"finding_id"`
+	AssetID     string         `json:"asset_id"`
+	Severity    types.Severity `json:"severity"`
+	Description string         `json:"description"`
+}
+
+type autoIssueRequest struct {
+	SourceInspectionID string          `json:"source_inspection_id"`
+	Findings           []FindingDefect `json:"findings"`
+}
+
 type remediateRequest struct {
 	CARID        string   `json:"car_id"`
 	Notes        string   `json:"notes"`
@@ -91,6 +104,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case path == "issue" && r.Method == http.MethodPost:
 		h.handleIssue(w, r, tenantID, orgID)
+	case (path == "auto-issue" || path == "batch-issue") && r.Method == http.MethodPost:
+		h.handleAutoIssue(w, r, tenantID, orgID)
 	case path == "remediate" && r.Method == http.MethodPost:
 		h.handleRemediate(w, r, tenantID, orgID)
 	case path == "verify" && r.Method == http.MethodPost:
@@ -132,6 +147,46 @@ func (h *Handler) handleIssue(w http.ResponseWriter, r *http.Request, tenantID, 
 
 	h.Store.Save(car)
 	httpresponse.JSON(w, http.StatusCreated, car)
+}
+
+func (h *Handler) handleAutoIssue(w http.ResponseWriter, r *http.Request, tenantID, orgID string) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		httpresponse.Error(w, http.StatusBadRequest, "failed to read body")
+		return
+	}
+	var req autoIssueRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		httpresponse.Error(w, http.StatusBadRequest, "malformed request JSON")
+		return
+	}
+	if req.SourceInspectionID == "" {
+		httpresponse.Error(w, http.StatusBadRequest, "source_inspection_id is required")
+		return
+	}
+
+	now := time.Now().UTC()
+	var issuedCARs []reinspection.CorrectiveActionRequest
+	for _, f := range req.Findings {
+		if f.Severity == types.SeverityCritical || f.Severity == types.SeverityMajor {
+			carID := fmt.Sprintf("car-%s-%s", req.SourceInspectionID, f.FindingID)
+			car, err := reinspection.IssueCAR(
+				carID, tenantID, orgID, f.AssetID,
+				req.SourceInspectionID, f.FindingID,
+				f.Severity, f.Description, now,
+			)
+			if err == nil {
+				h.Store.Save(car)
+				issuedCARs = append(issuedCARs, car)
+			}
+		}
+	}
+
+	httpresponse.JSON(w, http.StatusCreated, map[string]interface{}{
+		"source_inspection_id": req.SourceInspectionID,
+		"issued_count":        len(issuedCARs),
+		"cars":                issuedCARs,
+	})
 }
 
 func (h *Handler) handleRemediate(w http.ResponseWriter, r *http.Request, tenantID, orgID string) {

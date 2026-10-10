@@ -82,3 +82,65 @@ func TestReinspectionHTTP_Lifecycle(t *testing.T) {
 		t.Errorf("expected status VERIFIED_CLOSED, got %s", closedCAR.Status)
 	}
 }
+
+func TestReinspectionHTTP_AutoIssueOnCriticalDefects(t *testing.T) {
+	handler := reinspectionhttp.NewHandler(nil)
+
+	autoIssuePayload := map[string]interface{}{
+		"source_inspection_id": "insp-shackle-99",
+		"findings": []map[string]interface{}{
+			{
+				"finding_id":  "f-pin-wear",
+				"asset_id":    "shackle-alpha",
+				"severity":    types.SeverityCritical,
+				"description": "Pin diameter reduction exceeds 10% per BS EN 13889",
+			},
+			{
+				"finding_id":  "f-sling-cut",
+				"asset_id":    "sling-bravo",
+				"severity":    types.SeverityMajor,
+				"description": "Core yarn exposed per BS EN 1492-2",
+			},
+			{
+				"finding_id":  "f-cosmetic",
+				"asset_id":    "paint-chassis",
+				"severity":    types.SeverityMinor,
+				"description": "Minor surface paint fading",
+			},
+		},
+	}
+	raw, _ := json.Marshal(autoIssuePayload)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/car/auto-issue", bytes.NewReader(raw))
+	req.Header.Set("X-Tenant-ID", "tenant-offshore")
+	req.Header.Set("X-Organization-ID", "org-marine")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("auto-issue expected 201 Created, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var res struct {
+		SourceInspectionID string                                `json:"source_inspection_id"`
+		IssuedCount        int                                   `json:"issued_count"`
+		CARs               []reinspection.CorrectiveActionRequest `json:"cars"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
+		t.Fatalf("decode failed: %v", err)
+	}
+
+	// Minor defects must NOT trigger CARs, only Critical & Major
+	if res.IssuedCount != 2 {
+		t.Fatalf("expected 2 CARs issued (Critical and Major), got %d", res.IssuedCount)
+	}
+	if len(res.CARs) != 2 {
+		t.Fatalf("expected 2 cars in payload, got %d", len(res.CARs))
+	}
+	for _, car := range res.CARs {
+		if car.Status != reinspection.CAROpen {
+			t.Errorf("expected new CAR to be OPEN, got %s", car.Status)
+		}
+	}
+}
+
