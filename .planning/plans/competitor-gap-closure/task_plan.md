@@ -61,6 +61,18 @@ Turn the existing INTEGIN lift simulator into a governed, rated, exportable lift
 - The same canonical plan renders consistently in 2D, 3D, PDF, and offline field views.
 - Missing, stale, conflicting, unlicensed, or tampered data fails closed with an actionable error.
 - Public sharing exposes only intentionally approved records and redacts sensitive geometry/evidence.
+- Multi-disciplinary verification across all 10 engineering scopes:
+  1. Marine (DNV-ST-0378, IMO SOLAS, ABS)
+  2. Construction (OSHA 1926.1400, LOLER 1998, BS 7121)
+  3. Mechanical (ASME B30.5/9/10/20, API 510/570, Paris' Law)
+  4. Mechatronics (IEC 60079-0/11/17 ATEX, sensor jitter analysis)
+  5. Civil (Meyerhof/Hansen ground bearing, CIRIA C703 outrigger FoS >= 1.50)
+  6. Telecommunications (BLE RSSI proximity, air-gapped CRDT sync)
+  7. Backend (Go 1.24 authority monolith, River DLQ, RFC 3161 TSA)
+  8. Frontend (Flutter Field App schema-driven forms, zero CAD bloat)
+  9. Fullstack (Three.js 60s timeline slider sync to evaluate4d, WebCrypto verifier)
+  10. CS/Cryptography (FIPS 140-3 enclaves, NIST FIPS 204 PQ lattice, Snodgrass bitemporal WAL)
+- Multi-standards bodies ratified: ISO, BSI, CEN/EN, DIN, LEEA, ASME, API, OSHA, SASO/ZATCA.
 
 ## Decisions
 
