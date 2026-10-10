@@ -147,7 +147,7 @@
 
 ### 20. [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability)
 *   **Domain**: Large-Scale System Architecture Patterns.
-*   **Role in INTEGIN**: Blueprints for cell-based blast radius isolation, connection pooling via PgCat, and distributed idempotency.
+*   **Role in INTEGIN**: Blueprints for cell-based blast radius isolation, connection pooling via PgDog, and distributed idempotency.
 
 ### 21. [Awesome-Hacking](https://github.com/Hack-with-Github/Awesome-Hacking)
 *   **Domain**: Security Hardening & Penetration Testing Resources.

@@ -72,7 +72,7 @@
 
 ### 12. PostgreSQL XID Wraparound & Autovacuum Starvation
 *   **The Threat**: Long-running executive analytics queries block autovacuum on millions of sync receipts, triggering database shutdown from XID wraparound.
-*   **The Defense**: Automated weekly table partitioning (`pg_partman`) + strict CQRS routing of all analytics to a read-replica via PgCat.
+*   **The Defense**: Automated weekly table partitioning (`pg_partman`) + strict CQRS routing of all analytics to a read-replica via PgDog.
 
 ### 13. Mixed LTR/RTL Arabic/Latin PDF/A-3b Typography Engine
 *   **The Threat**: Naive PDF engines break Arabic ligatures and reverse load numbers (turning "120 t" into "021 t") on bilingual SASO/ZATCA certificates.
