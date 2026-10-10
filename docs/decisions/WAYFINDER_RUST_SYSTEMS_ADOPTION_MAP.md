@@ -65,14 +65,19 @@ All initial decisions for the Rust Systems Adoption Initiative are formally reso
 
 ---
 
-## 5. Not Yet Specified
-* **NY-01: Native TPM/Hardware Enclave Bridge:** Architecture for binding Rust field tools directly to physical YubiKeys / rugged tablet TPM chips under air-gapped field conditions.
-* **NY-02: GPU Acceleration for Crane Stability:** Whether WebGPU / Vulkan via Rust is necessary for real-time mobile crane soil-bearing pressure field rendering.
+## 5. Resolved Exploratory Items
+* **NY-02: GPU Acceleration for Crane Stability (RESOLVED ✅):** Server-side Vulkan/Rust GPU compute rejected via YAGNI. Pure Go `pkg/mathcore` verifies outrigger reaction limits and 10,000-point soil grids in 0.75ms (0 B/op). Real-time visual heatmaps are offloaded entirely to client-side WebGL / WebGPU fragment shaders (Three.js / Flutter Impeller). Zero cloud GPU cost or streaming latency.
 
 ---
 
-## 6. Out of Scope
+## 6. Not Yet Specified
+* **NY-01: Native TPM/Hardware Enclave Bridge:** Architecture for binding Rust field tools directly to physical YubiKeys / rugged tablet TPM chips under air-gapped field conditions.
+
+---
+
+## 7. Out of Scope
 * ❌ Rewriting any existing Go domain modules (L0–L11) into Rust.
 * ❌ Splitting the Go modular monolith into Rust microservices.
 * ❌ Creating a second database write path or direct Rust connection to PostgreSQL.
 * ❌ In-process `cgo` / Rust dynamic link libraries (`.dll`, `.so`) loaded into the Go backend.
+* ❌ Server-side Vulkan / GPU infrastructure for soil pressure rendering.
