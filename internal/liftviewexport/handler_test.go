@@ -285,7 +285,7 @@ func TestEvaluate4DRejectsMalformedOBJ(t *testing.T) {
 		"crane2":   sim.Crane2,
 		"load":     engine.MassSpec{MassTonnes: 45, LengthM: 12, RadiusM: 1.5},
 		"stages":   []engine.LiftStage{{TimeS: 0, Crane1Angle: 65, Crane2Angle: 60}},
-		"obj_data": "v 1 2\\n",
+		"obj_data": "v 1 2\n",
 	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -297,6 +297,71 @@ func TestEvaluate4DRejectsMalformedOBJ(t *testing.T) {
 	Handler{}.ServeHTTP(rec, req)
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestEvaluate4DSuccessTrajectory(t *testing.T) {
+	sim := simRequest()
+	payload := map[string]any{
+		"crane1": sim.Crane1,
+		"crane2": sim.Crane2,
+		"load":   engine.MassSpec{MassTonnes: 40, LengthM: 12, RadiusM: 1.5},
+		"stages": []engine.LiftStage{
+			{TimeS: 0, Crane1Angle: 65, Crane2Angle: 60, WindSpeedMPS: 5.5},
+			{TimeS: 15, Crane1Angle: 62, Crane2Angle: 58, WindSpeedMPS: 6.0},
+		},
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/evaluate4d", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var res engine.Trajectory4DResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
+		t.Fatal(err)
+	}
+	if !res.Passed {
+		t.Fatalf("expected 4D trajectory to pass, got: %s", res.FailReason)
+	}
+}
+
+func TestEvaluate4DTrajectoryWeatherGate(t *testing.T) {
+	sim := simRequest()
+	payload := map[string]any{
+		"crane1": sim.Crane1,
+		"crane2": sim.Crane2,
+		"load":   engine.MassSpec{MassTonnes: 40, LengthM: 12, RadiusM: 1.5},
+		"stages": []engine.LiftStage{
+			{TimeS: 0, Crane1Angle: 65, Crane2Angle: 60, WindSpeedMPS: 5.0},
+			{TimeS: 10, Crane1Angle: 62, Crane2Angle: 58, WindSpeedMPS: 14.0}, // Exceeds 9.8 m/s
+		},
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/liftviews/evaluate4d", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	Handler{}.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var res engine.Trajectory4DResult
+	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
+		t.Fatal(err)
+	}
+	if res.Passed {
+		t.Fatal("expected weather gate failure")
+	}
+	if !strings.Contains(res.FailReason, "weather limit exceeded") {
+		t.Fatalf("expected weather limit error, got: %s", res.FailReason)
 	}
 }
 
