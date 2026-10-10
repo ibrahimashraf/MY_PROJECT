@@ -184,7 +184,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   [x] **4.6: Sovereign Cell-Based Multi-Region Sharding (`deploy/k8s/cells/`)** ✅:
     *   Physical data plane pinning to sovereign regional cells (`cell-sa-central-01`, `cell-eu-west-01`) satisfying SDAIA and GDPR.
 *   [x] **4.7: Time-Bucket Table Partitioning & CQRS Replication (`migrations/0074_partitioning_and_cqrs.sql`)** ✅:
-    *   Automated `pg_partman` weekly partitioning on append-heavy tables + PgCat read-replica routing eliminating XID wraparound.
+    *   Automated `pg_partman` weekly partitioning on append-heavy tables + PgDog read-replica routing eliminating XID wraparound.
 *   [x] **4.8: Dynamic Telemetric Sensor Jitter Verification (`pkg/rulesengine/jitter.go`)** ✅:
     *   Harmonic micro-ripple frequency analysis and tool-to-enclave BLE pairing preventing counterfeit load cell spoofing.
 *   [x] **4.9: 3D WebGL Spatial Collision & 4D Temporal Tandem Lift Simulator (`tools/lifting-simulator/3d/`)** ✅:
@@ -277,7 +277,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 | **PostgreSQL 18** | `appliance-postgres` | `5432` (internal) | DB: `integin_appliance`, User: `integin_appliance_user` | `docker exec appliance-postgres pg_isready` |
 | **Casdoor IAM** | `appliance-casdoor` | `18181` | IAM HTTP: `http://127.0.0.1:18181/` | `curl http://127.0.0.1:18181/` |
 | **RustFS Object Store** | `appliance-rustfs` | `9000` / `9001` | S3 API: `http://127.0.0.1:9000`, Console: `http://127.0.0.1:9001` | `curl http://127.0.0.1:9000/health` |
-| **PgCat Pooler** | `appliance-pgcat` | `6432` | Transaction pooler for high-throughput scaling | TCP connect |
+| **PgDog Pooler** | `appliance-pgdog` | `6432` | Transaction pooler for high-throughput scaling | TCP connect |
 | **HAProxy Ingress** | `appliance-haproxy` | `80` / `443` | Reverse proxy routing & TLS termination | `curl http://127.0.0.1:80/` |
 | **integin-server** | `appliance-integin-server` | `8080` / `18080` | Core API Server: `http://127.0.0.1:8080` (`v3.5.0`) | `curl http://127.0.0.1:8080/healthz` |
 | **PostgreSQL 16 (Dev)** | `integin-dev-postgres` | `15432` | DB: `integin_dev`, User: `integin_runtime` | `pg_isready -p 15432 -U integin_runtime` |
@@ -315,7 +315,7 @@ The following matrix tracks the live implementation status, Go packages, and Pos
 *   Provisioned Keycloak `integin-pilot` realm, client `integin-live-matrix`, and verified JWT token acquisition.
 *   Seeded PostgreSQL `identity_subject` and `identity_membership` mapping for matrix service account.
 *   Live Matrix Execution: `seed` $\longrightarrow$ **PASS**; `exercise` $\longrightarrow$ **100% PASS** (`/sync`: `APPLIED`, `DUPLICATE`, `HELD`, `CONFLICT`, `SECURITY_FAILURE`; `/evidence`: `APPLIED`, `DUPLICATE`, `CONFLICT`, `SECURITY_FAILURE`).
-*   Chaos & Security Proof: FoundationDB chaos simulation (120/120 mutations reconciled, **PASS**), PgCat connection pooling (450 txns, zero GUC leak, **PASS**), Adversarial RLS penetration (5/5 attacks blocked, **PASS**).
+*   Chaos & Security Proof: FoundationDB chaos simulation (120/120 mutations reconciled, **PASS**), PgDog connection pooling (450 txns, zero GUC leak, **PASS**), Adversarial RLS penetration (5/5 attacks blocked, **PASS**).
 
 #### Documentation SSOT Consolidation & Multi-Agent Protocol
 *   Merged 10 root markdown files down to exactly 2 canonical files:
