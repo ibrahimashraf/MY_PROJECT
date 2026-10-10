@@ -38,11 +38,11 @@ Establish an uncompromised, high-assurance integration envelope for Rust in INTE
 | **DEC-RUST-01** | Should `integin-export-verifier` be expanded to verify full multi-part encrypted evidence TAR/ZIP bundles directly from RustFS? | Research / Architecture | None (Root) | Core Security | **RESOLVED ✅** | Cross-language golden ZIP fixture + streaming SHA-256 verifier in `src/main.rs`. |
 | **DEC-RUST-02** | Shall a policy ban on in-process `cgo` / Rust FFI for domain logic be formally codified in `WORKSPACE.md` and CI gates? | Governance / Policy | None (Root) | Quality Authority | **RESOLVED ✅** | Codified in `WORKSPACE.md`, `AGENTS.md`, and automated `.github/workflows/cgo-guard.yml`. |
 | **DEC-RUST-03** | How should the standalone Rust verifier binary be packaged and delivered to external regulators (air-gapped vs appliance)? | Operational Task | DEC-RUST-01 | Deployment Eng | **RESOLVED ✅** | Packaged via `package.ps1`, `package.sh`, `AUDITOR_INSTRUCTIONS.md`, and CI distribution matrix. |
-| **DEC-RUST-04** | Does 3D/4D lifting plan physics simulation require native Rust SIMD/WASM, or does pure Go `pkg/mathcore` meet throughput SLA? | Prototype / Benchmark | DEC-RUST-02 | Math & Physics Lead | **OPEN (Frontier)** | Benchmark report measuring Go MathCore vs Rust WASM/native on 10,000-element kinematic trees. |
+| **DEC-RUST-04** | Does 3D/4D lifting plan physics simulation require native Rust SIMD/WASM, or does pure Go `pkg/mathcore` meet throughput SLA? | Prototype / Benchmark | DEC-RUST-02 | Math & Physics Lead | **RESOLVED ✅** | Empirical benchmark proves pure Go is 0.58ms (28.6x faster than 60 FPS SLA with 0 heap allocs). No Rust needed. |
 
 ---
 
-## 4. Dependency Graph & Current Frontier
+## 4. Dependency Graph & Completion Status
 
 ### 4.1 Dependency Graph
 
@@ -51,20 +51,17 @@ flowchart TD
   RUST01["DEC-RUST-01: RESOLVED ✅\nExpand Export Verifier to Blobs"]
   RUST02["DEC-RUST-02: RESOLVED ✅\nCodify cgo/FFI Ban in Governance"]
   RUST03["DEC-RUST-03: RESOLVED ✅\nRegulator Packaging & Distribution"]
-  RUST04["DEC-RUST-04: OPEN (Frontier)\n3D Kinematics Go vs Rust Benchmark"]
+  RUST04["DEC-RUST-04: RESOLVED ✅\nPure Go MathCore Retained (0.58ms)"]
 
   RUST01 --> RUST03
   RUST02 --> RUST04
 
   classDef resolved fill:#1e8449,stroke:#27ae60,stroke-width:2px,color:#fff;
-  classDef frontier fill:#d35400,stroke:#e67e22,stroke-width:2px,color:#fff;
-
-  class RUST01,RUST02,RUST03 resolved;
-  class RUST04 frontier;
+  class RUST01,RUST02,RUST03,RUST04 resolved;
 ```
 
-### 4.2 Current Frontier
-* **`DEC-RUST-04`**: Benchmark and evaluate whether 3D kinematic trajectory math requires out-of-process Rust SIMD or if pure Go `pkg/mathcore` fulfills sub-second SLAs.
+### 4.2 Map Resolution Status: **100% COMPLETE ✅**
+All initial decisions for the Rust Systems Adoption Initiative are formally resolved with empirical evidence. The frontier is clear. Pure Go handles domain authority and physics simulation; out-of-process Rust handles regulatory verification and evidence blob storage.
 
 ---
 

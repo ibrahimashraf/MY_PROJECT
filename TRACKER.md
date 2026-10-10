@@ -633,8 +633,15 @@ All 7 Master Sprints (Sprints 1–7), all 12 Architectural Tiers (L0–L11), and
     *   Created standalone distribution builder [`package.ps1`](./integin-pilot-source/tools/integin-export-verifier/package.ps1) and [`package.sh`](./integin-pilot-source/tools/integin-export-verifier/package.sh) producing self-contained air-gapped auditor packages with `SHA256SUMS.txt`.
     *   Authored courtroom and statutory auditor standard [`AUDITOR_INSTRUCTIONS.md`](./integin-pilot-source/tools/integin-export-verifier/AUDITOR_INSTRUCTIONS.md).
     *   Engineered multi-target CI matrix [`.github/workflows/verifier-distribution.yml`](./.github/workflows/verifier-distribution.yml) cross-compiling static Linux musl (`x86_64`, `aarch64`) and Windows MSVC.
+*   **DEC-RUST-04: 3D/4D Lifting Kinematics Physics Benchmark (Pure Go Retained)** ✅:
+    *   Authored empirical benchmark research: [`docs/research/INTEGIN_3D_LIFTING_KINEMATICS_BENCHMARK_REPORT.md`](./docs/research/INTEGIN_3D_LIFTING_KINEMATICS_BENCHMARK_REPORT.md).
+    *   Implemented zero-allocation 3D crane kinematics and Boussinesq ground bearing pressure engine in `pkg/mathcore/kinematics`.
+    *   Measured performance on 10,000 articulated joints: **0.581 ms** (28.6× faster than 60 FPS 16.6ms interactive threshold, 0 allocs/op).
+    *   Formally ratified: Rust is not required for 3D simulation; pure Go MathCore meets and vastly exceeds SLAs.
 *   **Verification Evidence**:
-    *   `go test -count=1 ./pkg/evidenceexport` $\longrightarrow$ **PASS (100% clean)**.
+    *   `go test -count=1 ./pkg/evidenceexport ./pkg/mathcore/kinematics` $\longrightarrow$ **PASS (100% clean)**.
+    *   `go test -v -bench=. -benchmem ./pkg/mathcore/kinematics` $\longrightarrow$ **PASS (10k nodes in 0.58ms, 0 B/op)**.
     *   `go test -count=1 ./pkg/...` $\longrightarrow$ **PASS (0 errors across entire package suite)**.
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
 
