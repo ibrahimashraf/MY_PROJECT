@@ -184,8 +184,8 @@ func (h *Handler) handleAutoIssue(w http.ResponseWriter, r *http.Request, tenant
 
 	httpresponse.JSON(w, http.StatusCreated, map[string]interface{}{
 		"source_inspection_id": req.SourceInspectionID,
-		"issued_count":        len(issuedCARs),
-		"cars":                issuedCARs,
+		"issued_count":         len(issuedCARs),
+		"cars":                 issuedCARs,
 	})
 }
 

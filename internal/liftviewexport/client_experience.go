@@ -38,11 +38,11 @@ type ClientBranding struct {
 
 // RevisionRecord tracks auditable plan revisions linked by cryptographic Merkle hash chains.
 type RevisionRecord struct {
-	RevisionCode       string    `json:"revision_code"`        // e.g. "REV-A", "REV-01"
+	RevisionCode       string    `json:"revision_code"` // e.g. "REV-A", "REV-01"
 	CreatedAt          time.Time `json:"created_at"`
 	AuthorDID          string    `json:"author_did"`
 	ChangeSummary      string    `json:"change_summary"`
-	ParentHashSHA256   string    `json:"parent_hash_sha256"`   // Previous manifest hash
+	ParentHashSHA256   string    `json:"parent_hash_sha256"`             // Previous manifest hash
 	ManifestHashSHA256 string    `json:"manifest_hash_sha256,omitempty"` // Current manifest hash
 }
 
@@ -278,14 +278,14 @@ func (Handler) ServeShare(w http.ResponseWriter, r *http.Request) {
 
 		// Build client portal view
 		clientPortalView := map[string]any{
-			"status":                      "AUTHORIZED",
-			"tenant_did":                  fmt.Sprintf("did:integin:tenant:%s", claims.TenantID),
-			"plan_id":                     claims.PlanID,
-			"expires_at":                  claims.ExpiresAt.Format(time.RFC3339),
-			"allow_download_cad":          claims.AllowDownloadCAD,
-			"confidential_redacted":       claims.RedactSensitiveSiteGeometry,
-			"statutory_scope":             "SIMULATION ONLY: NOT A CERTIFIED LIFT PLAN",
-			"portal_disclaimer":           "Client portal view. Authoritative calculations verified server-side under ASME B30.5 / BS 7121.",
+			"status":                "AUTHORIZED",
+			"tenant_did":            fmt.Sprintf("did:integin:tenant:%s", claims.TenantID),
+			"plan_id":               claims.PlanID,
+			"expires_at":            claims.ExpiresAt.Format(time.RFC3339),
+			"allow_download_cad":    claims.AllowDownloadCAD,
+			"confidential_redacted": claims.RedactSensitiveSiteGeometry,
+			"statutory_scope":       "SIMULATION ONLY: NOT A CERTIFIED LIFT PLAN",
+			"portal_disclaimer":     "Client portal view. Authoritative calculations verified server-side under ASME B30.5 / BS 7121.",
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -122,8 +122,8 @@ func TestReinspectionHTTP_AutoIssueOnCriticalDefects(t *testing.T) {
 	}
 
 	var res struct {
-		SourceInspectionID string                                `json:"source_inspection_id"`
-		IssuedCount        int                                   `json:"issued_count"`
+		SourceInspectionID string                                 `json:"source_inspection_id"`
+		IssuedCount        int                                    `json:"issued_count"`
 		CARs               []reinspection.CorrectiveActionRequest `json:"cars"`
 	}
 	if err := json.NewDecoder(rec.Body).Decode(&res); err != nil {
@@ -143,4 +143,3 @@ func TestReinspectionHTTP_AutoIssueOnCriticalDefects(t *testing.T) {
 		}
 	}
 }
-

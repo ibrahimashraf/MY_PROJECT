@@ -623,4 +623,3 @@ func TestZeroTrustIngressTenantIsolation(t *testing.T) {
 		t.Errorf("expected genuine-actor, got %s", capturedActor)
 	}
 }
-

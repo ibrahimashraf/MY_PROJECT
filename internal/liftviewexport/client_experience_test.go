@@ -178,12 +178,12 @@ func TestClientShareTokenExpirationFailClosed(t *testing.T) {
 
 func TestPlanMetadataRedaction(t *testing.T) {
 	rawMeta := map[string]any{
-		"crane_util":               78.5,
-		"leg_tension":              14.2,
-		"certification_scope":      "SIMULATION ONLY",
-		"internal_operator_notes":  "Secret contractor margin",
-		"chassis_tare_weight":      60.0,
-		"outrigger_pad_details":    "Proprietary composite pad spec",
+		"crane_util":              78.5,
+		"leg_tension":             14.2,
+		"certification_scope":     "SIMULATION ONLY",
+		"internal_operator_notes": "Secret contractor margin",
+		"chassis_tare_weight":     60.0,
+		"outrigger_pad_details":   "Proprietary composite pad spec",
 	}
 
 	redacted := RedactPlanMetadata(rawMeta)
