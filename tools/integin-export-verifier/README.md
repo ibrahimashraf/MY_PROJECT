@@ -33,25 +33,36 @@ offline, zero database credentials, zero network calls.
 ## Usage
 
 ```
-integin-export-verifier --manifest <manifest.json> --public-key <hex|file|-> 
+integin-export-verifier --manifest <manifest.json> --public-key <hex|file|-> [--evidence-dir <dir>]
+integin-export-verifier --archive <export.zip> --public-key <hex|file|->
 ```
 
 - `--public-key` accepts a 64-hex-character Ed25519 public key inline, a path
   to a file containing the hex key, or `-` to read the key from stdin.
+- `--archive` verifies a deterministic ZIP bundle containing `manifest.json` and
+  all physical evidence objects (`pkg/evidenceexport.CreateExportArchive`).
+- `--evidence-dir` verifies physical evidence objects from a directory on disk.
 - Exit codes: `0` verified, `1` verification failed, `2` usage error.
 - Progress is printed to stderr; one line per completed check.
 
 ### Examples
 
 ```powershell
-# Verify the committed Go-signed golden fixture
+# 1. Verify manifest metadata only
 cargo run --release -- `
   --manifest testdata/manifest.json `
   --public-key testdata/public_key.hex
 
-# A key arriving over a pipe
-Get-Content testdata/public_key.hex | cargo run --release -- `
-  --manifest testdata/manifest.json --public-key -
+# 2. Verify complete export.zip archive (manifest + physical evidence blobs)
+cargo run --release -- `
+  --archive testdata/export.zip `
+  --public-key testdata/public_key.hex
+
+# 3. Verify manifest + physical blobs directory
+cargo run --release -- `
+  --manifest testdata/manifest.json `
+  --public-key testdata/public_key.hex `
+  --evidence-dir testdata/blobs
 ```
 
 ## Running the tests

@@ -19,15 +19,24 @@ try {
         Pop-Location
     }
 
-    Write-Host "[3/3] verifying golden manifest ..."
+    Write-Host "[3/4] verifying golden manifest + directory blobs ..."
     & tools/integin-export-verifier/target/release/integin-export-verifier.exe `
         --manifest tools/integin-export-verifier/testdata/manifest.json `
-        --public-key tools/integin-export-verifier/testdata/public_key.hex
+        --public-key tools/integin-export-verifier/testdata/public_key.hex `
+        --evidence-dir tools/integin-export-verifier/testdata/blobs
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "verifier rejected a Go-signed manifest (exit $LASTEXITCODE)"
+        Write-Error "verifier rejected directory evidence blobs (exit $LASTEXITCODE)"
     }
 
-    Write-Host "cross-language verification PASSED"
+    Write-Host "[4/4] verifying golden export.zip archive ..."
+    & tools/integin-export-verifier/target/release/integin-export-verifier.exe `
+        --archive tools/integin-export-verifier/testdata/export.zip `
+        --public-key tools/integin-export-verifier/testdata/public_key.hex
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "verifier rejected export.zip archive (exit $LASTEXITCODE)"
+    }
+
+    Write-Host "cross-language end-to-end verification PASSED"
 } finally {
     Pop-Location
 }

@@ -12,8 +12,9 @@ services:
     ports:
       - "${APPLIANCE_HTTP_PORT:-80}:80"
       - "${APPLIANCE_HTTPS_PORT:-443}:443"
+      - "${APPLIANCE_HAPROXY_STATS_PORT:-8404}:8404"
     volumes:
-      - ../deploy/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ../deploy/haproxy:/usr/local/etc/haproxy:ro
     deploy:
       resources:
         limits:
@@ -22,6 +23,7 @@ services:
       - appliance-network
     depends_on:
       - integin-server
+      - casdoor
 
   # 2. Sovereign Identity Provider (Apache 2.0)
   # RS256 token issuance, local credential store, 0 external cloud dependencies
@@ -58,6 +60,8 @@ services:
       origin: "http://appliance-casdoor:8000"
     ports:
       - "18181:8000"
+    volumes:
+      - ../deploy/casdoor/app.conf:/conf/app.conf:ro
     networks:
       - appliance-network
     depends_on:

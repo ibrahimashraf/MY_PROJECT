@@ -81,18 +81,26 @@ struct EvidenceItem {
 // Entry point
 // ---------------------------------------------------------------------------
 
+#[derive(Debug)]
+struct CliArgs {
+    manifest: Option<String>,
+    archive: Option<String>,
+    evidence_dir: Option<String>,
+    public_key: String,
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     let parsed = match parse_args(&args) {
         Ok(parsed) => parsed,
         Err(()) => return usage(),
     };
-    match run(&parsed.0, &parsed.1) {
+    match run(&parsed) {
         Ok(checks) => {
             for line in &checks {
                 eprintln!("[ok] {line}");
             }
-            eprintln!("[ok] manifest verified: canonical payload and Ed25519 signature are valid");
+            eprintln!("[ok] verification completed successfully");
             ExitCode::from(EXIT_OK)
         }
         Err(msg) => {
@@ -104,26 +112,54 @@ fn main() -> ExitCode {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "usage: integin-export-verifier --manifest <manifest.json> --public-key <hex|file|-|->"
+        "usage: integin-export-verifier --manifest <manifest.json> --public-key <hex|file|-> [--evidence-dir <dir>]\n   \
+         or: integin-export-verifier --archive <export.zip> --public-key <hex|file|->"
     );
     ExitCode::from(EXIT_USAGE)
 }
 
-fn run(manifest_path: &str, key_arg: &str) -> Result<Vec<String>, Error> {
-    let raw = fs::read_to_string(manifest_path)
-        .map_err(|e| format!("cannot read {}: {e}", manifest_path))?;
-    let manifest: Manifest = serde_json::from_str(&raw)
-        .map_err(|e| format!("manifest is not valid Export Manifest v1 JSON: {e}"))?;
+fn verify_reader<R: std::io::Read>(
+    mut reader: R,
+    expected_len: u64,
+    expected_sha256: &str,
+) -> Result<(), Error> {
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 8192];
+    let mut total_read = 0u64;
+    loop {
+        let n = reader
+            .read(&mut buffer)
+            .map_err(|e| format!("read error: {e}"))?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+        total_read += n as u64;
+    }
+    if total_read != expected_len {
+        return Err(format!(
+            "byte length mismatch: expected {expected_len}, got {total_read}"
+        ));
+    }
+    let digest_hex = hex::encode(hasher.finalize());
+    let declared = expected_sha256.trim().to_ascii_lowercase();
+    if digest_hex != declared {
+        return Err(format!(
+            "ciphertext_sha256 mismatch: declared {declared}, computed {digest_hex}"
+        ));
+    }
+    Ok(())
+}
 
-    let public_key = load_public_key(&key_arg)?;
-    let verifying_key = VerifyingKey::from_bytes(&public_key)
-        .map_err(|e| format!("public key is not a valid Ed25519 key: {e}"))?;
-
-    let mut checks = Vec::new();
-    validate_structure(&manifest).map_err(|e| format!("structural check failed: {e}"))?;
+fn verify_manifest_metadata(
+    manifest: &Manifest,
+    verifying_key: &VerifyingKey,
+    checks: &mut Vec<String>,
+) -> Result<(), Error> {
+    validate_structure(manifest).map_err(|e| format!("structural check failed: {e}"))?;
     checks.push("structure: object_count, total_byte_length, fields, sha256 digests".into());
 
-    let canonical = canonical_payload(&manifest)?;
+    let canonical = canonical_payload(manifest)?;
     checks.push(format!(
         "canonical payload rebuilt ({} bytes, evidence_items sorted, RFC3339Nano)",
         canonical.len()
@@ -140,17 +176,16 @@ fn run(manifest_path: &str, key_arg: &str) -> Result<Vec<String>, Error> {
             "manifest_sha256 mismatch: manifest declares {declared}, canonical payload hashes to {digest_hex}"
         ));
     }
-    checks.push(format!("manifest_sha256 matches SHA-256(canonicalPayload): {digest_hex}"));
+    checks.push(format!(
+        "manifest_sha256 matches SHA-256(canonicalPayload): {digest_hex}"
+    ));
 
     if manifest.export_signature.trim().is_empty() {
         return Err("export_signature is required".into());
     }
     let sig_bytes = decode_signature(&manifest.export_signature)?;
     if sig_bytes.len() != 64 {
-        return Err(format!(
-            "signature length = {}, want 64",
-            sig_bytes.len()
-        ));
+        return Err(format!("signature length = {}, want 64", sig_bytes.len()));
     }
     let signature = Signature::try_from(sig_bytes.as_slice())
         .map_err(|_| "signature bytes do not form a valid ed25519 signature".to_string())?;
@@ -159,15 +194,86 @@ fn run(manifest_path: &str, key_arg: &str) -> Result<Vec<String>, Error> {
         .map_err(|_| "export_signature verification failed".to_string())?;
     checks.push("export_signature verified with Ed25519".into());
 
+    Ok(())
+}
+
+fn run(args: &CliArgs) -> Result<Vec<String>, Error> {
+    let public_key = load_public_key(&args.public_key)?;
+    let verifying_key = VerifyingKey::from_bytes(&public_key)
+        .map_err(|e| format!("public key is not a valid Ed25519 key: {e}"))?;
+
+    let mut checks = Vec::new();
+
+    if let Some(archive_path) = &args.archive {
+        let file = fs::File::open(archive_path)
+            .map_err(|e| format!("cannot open archive {archive_path}: {e}"))?;
+        let mut zip = zip::ZipArchive::new(file)
+            .map_err(|e| format!("cannot read zip archive {archive_path}: {e}"))?;
+
+        let raw = {
+            let mut mf = zip
+                .by_name("manifest.json")
+                .map_err(|e| format!("archive does not contain manifest.json: {e}"))?;
+            let mut s = String::new();
+            mf.read_to_string(&mut s)
+                .map_err(|e| format!("failed to read manifest.json from archive: {e}"))?;
+            s
+        };
+
+        let manifest: Manifest = serde_json::from_str(&raw)
+            .map_err(|e| format!("manifest in archive is not valid Export Manifest v1 JSON: {e}"))?;
+
+        verify_manifest_metadata(&manifest, &verifying_key, &mut checks)?;
+
+        let mut verified_bytes = 0u64;
+        for item in &manifest.evidence_items {
+            let entry = zip
+                .by_name(&item.object_key)
+                .map_err(|e| format!("archive missing evidence {}: {e}", item.object_key))?;
+            verify_reader(entry, item.byte_length as u64, &item.ciphertext_sha256)
+                .map_err(|e| format!("evidence {} verification failed: {e}", item.object_key))?;
+            verified_bytes += item.byte_length as u64;
+        }
+        checks.push(format!(
+            "archive evidence blobs verified ({} items, {} bytes)",
+            manifest.evidence_items.len(),
+            verified_bytes
+        ));
+    } else if let Some(manifest_path) = &args.manifest {
+        let raw = fs::read_to_string(manifest_path)
+            .map_err(|e| format!("cannot read {}: {e}", manifest_path))?;
+        let manifest: Manifest = serde_json::from_str(&raw)
+            .map_err(|e| format!("manifest is not valid Export Manifest v1 JSON: {e}"))?;
+
+        verify_manifest_metadata(&manifest, &verifying_key, &mut checks)?;
+
+        if let Some(dir) = &args.evidence_dir {
+            let mut verified_bytes = 0u64;
+            for item in &manifest.evidence_items {
+                let p = Path::new(dir).join(item.object_key.replace('/', std::path::MAIN_SEPARATOR_STR));
+                let file = fs::File::open(&p)
+                    .map_err(|e| format!("cannot open evidence file {}: {e}", p.display()))?;
+                verify_reader(file, item.byte_length as u64, &item.ciphertext_sha256)
+                    .map_err(|e| format!("evidence {} verification failed: {e}", item.object_key))?;
+                verified_bytes += item.byte_length as u64;
+            }
+            checks.push(format!(
+                "directory evidence blobs verified ({} items, {} bytes)",
+                manifest.evidence_items.len(),
+                verified_bytes
+            ));
+        }
+    } else {
+        return Err("either --manifest or --archive must be specified".into());
+    }
+
     Ok(checks)
 }
 
-// ---------------------------------------------------------------------------
-// Argument handling
-// ---------------------------------------------------------------------------
-
-fn parse_args(args: &[String]) -> Result<(String, String), ()> {
+fn parse_args(args: &[String]) -> Result<CliArgs, ()> {
     let mut manifest: Option<String> = None;
+    let mut archive: Option<String> = None;
+    let mut evidence_dir: Option<String> = None;
     let mut key: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -178,6 +284,20 @@ fn parse_args(args: &[String]) -> Result<(String, String), ()> {
                     return Err(());
                 }
                 manifest = Some(args[i].clone());
+            }
+            "--archive" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(());
+                }
+                archive = Some(args[i].clone());
+            }
+            "--evidence-dir" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(());
+                }
+                evidence_dir = Some(args[i].clone());
             }
             "--public-key" => {
                 i += 1;
@@ -190,8 +310,13 @@ fn parse_args(args: &[String]) -> Result<(String, String), ()> {
         }
         i += 1;
     }
-    match (manifest, key) {
-        (Some(m), Some(k)) => Ok((m, k)),
+    match (manifest.is_some() || archive.is_some(), key) {
+        (true, Some(k)) => Ok(CliArgs {
+            manifest,
+            archive,
+            evidence_dir,
+            public_key: k,
+        }),
         _ => Err(()),
     }
 }
@@ -658,5 +783,40 @@ mod tests {
         assert_eq!(decode_signature(&url).unwrap(), sig);
         assert_eq!(decode_signature(&std).unwrap(), sig);
         assert!(decode_signature("not-an-encoding!!!").is_err());
+    }
+
+    #[test]
+    fn golden_export_zip_verifies() {
+        let zip_path = fixture_dir().join("export.zip");
+        let key_path = fixture_dir().join("public_key.hex");
+        if !zip_path.exists() {
+            return;
+        }
+        let args = CliArgs {
+            manifest: None,
+            archive: Some(zip_path.to_str().unwrap().to_string()),
+            evidence_dir: None,
+            public_key: key_path.to_str().unwrap().to_string(),
+        };
+        let checks = run(&args).expect("golden export.zip must verify successfully");
+        assert!(checks.iter().any(|c| c.contains("archive evidence blobs verified")));
+    }
+
+    #[test]
+    fn golden_evidence_dir_verifies() {
+        let manifest_path = fixture_dir().join("manifest.json");
+        let key_path = fixture_dir().join("public_key.hex");
+        let blobs_path = fixture_dir().join("blobs");
+        if !blobs_path.exists() {
+            return;
+        }
+        let args = CliArgs {
+            manifest: Some(manifest_path.to_str().unwrap().to_string()),
+            archive: None,
+            evidence_dir: Some(blobs_path.to_str().unwrap().to_string()),
+            public_key: key_path.to_str().unwrap().to_string(),
+        };
+        let checks = run(&args).expect("golden evidence dir must verify successfully");
+        assert!(checks.iter().any(|c| c.contains("directory evidence blobs verified")));
     }
 }

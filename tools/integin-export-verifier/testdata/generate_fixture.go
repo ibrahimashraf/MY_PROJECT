@@ -12,11 +12,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -29,6 +31,19 @@ func sha256hex(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+func sha256bytesHex(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}
+
+func makePayload(seed byte, size int) []byte {
+	b := make([]byte, size)
+	for i := range b {
+		b[i] = byte((int(seed) + i*7) % 256)
+	}
+	return b
+}
+
 func main() {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -36,7 +51,7 @@ func main() {
 	}
 	outDir := dir
 	if filepath.Base(dir) != "testdata" {
-		outDir = filepath.Join(dir, "tools", "rust-export-verifier", "testdata")
+		outDir = filepath.Join(dir, "tools", "integin-export-verifier", "testdata")
 	}
 
 	seed, err := hex.DecodeString("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
@@ -46,6 +61,10 @@ func main() {
 	priv := ed25519.NewKeyFromSeed(seed)
 	pub := priv.Public().(ed25519.PublicKey)
 
+	payload2 := makePayload(2, 8192)
+	payload1 := makePayload(1, 4096)
+	payload3 := makePayload(3, 2048)
+
 	items := []evidenceexport.EvidenceItem{
 		{ // intentionally placed second to exercise evidence_id sorting
 			EvidenceID:          "EV-1002",
@@ -53,8 +72,8 @@ func main() {
 			ContentType:         "application/octet-stream",
 			CapturedAt:          time.Date(2026, 8, 20, 15, 10, 30, 0, time.UTC),
 			PlaintextSHA256:     sha256hex("plaintext-object-2"),
-			CiphertextSHA256:    sha256hex("ciphertext-object-2"),
-			ByteLength:          8192,
+			CiphertextSHA256:    sha256bytesHex(payload2),
+			ByteLength:          int64(len(payload2)),
 			EncryptionAlgorithm: "AES-256-GCM",
 			AuthorityDeviceID:   "device-tablet-7f3a9912",
 		},
@@ -64,8 +83,8 @@ func main() {
 			ContentType:         "application/octet-stream",
 			CapturedAt:          time.Date(2026, 8, 20, 14, 5, 0, 250000000, time.UTC), // fractional
 			PlaintextSHA256:     sha256hex("plaintext-object-1"),
-			CiphertextSHA256:    sha256hex("ciphertext-object-1"),
-			ByteLength:          4096,
+			CiphertextSHA256:    sha256bytesHex(payload1),
+			ByteLength:          int64(len(payload1)),
 			EncryptionAlgorithm: "AES-256-GCM",
 			AuthorityDeviceID:   "device-tablet-7f3a9912",
 		},
@@ -75,8 +94,8 @@ func main() {
 			ContentType:         "application/octet-stream",
 			CapturedAt:          time.Date(2026, 8, 20, 15, 11, 0, 500000000, time.UTC),
 			PlaintextSHA256:     sha256hex("plaintext-object-3"),
-			CiphertextSHA256:    sha256hex("ciphertext-object-3"),
-			ByteLength:          2048,
+			CiphertextSHA256:    sha256bytesHex(payload3),
+			ByteLength:          int64(len(payload3)),
 			EncryptionAlgorithm: "AES-256-GCM",
 			AuthorityDeviceID:   "device-tablet-7f3a9912",
 		},
@@ -117,7 +136,42 @@ func main() {
 	if err := os.WriteFile(filepath.Join(outDir, "public_key.hex"), []byte(hex.EncodeToString(pub)), 0o644); err != nil {
 		panic(err)
 	}
-	fmt.Printf("wrote %s and %s\n",
+
+	payloadStore := map[string][]byte{
+		items[0].ObjectKey: payload2,
+		items[1].ObjectKey: payload1,
+		items[2].ObjectKey: payload3,
+	}
+
+	for key, data := range payloadStore {
+		p := filepath.Join(outDir, "blobs", filepath.FromSlash(key))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			panic(err)
+		}
+		if err := os.WriteFile(p, data, 0o644); err != nil {
+			panic(err)
+		}
+	}
+
+	zipPath := filepath.Join(outDir, "export.zip")
+	zf, err := os.Create(zipPath)
+	if err != nil {
+		panic(err)
+	}
+	defer zf.Close()
+
+	if err := evidenceexport.CreateExportArchive(m, func(key string) (io.ReadCloser, error) {
+		data, ok := payloadStore[key]
+		if !ok {
+			return nil, fmt.Errorf("key not found: %s", key)
+		}
+		return io.NopCloser(bytes.NewReader(data)), nil
+	}, zf); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("wrote %s, %s, %s, and blobs/\n",
 		filepath.Join(outDir, "manifest.json"),
-		filepath.Join(outDir, "public_key.hex"))
+		filepath.Join(outDir, "public_key.hex"),
+		zipPath)
 }
