@@ -83,7 +83,7 @@ c:\MY_PROJECT\
 | Service | Container Name | Local Port | Role & Context | Status |
 |---|---|---|---|---|
 | **PostgreSQL 16** | `integin-dev-postgres` | `127.0.0.1:15432` | DB: `integin_dev`, User: `integin_runtime` | **UP (Active)** |
-| **PgCat Pooler** | `integin-pgcat` | `127.0.0.1:6432` | Multiplexes `integin_dev` with zero GUC leaks | **UP (Active)** |
+| **PgDog Pooler** | `integin-pgdog` | `127.0.0.1:6432` | Multiplexes `integin_dev` with zero GUC leaks | **UP (Active)** |
 | **Keycloak IAM** | `integin-pilot-keycloak` | `127.0.0.1:18180` (HTTP)<br>`127.0.0.1:19090` (Health) | Realm: `integin-pilot`, Client: `integin-live-matrix` | **UP (Active)** |
 | **RustFS S3** | `integin-pilot-rustfs` | `127.0.0.1:19000` (S3 API)<br>`127.0.0.1:19001` (Console) | Bucket: `integin-pilot-evidence`, Region: `us-east-1` | **UP (Active)** |
 
