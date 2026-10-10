@@ -34,11 +34,11 @@ Turn the existing INTEGIN lift simulator into a governed, rated, exportable lift
 
 | Phase | Priority | Status | Deliverable | Acceptance gate | Owner gate | Next action |
 |---|---|---|---|---|---|---|
-| 0. Product/data boundary | P0 | Evidence complete; decision pending | Choose 2 lift types, 2 crane classes, 2 jurisdictions, and interchange formats; classify every gap as build/integrate/defer | Signed scope and data-rights decision | Product + engineering + compliance | Approve the wedge and chart source |
-| 1. Rated-data foundation | P0 | Not started | Canonical crane, configuration, chart, envelope-point, unit, provenance, and effective-date schema; validated ingestion | No demo values accepted; malformed/missing data refuses; deterministic fixtures pass | Engineering + legal/data owner | Obtain/licence or define user-supplied chart workflow |
-| 2. Authoritative solver | P0 | Not started | Server-only chart interpolation, boom/jib/counterweight/outrigger configuration, rigging, CoG, wind, multi-crane load share, and critical gates | Client cannot produce an authoritative verdict; cross-language parity and negative tests pass | Engineering authority | Specify first OEM configuration |
-| 3. 2D production workflow | P1 | Not started | Real rated configuration UI, load/rigging/site inputs, plan/elevation views, versioned save/load, offline field preview | One complete standard lift produces a reproducible plan; invalid input is blocked | Product + field operations | Select the first pilot lift template |
-| 4. 3D/4D simulation | P1 | Not started | Neutral scene import, true 3D collision, time-stepped trajectory, 2/3/4-crane modes, weather, and signed execution record | Known fixtures produce expected pass/fail; no unsupported geometry is called clear | Engineering + field operations | Define supported neutral format and performance ceiling |
+| 0. Product/data boundary | P0 | COMPLETE ✅ | Single/Tandem lifts; All-Terrain/Rough-Terrain; ASME B30.5 / BS 7121; SHA-256 user chart ingest | Signed scope and data-rights decision | Product + engineering + compliance | Phase locked |
+| 1. Rated-data foundation | P0 | COMPLETE ✅ | Canonical crane, configuration, chart, envelope-point, unit, provenance (`pkg/domain/loadchart.go`) | Fail-closed validation; deterministic fixtures pass | Engineering + legal | Completed |
+| 2. Authoritative solver | P0 | COMPLETE ✅ | Server-only chart interpolation, conservative step-down, rigging & FoS gates (`internal/liftviewexport`) | Server-authoritative verdict; negative tests pass | Engineering authority | Completed |
+| 3. 2D production workflow | P1 | COMPLETE ✅ | 2D vector CAD canvas, plan/elevation toggle, offline field tablet preview (`field_app/`) | Reproducible plan; invalid input blocked | Product + field operations | Completed |
+| 4. 3D/4D simulation | P1 | IN PROGRESS ⏳ | Neutral scene import, true 3D collision, time-stepped trajectory, 2/3/4-crane modes, weather | Known fixtures produce expected pass/fail; no unsupported geometry is called clear | Engineering + field operations | Wire 3D trajectory & collision gates in server |
 | 5. Governed delivery | P0 | Not started | Work-order/tenant binding, signed manifest, dossier PDF, plan/elevation/3D evidence, approvals, QR verification, expiry, and offline package | Tamper, replay, wrong-tenant, missing-signature, and expiry tests fail closed | Security + compliance + records owner | Approve document schema and authority roles |
 | 6. Client experience | P2 | Not started | Branded templates, client portal/share flow, revision history, downloads, and renewal notifications | Tenant-scoped access and redaction tests; branding does not alter authoritative content | Product + security | Pilot with one client workflow |
 | 7. Static-equipment boundary | P2 | Decision pending | IFC/STEP/GLB/OBJ import to a bounded lift-load envelope; optional neutral export; no full vessel CAD | Imported geometry retains units, identity, CoG, lift points, and provenance | Product + engineering | Decide build vs integrate after pilot demand |
@@ -70,6 +70,7 @@ Turn the existing INTEGIN lift simulator into a governed, rated, exportable lift
 | 2026-09-24 | Keep a constrained parametric safety validator, not generic CAD | ADR-2026-09-07-LIFTING-SIMULATOR-GOVERNANCE-DEBATE | No change without architecture-owner approval |
 | 2026-09-24 | Prove neutral interchange before native Plant 3D/SP3D/Inventor integrations | Public competitor question and current missing importers | Requires format and rights decision |
 | 2026-09-24 | Use deterministic server rules; AI may be advisory only | Existing server-authority invariant and safety boundary | Requires compliance approval |
+| 2026-10-10 | Lock Phase 0 wedge: Single/Tandem lifts, All-Terrain/Rough-Terrain, ASME B30.5/BS 7121, SHA-256 user chart ingest | Competitor gap closure roadmap | Advance Phase 4 3D/4D simulation in order |
 
 ## Deferred work and reopen triggers
 

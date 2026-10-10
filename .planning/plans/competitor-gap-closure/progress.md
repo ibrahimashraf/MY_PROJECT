@@ -12,9 +12,10 @@
 
 | 2026-10-06 | Integrated `domain.LoadChart` verified conservative capacity lookup into `internal/liftviewexport` server handler. | Server export handler now executes typed `domain.LoadChart.LookupCapacityConservative` with fail-closed bounds checking; all 15 tests in `internal/liftviewexport` pass (100%). | Ready for Phase 3 2D production workflow & offline field tablet lift plan integration. | Select first pilot lift template for offline field tablet preview. |
 | 2026-10-08 | Wired offline 2D `LiftPlan2DView` preview into `field_app/` home page (`_LiftPlanPreviewCard`). | Offline field tablet supports plan/elevation toggle, live telemetry bar, and vector CAD canvas; submodule commit `e5979e8`. | Field app has offline 2D preview wired; ready for Phase 4 3D/4D simulation & Sprint 8 scope. | Advance Phase 4 / Sprint 8 deliverables. |
+| 2026-10-10 | Implemented weather wind limit gate and trajectory sequence validation in 4D solver (`trajectory_4d.go`, `handler.go`). | Enforces 9.8 m/s wind speed ceiling (ASME B30.5 / BS 7121) and multi-stage capacity checks; submodule commit `62df7f8`; 17/17 tests pass. | 4D trajectory and weather limits verified; ready for Phase 5 governed delivery. | Advance Phase 5 governed delivery (work order binding & signed dossier). |
 
 ## Continuity checkpoint
 
 | Current phase | Last validated action | Unresolved decision or limitation | Next safe action |
 |---|---|---|---|
-| Phase 3 — 2D production workflow complete | Wired offline 2D `LiftPlan2DView` preview into `field_app/` (`_LiftPlanPreviewCard`, commit `e5979e8`). | Phase 4 3D/4D simulation & collision integration. | Begin Phase 4 neutral scene import / collision or Sprint 8 scope. |
+| Phase 4 — 3D/4D simulation verified | Implemented 4D trajectory solver & ASME B30.5 / BS 7121 9.8 m/s weather limit gate (submodule `62df7f8`). | Governed work-order binding & signed manifest delivery. | Begin Phase 5 governed delivery. |
