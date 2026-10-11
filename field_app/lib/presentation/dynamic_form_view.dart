@@ -246,6 +246,17 @@ class _DynamicFormEngineViewState extends State<DynamicFormEngineView> {
                         if (rawBytes == null || rawBytes.isEmpty) {
                           return;
                         }
+                        if (!looksLikeSupportedImage(rawBytes)) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Photo rejected: not a JPEG, PNG, WebP or HEIC image'),
+                              ),
+                            );
+                          }
+                          return;
+                        }
                         
                         String newKey;
                         if (widget.tusClient != null) {

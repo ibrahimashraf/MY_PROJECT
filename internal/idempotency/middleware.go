@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -58,7 +59,8 @@ func (m *Middleware) Wrap(next http.Handler) http.Handler {
 
 		tenantID, organizationID, err := m.resolve(r, body)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, `{"error":"idempotency_scope_unresolved","reason":`+jsonString(err.Error())+`}`)
+			log.Printf("idempotency: scope resolve: %v", err)
+			writeError(w, http.StatusBadRequest, `{"error":"idempotency_scope_unresolved"}`)
 			return
 		}
 		scope := Scope{
@@ -75,7 +77,8 @@ func (m *Middleware) Wrap(next http.Handler) http.Handler {
 			writeError(w, http.StatusConflict, `{"error":"idempotency_conflict","reason":"idempotency key reused with a different request"}`)
 			return
 		case err != nil:
-			writeError(w, http.StatusServiceUnavailable, `{"error":"idempotency_unavailable","reason":`+jsonString(err.Error())+`}`)
+			log.Printf("idempotency: store acquire: %v", err)
+			writeError(w, http.StatusServiceUnavailable, `{"error":"idempotency_unavailable"}`)
 			return
 		case cached != nil:
 			replay(w, cached)

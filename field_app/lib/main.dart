@@ -50,7 +50,7 @@ Future<void> main() async {
   if (syncEndpoint.isEmpty) {
     // Development fallback: use loopback sync server on port 8080
     syncEndpoint = 'http://127.0.0.1:8080/api/v1/sync';
-    print('⚙️ Using fallback sync endpoint: $syncEndpoint');
+    debugPrint('Using fallback sync endpoint: $syncEndpoint');
   }
   const localProvisioningEndpoint =
       String.fromEnvironment('INTEGIN_LOCAL_PROVISIONING_ENDPOINT');

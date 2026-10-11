@@ -3,6 +3,31 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
+/// Whether [source] begins with a magic number for an image format the field
+/// app accepts as photographic evidence (JPEG, PNG, WebP, HEIC/HEIF).
+///
+/// Callers must check this before labelling bytes with an image content type:
+/// [DownsamplePipeline.downsample] passes undecodable payloads through
+/// untouched, so without this sniff arbitrary bytes reach the evidence store
+/// tagged as a photograph.
+bool looksLikeSupportedImage(Uint8List source) {
+  bool starts(List<int> sig, [int offset = 0]) {
+    if (source.length < offset + sig.length) return false;
+    for (var i = 0; i < sig.length; i++) {
+      if (source[offset + i] != sig[i]) return false;
+    }
+    return true;
+  }
+
+  if (starts([0xFF, 0xD8, 0xFF])) return true; // JPEG
+  if (starts([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) return true; // PNG
+  if (starts([0x52, 0x49, 0x46, 0x46]) && starts([0x57, 0x45, 0x42, 0x50], 8)) {
+    return true; // WebP
+  }
+  if (starts([0x66, 0x74, 0x79, 0x70], 4)) return true; // HEIC/HEIF ftyp
+  return false;
+}
+
 /// Preferred/fallback image encoding contract for downsampled uploads.
 ///
 /// The server accepts any content type, but AVIF-first uploads are the

@@ -221,7 +221,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.PackageValidator != nil && transaction.Operation == "InspectionSubmitted" {
 		if err := h.PackageValidator.ValidateInspectionPayload(r.Context(), transaction.TenantID, transaction.OrganizationID, transaction.EntityID, transaction.Payload); err != nil {
-			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			writeServerError(w, http.StatusUnprocessableEntity, "inspection payload rejected", err)
 			return
 		}
 	}
@@ -247,6 +247,12 @@ func canonicalPayload(raw json.RawMessage) ([]byte, error) {
 
 func writeError(w http.ResponseWriter, status int, reason string) {
 	writeJSON(w, status, response{Outcome: domainsync.Rejected, Reason: reason})
+}
+
+// writeServerError logs the cause server-side and returns a caller-safe reason.
+func writeServerError(w http.ResponseWriter, status int, reason string, err error) {
+	log.Printf("syncapi: %d: %v", status, err)
+	writeError(w, status, reason)
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {

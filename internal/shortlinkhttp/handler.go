@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -202,7 +203,7 @@ func (h *Handler) CreateHandler(w http.ResponseWriter, r *http.Request) {
 		HMACAlgorithm: hmacAlgorithm,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -217,7 +218,7 @@ func (h *Handler) CreateHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListHandler(w http.ResponseWriter, r *http.Request) {
 	links, err := h.svc.List(r.Context(), 50, 0)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, links)
@@ -246,7 +247,7 @@ func (h *Handler) StatsHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RevokeHandler(w http.ResponseWriter, r *http.Request) {
 	code := chi.URLParam(r, "code")
 	if err := h.svc.RevokeShortLink(r.Context(), code); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -278,7 +279,7 @@ func (h *Handler) ListDLQHandler(w http.ResponseWriter, r *http.Request) {
 		Status: status,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -300,7 +301,7 @@ func (h *Handler) RetryDLQHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := h.svc.RetryDLQEntry(r.Context(), shortlink.RetryDLQRequest{DeliveryID: id})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -327,7 +328,7 @@ func (h *Handler) ResolveDLQHandler(w http.ResponseWriter, r *http.Request) {
 		ResolvedBy string `json:"resolved_by"`
 	}
 	if err := decodeOptionalJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json payload: "+err.Error())
+		writeError(w, http.StatusBadRequest, "invalid json payload")
 		return
 	}
 	if req.ResolvedBy == "" {
@@ -336,7 +337,7 @@ func (h *Handler) ResolveDLQHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := h.svc.ResolveDLQEntry(r.Context(), id, req.ResolvedBy)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -391,7 +392,7 @@ func (h *Handler) CreateHMACSecretHandler(w http.ResponseWriter, r *http.Request
 
 	secret, err := h.svc.CreateHMACSecret(r.Context(), tenantID, req.Secret, req.Algorithm)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -407,7 +408,7 @@ func (h *Handler) ListHMACSecretsHandler(w http.ResponseWriter, r *http.Request)
 
 	secrets, err := h.svc.ListHMACSecrets(r.Context(), tenantID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -463,7 +464,7 @@ func (h *Handler) RevokeHMACSecretHandler(w http.ResponseWriter, r *http.Request
 
 	err = h.svc.RevokeHMACSecret(r.Context(), tenantID, version)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -509,7 +510,7 @@ func (h *Handler) BulkCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := h.svc.BulkCreate(r.Context(), shortlinksvc.BulkCreateRequest{Links: items})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, resp)
@@ -523,7 +524,7 @@ func (h *Handler) BulkImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := h.svc.ImportCSV(r.Context(), string(data))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeServerError(w, http.StatusBadRequest, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, resp)
@@ -534,14 +535,14 @@ func (h *Handler) BulkExportHandler(w http.ResponseWriter, r *http.Request) {
 		Format string `json:"format"`
 	}
 	if err := decodeOptionalJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid json payload: "+err.Error())
+		writeError(w, http.StatusBadRequest, "invalid json payload")
 		return
 	}
 	expReq := shortlinksvc.ExportRequest{Format: req.Format}
 	if req.Format == "json" {
 		resp, err := h.svc.ExportJSON(r.Context(), expReq)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			writeServerError(w, http.StatusInternalServerError, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, resp)
@@ -549,7 +550,7 @@ func (h *Handler) BulkExportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := h.svc.ExportCSV(r.Context(), expReq)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, resp)
@@ -571,7 +572,7 @@ func (h *Handler) BulkQRZipHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	zipData, err := h.svc.GenerateQRZip(r.Context(), req.Codes, req.Size, req.Level, getShortBaseURL(r))
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/zip")
@@ -712,7 +713,7 @@ func (h *Handler) CreateAnomalyRuleHandler(w http.ResponseWriter, r *http.Reques
 		Config:      req.Config,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -748,7 +749,7 @@ func (h *Handler) ListAnomalyRulesHandler(w http.ResponseWriter, r *http.Request
 		Enabled:  enabled,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -774,7 +775,7 @@ func (h *Handler) GetAnomalyRuleHandler(w http.ResponseWriter, r *http.Request) 
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -811,7 +812,7 @@ func (h *Handler) UpdateAnomalyRuleHandler(w http.ResponseWriter, r *http.Reques
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -828,7 +829,7 @@ func (h *Handler) DeleteAnomalyRuleHandler(w http.ResponseWriter, r *http.Reques
 
 	err := h.svc.DeleteAnomalyRule(r.Context(), id)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -896,7 +897,7 @@ func (h *Handler) ListAnomalyAlertsHandler(w http.ResponseWriter, r *http.Reques
 		Offset:        offset,
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -922,7 +923,7 @@ func (h *Handler) GetAnomalyAlertHandler(w http.ResponseWriter, r *http.Request)
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -957,7 +958,7 @@ func (h *Handler) UpdateAnomalyAlertHandler(w http.ResponseWriter, r *http.Reque
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -995,7 +996,7 @@ func (h *Handler) AcknowledgeAnomalyAlertHandler(w http.ResponseWriter, r *http.
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1033,7 +1034,7 @@ func (h *Handler) ResolveAnomalyAlertHandler(w http.ResponseWriter, r *http.Requ
 			writeError(w, http.StatusNotFound, "not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1051,7 +1052,7 @@ func (h *Handler) AnalyticsOverviewHandler(w http.ResponseWriter, r *http.Reques
 
 	analytics, err := h.svc.GetDashboardAnalytics(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1071,7 +1072,7 @@ func (h *Handler) AnalyticsTimeSeriesHandler(w http.ResponseWriter, r *http.Requ
 
 	points, err := h.svc.GetTimeSeries(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1088,7 +1089,7 @@ func (h *Handler) AnalyticsGeoHandler(w http.ResponseWriter, r *http.Request) {
 
 	points, err := h.svc.GetGeoHeatmap(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1105,7 +1106,7 @@ func (h *Handler) AnalyticsDevicesHandler(w http.ResponseWriter, r *http.Request
 
 	devices, osList, browsers, err := h.svc.GetDeviceAnalytics(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1126,7 +1127,7 @@ func (h *Handler) AnalyticsFunnelHandler(w http.ResponseWriter, r *http.Request)
 
 	funnel, err := h.svc.GetFunnel(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1143,7 +1144,7 @@ func (h *Handler) AnalyticsTopAssetsHandler(w http.ResponseWriter, r *http.Reque
 
 	assets, err := h.svc.GetTopAssets(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeServerError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -1317,6 +1318,14 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+// writeServerError logs the underlying cause server-side and returns a fixed
+// generic message. Internal error text (SQL fragments, driver detail, file
+// paths) must never reach an untrusted caller.
+func writeServerError(w http.ResponseWriter, status int, err error) {
+	log.Printf("shortlinkhttp: %d: %v", status, err)
+	writeJSON(w, status, map[string]string{"error": "internal_error"})
 }
 
 func decodeOptionalJSON(r *http.Request, dst any) error {

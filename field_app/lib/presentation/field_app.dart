@@ -213,25 +213,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
               CustodyHandoverView(
                 workOrderId: workPack.inspectionId,
                 assetId: workPack.rootAssetId,
-                onHandoverCompleted: (handoverData) async {
-                  final notes = [
-                    if (handoverData['releasing_party'] != null)
-                      'Releasing: ${handoverData['releasing_party']}',
-                    if (handoverData['accepting_party'] != null)
-                      'Accepting: ${handoverData['accepting_party']}',
-                    if (handoverData['site_notes'] != null &&
-                        (handoverData['site_notes'] as String).isNotEmpty)
-                      handoverData['site_notes'],
-                  ].join(' | ');
-                  if (controller.connectivity == ConnectivityState.online) {
-                    final ok = await controller.submitLive(notes: notes);
-                    if (!ok) {
-                      await controller.queueForSync(notes: notes);
-                    }
-                  } else {
-                    await controller.queueForSync(notes: notes);
-                  }
-                },
+                onHandoverCompleted: (handoverData) =>
+                    controller.completeHandover(handoverData),
               ),
             ],
             const SizedBox(height: 16),

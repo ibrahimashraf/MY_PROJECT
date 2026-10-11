@@ -2,6 +2,7 @@ package dpphttp
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -50,7 +51,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	actor, err := h.resolver(r)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "unauthorized", err.Error())
+		writeServerError(w, http.StatusUnauthorized, "unauthorized", "authentication required", err)
 		return
 	}
 
@@ -84,7 +85,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			created, err := h.repo.CreateProductPassportDPP(r.Context(), actor, passport)
 			if err != nil {
-				writeError(w, http.StatusInternalServerError, "error", err.Error())
+				writeServerError(w, http.StatusInternalServerError, "internal_error", "internal server error", err)
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
@@ -98,7 +99,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			passportID := parts[1]
 			got, err := h.repo.GetProductPassportDPP(r.Context(), actor, passportID)
 			if err != nil {
-				writeError(w, http.StatusNotFound, "not_found", err.Error())
+				writeServerError(w, http.StatusNotFound, "not_found", "passport not found", err)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
@@ -110,7 +111,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			assetID := parts[2]
 			got, found, err := h.repo.GetProductPassportDPPByAsset(r.Context(), actor, assetID)
 			if err != nil {
-				writeError(w, http.StatusInternalServerError, "error", err.Error())
+				writeServerError(w, http.StatusInternalServerError, "internal_error", "internal server error", err)
 				return
 			}
 			if !found {
@@ -145,7 +146,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				DisposalPayload:   req.DisposalPayload,
 			}
 			if err := h.repo.UpdateProductPassportDPP(r.Context(), actor, passport); err != nil {
-				writeError(w, http.StatusConflict, "conflict", err.Error())
+				writeServerError(w, http.StatusConflict, "conflict", "update rejected", err)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
@@ -163,4 +164,11 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 		"code":    code,
 		"message": message,
 	})
+}
+
+// writeServerError logs the cause server-side and returns a caller-safe code
+// so internal error text (SQL, driver detail, file paths) never leaks.
+func writeServerError(w http.ResponseWriter, status int, code, message string, err error) {
+	log.Printf("dpphttp: %d %s: %v", status, code, err)
+	writeError(w, status, code, message)
 }

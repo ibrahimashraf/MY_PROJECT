@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"integin/internal/domain/shortlink"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/shortlinkhttp"
@@ -219,5 +221,51 @@ func TestShortLinkHandler_OptionalBodyValidation(t *testing.T) {
 
 	if recEmpty.Code == http.StatusBadRequest {
 		t.Fatalf("expected empty body to be accepted without 400, got: %s", recEmpty.Body.String())
+	}
+}
+
+// failingRepo embeds the Repository interface so only the methods a test
+// exercises need a body; anything else panics and fails loudly.
+type failingRepo struct {
+	shortlink.Repository
+	err error
+}
+
+func (f failingRepo) Create(context.Context, string, string, *time.Time, *string, *string, *string, *string, *string) error {
+	return f.err
+}
+
+// A handler whose repository returns a driver-flavoured error must reach the
+// caller as a generic code, never as raw SQL or driver text.
+func TestShortLinkHandler_InternalErrorNotLeaked(t *testing.T) {
+	validator := &mockTokenValidator{
+		validateFn: func(ctx context.Context, rawToken string) (oidcauth.Principal, error) {
+			return oidcauth.Principal{Issuer: "https://auth.integin.local", Subject: "user-1"}, nil
+		},
+	}
+	resolver := &mockResolver{
+		resolveFn: func(ctx context.Context, principal identity.PrincipalKey) (identity.Membership, error) {
+			return identity.Membership{ActorID: "actor-1", TenantID: "tenant-1", OrganizationID: "org-1"}, nil
+		},
+	}
+	driverErr := errors.New(`pq: relation "short_links" does not exist`)
+	svc := shortlinksvc.New(failingRepo{err: driverErr}, 6, "")
+	handler := shortlinkhttp.NewWithAuth(svc, validator, resolver)
+
+	req := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks", strings.NewReader(`{"target_url":"https://example.com"}`))
+	req.Header.Set("Authorization", "Bearer token")
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	for _, leak := range []string{"pq:", "relation", "short_links", "SQL", "driver"} {
+		if strings.Contains(body, leak) {
+			t.Fatalf("internal error detail %q leaked to caller: %s", leak, body)
+		}
+	}
+	if !strings.Contains(body, "internal_error") {
+		t.Fatalf("expected generic internal_error code, got: %s", body)
 	}
 }

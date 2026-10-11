@@ -438,12 +438,22 @@ class FieldAppController extends ChangeNotifier {
       try {
         appSig = await deviceSigner!.signRawBytes(dataBytes);
       } catch (_) {
-        // Fall back gracefully if signing unavailable
+        lastError =
+            'Device signing key unavailable; inspection was not submitted.';
+        notifyListeners();
+        return false;
       }
     }
 
+    final keyId = deviceKeyId;
+    if (keyId == null || keyId.isEmpty) {
+      lastError = 'Device key not provisioned; inspection was not submitted.';
+      notifyListeners();
+      return false;
+    }
+
     final seal = SubmissionSealPayload(
-      deviceKeyDID: deviceKeyId!,
+      deviceKeyDID: keyId,
       tokenID: authority.id,
       leaseEpoch: authority.epoch,
       dataPayload: dataBytes,
@@ -454,7 +464,7 @@ class FieldAppController extends ChangeNotifier {
       final endpoint = (syncClient!.transport as HttpSyncTransport).endpoint;
       final result = await submissionService!.submitInspection(
         payload: seal,
-        deviceKeyDID: deviceKeyId!,
+        deviceKeyDID: keyId,
         endpoint: endpoint,
         tokenID: authority.id,
         leaseEpoch: authority.epoch,
@@ -481,6 +491,30 @@ class FieldAppController extends ChangeNotifier {
       lastError = 'Live submission failed: $e';
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Formats a completed custody handover into inspection notes and submits
+  /// it, falling back to the offline queue when live submission fails or the
+  /// device is offline. Extracted from the handover widget so the
+  /// submit-or-queue policy lives with the controller, not the view.
+  Future<void> completeHandover(Map<String, dynamic> handoverData) async {
+    final notes = [
+      if (handoverData['releasing_party'] != null)
+        'Releasing: ${handoverData['releasing_party']}',
+      if (handoverData['accepting_party'] != null)
+        'Accepting: ${handoverData['accepting_party']}',
+      if (handoverData['site_notes'] != null &&
+          (handoverData['site_notes'] as String).isNotEmpty)
+        handoverData['site_notes'],
+    ].join(' | ');
+    if (connectivity == ConnectivityState.online) {
+      final ok = await submitLive(notes: notes);
+      if (!ok) {
+        await queueForSync(notes: notes);
+      }
+    } else {
+      await queueForSync(notes: notes);
     }
   }
 
