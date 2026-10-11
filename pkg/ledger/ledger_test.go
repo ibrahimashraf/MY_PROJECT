@@ -63,5 +63,3 @@ func BenchmarkAppendRecord(b *testing.B) {
 	b.StopTimer()
 	_ = rec
 }
-
-

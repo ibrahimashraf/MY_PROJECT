@@ -16,7 +16,7 @@
 use std::env;
 use std::fmt::Write as _;
 use std::fs;
-use std::io::Read as _;
+use std::io::{Read as _, Write as _};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -341,9 +341,10 @@ fn load_public_key(arg: &str) -> Result<[u8; 32], Error> {
     let compact: String = cleaned.chars().filter(|c| !c.is_whitespace()).collect();
     let bytes = hex::decode(&compact)
         .map_err(|e| format!("public key {arg} is not valid hex: {e}"))?;
+    let bytes_len = bytes.len();
     let fixed: [u8; 32] = bytes
         .try_into()
-        .map_err(|_| format!("public key length = {}, want 64 hex chars (32 bytes)", bytes.len() * 2))?;
+        .map_err(|_| format!("public key length = {}, want 64 hex chars (32 bytes)", bytes_len * 2))?;
     Ok(fixed)
 }
 

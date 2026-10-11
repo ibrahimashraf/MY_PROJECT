@@ -11,6 +11,7 @@ import (
 	"integin/internal/domain/scheduling"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/internal/shared/httpresponse"
 	"integin/pkg/onboarding"
 )
 
@@ -36,10 +37,7 @@ type checkSkillsResponse struct {
 }
 
 func writeJSONError(w http.ResponseWriter, status int, code string) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": code})
+	httpresponse.SecurityError(w, status, code)
 }
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

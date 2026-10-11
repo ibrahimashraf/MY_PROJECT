@@ -239,6 +239,40 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 	}
 }
 
+// principalAuth is the outcome of authenticating a request's bearer token.
+// tokenValid and membershipResolved are reported separately because the two
+// callers diverge: requireOIDCAuth admits a token-valid request even when
+// membership lookup fails, while requireTUSAuth requires both.
+type principalAuth struct {
+	membership         identity.Membership
+	tokenValid         bool
+	resolverConfigured bool
+	membershipResolved bool
+}
+
+// authenticateBearer validates the Authorization bearer token and, when both a
+// validator and a resolver are configured, resolves the principal's membership.
+func authenticateBearer(request *http.Request, validator TokenValidator, resolver identity.Resolver) principalAuth {
+	var result principalAuth
+	raw, ok := bearerToken(request.Header.Get("Authorization"))
+	if !ok {
+		return result
+	}
+	if validator != nil {
+		if principal, err := validator.Validate(request.Context(), raw); err == nil {
+			result.tokenValid = true
+			if resolver != nil {
+				result.resolverConfigured = true
+				if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
+					result.membership = membership
+					result.membershipResolved = true
+				}
+			}
+		}
+	}
+	return result
+}
+
 func requireOIDCAuth(validator TokenValidator, resolver identity.Resolver, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// Strip untrusted tenant/identity headers to prevent spoofing
@@ -246,23 +280,29 @@ func requireOIDCAuth(validator TokenValidator, resolver identity.Resolver, next 
 		request.Header.Del("X-Organization-ID")
 		request.Header.Del("X-Actor-ID")
 
-		raw, ok := bearerToken(request.Header.Get("Authorization"))
-		if !ok {
-			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+		auth := authenticateBearer(request, validator, resolver)
+		// A valid token is not sufficient: the principal must also resolve to a
+		// tenant membership, otherwise there is no tenant to authorize against.
+		// Admitting the request would push the failure downstream into a 400 for
+		// a missing tenant header.
+		if auth.tokenValid && auth.membershipResolved {
+			request.Header.Set("X-Tenant-ID", auth.membership.TenantID)
+			request.Header.Set("X-Organization-ID", auth.membership.OrganizationID)
+			request.Header.Set("X-Actor-ID", auth.membership.ActorID)
+			next.ServeHTTP(writer, request)
 			return
 		}
-		if validator != nil {
-			if principal, err := validator.Validate(request.Context(), raw); err == nil {
-				if resolver != nil {
-					if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
-						request.Header.Set("X-Tenant-ID", membership.TenantID)
-						request.Header.Set("X-Organization-ID", membership.OrganizationID)
-						request.Header.Set("X-Actor-ID", membership.ActorID)
-					}
-				}
-				next.ServeHTTP(writer, request)
-				return
-			}
+		// A resolver was configured and could not map this principal to a
+		// tenant: there is no tenant to authorize against, so refuse. With no
+		// resolver configured there is no membership to check, and routes that
+		// do not require tenant identity still serve.
+		if auth.tokenValid && auth.resolverConfigured {
+			writeOperationalJSON(writer, http.StatusForbidden, `{"error":"no_tenant_membership"}`)
+			return
+		}
+		if auth.tokenValid {
+			next.ServeHTTP(writer, request)
+			return
 		}
 		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 	})
@@ -279,23 +319,19 @@ func requireTUSAuth(validator TokenValidator, resolver identity.Resolver, upload
 			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
 			return
 		}
-		if validator != nil {
-			if principal, err := validator.Validate(request.Context(), raw); err == nil {
-				if resolver != nil {
-					if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
-						request.Header.Set("X-TUS-Tenant-ID", membership.TenantID)
-						request.Header.Set("X-TUS-Session-ID", membership.ActorID)
-						next.ServeHTTP(writer, request)
-						return
-					}
-				}
-			}
+
+		auth := authenticateBearer(request, validator, resolver)
+		if auth.tokenValid && auth.membershipResolved {
+			request.Header.Set("X-TUS-Tenant-ID", auth.membership.TenantID)
+			request.Header.Set("X-TUS-Session-ID", auth.membership.ActorID)
+			next.ServeHTTP(writer, request)
+			return
 		}
 		if uploadSecret != "" {
 			claims, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC())
 			if err == nil && uploadTokenAuthorityCurrent(claims, authorities, time.Now().UTC()) {
-				auth, _ := authorities.Get(claims.AuthorityID)
-				if auth.TenantID == claims.TenantID {
+				authz, _ := authorities.Get(claims.AuthorityID)
+				if authz.TenantID == claims.TenantID {
 					request.Header.Set("X-TUS-Tenant-ID", claims.TenantID)
 					request.Header.Set("X-TUS-Session-ID", claims.SessionID)
 					next.ServeHTTP(writer, request)

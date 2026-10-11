@@ -52,13 +52,13 @@ func GenerateHybridKeyPair() (*HybridKeyPair, error) {
 
 // HybridSignedReceipt represents an immutable, post-quantum protected audit ledger receipt.
 type HybridSignedReceipt struct {
-	ReceiptDID       string    `json:"receipt_did"` // did:integin:pqreceipt:<uuid>
-	SubjectDID       string    `json:"subject_did"`
-	PayloadDigest    string    `json:"payload_digest"`
-	Ed25519SigHex    string    `json:"ed25519_sig_hex"`
-	LatticeSigHex    string    `json:"lattice_sig_hex"` // Lattice verification token
-	IssuedAt         time.Time `json:"issued_at"`
-	ExpiresAt        time.Time `json:"expires_at"`
+	ReceiptDID    string    `json:"receipt_did"` // did:integin:pqreceipt:<uuid>
+	SubjectDID    string    `json:"subject_did"`
+	PayloadDigest string    `json:"payload_digest"`
+	Ed25519SigHex string    `json:"ed25519_sig_hex"`
+	LatticeSigHex string    `json:"lattice_sig_hex"` // Lattice verification token
+	IssuedAt      time.Time `json:"issued_at"`
+	ExpiresAt     time.Time `json:"expires_at"`
 }
 
 // SignHybridReceipt produces dual classical Ed25519 and lattice post-quantum signatures.

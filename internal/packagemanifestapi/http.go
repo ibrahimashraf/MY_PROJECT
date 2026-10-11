@@ -13,6 +13,7 @@ import (
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/packagemanifest"
+	"integin/internal/shared/httpresponse"
 )
 
 const maxRequestBytes = 16 << 10
@@ -158,7 +159,5 @@ func proofFailureReason(err error) string {
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+	httpresponse.Error(w, status, message)
 }

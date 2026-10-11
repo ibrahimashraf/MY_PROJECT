@@ -17,6 +17,7 @@ import (
 	"integin/internal/domain/authorization"
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/internal/shared/httpresponse"
 	"integin/internal/shared/types"
 )
 
@@ -175,7 +176,5 @@ func bearer(value string) (string, bool) {
 }
 
 func writeJSON(writer http.ResponseWriter, status int, value response) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(status)
-	_ = json.NewEncoder(writer).Encode(value)
+	httpresponse.JSON(writer, status, value)
 }

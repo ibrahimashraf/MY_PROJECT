@@ -21,7 +21,7 @@ const (
 
 var (
 	ErrInvalidHeatNumber      = errors.New("metallurgy: heat number must be non-empty and alphanumeric")
-	ErrInvalidSteelGrade       = errors.New("metallurgy: steel grade specification cannot be empty")
+	ErrInvalidSteelGrade      = errors.New("metallurgy: steel grade specification cannot be empty")
 	ErrEmptyMillName          = errors.New("metallurgy: steel mill name cannot be empty")
 	ErrInvalidCertStandard    = errors.New("metallurgy: invalid EN 10204 certificate standard")
 	ErrInvalidChemicalRange   = errors.New("metallurgy: chemical composition element percentage out of physical range (0-100%)")
@@ -93,18 +93,18 @@ func (m MechanicalProperties) Validate() error {
 // MillHeatCertificate represents the verified EN 10204 3.1 / 3.2 inspection certificate
 // directly linked to the steel melt.
 type MillHeatCertificate struct {
-	HeatDID              string               `json:"heat_did"`               // e.g. "did:integin:heat:AR-2026-X8911"
-	HeatNumber           string               `json:"heat_number"`            // Furnace melt identification
-	SteelMillName        string               `json:"steel_mill_name"`        // e.g. "HADEED / SABIC", "Voestalpine", "SSAB"
-	MillCountryISO2      string               `json:"mill_country_iso2"`      // "SA", "AT", "SE"
-	Standard             CertificateStandard  `json:"standard"`               // EN 10204 3.1 or 3.2
-	SteelGrade           string               `json:"steel_grade"`            // e.g. "S355ML", "S690QL", "ASTM A514"
+	HeatDID              string               `json:"heat_did"`          // e.g. "did:integin:heat:AR-2026-X8911"
+	HeatNumber           string               `json:"heat_number"`       // Furnace melt identification
+	SteelMillName        string               `json:"steel_mill_name"`   // e.g. "HADEED / SABIC", "Voestalpine", "SSAB"
+	MillCountryISO2      string               `json:"mill_country_iso2"` // "SA", "AT", "SE"
+	Standard             CertificateStandard  `json:"standard"`          // EN 10204 3.1 or 3.2
+	SteelGrade           string               `json:"steel_grade"`       // e.g. "S355ML", "S690QL", "ASTM A514"
 	MeltDate             time.Time            `json:"melt_date"`
 	Chemistry            ChemicalComposition  `json:"chemistry"`
 	Mechanicals          MechanicalProperties `json:"mechanicals"`
-	MillInspectorSigner  string               `json:"mill_inspector_signer"`  // Authorized QA agent
+	MillInspectorSigner  string               `json:"mill_inspector_signer"`           // Authorized QA agent
 	ThirdPartyInspector  string               `json:"third_party_inspector,omitempty"` // Required for 3.2 (e.g. DNV, TÜV)
-	CertificateDocSHA256 string               `json:"certificate_doc_sha256"` // Digest of PDF mill cert
+	CertificateDocSHA256 string               `json:"certificate_doc_sha256"`          // Digest of PDF mill cert
 }
 
 func (c MillHeatCertificate) Validate() error {

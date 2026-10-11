@@ -19,17 +19,17 @@ var (
 // InspectorScopeSummary records the individual work and timesheet summary
 // submitted by an inspector upon completing their assigned scope.
 type InspectorScopeSummary struct {
-	SummaryID       string    `json:"summary_id"`
-	AssignmentID    string    `json:"assignment_id"`
-	WorkOrderID     string    `json:"work_order_id"`
-	InspectorID     string    `json:"inspector_id"`
-	ScopeItemIDs    []string  `json:"scope_item_ids"`
-	CompletedCount  int       `json:"completed_count"`
-	BlockedCount    int       `json:"blocked_count"`
-	TimesheetHours  float64   `json:"timesheet_hours"`
-	TravelHours     float64   `json:"travel_hours"`
-	Notes           string    `json:"notes,omitempty"`
-	ClosedAt        time.Time `json:"closed_at"`
+	SummaryID      string    `json:"summary_id"`
+	AssignmentID   string    `json:"assignment_id"`
+	WorkOrderID    string    `json:"work_order_id"`
+	InspectorID    string    `json:"inspector_id"`
+	ScopeItemIDs   []string  `json:"scope_item_ids"`
+	CompletedCount int       `json:"completed_count"`
+	BlockedCount   int       `json:"blocked_count"`
+	TimesheetHours float64   `json:"timesheet_hours"`
+	TravelHours    float64   `json:"travel_hours"`
+	Notes          string    `json:"notes,omitempty"`
+	ClosedAt       time.Time `json:"closed_at"`
 }
 
 // CombinedCompletionReport aggregates all individual inspector scope summaries

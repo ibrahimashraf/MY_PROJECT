@@ -13,6 +13,7 @@ import (
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/oidchttp"
+	"integin/internal/shared/httpresponse"
 	"integin/internal/workpackageenforcement"
 )
 
@@ -246,7 +247,9 @@ func canonicalPayload(raw json.RawMessage) ([]byte, error) {
 }
 
 func writeError(w http.ResponseWriter, status int, reason string) {
-	writeJSON(w, status, response{Outcome: domainsync.Rejected, Reason: reason})
+	// The sync contract wraps the reason in the outcome envelope; this is a
+	// public wire format, not the bare {"reason":...} used by provisioning.
+	httpresponse.JSON(w, status, response{Outcome: domainsync.Rejected, Reason: reason})
 }
 
 // writeServerError logs the cause server-side and returns a caller-safe reason.
@@ -256,7 +259,5 @@ func writeServerError(w http.ResponseWriter, status int, reason string, err erro
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(value)
+	httpresponse.JSON(w, status, value)
 }

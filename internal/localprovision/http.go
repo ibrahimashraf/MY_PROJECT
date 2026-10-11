@@ -21,6 +21,7 @@ import (
 	"integin/internal/domain/device_trust"
 	domainsync "integin/internal/domain/sync"
 	"integin/internal/security"
+	"integin/internal/shared/httpresponse"
 	"integin/internal/shared/types"
 	"integin/internal/syncstate"
 )
@@ -211,11 +212,9 @@ func newAuthorityID() string {
 }
 
 func writeError(writer http.ResponseWriter, status int, reason string) {
-	writeJSON(writer, status, map[string]string{"reason": reason})
+	httpresponse.Reason(writer, status, reason)
 }
 
 func writeJSON(writer http.ResponseWriter, status int, value any) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(status)
-	_ = json.NewEncoder(writer).Encode(value)
+	httpresponse.JSON(writer, status, value)
 }

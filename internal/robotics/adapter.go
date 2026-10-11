@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrNilReceipt           = errors.New("robotics: robotic inspection receipt cannot be nil")
+	ErrNilReceipt            = errors.New("robotics: robotic inspection receipt cannot be nil")
 	ErrReceiptTenantMismatch = errors.New("robotics: receipt tenant mismatch with execution context")
 )
 

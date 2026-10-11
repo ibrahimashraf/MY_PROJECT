@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	ErrZeroPoints             = errors.New("photogrammetry: point cloud requires at least 4 non-coplanar points")
-	ErrDeflectionThreshold    = errors.New("photogrammetry: critical structural deflection threshold breached")
-	ErrNegativeVolume         = errors.New("photogrammetry: computed volumetric reconciliation is non-positive")
-	ErrFlightEnvelopeBreach   = errors.New("photogrammetry: telemetry points violate permitted aerial flight envelope")
-	ErrZeroAssetDID           = errors.New("photogrammetry: target asset DID cannot be empty")
+	ErrZeroPoints           = errors.New("photogrammetry: point cloud requires at least 4 non-coplanar points")
+	ErrDeflectionThreshold  = errors.New("photogrammetry: critical structural deflection threshold breached")
+	ErrNegativeVolume       = errors.New("photogrammetry: computed volumetric reconciliation is non-positive")
+	ErrFlightEnvelopeBreach = errors.New("photogrammetry: telemetry points violate permitted aerial flight envelope")
+	ErrZeroAssetDID         = errors.New("photogrammetry: target asset DID cannot be empty")
 )
 
 // Point3D represents a georeferenced spatial coordinate (X, Y, Z in meters or UTM).
@@ -33,13 +33,13 @@ type BoundingBox3D struct {
 
 // VolumetricAnalysisResult encapsulates computed geometric survey metrics.
 type VolumetricAnalysisResult struct {
-	AssetDID             string        `json:"asset_did"`
-	PointCount           int           `json:"point_count"`
-	BoundingBox          BoundingBox3D `json:"bounding_box"`
-	ApproximateVolumeM3  float64       `json:"approximate_volume_m3"` // Volume in cubic meters
-	MaxDeflectionMeters  float64       `json:"max_deflection_meters"` // Max deviation from baseline plane/mesh
-	DeflectionBreached   bool          `json:"deflection_breached"`
-	EvaluatedAt          time.Time     `json:"evaluated_at"`
+	AssetDID            string        `json:"asset_did"`
+	PointCount          int           `json:"point_count"`
+	BoundingBox         BoundingBox3D `json:"bounding_box"`
+	ApproximateVolumeM3 float64       `json:"approximate_volume_m3"` // Volume in cubic meters
+	MaxDeflectionMeters float64       `json:"max_deflection_meters"` // Max deviation from baseline plane/mesh
+	DeflectionBreached  bool          `json:"deflection_breached"`
+	EvaluatedAt         time.Time     `json:"evaluated_at"`
 }
 
 // ComputeVolumetricSurvey calculates convex bounding metrics and structural deflection.
@@ -131,14 +131,14 @@ func ComputeVolumetricSurvey(
 
 // CertifiedPhotogrammetryReport represents an Ed25519-signed survey certificate.
 type CertifiedPhotogrammetryReport struct {
-	ReportDID       string    `json:"report_did"` // did:integin:survey:<uuid>
-	AssetDID        string    `json:"asset_did"`
-	PointCount      int       `json:"point_count"`
-	VolumeM3        float64   `json:"volume_m3"`
-	MaxDeflectionM  float64   `json:"max_deflection_m"`
-	IssuedAt        time.Time `json:"issued_at"`
-	Digest          string    `json:"digest"`
-	SignatureHex    string    `json:"signature_hex"`
+	ReportDID      string    `json:"report_did"` // did:integin:survey:<uuid>
+	AssetDID       string    `json:"asset_did"`
+	PointCount     int       `json:"point_count"`
+	VolumeM3       float64   `json:"volume_m3"`
+	MaxDeflectionM float64   `json:"max_deflection_m"`
+	IssuedAt       time.Time `json:"issued_at"`
+	Digest         string    `json:"digest"`
+	SignatureHex   string    `json:"signature_hex"`
 }
 
 // IssueSurveyReport signs an authoritative photogrammetric inspection record.

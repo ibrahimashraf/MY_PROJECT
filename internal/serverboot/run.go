@@ -3,6 +3,7 @@ package serverboot
 import (
 	"context"
 	"crypto/ed25519"
+	"crypto/x509"
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
@@ -96,7 +97,23 @@ func durEnvSeconds(key string, fallback time.Duration) time.Duration {
 // Run boots the universal server and blocks serving until shutdown.
 // Entry point for cmd/integin-server (which presets
 // INTEGIN_DEPLOY_MODE from --mode before calling Run).
-func Run() {
+// bootConfig is the validated, environment-sourced configuration Run needs
+// before it touches any infrastructure.
+type bootConfig struct {
+	secrets          map[string]string
+	deployMode       DeployMode
+	bindAddr         string
+	allowLANBind     bool
+	attestRoots      *x509.CertPool
+	appleAttestRoots *x509.CertPool
+	appleAppID       string
+	tsa              *timestamp.TSA
+}
+
+// loadBootConfig reads and validates every boot-time configuration source.
+// Any missing or malformed input is fatal: a half-configured rig must not
+// reach the point of serving traffic.
+func loadBootConfig() bootConfig {
 	secretStr := strings.TrimSpace(os.Getenv("INTEGIN_SYNC_SECRET"))
 	if secretStr == "" {
 		log.Fatal("INTEGIN_SYNC_SECRET is required")
@@ -140,7 +157,23 @@ func Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return bootConfig{
+		secrets:          secrets,
+		deployMode:       deployMode,
+		bindAddr:         bindAddr,
+		allowLANBind:     allowLANBind,
+		attestRoots:      attestRoots,
+		appleAttestRoots: appleAttestRoots,
+		appleAppID:       appleAppID,
+		tsa:              tsaClient,
+	}
+}
+
+func Run() {
+	cfg := loadBootConfig()
+	secrets := cfg.secrets
 	var database *sql.DB
+	var deps server.Dependencies
 	var stateRepo syncstate.SyncStateRepository
 	var syncRepo syncstate.Repository
 	var devices []device_trust.Device
@@ -227,7 +260,6 @@ func Run() {
 	if address == "" {
 		address = ":8080"
 	}
-	var localProvisioning http.Handler
 	if envBool("INTEGIN_LOCAL_PROVISIONING_ENABLED") {
 		if database == nil || stateRepo == nil {
 			log.Fatal("local provisioning requires INTEGIN_DB_URL")
@@ -239,17 +271,14 @@ func Run() {
 		if !ok {
 			log.Fatal("local provisioning requires the PostgreSQL sync-state repository")
 		}
-		handler, handlerErr := localprovision.NewHandler(localprovision.Config{
-			Repository: repository, Processor: processor, SigningSecret: secretStr,
+		handler := mustHandler(localprovision.NewHandler(localprovision.Config{
+			Repository: repository, Processor: processor, SigningSecret: cfg.secrets["default"],
 			TenantID:          firstEnv("INTEGIN_LOCAL_PROVISIONING_TENANT_ID", "INTEGIN_TENANT_ID"),
 			OrganizationID:    strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_ORGANIZATION_ID")),
 			UserID:            strings.TrimSpace(os.Getenv("INTEGIN_LOCAL_PROVISIONING_USER_ID")),
 			AuthorityLifetime: time.Duration(envInt("INTEGIN_LOCAL_PROVISIONING_AUTHORITY_MINUTES", 30)) * time.Minute,
-		})
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		localProvisioning = handler
+		}))
+		deps.LocalProvisioning = handler
 	}
 	// Pilot-only in-memory device enrollment (pkg/onboarding EnrollServer): lets
 	// the field_app simulator submission reach ProcessDeviceEnrollment over
@@ -263,9 +292,9 @@ func Run() {
 			log.Fatal("pilot device enrollment requires INTEGIN_HTTP_ADDR to bind to localhost only")
 		}
 		sim, simErr := onboarding.NewEnrollmentSimulator(
-			onboarding.WithAttestationRoots(attestRoots),
-			onboarding.WithAppleAttestRoots(appleAttestRoots),
-			onboarding.WithExpectedAppID(appleAppID),
+			onboarding.WithAttestationRoots(cfg.attestRoots),
+			onboarding.WithAppleAttestRoots(cfg.appleAttestRoots),
+			onboarding.WithExpectedAppID(cfg.appleAppID),
 		)
 		if simErr != nil {
 			log.Fatal(simErr)
@@ -293,7 +322,7 @@ func Run() {
 			now := time.Now().UTC()
 			authorityID := "pilot-auth-" + record.DeviceID
 			scopes := []string{"inspection.perform", "inspection.submit"}
-			authority, err := device_trust.IssueAuthorityPackage(device, authorityID, secretStr, scopes, now, 24*time.Hour)
+			authority, err := device_trust.IssueAuthorityPackage(device, authorityID, cfg.secrets["default"], scopes, now, 24*time.Hour)
 			if err != nil {
 				log.Printf("pilot enrollment: cannot issue authority: %v", err)
 				return
@@ -303,21 +332,7 @@ func Run() {
 		}
 		enrollHandler = enrollSrv.Handler()
 	}
-	var oidcSessionHandler http.Handler
-	var sessionRevocationHandler http.Handler
-	var sessionRevokeAllHandler http.Handler
-	var workOrderHandler http.Handler
-	var workOrderEvidenceHandler http.Handler
-	var workOrderAssignmentHandler http.Handler
-	var workOrderHandoverHandler http.Handler
-	var evidenceRegistrationHandler http.Handler
-	var certificateHandler http.Handler
-	var certificatePublicHandler http.Handler
 	var tusHandler http.Handler
-	var schedulingHandler http.Handler
-	var deviceEnrollmentHandler http.Handler
-	var workbenchHandler http.Handler
-	var advisoryHandler http.Handler
 	var certificateRepository *certificatepg.Repository
 	if database != nil {
 		repository, certificateErr := certificatepg.NewRepository(database)
@@ -325,9 +340,9 @@ func Run() {
 			log.Fatal(certificateErr)
 		}
 		certificateRepository = repository
-		certificateRepository.SetTSAClient(tsaClient)
+		certificateRepository.SetTSAClient(cfg.tsa)
 		trustedProxies := envList("INTEGIN_TRUSTED_PROXIES", "INTEGIN_TRUSTED_PROXY")
-		certificatePublicHandler = &certificatepublichttp.Handler{
+		deps.CertificatePublicHandler = &certificatepublichttp.Handler{
 			Verifier:       certificateRepository,
 			TrustedProxies: trustedProxies,
 		}
@@ -336,7 +351,6 @@ func Run() {
 	if oidcConfigErr != nil {
 		log.Fatal(oidcConfigErr)
 	}
-	var licenseHandler http.Handler
 	var activeValidator *oidcauth.Validator
 	var activeResolver identity.Resolver
 	if oidcConfig.Enabled {
@@ -364,16 +378,9 @@ func Run() {
 		if certificateRepository == nil {
 			log.Fatal("certificate repository requires INTEGIN_DB_URL")
 		}
-		var handlerErr error
-		certificateHandler, handlerErr = server.NewCertificateHandlerWithStore(database, validator, activeResolver, evidenceStore)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		sessionHandler, sessionHandlerErr := oidchttp.NewSessionHandler(validator, activeResolver, oidchttp.SessionCapability)
-		if sessionHandlerErr != nil {
-			log.Fatal(sessionHandlerErr)
-		}
-		oidcSessionHandler = sessionHandler
+		deps.CertificateHandler = mustHandler(server.NewCertificateHandlerWithStore(database, validator, activeResolver, evidenceStore))
+		sessionHandler := mustHandler(oidchttp.NewSessionHandler(validator, activeResolver, oidchttp.SessionCapability))
+		deps.OIDCSessionHandler = sessionHandler
 
 		sessionStore, storeErr := oidchttp.NewPostgresSessionStore(database)
 		if storeErr != nil {
@@ -386,50 +393,23 @@ func Run() {
 		if cachedResolver, ok := activeResolver.(*identity.CachedResolver); ok {
 			sessionManager.SetInvalidator(cachedResolver)
 		}
-		sessionRevocationHandler, handlerErr = oidchttp.NewSessionRevocationHandler(validator, sessionManager, false)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		sessionRevokeAllHandler, handlerErr = oidchttp.NewSessionRevocationHandler(validator, sessionManager, true)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
+		deps.SessionRevocationHandler = mustHandler(oidchttp.NewSessionRevocationHandler(validator, sessionManager, false))
+		deps.SessionRevokeAllHandler = mustHandler(oidchttp.NewSessionRevocationHandler(validator, sessionManager, true))
 
 		sessionAwareValidator, sessionAwareErr := oidchttp.NewSessionAwareValidator(validator, sessionManager)
 		if sessionAwareErr != nil {
 			log.Fatal(sessionAwareErr)
 		}
 
-		workOrderHandler, handlerErr = server.NewWorkOrderPartialSubmissionHandler(database, sessionAwareValidator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		workOrderEvidenceHandler, handlerErr = server.NewWorkOrderEvidenceHandler(database, sessionAwareValidator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		workOrderAssignmentHandler, handlerErr = server.NewWorkOrderAssignmentHandler(database, sessionAwareValidator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		workOrderHandoverHandler, handlerErr = server.NewWorkOrderHandoverHandler(database, sessionAwareValidator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
+		deps.WorkOrderHandler = mustHandler(server.NewWorkOrderPartialSubmissionHandler(database, sessionAwareValidator, activeResolver))
+		deps.WorkOrderEvidenceHandler = mustHandler(server.NewWorkOrderEvidenceHandler(database, sessionAwareValidator, activeResolver))
+		deps.WorkOrderAssignmentHandler = mustHandler(server.NewWorkOrderAssignmentHandler(database, sessionAwareValidator, activeResolver))
+		deps.WorkOrderHandoverHandler = mustHandler(server.NewWorkOrderHandoverHandler(database, sessionAwareValidator, activeResolver))
 		if evidenceStore != nil {
-			evidenceRegistrationHandler, handlerErr = server.NewEvidenceMetadataRegistrationHandler(database, validator, activeResolver, evidenceStore)
-			if handlerErr != nil {
-				log.Fatal(handlerErr)
-			}
+			deps.EvidenceRegistrationHandler = mustHandler(server.NewEvidenceMetadataRegistrationHandler(database, validator, activeResolver, evidenceStore))
 		}
-		licenseHandler, handlerErr = server.NewLicenseHandler(database, validator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
-		schedulingHandler, handlerErr = server.NewSchedulingHandler(database, validator, activeResolver)
-		if handlerErr != nil {
-			log.Fatal(handlerErr)
-		}
+		deps.LicenseHandler = mustHandler(server.NewLicenseHandler(database, validator, activeResolver))
+		deps.SchedulingHandler = mustHandler(server.NewSchedulingHandler(database, validator, activeResolver))
 
 		enrollCfg := deviceenrollhttp.Config{
 			SigningSecret: secrets["default"],
@@ -455,36 +435,34 @@ func Run() {
 		if authErr != nil {
 			log.Fatal(authErr)
 		}
-		deviceEnrollmentHandler = sessionAuth.Middleware(oidchttp.RejectTenantScopeConflict(rawEnrollHandler.Routes()))
+		deps.DeviceEnrollmentHandler = sessionAuth.Middleware(oidchttp.RejectTenantScopeConflict(rawEnrollHandler.Routes()))
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
-	flagAdminHandler, _ := server.NewFeatureFlagAdminHandler(database)
-	identityGrantHandler, _ := server.NewIdentityGrantHandler(database, activeValidator, activeResolver)
-	trainingHandler, _ := server.NewTrainingHandler(database)
-	settingsHandler, _ := server.NewSettingsHandler(database)
-	inspectionHandler, _ := server.NewInspectionHandler(database)
-	searchHandler, _ := server.NewSearchHandler(database)
-	auditLogHandler, _ := server.NewAuditLogHandler(database)
-	analyticsHandler, _ := server.NewAnalyticsHandler(database)
-	reportsHandler, _ := server.NewReportsHandler(database)
-	liftViewExportHandler, _ := server.NewLiftViewExportHandler()
-	workbenchHandler = workbenchhttp.NewHandler(database, devices)
-	advisoryHandler = advisoryhttp.NewHandler(advisory.NewRegistry())
+	deps.FlagAdminHandler = mustHandler(server.NewFeatureFlagAdminHandler(database))
+	deps.IdentityGrantHandler = mustHandler(server.NewIdentityGrantHandler(database, activeValidator, activeResolver))
+	deps.TrainingHandler = mustHandler(server.NewTrainingHandler(database))
+	deps.SettingsHandler = mustHandler(server.NewSettingsHandler(database))
+	deps.InspectionHandler = mustHandler(server.NewInspectionHandler(database))
+	deps.SearchHandler = mustHandler(server.NewSearchHandler(database))
+	deps.AuditLogHandler = mustHandler(server.NewAuditLogHandler(database))
+	deps.AnalyticsHandler = mustHandler(server.NewAnalyticsHandler(database))
+	deps.ReportsHandler = mustHandler(server.NewReportsHandler(database))
+	deps.LiftViewExportHandler = mustHandler(server.NewLiftViewExportHandler())
+	deps.WorkbenchHandler = workbenchhttp.NewHandler(database, devices)
+	deps.AdvisoryHandler = advisoryhttp.NewHandler(advisory.NewRegistry())
 
-	var jurisdictionHandler http.Handler
 	jurisdictionsRegistry, jErr := jurisdictions.NewRegistry(jurisdictions.TopJurisdictions())
 	if jErr != nil {
 		log.Fatalf("failed to initialize jurisdictions registry: %v", jErr)
 	}
-	jurisdictionHandler = jurisdictionhttp.NewHandler(jurisdictionsRegistry)
+	deps.JurisdictionHandler = jurisdictionhttp.NewHandler(jurisdictionsRegistry)
 
-	var queryHandler http.Handler
 	queryRegistry, qErr := queryengine.NewSchemaRegistry(queryenginehttp.CanonicalSchema())
 	if qErr != nil {
 		log.Fatalf("failed to initialize query engine schema registry: %v", qErr)
 	}
-	queryHandler = queryenginehttp.NewHandler(queryRegistry, database)
+	deps.QueryHandler = queryenginehttp.NewHandler(queryRegistry, database)
 
 	if database != nil {
 		if _, ctErr := certtemplatepg.NewRepository(database, certificatetemplate.DefaultCatalog()); ctErr != nil {
@@ -492,14 +470,7 @@ func Run() {
 		}
 	}
 
-	var shortLinkHandler http.Handler
 	var riverQueue *queue.Queue
-	var qrnfcHandler http.Handler
-	var assuranceHandler http.Handler
-	var formDefHandler http.Handler
-	var evidencePackHandler http.Handler
-	var assetEntitlementHandler http.Handler
-	var dppHandler http.Handler
 
 	if database != nil {
 		codeLen := envInt("SHORT_LINK_CODE_LENGTH", 6)
@@ -509,7 +480,7 @@ func Run() {
 			}
 		}
 		shortLinkSvc := shortlinksvc.New(shortlinkpg.New(database), codeLen, "")
-		shortLinkHandler = shortlinkhttp.NewWithAuth(shortLinkSvc, activeValidator, activeResolver)
+		deps.ShortLinkHandler = shortlinkhttp.NewWithAuth(shortLinkSvc, activeValidator, activeResolver)
 
 		// QR/NFC authenticated entry requires OIDC auth and the shared identity resolver.
 		if activeValidator != nil && activeResolver != nil {
@@ -517,7 +488,7 @@ func Run() {
 			if qrnfcErr != nil {
 				log.Fatal(qrnfcErr)
 			}
-			qrnfcHandler = qrnfchttp.NewHandler(activeValidator, activeResolver, qrnfcRepo, qrnfcRepo, nil)
+			deps.QRNFCHandler = qrnfchttp.NewHandler(activeValidator, activeResolver, qrnfcRepo, qrnfcRepo, nil)
 		}
 		projRepo, projErr := assurancepg.NewProjectionRepository(database)
 		if projErr != nil {
@@ -527,13 +498,13 @@ func Run() {
 		if workErr != nil {
 			log.Fatal(workErr)
 		}
-		assuranceHandler = assurancehttp.NewHandler(activeValidator, activeResolver, projRepo, workRepo, nil)
+		deps.AssuranceHandler = assurancehttp.NewHandler(activeValidator, activeResolver, projRepo, workRepo, nil)
 
 		formDefRepo, formDefErr := formdefinitionpg.NewRepository(database)
 		if formDefErr != nil {
 			log.Fatal(formDefErr)
 		}
-		formDefHandler = formdefinitionhttp.NewHandler(activeValidator, activeResolver, formDefRepo, nil)
+		deps.FormDefinitionHandler = formdefinitionhttp.NewHandler(activeValidator, activeResolver, formDefRepo, nil)
 
 		packRepo, packErr := evidencepackpg.NewPackRepository(database)
 		if packErr != nil {
@@ -543,7 +514,7 @@ func Run() {
 		if releaseErr != nil {
 			log.Fatal(releaseErr)
 		}
-		evidencePackHandler = evidencepackhttp.NewHandler(activeValidator, activeResolver, packRepo, releaseRepo, nil)
+		deps.EvidencePackHandler = evidencepackhttp.NewHandler(activeValidator, activeResolver, packRepo, releaseRepo, nil)
 
 		entRepo, entErr := assetentitlementpg.NewRepository(database)
 		if entErr != nil {
@@ -553,7 +524,7 @@ func Run() {
 		if entPkgErr != nil {
 			log.Fatal(entPkgErr)
 		}
-		assetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
+		deps.AssetEntitlementHandler = assetentitlementhttp.NewHandler(activeValidator, activeResolver, entRepo, entPkgRepo, nil)
 
 		dppRepo, dppErr := dpppg.NewRepository(database)
 		if dppErr != nil {
@@ -578,77 +549,11 @@ func Run() {
 			}
 			return dpp.ActorContext{TenantID: mem.TenantID, OrganizationID: mem.OrganizationID, ActorID: mem.ActorID}, nil
 		}
-		dppHandler = dpphttp.NewHandler(dppRepo, activeValidator, dppResolver)
+		deps.DPPHandler = dpphttp.NewHandler(dppRepo, activeValidator, dppResolver)
 
-		// Initialize and start River queue with WebhookDeliveryWorker and CertificateRenderWorker
-		workers := river.NewWorkers()
-		poisonRecorder, poisonErr := queue.NewPostgresQuarantineRecorder(database)
-		if poisonErr != nil {
-			log.Fatalf("failed to initialize poison-pill quarantine recorder: %v", poisonErr)
-		}
-		river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
-
-		// Mount Phase 6: Cognitive Dispatcher and Corrective Work Order Worker
-		sysEventBus := eventbus.NewBus()
-		defer sysEventBus.Close()
-		agentRegistry := &scheduling.InMemoryAgentRegistry{
-			Competencies: map[string][]scheduling.TechnicianCompetency{},
-		}
-		if envJSON := strings.TrimSpace(os.Getenv("INTEGIN_BDI_AGENTS_JSON")); envJSON != "" {
-			var agents []*cognitive.BDIAgent
-			if err := json.Unmarshal([]byte(envJSON), &agents); err != nil {
-				log.Fatalf("failed to unmarshal INTEGIN_BDI_AGENTS_JSON: %v", err)
-			}
-			agentRegistry.Agents = agents
-			// Note: Competencies should similarly be loaded via config if needed.
-		}
-		river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{
-			Registry: agentRegistry,
-		})
-		if evidenceStore != nil && certificateRepository != nil {
-			renderer := domainrender.NewDeterministicPDFRenderer()
-			renderSvc, renderErr := certificaterender.NewRenderService(renderer, evidenceStore, certificateRepository)
-			if renderErr != nil {
-				log.Fatalf("failed to initialize certificate render service: %v", renderErr)
-			}
-			river.AddWorker(workers, certificaterender.NewCertificateRenderWorker(renderSvc, certificateRepository))
-
-			// Phase 7: Regulatory & CFIHOS workers
-			// (Assuming equipmentRepo and evidenceStore wrappers exist in a real deployment)
-			// river.AddWorker(workers, &integration.CFIHOSExportWorker{
-			// 	EquipmentRepo: equipmentRepo,
-			// 	Storage:       storageWrapper,
-			// })
-			// river.AddWorker(workers, &compliance.DossierExportWorker{
-			// 	Renderer: &certificaterender.DossierRenderer{
-			// 		PDFRenderer: renderer,
-			// 		Data:        assetDataSource,
-			// 	},
-			// 	Storage: storageWrapper,
-			// })
-		}
-
-		var riverErr error
-		riverQueue, riverErr = queue.NewQueue(context.Background(), database, workers, queue.WithMiddleware(queue.NewPoisonQuarantineMiddleware(poisonRecorder)))
-		if riverErr != nil {
-			log.Fatalf("failed to initialize river queue: %v", riverErr)
-		}
-		if err := riverQueue.Start(context.Background()); err != nil {
-			log.Fatalf("failed to start river queue workers: %v", err)
-		}
-		// Start automated retention pruner (sweeps every 10m, retain for 1h) to prevent XID wraparound table bloat
-		riverQueue.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
-
-		// Wire up the Cognitive Dispatcher (Phase 6)
-		if len(agentRegistry.Agents) > 0 {
-			scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, agentRegistry.Agents[0], func(ctx context.Context, args river.JobArgs) error {
-				if riverQueue != nil {
-					_, err := riverQueue.Client().Insert(ctx, args, nil)
-					return err
-				}
-				return nil
-			})
-		}
+		// Background worker queue: webhook delivery, certificate rendering and
+		// corrective work orders.
+		riverQueue = startWorkers(database, shortLinkSvc, evidenceStore, certificateRepository)
 	}
 	if tusDir := strings.TrimSpace(os.Getenv("INTEGIN_TUS_SCRATCH_DIR")); tusDir != "" {
 		tusManager, tusErr := storage.NewTUSManager(tusDir, 0, 0)
@@ -660,46 +565,41 @@ func Run() {
 		// logging sweep metrics (resumed/orphaned/purged/active).
 		go tusManager.RunJanitor(context.Background(), 0, nil)
 	}
-	warnIfUnconfigured(tsaClient != nil, tusHandler != nil, activeValidator != nil, evidenceStore != nil)
+	warnIfUnconfigured(cfg.tsa != nil, tusHandler != nil, activeValidator != nil, evidenceStore != nil)
 
-	roboticsHandler := robotichttp.NewHandler(nil)
+	deps.RoboticsHandler = robotichttp.NewHandler(nil)
 	telemetryBuffer := telemetrystream.NewStreamBuffer(database, telemetrystream.DefaultIngestConfig())
-	telemetryHandler := telemetrystreamhttp.NewHandler(telemetryBuffer)
-	carHandler := reinspectionhttp.NewHandler(nil)
+	deps.TelemetryStreamHandler = telemetrystreamhttp.NewHandler(telemetryBuffer)
+	deps.CARHandler = reinspectionhttp.NewHandler(nil)
 	localCell := federation.CellSaudiCentral01
 	if cell := os.Getenv("INTEGIN_SOVEREIGN_CELL_ID"); cell != "" {
 		localCell = federation.SovereignCellID(cell)
 	}
 	fedGate := federation.NewFederationGatekeeper(localCell)
-	federationHandler := federationhttp.NewHandler(fedGate)
-	riskHandler := riskhttp.NewHandler()
-	atexHandler := atexhttp.NewHandler()
-	photogrammetryHandler := photogrammetryhttp.NewHandler()
-	pipingHandler := pipinghttp.NewHandler()
+	deps.FederationHandler = federationhttp.NewHandler(fedGate)
+	deps.RiskHandler = riskhttp.NewHandler()
+	deps.ATEXHandler = atexhttp.NewHandler()
+	deps.PhotogrammetryHandler = photogrammetryhttp.NewHandler()
+	deps.PipingHandler = pipinghttp.NewHandler()
 
-	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, LocalProvisioning: localProvisioning, OIDCSessionHandler: oidcSessionHandler, SessionRevocationHandler: sessionRevocationHandler, SessionRevokeAllHandler: sessionRevokeAllHandler, WorkOrderHandler: workOrderHandler, WorkOrderEvidenceHandler: workOrderEvidenceHandler, WorkOrderAssignmentHandler: workOrderAssignmentHandler, WorkOrderReconciliationHandler: server.NewWorkOrderReconciliationHandler(),
+	handler := server.NewMux(server.Dependencies{DB: database, SyncProcessor: processor, Devices: devices, Authorities: authorities, EvidenceStore: evidenceStore, Validator: activeValidator, Resolver: activeResolver, WorkOrderReconciliationHandler: server.NewWorkOrderReconciliationHandler(),
 		PilotManifestHandler: pilotManifestHandler,
-		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, EvidenceRegistrationHandler: evidenceRegistrationHandler, CertificateHandler: certificateHandler, CertificatePublicHandler: certificatePublicHandler,
-		LicenseHandler: licenseHandler, FlagAdminHandler: flagAdminHandler, IdentityGrantHandler: identityGrantHandler, TrainingHandler: trainingHandler,
-		SettingsHandler: settingsHandler, InspectionHandler: inspectionHandler, SearchHandler: searchHandler,
-		AuditLogHandler: auditLogHandler, AnalyticsHandler: analyticsHandler, ReportsHandler: reportsHandler, LiftViewExportHandler: liftViewExportHandler, ShortLinkHandler: shortLinkHandler, QRNFCHandler: qrnfcHandler, AssuranceHandler: assuranceHandler, FormDefinitionHandler: formDefHandler,
-		EvidencePackHandler: evidencePackHandler, AssetEntitlementHandler: assetEntitlementHandler, DPPHandler: dppHandler, TUSHandler: tusHandler, SchedulingHandler: schedulingHandler, UploadTokenSecret: secretStr, UploadAuthorityRegistry: pilotAuthorityRegistry,
-		DeviceEnrollmentHandler:  deviceEnrollmentHandler,
-		WorkOrderHandoverHandler: workOrderHandoverHandler,
-		WorkbenchHandler:         workbenchHandler,
-		AdvisoryHandler:          advisoryHandler,
-		JurisdictionHandler:      jurisdictionHandler,
-		QueryHandler:             queryHandler,
-		RoboticsHandler:          roboticsHandler,
-		TelemetryStreamHandler:   telemetryHandler,
-		CARHandler:               carHandler,
-		FederationHandler:        federationHandler,
-		RiskHandler:              riskHandler,
-		ATEXHandler:              atexHandler,
-		PhotogrammetryHandler:    photogrammetryHandler,
-		PipingHandler:            pipingHandler,
-		PilotEnrollHandler:       enrollHandler,
-		ContextGroundHandler:     contextground.HTTPHandler(contextground.New())})
+		AuthorityRegistry:    pilotAuthorityRegistry, Readiness: readiness, TUSHandler: tusHandler, UploadTokenSecret: cfg.secrets["default"], UploadAuthorityRegistry: pilotAuthorityRegistry,
+		DeviceEnrollmentHandler: deps.DeviceEnrollmentHandler,
+		WorkbenchHandler:        deps.WorkbenchHandler,
+		AdvisoryHandler:         deps.AdvisoryHandler,
+		JurisdictionHandler:     deps.JurisdictionHandler,
+		QueryHandler:            deps.QueryHandler,
+		RoboticsHandler:         deps.RoboticsHandler,
+		TelemetryStreamHandler:  deps.TelemetryStreamHandler,
+		CARHandler:              deps.CARHandler,
+		FederationHandler:       deps.FederationHandler,
+		RiskHandler:             deps.RiskHandler,
+		ATEXHandler:             deps.ATEXHandler,
+		PhotogrammetryHandler:   deps.PhotogrammetryHandler,
+		PipingHandler:           deps.PipingHandler,
+		PilotEnrollHandler:      enrollHandler,
+		ContextGroundHandler:    contextground.HTTPHandler(contextground.New())})
 	if enrollHandler != nil {
 		log.Printf("pilot enrollment server mounted at /enroll/")
 	}
@@ -712,6 +612,90 @@ func Run() {
 		IdleTimeout:       durEnvSeconds("INTEGIN_HTTP_IDLE_TIMEOUT_S", 60*time.Second),
 		MaxHeaderBytes:    1 << 20,
 	}
+	serveHTTP(httpServer, riverQueue, database)
+}
+
+// mustHandler collapses the "construct a handler, abort if it failed" pattern
+// that repeats for every route. A handler that cannot be wired must stop the
+// process rather than silently leave a route unmounted and unprotected.
+func mustHandler[T any](h T, err error) T {
+	if err != nil {
+		log.Fatal(err)
+	}
+	return h
+}
+
+// startWorkers builds and starts the background River queue: webhook delivery,
+// certificate rendering, and corrective work orders, plus the cognitive
+// dispatcher subscription. Extracted from Run so the background subsystem is
+// wired in one place instead of inline in the boot sequence.
+//
+// Returns the agent registry (nil when there is no database) and the started
+// queue, so Run can later drain the queue on shutdown.
+func startWorkers(
+	database *sql.DB,
+	shortLinkSvc *shortlinksvc.Service,
+	evidenceStore storage.Store,
+	certificateRepository *certificatepg.Repository,
+) *queue.Queue {
+	if database == nil {
+		return nil
+	}
+
+	workers := river.NewWorkers()
+	poisonRecorder, err := queue.NewPostgresQuarantineRecorder(database)
+	if err != nil {
+		log.Fatalf("failed to initialize poison-pill quarantine recorder: %v", err)
+	}
+	river.AddWorker(workers, shortlinksvc.NewWebhookDeliveryWorker(shortLinkSvc))
+
+	agentRegistry := &scheduling.InMemoryAgentRegistry{
+		Competencies: map[string][]scheduling.TechnicianCompetency{},
+	}
+	if envJSON := strings.TrimSpace(os.Getenv("INTEGIN_BDI_AGENTS_JSON")); envJSON != "" {
+		var agents []*cognitive.BDIAgent
+		if err := json.Unmarshal([]byte(envJSON), &agents); err != nil {
+			log.Fatalf("failed to unmarshal INTEGIN_BDI_AGENTS_JSON: %v", err)
+		}
+		agentRegistry.Agents = agents
+	}
+	river.AddWorker(workers, &scheduling.CorrectiveWorkOrderWorker{Registry: agentRegistry})
+
+	if evidenceStore != nil && certificateRepository != nil {
+		renderer := domainrender.NewDeterministicPDFRenderer()
+		renderSvc, err := certificaterender.NewRenderService(renderer, evidenceStore, certificateRepository)
+		if err != nil {
+			log.Fatalf("failed to initialize certificate render service: %v", err)
+		}
+		river.AddWorker(workers, certificaterender.NewCertificateRenderWorker(renderSvc, certificateRepository))
+	}
+
+	q, err := queue.NewQueue(context.Background(), database, workers,
+		queue.WithMiddleware(queue.NewPoisonQuarantineMiddleware(poisonRecorder)))
+	if err != nil {
+		log.Fatalf("failed to initialize river queue: %v", err)
+	}
+	if err := q.Start(context.Background()); err != nil {
+		log.Fatalf("failed to start river queue workers: %v", err)
+	}
+	// Sweeps every 10m, retaining 1h, to prevent XID wraparound table bloat.
+	q.StartPruneWorker(context.Background(), 10*time.Minute, 1*time.Hour)
+
+	if len(agentRegistry.Agents) > 0 {
+		sysEventBus := eventbus.NewBus()
+		defer sysEventBus.Close()
+		scheduling.SubscribeEnvironmentalTelemetry(sysEventBus, agentRegistry.Agents[0], func(ctx context.Context, args river.JobArgs) error {
+			_, err := q.Client().Insert(ctx, args, nil)
+			return err
+		})
+	}
+	return q
+}
+
+// serveHTTP runs the HTTP server until it fails or the process is signalled,
+// then drains the worker queue and closes the database. Extracted from Run so
+// the lifecycle is independently exercisable and Run stays a boot sequence.
+func serveHTTP(httpServer *http.Server, riverQueue *queue.Queue, database *sql.DB) {
 	if err := http2.ConfigureServer(httpServer, &http2.Server{
 		MaxConcurrentStreams: 250,
 		MaxReadFrameSize:     1048576,
@@ -725,17 +709,14 @@ func Run() {
 	}()
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(stop)
 	select {
 	case err := <-serverErrors:
 		if !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal(err)
 		}
 	case <-stop:
-		if riverQueue != nil {
-			queueStopCtx, queueCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			_ = riverQueue.Stop(queueStopCtx)
-			queueCancel()
-		}
+		stopQueue(riverQueue)
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownContext); err != nil {
@@ -745,6 +726,17 @@ func Run() {
 	if database != nil {
 		_ = database.Close()
 	}
+}
+
+// stopQueue drains in-flight River jobs so a shutdown does not abandon
+// halfway-processed webhook deliveries or certificate renders.
+func stopQueue(q *queue.Queue) {
+	if q == nil {
+		return
+	}
+	queueStopCtx, queueCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer queueCancel()
+	_ = q.Stop(queueStopCtx)
 }
 
 func loadFromPostgres(ctx context.Context, repository *syncstate.PostgresRepository, tenantIDs []string) ([]device_trust.Device, []device_trust.AuthorityPackage, error) {

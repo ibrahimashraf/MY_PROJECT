@@ -19,6 +19,7 @@ import (
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
 	"integin/internal/oidchttp"
+	"integin/internal/shared/httpresponse"
 	"integin/internal/shortlinksvc"
 )
 
@@ -1311,13 +1312,11 @@ func defaultQuery(q url.Values, key, fallback string) string {
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(data)
+	httpresponse.JSON(w, status, data)
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
-	writeJSON(w, status, map[string]string{"error": message})
+	httpresponse.Error(w, status, message)
 }
 
 // writeServerError logs the underlying cause server-side and returns a fixed

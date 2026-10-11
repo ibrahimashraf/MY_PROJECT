@@ -23,13 +23,13 @@ type SovereignCellID string
 const (
 	CellSaudiCentral01 SovereignCellID = "cell-sa-central-01" // SDAIA / PDPL data residency boundary
 	CellEUWest01       SovereignCellID = "cell-eu-west-01"    // GDPR Chapter V boundary
-	CellUSGovEast01    SovereignCellID = "cell-us-gov-01"    // FedRAMP / ITAR boundary
+	CellUSGovEast01    SovereignCellID = "cell-us-gov-01"     // FedRAMP / ITAR boundary
 )
 
 type DataClassification string
 
 const (
-	ClassSovereignRestricted DataClassification = "SOVEREIGN_RESTRICTED" // Never leaves originating nation
+	ClassSovereignRestricted  DataClassification = "SOVEREIGN_RESTRICTED"  // Never leaves originating nation
 	ClassAnonymizedTelemetric DataClassification = "ANONYMIZED_TELEMETRIC" // Cross-cell sync allowed
 	ClassGlobalPublicTrust    DataClassification = "GLOBAL_PUBLIC_TRUST"   // Free worldwide broadcast
 )
@@ -51,10 +51,10 @@ type FederationMessage struct {
 
 // FederationGatekeeper enforces sovereign export policies and verifies signatures.
 type FederationGatekeeper struct {
-	mu           sync.Mutex
-	localCell    SovereignCellID
-	knownCells   map[SovereignCellID]ed25519.PublicKey
-	seenEpochs   map[string]int64 // entity_did -> max seen epoch
+	mu         sync.Mutex
+	localCell  SovereignCellID
+	knownCells map[SovereignCellID]ed25519.PublicKey
+	seenEpochs map[string]int64 // entity_did -> max seen epoch
 }
 
 // NewFederationGatekeeper initializes sovereign compliance gatekeeper.

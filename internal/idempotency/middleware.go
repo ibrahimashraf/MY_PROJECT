@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"integin/internal/shared/httpresponse"
 	"io"
 	"log"
 	"net/http"
@@ -144,9 +145,7 @@ func jsonString(value string) string {
 }
 
 func writeError(w http.ResponseWriter, status int, body string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_, _ = w.Write([]byte(body))
+	httpresponse.Raw(w, status, []byte(body))
 }
 
 // SyncScopeResolver derives the tenant scope from the /sync envelope body.

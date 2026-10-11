@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	ErrNilDB              = errors.New("telemetrystream: database handle cannot be nil")
-	ErrEmptyBatch         = errors.New("telemetrystream: telemetry reading batch cannot be empty")
-	ErrBufferOverflow     = errors.New("telemetrystream: in-memory ring buffer overflow")
-	ErrCriticalOverload   = errors.New("telemetrystream: critical physical load capacity exceeded (lockout triggered)")
+	ErrNilDB            = errors.New("telemetrystream: database handle cannot be nil")
+	ErrEmptyBatch       = errors.New("telemetrystream: telemetry reading batch cannot be empty")
+	ErrBufferOverflow   = errors.New("telemetrystream: in-memory ring buffer overflow")
+	ErrCriticalOverload = errors.New("telemetrystream: critical physical load capacity exceeded (lockout triggered)")
 )
 
 // TelemetryReading represents a single high-frequency sensor measurement.

@@ -69,7 +69,7 @@ func TestValidateIntrinsicSafetyLoop_Breaches(t *testing.T) {
 
 	// 3. Thermal lockout (Surface temp >= Auto-ignition)
 	loopT := validLoop()
-	loopT.ApparatusTemp = T2 // 300 C surface temp
+	loopT.ApparatusTemp = T2    // 300 C surface temp
 	loopT.AutoIgnitionC = 250.0 // Gas ignites at 250 C < 300 C
 	res, err = ValidateIntrinsicSafetyLoop(loopT)
 	if err != ErrTemperatureExceeded || res.IsCompliant {

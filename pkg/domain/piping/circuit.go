@@ -15,22 +15,22 @@ var (
 
 // CircuitParameters defines ASME B31.3 / API 570 piping circuit properties.
 type CircuitParameters struct {
-	CircuitDID            string    `json:"circuit_did"` // did:integin:circuit:<uuid>
-	OuterDiameterMM       float64   `json:"outer_diameter_mm"`
-	DesignPressureBar     float64   `json:"design_pressure_bar"`
-	AllowableStressMPa    float64   `json:"allowable_stress_mpa"` // Material stress limit S
-	JointEfficiencyE      float64   `json:"joint_efficiency_e"`    // e.g. 1.0 for seamless, 0.85 for ERW
-	CoefficientY          float64   `json:"coefficient_y"`         // ASME table 304.1.1 (typically 0.4 for ferritic steels below 482C)
-	CorrosionAllowanceMM  float64   `json:"corrosion_allowance_mm"`
-	NominalThicknessMM    float64   `json:"nominal_thickness_mm"`
+	CircuitDID           string  `json:"circuit_did"` // did:integin:circuit:<uuid>
+	OuterDiameterMM      float64 `json:"outer_diameter_mm"`
+	DesignPressureBar    float64 `json:"design_pressure_bar"`
+	AllowableStressMPa   float64 `json:"allowable_stress_mpa"` // Material stress limit S
+	JointEfficiencyE     float64 `json:"joint_efficiency_e"`   // e.g. 1.0 for seamless, 0.85 for ERW
+	CoefficientY         float64 `json:"coefficient_y"`        // ASME table 304.1.1 (typically 0.4 for ferritic steels below 482C)
+	CorrosionAllowanceMM float64 `json:"corrosion_allowance_mm"`
+	NominalThicknessMM   float64 `json:"nominal_thickness_mm"`
 }
 
 // MeasurementPoint represents an ultrasonic thickness gauging (UTG) monitoring location.
 type MeasurementPoint struct {
-	PointID               string    `json:"point_id"`
-	CurrentThicknessMM    float64   `json:"current_thickness_mm"`
-	PreviousThicknessMM   float64   `json:"previous_thickness_mm"`
-	YearsBetweenReadings  float64   `json:"years_between_readings"`
+	PointID              string  `json:"point_id"`
+	CurrentThicknessMM   float64 `json:"current_thickness_mm"`
+	PreviousThicknessMM  float64 `json:"previous_thickness_mm"`
+	YearsBetweenReadings float64 `json:"years_between_readings"`
 }
 
 // AssessmentResult encapsulates remaining life and retirement thickness calculations.

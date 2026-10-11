@@ -31,23 +31,23 @@ var (
 // CorrectiveActionRequest manages the remediation lifecycle when an inspection
 // uncovers a major or critical physical non-conformance.
 type CorrectiveActionRequest struct {
-	ID                      string          `json:"car_id"`
-	TenantID                string          `json:"tenant_id"`
-	OrganizationID          string          `json:"organization_id"`
-	AssetID                 string          `json:"asset_id"`
-	SourceInspectionID      string          `json:"source_inspection_id"`
-	SourceFindingID         string          `json:"source_finding_id"`
-	DefectSeverity          types.Severity  `json:"defect_severity"`
-	DefectDescription       string          `json:"defect_description"`
-	Status                  CARStatus       `json:"status"`
-	RemediationNotes        string          `json:"remediation_notes,omitempty"`
-	RemediationEvidenceRefs []string        `json:"remediation_evidence_refs,omitempty"`
-	RemediatedAt            *time.Time      `json:"remediated_at,omitempty"`
-	RemediatedBy            string          `json:"remediated_by,omitempty"`
-	ReinspectionID          string          `json:"reinspection_id,omitempty"`
-	ClosedAt                *time.Time      `json:"closed_at,omitempty"`
-	VerifiedBy              string          `json:"verified_by,omitempty"`
-	CreatedAt               time.Time       `json:"created_at"`
+	ID                      string         `json:"car_id"`
+	TenantID                string         `json:"tenant_id"`
+	OrganizationID          string         `json:"organization_id"`
+	AssetID                 string         `json:"asset_id"`
+	SourceInspectionID      string         `json:"source_inspection_id"`
+	SourceFindingID         string         `json:"source_finding_id"`
+	DefectSeverity          types.Severity `json:"defect_severity"`
+	DefectDescription       string         `json:"defect_description"`
+	Status                  CARStatus      `json:"status"`
+	RemediationNotes        string         `json:"remediation_notes,omitempty"`
+	RemediationEvidenceRefs []string       `json:"remediation_evidence_refs,omitempty"`
+	RemediatedAt            *time.Time     `json:"remediated_at,omitempty"`
+	RemediatedBy            string         `json:"remediated_by,omitempty"`
+	ReinspectionID          string         `json:"reinspection_id,omitempty"`
+	ClosedAt                *time.Time     `json:"closed_at,omitempty"`
+	VerifiedBy              string         `json:"verified_by,omitempty"`
+	CreatedAt               time.Time      `json:"created_at"`
 }
 
 // ReinspectionBinding records the forward link connecting the original failed

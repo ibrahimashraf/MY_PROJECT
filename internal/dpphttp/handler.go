@@ -8,6 +8,7 @@ import (
 
 	"integin/internal/domain/dpp"
 	"integin/internal/oidcauth"
+	"integin/internal/shared/httpresponse"
 )
 
 type TokenValidator interface {
@@ -159,11 +160,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"code":    code,
-		"message": message,
-	})
+	httpresponse.CodeMessage(w, status, code, message)
 }
 
 // writeServerError logs the cause server-side and returns a caller-safe code

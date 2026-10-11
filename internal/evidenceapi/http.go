@@ -13,6 +13,7 @@ import (
 
 	"integin/internal/identity"
 	"integin/internal/oidcauth"
+	"integin/internal/shared/httpresponse"
 	"integin/internal/storage"
 	"integin/internal/workorderauth"
 )
@@ -179,9 +180,7 @@ func objectKey(tenantID, organizationID, evidenceID string) string {
 }
 
 func writeJSON(writer http.ResponseWriter, status int, payload response) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(status)
-	_ = json.NewEncoder(writer).Encode(payload)
+	httpresponse.JSON(writer, status, payload)
 }
 
 func bearer(value string) (string, bool) {

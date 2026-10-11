@@ -623,3 +623,44 @@ func TestZeroTrustIngressTenantIsolation(t *testing.T) {
 		t.Errorf("expected genuine-actor, got %s", capturedActor)
 	}
 }
+
+// unmappedPrincipalValidator issues a valid token for a principal that is not
+// a member of any tenant (tenantStubResolver only resolves "user-1").
+type unmappedPrincipalValidator struct{}
+
+func (unmappedPrincipalValidator) Validate(ctx context.Context, token string) (oidcauth.Principal, error) {
+	if token == "valid-token" {
+		return oidcauth.Principal{Subject: "user-without-membership", Issuer: "https://issuer.example.com"}, nil
+	}
+	return oidcauth.Principal{}, errors.New("invalid token")
+}
+
+// A cryptographically valid token whose membership cannot be resolved must be
+// rejected at the middleware with 403 Forbidden. It must never reach the
+// handler: tenant identity could not be established, so there is no tenant to
+// authorize against.
+func TestOIDCAuthRejectsUnresolvedMembershipWithForbidden(t *testing.T) {
+	var handlerReached bool
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlerReached = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux := NewMux(Dependencies{
+		Validator:         unmappedPrincipalValidator{},
+		Resolver:          tenantStubResolver{membership: identity.Membership{TenantID: "genuine-tenant"}},
+		InspectionHandler: handler,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/inspections", nil)
+	req.Header.Set("Authorization", "Bearer valid-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if handlerReached {
+		t.Fatal("request reached the handler without a resolved tenant membership")
+	}
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("code=%d, want 403 Forbidden; body=%s", rec.Code, rec.Body.String())
+	}
+}

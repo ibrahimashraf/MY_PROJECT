@@ -11,16 +11,16 @@ import (
 )
 
 var (
-	ErrZoneViolation         = errors.New("atex: equipment not certified for deployment in target hazardous zone")
-	ErrVoltageBreach         = errors.New("atex: barrier open-circuit voltage Uo exceeds apparatus input voltage Ui")
-	ErrCurrentBreach         = errors.New("atex: barrier short-circuit current Io exceeds apparatus input current Ii")
-	ErrPowerBreach           = errors.New("atex: barrier max output power Po exceeds apparatus input power Pi")
-	ErrCapacitanceBreach     = errors.New("atex: lumped capacitance (Ci + Ccable) exceeds barrier permissible Co")
-	ErrInductanceBreach      = errors.New("atex: lumped inductance (Li + Lcable) exceeds barrier permissible Lo")
-	ErrTemperatureExceeded   = errors.New("atex: apparatus maximum surface temperature exceeds explosive gas ignition point")
-	ErrInvalidGasGroup       = errors.New("atex: apparatus gas group is incompatible with ambient atmosphere")
-	ErrZeroApparatusDID      = errors.New("atex: apparatus DID cannot be empty")
-	ErrZeroBarrierDID        = errors.New("atex: safety barrier DID cannot be empty")
+	ErrZoneViolation       = errors.New("atex: equipment not certified for deployment in target hazardous zone")
+	ErrVoltageBreach       = errors.New("atex: barrier open-circuit voltage Uo exceeds apparatus input voltage Ui")
+	ErrCurrentBreach       = errors.New("atex: barrier short-circuit current Io exceeds apparatus input current Ii")
+	ErrPowerBreach         = errors.New("atex: barrier max output power Po exceeds apparatus input power Pi")
+	ErrCapacitanceBreach   = errors.New("atex: lumped capacitance (Ci + Ccable) exceeds barrier permissible Co")
+	ErrInductanceBreach    = errors.New("atex: lumped inductance (Li + Lcable) exceeds barrier permissible Lo")
+	ErrTemperatureExceeded = errors.New("atex: apparatus maximum surface temperature exceeds explosive gas ignition point")
+	ErrInvalidGasGroup     = errors.New("atex: apparatus gas group is incompatible with ambient atmosphere")
+	ErrZeroApparatusDID    = errors.New("atex: apparatus DID cannot be empty")
+	ErrZeroBarrierDID      = errors.New("atex: safety barrier DID cannot be empty")
 )
 
 type HazardousZone string
@@ -230,16 +230,16 @@ func isGasGroupCompatible(apparatus GasGroup, ambient GasGroup) bool {
 
 // CertifiedZonePass represents an Ed25519-signed authorization certificate for Ex deployment.
 type CertifiedZonePass struct {
-	PassDID        string    `json:"pass_did"` // did:integin:expass:<uuid>
-	ApparatusDID   string    `json:"apparatus_did"`
-	BarrierDID     string    `json:"barrier_did"`
-	Zone           string    `json:"zone"`
-	GasGroup       string    `json:"gas_group"`
-	TempClass      string    `json:"temp_class"`
-	IssuedAt       time.Time `json:"issued_at"`
-	ExpiresAt      time.Time `json:"expires_at"`
-	Digest         string    `json:"digest"`
-	SignatureHex   string    `json:"signature_hex"`
+	PassDID      string    `json:"pass_did"` // did:integin:expass:<uuid>
+	ApparatusDID string    `json:"apparatus_did"`
+	BarrierDID   string    `json:"barrier_did"`
+	Zone         string    `json:"zone"`
+	GasGroup     string    `json:"gas_group"`
+	TempClass    string    `json:"temp_class"`
+	IssuedAt     time.Time `json:"issued_at"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	Digest       string    `json:"digest"`
+	SignatureHex string    `json:"signature_hex"`
 }
 
 // IssueZonePass signs a cryptographic permit allowing tool operation in an ATEX zone.

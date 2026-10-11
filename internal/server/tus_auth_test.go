@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"integin/internal/domain/device_trust"
+	"integin/internal/identity"
 	"integin/internal/localprovision"
 	"integin/internal/oidcauth"
 	"integin/internal/storage"
@@ -213,5 +214,39 @@ func TestTUSAuthenticatedUploadFlowThroughMux(t *testing.T) {
 	mux.ServeHTTP(completeRec, authorized(httptest.NewRequest(http.MethodPost, "/uploads/"+created.ID+"/complete", nil)))
 	if completeRec.Code != http.StatusOK || !strings.Contains(completeRec.Body.String(), created.ID) {
 		t.Fatalf("complete status=%d body=%s", completeRec.Code, completeRec.Body.String())
+	}
+}
+
+// failingResolver models a principal that is not a member of any tenant.
+type failingResolver struct{}
+
+func (failingResolver) Resolve(context.Context, identity.PrincipalKey) (identity.Membership, error) {
+	return identity.Membership{}, errors.New("no membership")
+}
+
+// A valid token whose membership cannot be resolved must NOT be treated as
+// authenticated for TUS: requireTUSAuth fails closed, so the upload is
+// rejected rather than admitted with empty tenant headers.
+func TestTUSFailsClosedWhenMembershipUnresolved(t *testing.T) {
+	manager, err := storage.NewTUSManager(t.TempDir(), 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := NewMux(Dependencies{
+		TUSHandler: storage.TUSRouteHandler{Manager: manager},
+		Validator:  tusValidatorStub{},
+		Resolver:   failingResolver{},
+	})
+
+	rec := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/uploads", nil)
+	request.Header.Set("Authorization", "Bearer valid-token")
+	mux.ServeHTTP(rec, request)
+
+	if rec.Code == http.StatusCreated || rec.Code == http.StatusOK {
+		t.Fatalf("TUS upload admitted without resolved membership: %d body=%s", rec.Code, rec.Body.String())
+	}
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 when membership cannot be resolved, got %d body=%s", rec.Code, rec.Body.String())
 	}
 }

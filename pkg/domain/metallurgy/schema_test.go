@@ -68,9 +68,9 @@ func TestPalmgrenMiner_FatigueAccumulation(t *testing.T) {
 	fatigueState := CumulativeFatigueState{
 		AssetDID: "did:integin:asset:boom-section-01",
 		CyclesHistory: []StressCycle{
-			{CycleCount: 50000, StressRangeMPa: 120.0, AllowableCyclesNi: 500000.0}, // d1 = 0.10
+			{CycleCount: 50000, StressRangeMPa: 120.0, AllowableCyclesNi: 500000.0},   // d1 = 0.10
 			{CycleCount: 150000, StressRangeMPa: 100.0, AllowableCyclesNi: 1000000.0}, // d2 = 0.15
-			{CycleCount: 20000, StressRangeMPa: 160.0, AllowableCyclesNi: 100000.0},  // d3 = 0.20
+			{CycleCount: 20000, StressRangeMPa: 160.0, AllowableCyclesNi: 100000.0},   // d3 = 0.20
 		},
 	}
 

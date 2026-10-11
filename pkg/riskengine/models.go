@@ -16,7 +16,7 @@ var (
 	ErrCriticalDefectsPresent     = errors.New("riskengine: unresolved critical defects block rebate issuance")
 	ErrInvalidWeights             = errors.New("riskengine: risk factor weights must sum to 1.0")
 	ErrZeroAssetDID               = errors.New("riskengine: asset DID cannot be empty")
-	ErrZeroTenantID              = errors.New("riskengine: tenant ID cannot be empty")
+	ErrZeroTenantID               = errors.New("riskengine: tenant ID cannot be empty")
 )
 
 // Weights configures the actuarial risk calculation formula:
@@ -38,14 +38,14 @@ func DefaultWeights() Weights {
 
 // OperationalRiskInputs represents the live physical and operational state of an asset.
 type OperationalRiskInputs struct {
-	TenantID            string    `json:"tenant_id"`
-	OrganizationID      string    `json:"organization_id"`
-	AssetDID            string    `json:"asset_did"`
-	DamageIndex         float64   `json:"damage_index"`          // Palmgren-Miner cumulative fatigue D in [0.0, 1.0]
-	UncalibratedTools   int       `json:"uncalibrated_tools"`   // Count of tools used past calibration expiry
-	CriticalDefects     int       `json:"critical_defects"`     // Active unresolved critical defects
-	MajorDefects        int       `json:"major_defects"`        // Active unresolved major defects
-	ObservationTime     time.Time `json:"observation_time"`
+	TenantID          string    `json:"tenant_id"`
+	OrganizationID    string    `json:"organization_id"`
+	AssetDID          string    `json:"asset_did"`
+	DamageIndex       float64   `json:"damage_index"`       // Palmgren-Miner cumulative fatigue D in [0.0, 1.0]
+	UncalibratedTools int       `json:"uncalibrated_tools"` // Count of tools used past calibration expiry
+	CriticalDefects   int       `json:"critical_defects"`   // Active unresolved critical defects
+	MajorDefects      int       `json:"major_defects"`      // Active unresolved major defects
+	ObservationTime   time.Time `json:"observation_time"`
 }
 
 // RiskScoreResult encapsulates computed risk metrics and policy qualification.
@@ -149,17 +149,17 @@ func ComputeOperationalRisk(in OperationalRiskInputs, w Weights) (RiskScoreResul
 
 // ParametricRebateVoucher represents an Ed25519-signed actuarial collateral claim.
 type ParametricRebateVoucher struct {
-	VoucherDID       string    `json:"voucher_did"` // did:integin:rebate:<uuid>
-	TenantID         string    `json:"tenant_id"`
-	OrganizationID   string    `json:"organization_id"`
-	AssetDID         string    `json:"asset_did"`
-	CalculatedRisk   float64   `json:"calculated_risk"`
-	DiscountBps      int       `json:"discount_bps"`
-	IssuedAt         time.Time `json:"issued_at"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	IssuerDID        string    `json:"issuer_did"`
-	Digest           string    `json:"digest"`
-	SignatureHex     string    `json:"signature_hex"`
+	VoucherDID     string    `json:"voucher_did"` // did:integin:rebate:<uuid>
+	TenantID       string    `json:"tenant_id"`
+	OrganizationID string    `json:"organization_id"`
+	AssetDID       string    `json:"asset_did"`
+	CalculatedRisk float64   `json:"calculated_risk"`
+	DiscountBps    int       `json:"discount_bps"`
+	IssuedAt       time.Time `json:"issued_at"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	IssuerDID      string    `json:"issuer_did"`
+	Digest         string    `json:"digest"`
+	SignatureHex   string    `json:"signature_hex"`
 }
 
 // IssueRebateVoucher generates a cryptographically signed voucher for an eligible asset.
