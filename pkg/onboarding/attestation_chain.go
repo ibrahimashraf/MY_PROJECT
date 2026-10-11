@@ -37,21 +37,6 @@ var (
 	ErrAttestationRootsUnconfigured = errors.New("attestation roots pool not configured")
 )
 
-// chainVerifyRoots holds the Google Android Hardware Attestation Root
-// certificates used to verify STRONGBOX chain claims at enrollment. It is
-// provisioned out-of-band — see LoadAttestationRoots. nil means the operator
-// has not configured roots, so chain verification fails closed with
-// ErrAttestationRootsUnconfigured rather than trusting an unverifiable claim.
-var chainVerifyRoots *x509.CertPool
-
-// SetAttestationRoots configures the package-wide Android attestation roots
-// used to verify STRONGBOX chain claims at enrollment. Call it once at boot
-// with the pool from LoadAttestationRoots. Passing nil unconfigures (chain
-// verification then fails closed with ErrAttestationRootsUnconfigured).
-func SetAttestationRoots(pool *x509.CertPool) {
-	chainVerifyRoots = pool
-}
-
 // AttestationInfo is the server-side verdict from VerifyAttestationChain.
 // All fields are true only on full success.
 type AttestationInfo struct {

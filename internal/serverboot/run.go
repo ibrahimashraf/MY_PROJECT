@@ -30,6 +30,7 @@ import (
 	"integin/internal/assetentitlementpg"
 	"integin/internal/assurancehttp"
 	"integin/internal/assurancepg"
+	"integin/internal/atexhttp"
 	"integin/internal/certificatepg"
 	"integin/internal/certificatepublichttp"
 	"integin/internal/certificaterender"
@@ -47,7 +48,6 @@ import (
 	"integin/internal/evidencepackpg"
 	"integin/internal/federation"
 	"integin/internal/federationhttp"
-	"integin/internal/atexhttp"
 	"integin/internal/formdefinitionhttp"
 	"integin/internal/formdefinitionpg"
 	"integin/internal/identity"
@@ -132,7 +132,8 @@ func Run() {
 	if deployMode == DeployModeAirgap && allowLANBind && !isLoopbackAddress(bindAddr) {
 		log.Printf("WARNING: airgap LAN bind explicitly allowed on %q — API is directly reachable on the rig LAN", bindAddr)
 	}
-	if err := onboarding.ProvisionAttestationFromEnv(); err != nil {
+	attestRoots, appleAttestRoots, appleAppID, err := onboarding.ProvisionAttestationFromEnv()
+	if err != nil {
 		log.Fatal(err)
 	}
 	tsaClient, err := timestamp.ProvisionFromEnv()
@@ -261,7 +262,11 @@ func Run() {
 		if !isLoopbackAddress(address) && !envBool("INTEGIN_PILOT_ENROLL_ALLOW_BIND_ALL") {
 			log.Fatal("pilot device enrollment requires INTEGIN_HTTP_ADDR to bind to localhost only")
 		}
-		sim, simErr := onboarding.NewEnrollmentSimulator()
+		sim, simErr := onboarding.NewEnrollmentSimulator(
+			onboarding.WithAttestationRoots(attestRoots),
+			onboarding.WithAppleAttestRoots(appleAttestRoots),
+			onboarding.WithExpectedAppID(appleAppID),
+		)
 		if simErr != nil {
 			log.Fatal(simErr)
 		}

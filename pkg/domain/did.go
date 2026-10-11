@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 )
 
 const (
@@ -110,12 +109,3 @@ func GenerateJurisdictionDID(countryISO2 string) DID {
 		Identifier: strings.ToUpper(strings.TrimSpace(countryISO2)),
 	}
 }
-
-// TimeSource provides testable timestamp generation.
-type TimeSource interface {
-	Now() time.Time
-}
-
-type RealTimeSource struct{}
-
-func (RealTimeSource) Now() time.Time { return time.Now().UTC() }

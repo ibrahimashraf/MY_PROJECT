@@ -42,6 +42,8 @@ func TestAttestationValidate(t *testing.T) {
 	valid := []AttestationClaim{
 		{KeyOrigin: KeyOriginSecureEnclave, BiometricBound: true, OSVersion: "iOS 17.2", AttestationBlob: "0102abcd", KeyAlias: "com.integin.enclave"},
 		{KeyOrigin: KeyOriginStrongBox, OSVersion: "Android 14", AttestationBlob: "deadbeef"},
+		{KeyOrigin: KeyOriginTPM, BiometricBound: true, OSVersion: "Windows 11 IoT Enterprise", AttestationBlob: "tpm-aik-quote"},
+		{KeyOrigin: KeyOriginYubiKey, BiometricBound: true, OSVersion: "Linux 6.1-rt", AttestationBlob: "yubikey-piv-attest-cert"},
 		{KeyOrigin: KeyOriginSoftware},
 		{KeyOrigin: KeyOriginNone},
 	}
@@ -52,10 +54,12 @@ func TestAttestationValidate(t *testing.T) {
 	}
 
 	invalid := []AttestationClaim{
-		{KeyOrigin: "TPM"}, // unknown origin
+		{KeyOrigin: "TPM"}, // unknown origin (not TPM_2_0)
 		{},                 // empty origin
 		{KeyOrigin: KeyOriginStrongBox, OSVersion: "Android 14"},     // hardware without blob
 		{KeyOrigin: KeyOriginSecureEnclave, AttestationBlob: "abcd"}, // hardware without OS
+		{KeyOrigin: KeyOriginTPM, OSVersion: "Windows 11"},           // TPM hardware without blob
+		{KeyOrigin: KeyOriginYubiKey, AttestationBlob: "abcd"},       // YubiKey hardware without OS
 		{KeyOrigin: KeyOriginNone, AttestationBlob: "abcd"},          // spoof: NONE with blob
 		{KeyOrigin: KeyOriginNone, BiometricBound: true},             // spoof: NONE claiming biometric
 	}
@@ -190,10 +194,106 @@ func TestAttestationPolicyFIPS140_3(t *testing.T) {
 		t.Fatalf("expected ErrFIPS140_3NonCompliant for TEE, got %v", err)
 	}
 
-	// 5. Software -> FAILS with ErrFIPS140_3NonCompliant
+	// 5. TPM 2.0 with Biometric/PIN -> PASS (FIPS 140-3 Level 2)
+	tpmBound := AttestationClaim{
+		KeyOrigin:       KeyOriginTPM,
+		BiometricBound:  true,
+		OSVersion:       "Windows 11 IoT Enterprise",
+		AttestationBlob: "tpm-aik-quote",
+	}
+	if err := VerifyClaim(tpmBound, policy); err != nil {
+		t.Fatalf("expected TPM 2.0 bound to satisfy FIPS 140-3 policy: %v", err)
+	}
+
+	// 6. TPM 2.0 WITHOUT Biometric -> FAILS with ErrFIPS140_3NonCompliant
+	tpmUnbound := tpmBound
+	tpmUnbound.BiometricBound = false
+	if err := VerifyClaim(tpmUnbound, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
+		t.Fatalf("expected ErrFIPS140_3NonCompliant for unbound TPM 2.0, got %v", err)
+	}
+
+	// 7. YubiKey PIV with Biometric/PIN -> PASS (FIPS 140-3 Level 3)
+	yubiBound := AttestationClaim{
+		KeyOrigin:       KeyOriginYubiKey,
+		BiometricBound:  true,
+		OSVersion:       "Linux 6.1-rt",
+		AttestationBlob: "yubikey-piv-cert",
+	}
+	if err := VerifyClaim(yubiBound, policy); err != nil {
+		t.Fatalf("expected YubiKey PIV bound to satisfy FIPS 140-3 policy: %v", err)
+	}
+
+	// 8. YubiKey PIV WITHOUT Biometric -> FAILS with ErrFIPS140_3NonCompliant
+	yubiUnbound := yubiBound
+	yubiUnbound.BiometricBound = false
+	if err := VerifyClaim(yubiUnbound, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
+		t.Fatalf("expected ErrFIPS140_3NonCompliant for unbound YubiKey, got %v", err)
+	}
+
+	// 9. Software -> FAILS with ErrFIPS140_3NonCompliant
 	softwareClaim := AttestationClaim{KeyOrigin: KeyOriginSoftware}
 	if err := VerifyClaim(softwareClaim, policy); !errors.Is(err, ErrFIPS140_3NonCompliant) {
 		t.Fatalf("expected ErrFIPS140_3NonCompliant for Software, got %v", err)
+	}
+}
+
+func TestEnrollmentAcceptsTPMAndYubiKeyClaims(t *testing.T) {
+	// 1. TPM 2.0 enrollment
+	sim, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	tpmClaim := AttestationClaim{
+		KeyOrigin:       KeyOriginTPM,
+		BiometricBound:  true,
+		OSVersion:       "Windows 11 IoT Enterprise",
+		AttestationBlob: "tpm-quote-evidence",
+		KeyAlias:        "Microsoft Platform Crypto Provider",
+	}
+	record, _, err := enroll(t, sim, tpmClaim)
+	if err != nil {
+		t.Fatalf("TPM enrollment failed: %v", err)
+	}
+	if record.AttestationOrigin != string(KeyOriginTPM) {
+		t.Fatalf("expected origin %q, got %q", KeyOriginTPM, record.AttestationOrigin)
+	}
+	if !record.AttestationBiometricBound {
+		t.Fatalf("expected biometric bound for TPM")
+	}
+	if !record.FIPS140_3Compliant {
+		t.Fatalf("expected FIPS 140-3 compliant for bound TPM")
+	}
+	if record.FIPSLevel != "FIPS_140_3_LEVEL_2" {
+		t.Fatalf("expected FIPS_140_3_LEVEL_2, got %q", record.FIPSLevel)
+	}
+
+	// 2. YubiKey PIV enrollment
+	sim2, err := NewEnrollmentSimulator()
+	if err != nil {
+		t.Fatalf("sim init: %v", err)
+	}
+	yubiClaim := AttestationClaim{
+		KeyOrigin:       KeyOriginYubiKey,
+		BiometricBound:  true,
+		OSVersion:       "Ubuntu Core 24",
+		AttestationBlob: "yubikey-piv-attest-leaf",
+		KeyAlias:        "YubiKey PIV Slot 9c",
+	}
+	record2, _, err := enroll(t, sim2, yubiClaim)
+	if err != nil {
+		t.Fatalf("YubiKey enrollment failed: %v", err)
+	}
+	if record2.AttestationOrigin != string(KeyOriginYubiKey) {
+		t.Fatalf("expected origin %q, got %q", KeyOriginYubiKey, record2.AttestationOrigin)
+	}
+	if !record2.AttestationBiometricBound {
+		t.Fatalf("expected biometric bound for YubiKey")
+	}
+	if !record2.FIPS140_3Compliant {
+		t.Fatalf("expected FIPS 140-3 compliant for bound YubiKey")
+	}
+	if record2.FIPSLevel != "FIPS_140_3_LEVEL_3" {
+		t.Fatalf("expected FIPS_140_3_LEVEL_3, got %q", record2.FIPSLevel)
 	}
 }
 

@@ -658,21 +658,8 @@ func (h *Handler) AdminAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Fallback for tests/unauthenticated standalone mode: require headers
-		tenant := r.Header.Get("X-Tenant-ID")
-		org := r.Header.Get("X-Organization-ID")
-		if tenant == "" || org == "" {
-			writeError(w, http.StatusBadRequest, "X-Tenant-ID and X-Organization-ID required")
-			return
-		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, ctxTenantID, tenant)
-		ctx = context.WithValue(ctx, ctxOrgID, org)
-		ctx = oidchttp.WithOrganizationContext(ctx, identity.OrganizationContext{
-			TenantID:       tenant,
-			OrganizationID: org,
-		})
-		next.ServeHTTP(w, r.WithContext(ctx))
+		writeError(w, http.StatusServiceUnavailable, "authentication not configured")
+		return
 	})
 }
 
@@ -1342,4 +1329,3 @@ func decodeOptionalJSON(r *http.Request, dst any) error {
 	}
 	return err
 }
-

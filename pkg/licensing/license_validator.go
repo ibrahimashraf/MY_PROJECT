@@ -21,16 +21,7 @@ var (
 // UniversalLicenseValidator validates license tokens locally with zero cloud phone-home requirement.
 type UniversalLicenseValidator struct {
 	trustedRootPublicKey ed25519.PublicKey
-	timeSource           timeSource
 }
-
-type timeSource interface {
-	Now() time.Time
-}
-
-type realTimeSource struct{}
-
-func (realTimeSource) Now() time.Time { return time.Now().UTC() }
 
 // NewUniversalLicenseValidator initializes a validator with the vendor's pinned Ed25519 public key.
 func NewUniversalLicenseValidator(trustedPublicKeyHex string) (*UniversalLicenseValidator, error) {
@@ -44,7 +35,6 @@ func NewUniversalLicenseValidator(trustedPublicKeyHex string) (*UniversalLicense
 
 	return &UniversalLicenseValidator{
 		trustedRootPublicKey: ed25519.PublicKey(pubBytes),
-		timeSource:           realTimeSource{},
 	}, nil
 }
 
@@ -69,7 +59,7 @@ func (v *UniversalLicenseValidator) ValidateToken(token *SignedLicenseToken, cur
 		return ErrInvalidSignature
 	}
 
-	return checkLicenseWindow(token.Payload, currentHardwareID, v.timeSource.Now())
+	return checkLicenseWindow(token.Payload, currentHardwareID, time.Now().UTC())
 }
 
 // checkLicenseWindow enforces the validity window and hardware lock constraints

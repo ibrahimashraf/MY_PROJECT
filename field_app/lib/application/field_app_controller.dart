@@ -781,7 +781,9 @@ class FieldAppController extends ChangeNotifier {
     super.dispose();
   }
 
+  final _secureRandom = Random.secure();
+
   String _transactionId() =>
-      'tx-${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(9999)}';
+      'tx-${DateTime.now().microsecondsSinceEpoch}-${_secureRandom.nextInt(9999)}';
 }
 

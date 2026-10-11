@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -12,27 +13,64 @@ import (
 
 // Simulator handles end-to-end device cryptographic enrollment and authority gating.
 type EnrollmentSimulator struct {
-	serverPubKey  ed25519.PublicKey
-	serverPrivKey ed25519.PrivateKey
-	deviceStore   map[string]DeviceTrustRecord
-	challenges    map[string]DeviceEnrollmentChallenge
-	manifests     map[string]WorkPackageManifest
-	toolStore     map[string]CalibratedToolRecord
+	serverPubKey     ed25519.PublicKey
+	serverPrivKey    ed25519.PrivateKey
+	deviceStore      map[string]DeviceTrustRecord
+	challenges       map[string]DeviceEnrollmentChallenge
+	manifests        map[string]WorkPackageManifest
+	toolStore        map[string]CalibratedToolRecord
+	attestationRoots *x509.CertPool
+	appleAttestRoots *x509.CertPool
+	expectedAppID    string
 }
 
-func NewEnrollmentSimulator() (*EnrollmentSimulator, error) {
+func NewEnrollmentSimulator(opts ...func(*EnrollmentSimulator)) (*EnrollmentSimulator, error) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
-	return &EnrollmentSimulator{
+	s := &EnrollmentSimulator{
 		serverPubKey:  pub,
 		serverPrivKey: priv,
 		deviceStore:   make(map[string]DeviceTrustRecord),
 		challenges:    make(map[string]DeviceEnrollmentChallenge),
 		manifests:     make(map[string]WorkPackageManifest),
 		toolStore:     make(map[string]CalibratedToolRecord),
-	}, nil
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s, nil
+}
+
+// WithAttestationRoots configures Android attestation roots for the simulator.
+func WithAttestationRoots(roots *x509.CertPool) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.attestationRoots = roots }
+}
+
+// WithAppleAttestRoots configures Apple App Attest roots for the simulator.
+func WithAppleAttestRoots(roots *x509.CertPool) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.appleAttestRoots = roots }
+}
+
+// WithExpectedAppID configures the expected Apple App ID for the simulator.
+func WithExpectedAppID(appID string) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.expectedAppID = appID }
+}
+
+// SetAttestationRoots sets the Android attestation roots on the simulator.
+func (s *EnrollmentSimulator) SetAttestationRoots(roots *x509.CertPool) {
+	s.attestationRoots = roots
+}
+
+// SetAppleAttestRoots sets the Apple App Attest roots on the simulator.
+func (s *EnrollmentSimulator) SetAppleAttestRoots(roots *x509.CertPool) {
+	s.appleAttestRoots = roots
+}
+
+// SetExpectedAppID sets the expected Apple App ID on the simulator.
+func (s *EnrollmentSimulator) SetExpectedAppID(appID string) {
+	s.expectedAppID = appID
 }
 
 // 1. CreateEnrollmentChallenge creates a short-lived nonce for QR pairing.
@@ -113,13 +151,13 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 			return nil, fmt.Errorf("attestation claim rejected: %w", err)
 		}
 		if sub.Attestation.KeyOrigin == KeyOriginStrongBox && len(sub.Attestation.ChainPEM) > 0 {
-			if _, err := verifyPEMChain(sub.Attestation.ChainPEM, chainVerifyRoots, []byte(chal.Nonce)); err != nil {
+			if _, err := verifyPEMChain(sub.Attestation.ChainPEM, s.attestationRoots, []byte(chal.Nonce)); err != nil {
 				return nil, fmt.Errorf("attestation chain rejected: %w", err)
 			}
 			attestationVerified = true
 		}
-		if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && len(sub.Attestation.AppleAttestCBOR) > 0 && enrollmentExpectedAppID != "" {
-			if _, err := VerifyAppleAttestation(sub.Attestation.AppleAttestCBOR, appleAttestRoots, []byte(chal.Nonce), enrollmentExpectedAppID); err != nil {
+		if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && len(sub.Attestation.AppleAttestCBOR) > 0 && s.expectedAppID != "" {
+			if _, err := VerifyAppleAttestation(sub.Attestation.AppleAttestCBOR, s.appleAttestRoots, []byte(chal.Nonce), s.expectedAppID); err != nil {
 				return nil, fmt.Errorf("apple attestation rejected: %w", err)
 			}
 			attestationVerified = true
@@ -130,12 +168,18 @@ func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmis
 	// "field-" + first 32 hex chars of SHA-256(public_key_bytes).
 	hash := sha256.Sum256(devPubBytes)
 	deviceID := fmt.Sprintf("field-%s", hex.EncodeToString(hash[:])[:32])
-	fipsCompliant := (sub.Attestation.KeyOrigin == KeyOriginStrongBox || sub.Attestation.KeyOrigin == KeyOriginSecureEnclave) && sub.Attestation.BiometricBound
+	fipsCompliant := (sub.Attestation.KeyOrigin == KeyOriginStrongBox ||
+		sub.Attestation.KeyOrigin == KeyOriginSecureEnclave ||
+		sub.Attestation.KeyOrigin == KeyOriginTPM ||
+		sub.Attestation.KeyOrigin == KeyOriginYubiKey) && sub.Attestation.BiometricBound
 	fipsLevel := ""
-	if sub.Attestation.KeyOrigin == KeyOriginStrongBox && sub.Attestation.BiometricBound {
-		fipsLevel = "FIPS_140_3_LEVEL_3"
-	} else if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && sub.Attestation.BiometricBound {
-		fipsLevel = "FIPS_140_3_LEVEL_2"
+	if sub.Attestation.BiometricBound {
+		switch sub.Attestation.KeyOrigin {
+		case KeyOriginStrongBox, KeyOriginYubiKey:
+			fipsLevel = "FIPS_140_3_LEVEL_3"
+		case KeyOriginSecureEnclave, KeyOriginTPM:
+			fipsLevel = "FIPS_140_3_LEVEL_2"
+		}
 	}
 
 	record := DeviceTrustRecord{

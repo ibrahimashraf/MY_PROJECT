@@ -150,14 +150,22 @@ func TestShortLinkHandler_MountNormalization(t *testing.T) {
 }
 
 func TestShortLinkHandler_ValidationRejection(t *testing.T) {
+	validator := &mockTokenValidator{
+		validateFn: func(ctx context.Context, rawToken string) (oidcauth.Principal, error) {
+			return oidcauth.Principal{Issuer: "https://auth.integin.local", Subject: "user-1"}, nil
+		},
+	}
+	resolver := &mockResolver{
+		resolveFn: func(ctx context.Context, principal identity.PrincipalKey) (identity.Membership, error) {
+			return identity.Membership{ActorID: "actor-1", TenantID: "tenant-1", OrganizationID: "org-1"}, nil
+		},
+	}
 	svc := shortlinksvc.New(nil, 6, "")
-	handler := shortlinkhttp.NewWithAuth(svc, nil, nil)
+	handler := shortlinkhttp.NewWithAuth(svc, validator, resolver)
 
-	// Test 1: Invalid URL rejection in Create
 	req := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks", strings.NewReader(`{"target_url":"not-a-valid-url"}`))
+	req.Header.Set("Authorization", "Bearer token")
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Tenant-ID", "tenant-1")
-	req.Header.Set("X-Organization-ID", "org-1")
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
@@ -166,11 +174,9 @@ func TestShortLinkHandler_ValidationRejection(t *testing.T) {
 		t.Fatalf("expected 400 Bad Request for invalid target_url, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Test 2: Missing Secret in HMAC creation
 	reqHMAC := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/hmac/secrets", strings.NewReader(`{"secret":""}`))
+	reqHMAC.Header.Set("Authorization", "Bearer token")
 	reqHMAC.Header.Set("Content-Type", "application/json")
-	reqHMAC.Header.Set("X-Tenant-ID", "tenant-1")
-	reqHMAC.Header.Set("X-Organization-ID", "org-1")
 
 	recHMAC := httptest.NewRecorder()
 	handler.ServeHTTP(recHMAC, reqHMAC)
@@ -181,14 +187,22 @@ func TestShortLinkHandler_ValidationRejection(t *testing.T) {
 }
 
 func TestShortLinkHandler_OptionalBodyValidation(t *testing.T) {
+	validator := &mockTokenValidator{
+		validateFn: func(ctx context.Context, rawToken string) (oidcauth.Principal, error) {
+			return oidcauth.Principal{Issuer: "https://auth.integin.local", Subject: "user-1"}, nil
+		},
+	}
+	resolver := &mockResolver{
+		resolveFn: func(ctx context.Context, principal identity.PrincipalKey) (identity.Membership, error) {
+			return identity.Membership{ActorID: "actor-1", TenantID: "tenant-1", OrganizationID: "org-1"}, nil
+		},
+	}
 	svc := shortlinksvc.New(nil, 6, "")
-	handler := shortlinkhttp.NewWithAuth(svc, nil, nil)
+	handler := shortlinkhttp.NewWithAuth(svc, validator, resolver)
 
-	// Test 1: Malformed JSON in optional body endpoint must return 400
 	reqBad := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/export", strings.NewReader(`{malformed_json`))
+	reqBad.Header.Set("Authorization", "Bearer token")
 	reqBad.Header.Set("Content-Type", "application/json")
-	reqBad.Header.Set("X-Tenant-ID", "tenant-1")
-	reqBad.Header.Set("X-Organization-ID", "org-1")
 
 	recBad := httptest.NewRecorder()
 	handler.ServeHTTP(recBad, reqBad)
@@ -197,10 +211,8 @@ func TestShortLinkHandler_OptionalBodyValidation(t *testing.T) {
 		t.Fatalf("expected 400 Bad Request for malformed json in optional body, got %d: %s", recBad.Code, recBad.Body.String())
 	}
 
-	// Test 2: Empty body in optional body endpoint is accepted (does not return 400)
 	reqEmpty := httptest.NewRequest(http.MethodPost, "/admin/api/v1/shortlinks/export", nil)
-	reqEmpty.Header.Set("X-Tenant-ID", "tenant-1")
-	reqEmpty.Header.Set("X-Organization-ID", "org-1")
+	reqEmpty.Header.Set("Authorization", "Bearer token")
 
 	recEmpty := httptest.NewRecorder()
 	handler.ServeHTTP(recEmpty, reqEmpty)
@@ -209,5 +221,3 @@ func TestShortLinkHandler_OptionalBodyValidation(t *testing.T) {
 		t.Fatalf("expected empty body to be accepted without 400, got: %s", recEmpty.Body.String())
 	}
 }
-
-

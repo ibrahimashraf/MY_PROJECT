@@ -134,5 +134,5 @@ func (v *UniversalLicenseValidator) ValidateWithRevocation(token *SignedLicenseT
 	if err := v.ValidateToken(token, currentHardwareID); err != nil {
 		return err
 	}
-	return cache.CheckLicense(token.Payload.LicenseID, v.timeSource.Now())
+	return cache.CheckLicense(token.Payload.LicenseID, time.Now().UTC())
 }

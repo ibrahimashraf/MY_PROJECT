@@ -527,13 +527,15 @@ type MediaArtifactDigest struct {
 	SHA256Digest [32]byte `json:"sha256_digest"`
 }
 
-// NonStatutoryRouteAllowlist defines routes explicitly exempted from hardware
-// P-256 seals. This is deployment policy, not source truth: prefer loading it
-// from configuration. The map must be treated read-only after init.
-var NonStatutoryRouteAllowlist = map[string]bool{
+var nonStatutoryRouteAllowlist = map[string]bool{
 	"/api/v1/field/telemetry": true,
 	"/api/v1/field/drafts":    true,
 	"/api/v1/field/notes":     true,
+}
+
+// IsStatutoryRoute returns true if the route requires a hardware seal.
+func IsStatutoryRoute(route string) bool {
+	return !nonStatutoryRouteAllowlist[route]
 }
 
 type SubmissionSeal struct {
@@ -613,7 +615,7 @@ func (s *SubmissionSeal) Verify(
 
 	// 2. Inverted Fail-Closed Gate: Require HW P-256 Seal unless on explicit allowlist.
 	// Ed25519-alone is NEVER sufficient for regulated payloads.
-	if !NonStatutoryRouteAllowlist[endpointRoute] {
+	if IsStatutoryRoute(endpointRoute) {
 		if len(s.HwP256Sig) == 0 || hwPubKey == nil {
 			return ErrStatutoryHardwareSealMissing
 		}

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'pin_bytes.dart';
+
 /// Hash policy seam for PIN hashing.
 ///
 /// The default [IdentityHashPolicy] passes through caller-hashed bytes unchanged,
@@ -249,11 +251,7 @@ class EnclavePinGate {
     _zeroPin(pin);
   }
 
-  static void _zeroPin(Uint8List pin) {
-    for (var i = 0; i < pin.length; i++) {
-      pin[i] = 0;
-    }
-  }
+  static void _zeroPin(Uint8List pin) => zeroPinBytes(pin);
 }
 
 /// Result of a PIN verification attempt.

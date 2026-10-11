@@ -14,12 +14,12 @@ var (
 	ErrSoftwareOriginRejected  = errors.New("attestation: policy requires hardware attestation (enclave, strongbox, or TEE)")
 	ErrBiometricBindingMissing = errors.New("attestation: biometric binding required but not asserted")
 	ErrStrongBoxMandated       = errors.New("attestation: site policy strictly mandates discrete StrongBox hardware")
-	ErrFIPS140_3NonCompliant   = errors.New("attestation: policy requires FIPS 140-3 validated hardware (StrongBox or Secure Enclave with biometric binding)")
+	ErrFIPS140_3NonCompliant   = errors.New("attestation: policy requires FIPS 140-3 validated hardware (StrongBox, Secure Enclave, TPM 2.0, or YubiKey with biometric binding)")
 )
 
 func (k KeyOrigin) Known() bool {
 	switch k {
-	case KeyOriginSecureEnclave, KeyOriginStrongBox, KeyOriginTEE, KeyOriginSoftware, KeyOriginNone:
+	case KeyOriginSecureEnclave, KeyOriginStrongBox, KeyOriginTEE, KeyOriginTPM, KeyOriginYubiKey, KeyOriginSoftware, KeyOriginNone:
 		return true
 	default:
 		return false
@@ -27,7 +27,7 @@ func (k KeyOrigin) Known() bool {
 }
 
 func (k KeyOrigin) Hardware() bool {
-	return k == KeyOriginSecureEnclave || k == KeyOriginStrongBox || k == KeyOriginTEE
+	return k == KeyOriginSecureEnclave || k == KeyOriginStrongBox || k == KeyOriginTEE || k == KeyOriginTPM || k == KeyOriginYubiKey
 }
 
 // Validate checks the structural soundness of a claim. The blob is treated as
@@ -111,7 +111,7 @@ func CheckPosture(origin string, biometricBound bool, policy AttestationPolicy) 
 		return ErrBiometricBindingMissing
 	}
 	if policy.RequireFIPS140_3 {
-		if (keyOrigin != KeyOriginStrongBox && keyOrigin != KeyOriginSecureEnclave) || !biometricBound {
+		if (keyOrigin != KeyOriginStrongBox && keyOrigin != KeyOriginSecureEnclave && keyOrigin != KeyOriginTPM && keyOrigin != KeyOriginYubiKey) || !biometricBound {
 			return fmt.Errorf("%w: origin=%s biometric_bound=%v", ErrFIPS140_3NonCompliant, origin, biometricBound)
 		}
 	}

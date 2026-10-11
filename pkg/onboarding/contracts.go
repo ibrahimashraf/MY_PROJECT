@@ -158,6 +158,8 @@ const (
 	KeyOriginSecureEnclave KeyOrigin = "SECURE_ENCLAVE" // Apple Secure Enclave
 	KeyOriginStrongBox     KeyOrigin = "STRONGBOX"      // Android StrongBox (discrete security chip)
 	KeyOriginTEE           KeyOrigin = "TEE"            // Android TrustZone TEE (no discrete StrongBox)
+	KeyOriginTPM           KeyOrigin = "TPM_2_0"        // Discrete or firmware TPM 2.0 (rugged tablets, Windows CNG / Linux tpmrm0)
+	KeyOriginYubiKey       KeyOrigin = "YUBIKEY_PIV"    // Hardware SmartCard / YubiKey PIV (FIPS 140-3 Level 3 token)
 	KeyOriginSoftware      KeyOrigin = "SOFTWARE"       // portable Ed25519 keypair
 	KeyOriginNone          KeyOrigin = "NONE"           // honest "no attestation evidence"
 )

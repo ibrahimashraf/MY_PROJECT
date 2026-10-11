@@ -287,8 +287,7 @@ func TestEnrollmentVerifiedStrongBoxChain(t *testing.T) {
 	}
 	_, ca, leafPEM, caPEM := newTestAttestationLeaf(t, buildKeyDescription(2, []byte(chal.Nonce), []int{2}, 0))
 	pool := caPool(ca)
-	chainVerifyRoots = pool
-	defer func() { chainVerifyRoots = nil }()
+	sim.SetAttestationRoots(pool)
 
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -325,8 +324,7 @@ func TestEnrollmentGarbageChainFailsClosed(t *testing.T) {
 		t.Fatalf("sim: %v", err)
 	}
 	_, ca, _, _ := newTestAttestationLeaf(t, buildKeyDescription(2, []byte("x"), []int{2}, 0))
-	chainVerifyRoots = caPool(ca)
-	defer func() { chainVerifyRoots = nil }()
+	sim.SetAttestationRoots(caPool(ca))
 
 	_, err = chainEnrollment(t, sim, []string{"not a certificate"})
 	if err == nil {
@@ -348,8 +346,6 @@ func TestEnrollmentNilRootsFailsClosed(t *testing.T) {
 		t.Fatalf("sim: %v", err)
 	}
 	_, _, leafPEM, caPEM := newTestAttestationLeaf(t, buildKeyDescription(2, []byte("x"), []int{2}, 0))
-	chainVerifyRoots = nil
-	defer func() { chainVerifyRoots = nil }()
 
 	_, err = chainEnrollment(t, sim, []string{string(leafPEM), string(caPEM)})
 	if err == nil {
@@ -365,9 +361,6 @@ func TestEnrollmentNilRootsFailsClosed(t *testing.T) {
 
 // (h-cont) non-STRONGBOX origins ignore ChainPEM entirely, even garbage.
 func TestNonAndroidOriginIgnoresChain(t *testing.T) {
-	chainVerifyRoots = nil
-	defer func() { chainVerifyRoots = nil }()
-
 	sim, err := NewEnrollmentSimulator()
 	if err != nil {
 		t.Fatalf("sim: %v", err)

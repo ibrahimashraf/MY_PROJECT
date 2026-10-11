@@ -45,38 +45,11 @@ type AppleAttestationInfo struct {
 	AppIDMatched     bool // rpIdHash equaled SHA256(expectedAppID)
 }
 
-// appleAttestRoots holds the Apple App Attest Root CA pool used to verify
-// SECURE_ENCLAVE claims at enrollment. Roots are ALWAYS injected by the
-// operator — nothing is embedded from memory. nil fails closed with
-// ErrAppleAttestRootsUnconfigured.
-var appleAttestRoots *x509.CertPool
-
-// SetAppleAttestRoots configures the package-wide Apple App Attest roots used
-// to verify SECURE_ENCLAVE enrollment claims. Call it once at boot with the
-// pool from LoadAppleAttestRoots. Passing nil unconfigures (Apple verification
-// then fails closed with ErrAppleAttestRootsUnconfigured).
-func SetAppleAttestRoots(pool *x509.CertPool) {
-	appleAttestRoots = pool
-}
-
 // LoadAppleAttestRoots reads a PEM file of the Apple App Attest Root CA
 // certificates and returns them as an x509.CertPool. Shares the Android roots
 // loader — the PEM file format is identical.
 func LoadAppleAttestRoots(pemPath string) (*x509.CertPool, error) {
 	return LoadAttestationRoots(pemPath)
-}
-
-// enrollmentExpectedAppID is the orchestrator-configured "<teamID>.<bundleID>"
-// that the Apple attestation's rpIdHash is checked against. Defaults to "",
-// which disables the Apple verification path entirely: SECURE_ENCLAVE claims
-// then enroll as CLAIMED (Verified=false) — an honest no-device-today posture.
-var enrollmentExpectedAppID string
-
-// SetEnrollmentExpectedAppID configures the appID expected in Apple App
-// Attest attestations at enrollment. Empty (the default) disables the Apple
-// verification path.
-func SetEnrollmentExpectedAppID(appID string) {
-	enrollmentExpectedAppID = appID
 }
 
 // cborReader is a minimal definite-length CBOR decoder covering only the

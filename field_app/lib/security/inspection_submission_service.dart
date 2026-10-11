@@ -105,11 +105,13 @@ class InspectionSubmissionService {
 
     // Step 4: Dispatch to edge coordinator
     final client = httpClient ?? PinnedHttpClient.forEndpoint(endpoint);
-    final response = await client.post(
-      endpoint.resolve('/api/v1/inspection/submit'),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode(submissionBody),
-    );
+    final response = await client
+        .post(
+          endpoint.resolve('/api/v1/inspection/submit'),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode(submissionBody),
+        )
+        .timeout(const Duration(seconds: 30));
 
     // Step 5: Branch on response
     final body = jsonDecode(response.body);

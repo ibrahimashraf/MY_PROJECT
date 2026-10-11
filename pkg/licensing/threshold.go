@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -32,9 +33,8 @@ type ringKey struct {
 // distinct ring keys have each produced a valid signature (the primary
 // Signature plus its Signoffs) over the same canonical payload digest.
 type MOfNValidator struct {
-	ring       []ringKey
-	m          int
-	timeSource timeSource
+	ring []ringKey
+	m    int
 }
 
 // NewMOfNValidator builds an m-of-n validator from N hex-encoded Ed25519
@@ -66,7 +66,7 @@ func NewMOfNValidator(hexKeys []string, m int) (*MOfNValidator, error) {
 		ring = append(ring, ringKey{hexID: id, pub: ed25519.PublicKey(pubBytes)})
 	}
 	sort.Slice(ring, func(i, j int) bool { return ring[i].hexID < ring[j].hexID })
-	return &MOfNValidator{ring: ring, m: m, timeSource: realTimeSource{}}, nil
+	return &MOfNValidator{ring: ring, m: m}, nil
 }
 
 // RingSize reports N (the number of authorized keys).
@@ -97,7 +97,7 @@ func (v *MOfNValidator) ValidateToken(token *SignedLicenseToken, currentHardware
 		return ErrQuorumNotMet
 	}
 
-	return checkLicenseWindow(token.Payload, currentHardwareID, v.timeSource.Now())
+	return checkLicenseWindow(token.Payload, currentHardwareID, time.Now().UTC())
 }
 
 // countDistinctSigners returns how many distinct ring keys verified at least
@@ -154,5 +154,5 @@ func (v *MOfNValidator) ValidateWithRevocation(token *SignedLicenseToken, curren
 	if err := v.ValidateToken(token, currentHardwareID); err != nil {
 		return err
 	}
-	return cache.CheckLicense(token.Payload.LicenseID, v.timeSource.Now())
+	return cache.CheckLicense(token.Payload.LicenseID, time.Now().UTC())
 }

@@ -30,24 +30,13 @@ func (r *Repository) beginTenant(ctx context.Context, tenantID, orgID string) (*
 
 var webhookRetryIntervals = getWebhookRetryIntervals()
 
-func defaultWebhookRetryIntervals() []time.Duration {
-	return []time.Duration{
-		1 * time.Minute,  // 1st retry: 1 minute
-		5 * time.Minute,  // 2nd retry: 5 minutes
-		15 * time.Minute, // 3rd retry: 15 minutes
-		1 * time.Hour,    // 4th retry: 1 hour
-		6 * time.Hour,    // 5th retry: 6 hours
-		24 * time.Hour,   // 6th retry: 24 hours
-	}
-}
-
 // getWebhookRetryIntervals allows operators to tune retry backoff via
 // WEBHOOK_RETRY_INTERVALS="1m,5m,15m,1h,6h,24h". Falls back to defaults
 // on empty or invalid input to preserve current behavior.
 func getWebhookRetryIntervals() []time.Duration {
 	raw := strings.TrimSpace(os.Getenv("WEBHOOK_RETRY_INTERVALS"))
 	if raw == "" {
-		return defaultWebhookRetryIntervals()
+		return shortlink.DefaultWebhookRetryIntervals()
 	}
 	parts := strings.Split(raw, ",")
 	intervals := make([]time.Duration, 0, len(parts))
@@ -58,12 +47,12 @@ func getWebhookRetryIntervals() []time.Duration {
 		}
 		d, err := time.ParseDuration(p)
 		if err != nil || d <= 0 {
-			return defaultWebhookRetryIntervals()
+			return shortlink.DefaultWebhookRetryIntervals()
 		}
 		intervals = append(intervals, d)
 	}
 	if len(intervals) == 0 {
-		return defaultWebhookRetryIntervals()
+		return shortlink.DefaultWebhookRetryIntervals()
 	}
 	return intervals
 }
@@ -191,159 +180,76 @@ func (r *Repository) GetScanStats(ctx context.Context, code string, since *time.
 		return nil, err
 	}
 
-	// Countries
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err := r.db.QueryContext(ctx, `
+	stats.Countries, _ = scanBreakdown(ctx, r.db, `
 		SELECT country, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1`+sinceClause(since), args...)
-	if err == nil {
-		stats.Countries = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var country string
-			var count int64
-			_ = rows.Scan(&country, &count) //nolint:gosec // Scan error handled by rows.Err()
-			if country == "" {
-				country = "Unknown"
-			}
-			stats.Countries[country] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan countries: %w", err)
-		}
-	}
+		WHERE short_link_code = $1`+sinceClause(since)+`
+		GROUP BY country`, "countries", "Unknown", args...)
 
-	// Devices
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.Devices, _ = scanBreakdown(ctx, r.db, `
 		SELECT device_type, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1`+sinceClause(since), args...)
-	if err == nil {
-		stats.Devices = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var device string
-			var count int64
-			_ = rows.Scan(&device, &count) //nolint:gosec // Scan error handled by rows.Err()
-			if device == "" {
-				device = "Unknown"
-			}
-			stats.Devices[device] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan devices: %w", err)
-		}
-	}
+		WHERE short_link_code = $1`+sinceClause(since)+`
+		GROUP BY device_type`, "devices", "Unknown", args...)
 
-	// Browsers
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.Browsers, _ = scanBreakdown(ctx, r.db, `
 		SELECT browser, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1`+sinceClause(since), args...)
-	if err == nil {
-		stats.Browsers = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var browser string
-			var count int64
-			_ = rows.Scan(&browser, &count) //nolint:gosec // Scan error handled by rows.Err()
-			if browser == "" {
-				browser = "Unknown"
-			}
-			stats.Browsers[browser] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan browsers: %w", err)
-		}
-	}
+		WHERE short_link_code = $1`+sinceClause(since)+`
+		GROUP BY browser`, "browsers", "Unknown", args...)
 
-	// Referrers
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.Referrers, _ = scanBreakdown(ctx, r.db, `
 		SELECT referrer, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1`+sinceClause(since), args...)
-	if err == nil {
-		stats.Referrers = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var referrer string
-			var count int64
-			_ = rows.Scan(&referrer, &count) //nolint:gosec // Scan error handled by rows.Err()
-			if referrer == "" {
-				referrer = "Direct"
-			}
-			stats.Referrers[referrer] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan referrers: %w", err)
-		}
-	}
+		WHERE short_link_code = $1`+sinceClause(since)+`
+		GROUP BY referrer`, "referrers", "Direct", args...)
 
-	// UTM Sources
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.UTMSources, _ = scanBreakdown(ctx, r.db, `
 		SELECT utm_source, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1 AND utm_source != ''`+sinceClause(since), args...)
-	if err == nil {
-		stats.UTMSources = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var source string
-			var count int64
-			_ = rows.Scan(&source, &count) //nolint:gosec // Scan error handled by rows.Err()
-			stats.UTMSources[source] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan utm sources: %w", err)
-		}
-	}
+		WHERE short_link_code = $1 AND utm_source != ''`+sinceClause(since)+`
+		GROUP BY utm_source`, "utm sources", "", args...)
 
-	// UTM Mediums
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.UTMMedia, _ = scanBreakdown(ctx, r.db, `
 		SELECT utm_medium, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1 AND utm_medium != ''`+sinceClause(since), args...)
-	if err == nil {
-		stats.UTMMedia = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var medium string
-			var count int64
-			_ = rows.Scan(&medium, &count) //nolint:gosec // Scan error handled by rows.Err()
-			stats.UTMMedia[medium] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan utm mediums: %w", err)
-		}
-	}
+		WHERE short_link_code = $1 AND utm_medium != ''`+sinceClause(since)+`
+		GROUP BY utm_medium`, "utm mediums", "", args...)
 
-	// UTM Campaigns
-	//nolint:gosec // query built with whitelisted column names, not user input
-	rows, err = r.db.QueryContext(ctx, `
+	stats.UTMCampaigns, _ = scanBreakdown(ctx, r.db, `
 		SELECT utm_campaign, COUNT(*)
 		FROM short_link_scan_events
-		WHERE short_link_code = $1 AND utm_campaign != ''`+sinceClause(since), args...)
-	if err == nil {
-		stats.UTMCampaigns = make(map[string]int64)
-		defer rows.Close()
-		for rows.Next() {
-			var campaign string
-			var count int64
-			_ = rows.Scan(&campaign, &count) //nolint:gosec // Scan error handled by rows.Err()
-			stats.UTMCampaigns[campaign] = count
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("scan utm campaigns: %w", err)
-		}
-	}
+		WHERE short_link_code = $1 AND utm_campaign != ''`+sinceClause(since)+`
+		GROUP BY utm_campaign`, "utm campaigns", "", args...)
 
 	return &stats, nil
+}
+
+// scanBreakdown runs one GROUP BY dimension query and returns key -> count.
+// Empty keys become fallback. The rows handle is closed on every path, so no
+// connection is held past the call.
+func scanBreakdown(ctx context.Context, db *sql.DB, query, label, fallback string, args ...interface{}) (map[string]int64, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[string]int64)
+	for rows.Next() {
+		var key string
+		var count int64
+		if err := rows.Scan(&key, &count); err != nil {
+			return nil, fmt.Errorf("scan %s: %w", label, err)
+		}
+		if key == "" {
+			key = fallback
+		}
+		out[key] = count
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan %s: %w", label, err)
+	}
+	return out, nil
 }
 
 func sinceClause(since *time.Time) string {

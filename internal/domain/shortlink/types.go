@@ -16,6 +16,21 @@ var (
 // DefaultWebhookMaxAttempts is the default webhook delivery retry budget.
 const DefaultWebhookMaxAttempts = 5
 
+// DefaultWebhookRetryIntervals returns the default webhook retry backoff
+// schedule. Shared by the persistence layer (which reads operator overrides
+// from WEBHOOK_RETRY_INTERVALS) and the service layer (which schedules the
+// next attempt) so the two can never drift apart.
+func DefaultWebhookRetryIntervals() []time.Duration {
+	return []time.Duration{
+		1 * time.Minute,
+		5 * time.Minute,
+		15 * time.Minute,
+		1 * time.Hour,
+		6 * time.Hour,
+		24 * time.Hour,
+	}
+}
+
 type AnomalyType string
 
 const (

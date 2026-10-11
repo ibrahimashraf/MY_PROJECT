@@ -18,30 +18,29 @@ import (
 const testAppleAppID = "TEAM1234.com.integin.fieldapp"
 
 func TestProvisionAttestationFromEnvInjectsRoots(t *testing.T) {
-	defer resetAttestationGlobals()
 	dir := t.TempDir()
 	t.Setenv(envGoogleRootsFile, writeRootPEM(t, dir, "google"))
 	t.Setenv(envAppleRootsFile, writeRootPEM(t, dir, "apple"))
 	t.Setenv(envAppleAppID, testAppleAppID)
 
-	if err := ProvisionAttestationFromEnv(); err != nil {
+	googleRoots, appleRoots, appleAppID, err := ProvisionAttestationFromEnv()
+	if err != nil {
 		t.Fatalf("provision: %v", err)
 	}
-	if chainVerifyRoots == nil {
-		t.Fatal("Google roots not injected")
+	if googleRoots == nil {
+		t.Fatal("Google roots not returned")
 	}
-	if appleAttestRoots == nil {
-		t.Fatal("Apple roots not injected")
+	if appleRoots == nil {
+		t.Fatal("Apple roots not returned")
 	}
-	if enrollmentExpectedAppID != testAppleAppID {
-		t.Fatalf("expectedAppID = %q, want %q", enrollmentExpectedAppID, testAppleAppID)
+	if appleAppID != testAppleAppID {
+		t.Fatalf("expectedAppID = %q, want %q", appleAppID, testAppleAppID)
 	}
 }
 
 func TestProvisionAttestationFromEnvMissingFileFailsClosed(t *testing.T) {
-	defer resetAttestationGlobals()
 	t.Setenv(envGoogleRootsFile, filepath.Join(t.TempDir(), "no-such-file.pem"))
-	err := ProvisionAttestationFromEnv()
+	_, _, _, err := ProvisionAttestationFromEnv()
 	if err == nil {
 		t.Fatal("missing Google roots file accepted")
 	}
@@ -51,7 +50,6 @@ func TestProvisionAttestationFromEnvMissingFileFailsClosed(t *testing.T) {
 }
 
 func TestProvisionAttestationFromEnvInvalidPEMFailsClosed(t *testing.T) {
-	defer resetAttestationGlobals()
 	dir := t.TempDir()
 	bad := filepath.Join(dir, "bad.pem")
 	if err := os.WriteFile(bad, []byte("not a certificate"), 0o600); err != nil {
@@ -59,32 +57,27 @@ func TestProvisionAttestationFromEnvInvalidPEMFailsClosed(t *testing.T) {
 	}
 	t.Setenv(envAppleRootsFile, bad)
 	t.Setenv(envAppleAppID, testAppleAppID)
-	err := ProvisionAttestationFromEnv()
+	_, _, _, err := ProvisionAttestationFromEnv()
 	if err == nil {
 		t.Fatal("invalid Apple roots file accepted")
 	}
 	if !strings.Contains(err.Error(), envAppleRootsFile) {
 		t.Fatalf("error does not name the variable: %v", err)
 	}
-	if appleAttestRoots != nil {
-		t.Fatal("invalid roots partially injected")
-	}
 }
 
 func TestProvisionAttestationFromEnvApplePairRequired(t *testing.T) {
-	defer resetAttestationGlobals()
 	t.Setenv(envAppleAppID, testAppleAppID)
-	if err := ProvisionAttestationFromEnv(); err == nil {
+	if _, _, _, err := ProvisionAttestationFromEnv(); err == nil {
 		t.Fatal("appID without roots file accepted")
 	} else if !strings.Contains(err.Error(), envAppleRootsFile) {
 		t.Fatalf("error does not name the pair: %v", err)
 	}
 
-	resetAttestationGlobals()
 	t.Setenv(envAppleRootsFile, writeRootPEM(t, t.TempDir(), "apple"))
 	t.Setenv(envAppleAppID, "")
 	t.Setenv(envGoogleRootsFile, "")
-	if err := ProvisionAttestationFromEnv(); err == nil {
+	if _, _, _, err := ProvisionAttestationFromEnv(); err == nil {
 		t.Fatal("roots file without appID accepted")
 	} else if !strings.Contains(err.Error(), envAppleAppID) {
 		t.Fatalf("error does not name the pair: %v", err)
@@ -92,22 +85,16 @@ func TestProvisionAttestationFromEnvApplePairRequired(t *testing.T) {
 }
 
 func TestProvisionAttestationFromEnvAllUnsetIsNoop(t *testing.T) {
-	defer resetAttestationGlobals()
 	t.Setenv(envGoogleRootsFile, "")
 	t.Setenv(envAppleRootsFile, "")
 	t.Setenv(envAppleAppID, "")
-	if err := ProvisionAttestationFromEnv(); err != nil {
+	googleRoots, appleRoots, appleAppID, err := ProvisionAttestationFromEnv()
+	if err != nil {
 		t.Fatalf("unset provisioning must not fail: %v", err)
 	}
-	if chainVerifyRoots != nil || appleAttestRoots != nil || enrollmentExpectedAppID != "" {
+	if googleRoots != nil || appleRoots != nil || appleAppID != "" {
 		t.Fatal("unset provisioning changed the package posture")
 	}
-}
-
-func resetAttestationGlobals() {
-	chainVerifyRoots = nil
-	appleAttestRoots = nil
-	enrollmentExpectedAppID = ""
 }
 
 func TestVerifyRootBundleValidPEMs(t *testing.T) {

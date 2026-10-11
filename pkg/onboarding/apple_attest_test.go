@@ -234,11 +234,11 @@ func appleSecureEnclaveClaim(cbor []byte) AttestationClaim {
 // SECURE_ENCLAVE claim carries a valid attestation object built against the
 // enrollment nonce; the record is stored as AttestationVerified.
 func TestEnrollmentVerifiedAppleAttestation(t *testing.T) {
-	sim, err := NewEnrollmentSimulator()
+	appID := "TEAM1234.com.integin.fieldapp"
+	sim, err := NewEnrollmentSimulator(WithExpectedAppID(appID))
 	if err != nil {
 		t.Fatalf("sim: %v", err)
 	}
-	appID := "TEAM1234.com.integin.fieldapp"
 
 	// Build the attestation object AFTER the challenge so the nonce binds the
 	// actual enrollment nonce.
@@ -249,9 +249,7 @@ func TestEnrollmentVerifiedAppleAttestation(t *testing.T) {
 	authData := appleAuthData(appID)
 	leafDER, caDER, ca := newAppleAttestLeaf(t, appleNonce(authData, []byte(chal.Nonce)))
 	attObj := buildAppleAttObj("apple-appattest", authData, [][]byte{leafDER, caDER})
-	appleAttestRoots = caPool(ca)
-	enrollmentExpectedAppID = appID
-	defer func() { appleAttestRoots = nil; enrollmentExpectedAppID = "" }()
+	sim.SetAppleAttestRoots(caPool(ca))
 
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -278,14 +276,14 @@ func TestEnrollmentVerifiedAppleAttestation(t *testing.T) {
 
 // (h) enrollment with garbage AppleAttestCBOR fails closed and stores nothing.
 func TestAppleEnrollmentGarbageCBORFailsClosed(t *testing.T) {
-	sim, err := NewEnrollmentSimulator()
+	sim, err := NewEnrollmentSimulator(
+		WithExpectedAppID("TEAM1234.com.integin.fieldapp"),
+	)
 	if err != nil {
 		t.Fatalf("sim: %v", err)
 	}
 	_, _, ca := newAppleAttestLeaf(t, make([]byte, sha256.Size))
-	appleAttestRoots = caPool(ca)
-	enrollmentExpectedAppID = "TEAM1234.com.integin.fieldapp"
-	defer func() { appleAttestRoots = nil; enrollmentExpectedAppID = "" }()
+	sim.SetAppleAttestRoots(caPool(ca))
 
 	_, _, err = enroll(t, sim, appleSecureEnclaveClaim([]byte("not-cbor")))
 	if err == nil {
@@ -302,7 +300,7 @@ func TestAppleEnrollmentGarbageCBORFailsClosed(t *testing.T) {
 // (i) enrollment with AppleAttestCBOR but nil roots returns
 // ErrAppleAttestRootsUnconfigured and stores nothing.
 func TestAppleEnrollmentNilRootsFailsClosed(t *testing.T) {
-	sim, err := NewEnrollmentSimulator()
+	sim, err := NewEnrollmentSimulator(WithExpectedAppID("TEAM1234.com.integin.fieldapp"))
 	if err != nil {
 		t.Fatalf("sim: %v", err)
 	}
@@ -310,9 +308,7 @@ func TestAppleEnrollmentNilRootsFailsClosed(t *testing.T) {
 	authData := appleAuthData(appID)
 	leafDER, caDER, _ := newAppleAttestLeaf(t, appleNonce(authData, []byte("x")))
 	attObj := buildAppleAttObj("apple-appattest", authData, [][]byte{leafDER, caDER})
-	appleAttestRoots = nil
-	enrollmentExpectedAppID = appID
-	defer func() { appleAttestRoots = nil; enrollmentExpectedAppID = "" }()
+	// nil roots - don't set them
 
 	_, _, err = enroll(t, sim, appleSecureEnclaveClaim(attObj))
 	if err == nil {
@@ -329,12 +325,12 @@ func TestAppleEnrollmentNilRootsFailsClosed(t *testing.T) {
 // (j) SECURE_ENCLAVE without CBOR enrolls CLAIMED (Verified=false), and so
 // does a CBOR-carrying claim while ExpectedAppID is unset (path disabled).
 func TestAppleSecureEnclaveWithoutCBOREnrollsClaimed(t *testing.T) {
-	sim, err := NewEnrollmentSimulator()
+	sim, err := NewEnrollmentSimulator(
+		WithExpectedAppID("TEAM1234.com.integin.fieldapp"),
+	)
 	if err != nil {
 		t.Fatalf("sim: %v", err)
 	}
-	enrollmentExpectedAppID = "TEAM1234.com.integin.fieldapp"
-	defer func() { enrollmentExpectedAppID = "" }()
 
 	// No CBOR: even with the path armed, there is nothing to verify.
 	record, _, err := enroll(t, sim, appleSecureEnclaveClaim(nil))
@@ -354,13 +350,11 @@ func TestAppleSecureEnclaveWithoutCBOREnrollsClaimed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sim2: %v", err)
 	}
-	enrollmentExpectedAppID = ""
 	appID := "TEAM1234.com.integin.fieldapp"
 	authData := appleAuthData(appID)
 	leafDER, caDER, ca := newAppleAttestLeaf(t, appleNonce(authData, []byte("x")))
 	attObj := buildAppleAttObj("apple-appattest", authData, [][]byte{leafDER, caDER})
-	appleAttestRoots = caPool(ca)
-	defer func() { appleAttestRoots = nil }()
+	sim2.SetAppleAttestRoots(caPool(ca))
 
 	record2, _, err := enroll(t, sim2, appleSecureEnclaveClaim(attObj))
 	if err != nil {

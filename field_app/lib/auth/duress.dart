@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'pin.dart';
+import 'pin_bytes.dart';
 
 /// Coercion quarantine flag embedded in outbox metadata.
 ///
@@ -76,11 +77,7 @@ class DuressPin {
         'queued_at': DateTime.now().toUtc().toIso8601String(),
       };
 
-  static void _zeroPin(Uint8List pin) {
-    for (var i = 0; i < pin.length; i++) {
-      pin[i] = 0;
-    }
-  }
+  static void _zeroPin(Uint8List pin) => zeroPinBytes(pin);
 }
 
 /// Silence duress alarm payload for a single submission.
