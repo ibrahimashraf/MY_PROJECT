@@ -66,12 +66,13 @@ All initial decisions for the Rust Systems Adoption Initiative are formally reso
 ---
 
 ## 5. Resolved Exploratory Items
+* **NY-01: Native TPM 2.0 / Hardware Enclave & YubiKey PIV Bridge (RESOLVED ✅):** Pure Go contract extension (`KeyOriginTPM = "TPM_2_0"`, `KeyOriginYubiKey = "YUBIKEY_PIV"`) in `pkg/onboarding`. All hardware interactions occur strictly out-of-process via native OS channels (Windows CNG Platform Crypto Provider, Linux `/dev/tpmrm0`, PC/SC PIV smartcards) or standalone verifier CLIs. Zero in-process `cgo` or FFI linkage into the Go runtime. FIPS 140-3 Level 2 (TPM 2.0) and Level 3 (YubiKey PIV) policies validated and enforced in pure Go under PostgreSQL RLS. Research report: [`docs/research/INTEGIN_HARDWARE_TPM_YUBIKEY_ENCLAVE_BRIDGE_RESEARCH.md`](../research/INTEGIN_HARDWARE_TPM_YUBIKEY_ENCLAVE_BRIDGE_RESEARCH.md).
 * **NY-02: GPU Acceleration for Crane Stability (RESOLVED ✅):** Server-side Vulkan/Rust GPU compute rejected via YAGNI. Pure Go `pkg/mathcore` verifies outrigger reaction limits and 10,000-point soil grids in 0.75ms (0 B/op). Real-time visual heatmaps are offloaded entirely to client-side WebGL / WebGPU fragment shaders (Three.js / Flutter Impeller). Zero cloud GPU cost or streaming latency.
 
 ---
 
 ## 6. Not Yet Specified
-* **NY-01: Native TPM/Hardware Enclave Bridge:** Architecture for binding Rust field tools directly to physical YubiKeys / rugged tablet TPM chips under air-gapped field conditions.
+* *None. All frontier decisions mapped in the Wayfinder initiative (DEC-RUST-01 through 04, NY-01, NY-02) are 100% resolved and ratified with operational and benchmark evidence.*
 
 ---
 

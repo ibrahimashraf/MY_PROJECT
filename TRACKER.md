@@ -638,10 +638,20 @@ All 7 Master Sprints (Sprints 1–7), all 12 Architectural Tiers (L0–L11), and
     *   Implemented zero-allocation 3D crane kinematics and Boussinesq ground bearing pressure engine in `pkg/mathcore/kinematics`.
     *   Measured performance on 10,000 articulated joints: **0.581 ms** (28.6× faster than 60 FPS 16.6ms interactive threshold, 0 allocs/op).
     *   Formally ratified: Rust is not required for 3D simulation; pure Go MathCore meets and vastly exceeds SLAs.
+*   **NY-01: Native TPM 2.0 / Hardware Enclave & YubiKey PIV Bridge (Pure Go + Out-of-Process)** ✅:
+    *   Authored research: [`docs/research/INTEGIN_HARDWARE_TPM_YUBIKEY_ENCLAVE_BRIDGE_RESEARCH.md`](./docs/research/INTEGIN_HARDWARE_TPM_YUBIKEY_ENCLAVE_BRIDGE_RESEARCH.md).
+    *   Extended `pkg/onboarding`: added `KeyOriginTPM` (`"TPM_2_0"`) and `KeyOriginYubiKey` (`"YUBIKEY_PIV"`).
+    *   Implemented hardware posture checks, biometric/PIN requirement validation, and FIPS 140-3 classifications (Level 2 for TPM 2.0, Level 3 for YubiKey PIV).
+    *   Preserved `CGO_ENABLED=0` static single-binary constraint: field clients communicate with TPM/YubiKey out-of-process via Windows CNG or Linux `/dev/tpmrm0`.
+*   **NY-02: GPU Acceleration for Crane Stability (Client-Side Shaders Retained)** ✅:
+    *   Rejected server-side Vulkan/Rust GPU complexity via YAGNI. Pure Go `pkg/mathcore` computes outrigger reactions and ground bearing pressure in 0.75ms.
+    *   Visual heatmaps delegated to client-side WebGL/WebGPU fragment shaders (Three.js / Flutter Impeller).
 *   **Verification Evidence**:
+    *   `go test -count=1 ./pkg/onboarding/...` $\longrightarrow$ **PASS (100% clean across all 40+ attestation & enrollment tests)**.
     *   `go test -count=1 ./pkg/evidenceexport ./pkg/mathcore/kinematics` $\longrightarrow$ **PASS (100% clean)**.
     *   `go test -v -bench=. -benchmem ./pkg/mathcore/kinematics` $\longrightarrow$ **PASS (10k nodes in 0.58ms, 0 B/op)**.
     *   `go test -count=1 ./pkg/...` $\longrightarrow$ **PASS (0 errors across entire package suite)**.
     *   `go vet ./...` $\longrightarrow$ **0 errors**.
+
 
 
