@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup Go Runtime
         uses: actions/setup-go@v5
