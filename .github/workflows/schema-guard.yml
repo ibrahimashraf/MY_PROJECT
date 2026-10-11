@@ -13,6 +13,9 @@ on:
       - 'integin-pilot-source/cmd/integin-server/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   schema-guard:
     name: Schema Ledger & Reversibility Gate

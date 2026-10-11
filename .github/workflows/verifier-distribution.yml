@@ -13,6 +13,9 @@ on:
       - '.github/workflows/verifier-distribution.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-package:
     name: Build ${{ matrix.target }}

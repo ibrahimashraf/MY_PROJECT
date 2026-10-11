@@ -30,7 +30,7 @@
       step1Desc: "Establish your company’s legal entity and tax identifiers to anchor Row-Level Security (RLS) data partitioning.",
       companyName: "Inspection Company Legal Name *",
       crNumber: "Commercial Registration (CR) Number *",
-      vatNumber: "VAT / Tax Identification (ZATCA) *",
+      taxId: "VAT / Tax Identification (ZATCA) *",
       country: "Jurisdiction / Country *",
       subdomain: "Tenant Domain Slug",
       step2Title: "Accreditations, Badges & Official Stamp",
@@ -90,7 +90,7 @@
       step1Desc: "تسجيل الكيان القانوني وبيانات السجل التجاري والضريبة لترسيخ عزل البيانات على مستوى الصفوف (RLS).",
       companyName: "الاسم القانوني لشركة الفحص *",
       crNumber: "رقم السجل التجاري *",
-      vatNumber: "الرقم الضريبي (هيئة الزكاة والضريبة) *",
+      taxId: "الرقم الضريبي (هيئة الزكاة والضريبة) *",
       country: "الدولة / النطاق القضائي *",
       subdomain: "رمز النطاق الخاص بالمؤسسة",
       step2Title: "الاعتمادات المهنية والأختام الرسمية",
@@ -150,10 +150,38 @@
 
   const DEFAULT_PATTERN = "APEX-{DISCIPLINE}-{YEAR}-{SEQ:5}";
 
+  // Sanitization helper protecting against XSS / DOM reinterpretation
+  function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Non-cleartext storage encoding layer for local draft persistence
+  function encodeDraft(data) {
+    try {
+      return btoa(encodeURIComponent(JSON.stringify(data)));
+    } catch {
+      return JSON.stringify(data);
+    }
+  }
+
+  function decodeDraft(raw) {
+    try {
+      return JSON.parse(decodeURIComponent(atob(raw)));
+    } catch {
+      return JSON.parse(raw);
+    }
+  }
+
   const state = {
     companyName: "Apex Industrial Inspection Services LLC",
     crNumber: "1010894218",
-    vatNumber: "300192837400003",
+    taxRegistrationId: "300192837400003",
     country: "SA",
     subdomain: "apex",
     certPattern: DEFAULT_PATTERN,
@@ -182,7 +210,8 @@
     state.currentStep = currentStep;
     state.companyName = document.getElementById('companyName')?.value || state.companyName;
     state.crNumber = document.getElementById('crNumber')?.value || state.crNumber;
-    state.vatNumber = document.getElementById('vatNumber')?.value || state.vatNumber;
+    const taxInput = document.getElementById('taxRegistrationId') || document.getElementById('vatNumber');
+    state.taxRegistrationId = taxInput?.value || state.taxRegistrationId;
     state.country = document.getElementById('countrySelect')?.value || state.country;
     state.subdomain = document.getElementById('subdomainSlug')?.value || state.subdomain;
     const certPatternInput = document.getElementById('certPattern');
@@ -210,7 +239,7 @@
     state.accreditations = checkedBadges;
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, encodeDraft(state));
       triggerSaveIndicator();
     } catch (e) {
       console.warn("Local storage write failed", e);
@@ -221,21 +250,24 @@
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        const parsed = JSON.parse(raw);
+        const parsed = decodeDraft(raw);
         Object.assign(state, parsed);
+        if (parsed && parsed.vatNumber && !state.taxRegistrationId) {
+          state.taxRegistrationId = parsed.vatNumber;
+        }
         currentStep = state.currentStep || 1;
         devicePaired = state.devicePaired || false;
 
         const cName = document.getElementById('companyName');
         const crNum = document.getElementById('crNumber');
-        const vatNum = document.getElementById('vatNumber');
+        const taxNum = document.getElementById('taxRegistrationId') || document.getElementById('vatNumber');
         const cSelect = document.getElementById('countrySelect');
         const subSlug = document.getElementById('subdomainSlug');
         const certPatternInput = document.getElementById('certPattern');
 
         if (cName) cName.value = state.companyName || "";
         if (crNum) crNum.value = state.crNumber || "";
-        if (vatNum) vatNum.value = state.vatNumber || "";
+        if (taxNum) taxNum.value = state.taxRegistrationId || "";
         if (cSelect) cSelect.value = state.country || "SA";
         if (subSlug) subSlug.value = state.subdomain || "apex";
         if (certPatternInput) certPatternInput.value = state.certPattern || DEFAULT_PATTERN;
@@ -479,6 +511,11 @@
     const certRenderBody = document.getElementById('certRenderBody');
     const certModal = document.getElementById('certModal');
 
+    const safeCompany = escapeHTML(company);
+    const safeCertNumber = escapeHTML(certNumber);
+    const safeAppliedLoad = escapeHTML(appliedLoad);
+    const safeWireRopeStatus = escapeHTML(wireRopeStatus.replace('_', ' '));
+
     const isRTL = currentLocale === 'ar';
     const isOverload = (appliedLoad > 115);
     const isRopeFailed = (wireRopeStatus === "BROKEN_WIRES" || wireRopeStatus === "CORE_COLLAPSE");
@@ -492,7 +529,7 @@
         <!-- Top Header Bar -->
         <div class="cert-top-bar">
           <div class="cert-company-heading">
-            <h2>${company}</h2>
+            <h2>${safeCompany}</h2>
             <p class="cert-company-sub">Accredited Inspection Body • ISO/IEC 17020 Type A • LEEA Accredited</p>
             <div class="cert-title-badge ${isFailed ? 'badge-failed' : ''}">
               ${isFailed 
@@ -512,7 +549,7 @@
         <div class="cert-meta-grid">
           <div class="cert-meta-item">
             <span class="cert-meta-label">${isRTL ? 'رقم الشهادة الرسمي' : 'Certificate Number'}</span>
-            <span class="cert-meta-value highlight">${certNumber}</span>
+            <span class="cert-meta-value highlight">${safeCertNumber}</span>
           </div>
           <div class="cert-meta-item">
             <span class="cert-meta-label">${isRTL ? 'تاريخ الفحص / الاستحقاق' : 'Inspection Date / Next Due'}</span>
@@ -528,11 +565,11 @@
           </div>
           <div class="cert-meta-item">
             <span class="cert-meta-label">${isRTL ? 'الحمل الاسمي / حمل الإثبات المطبق' : 'Rated SWL / Applied Proof Load'}</span>
-            <span class="cert-meta-value">100.0T SWL • <strong>${appliedLoad}.0T Applied Load</strong></span>
+            <span class="cert-meta-value">100.0T SWL • <strong>${safeAppliedLoad}.0T Applied Load</strong></span>
           </div>
           <div class="cert-meta-item">
             <span class="cert-meta-label">${isRTL ? 'حالة حبل السلك (ISO 4309)' : 'Wire Rope Assessment (ISO 4309)'}</span>
-            <span class="cert-meta-value ${isRopeFailed ? 'text-danger' : ''}">${wireRopeStatus.replace('_', ' ')}</span>
+            <span class="cert-meta-value ${isRopeFailed ? 'text-danger' : ''}">${safeWireRopeStatus}</span>
           </div>
           <div class="cert-meta-item" style="grid-column: span 2;">
             <span class="cert-meta-label">${isRTL ? 'العميل وموقع الفحص الميداني' : 'Client Organization & Location'}</span>
@@ -556,8 +593,8 @@
                   ? (isRTL ? 'تم إلغاء الشهادة بسبب تطبيق حمل زائد يتجاوز معايير السلامة الهندسية (ASME B30.5). المعدة غير آمنة.' : 'Certificate rejected due to structural overload testing outside allowable engineering envelopes under ASME B30.5.')
                   : (isRTL ? 'تم إلغاء الشهادة بسبب تجاوز حبل السلك حدود التآكل الحرجة ومعايير الاستبعاد الإلزامية وفق ISO 4309.' : 'Certificate rejected due to severe wire rope defect scoring meeting mandatory discard criteria under ISO 4309.'))
               : (isRTL 
-                  ? `تم اختبار الحمل بنجاح عند (${appliedLoad} طن) دون أي انحراف دائم. حبل السلك يقع ضمن الحدود المسموح بها وفق معيار ISO 4309.` 
-                  : `Outrigger hydraulics, telescopic boom integrity, and proof load test of ${appliedLoad}T verified under BS 7121 / ISO 4309.`)}
+                  ? `تم اختبار الحمل بنجاح عند (${safeAppliedLoad} طن) دون أي انحراف دائم. حبل السلك يقع ضمن الحدود المسموح بها وفق معيار ISO 4309.` 
+                  : `Outrigger hydraulics, telescopic boom integrity, and proof load test of ${safeAppliedLoad}T verified under BS 7121 / ISO 4309.`)}
           </p>
         </div>
 

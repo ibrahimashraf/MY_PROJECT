@@ -15,6 +15,9 @@ on:
       - 'integin-pilot-source/go.sum'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   cgo-guard:
     name: Pure Go & CGO_ENABLED=0 Invariant Gate
