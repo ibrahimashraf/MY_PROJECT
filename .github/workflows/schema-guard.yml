@@ -38,8 +38,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Initialize Integin Submodule
+        run: |
+          git submodule update --init integin-pilot-source
 
       - name: Setup Go Runtime
         uses: actions/setup-go@v5

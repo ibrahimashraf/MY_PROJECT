@@ -34,8 +34,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Initialize Integin Submodule
+        run: |
+          git submodule update --init integin-pilot-source
 
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
