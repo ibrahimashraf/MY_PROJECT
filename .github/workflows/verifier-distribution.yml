@@ -70,7 +70,7 @@ jobs:
         working-directory: integin-pilot-source/tools/integin-export-verifier
         run: |
           cross build --release --target ${{ matrix.target }}
-          TARGET=${{ matrix.target }} sh package.sh
+          SKIP_BUILD=1 TARGET=${{ matrix.target }} sh package.sh
 
       - name: Upload Packaged Artifacts
         uses: actions/upload-artifact@v4
