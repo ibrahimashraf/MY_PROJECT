@@ -26,7 +26,6 @@ List<DynamicFormFieldDefinition> formFieldsForWorkPack(InspectionWorkPack pack) 
         break;
       case ChecklistResponseType.choice:
       case ChecklistResponseType.text:
-      default:
         type = FieldPrimitiveType.textInput;
         break;
     }
@@ -192,8 +191,8 @@ class _FieldHomePageState extends State<FieldHomePage> {
               ),
               const SizedBox(height: 16),
               DynamicFormEngineView(
-                formTitle: '${(draft?.workPack ?? workPack).inspectionType} Form',
-                fields: formFieldsForWorkPack(draft?.workPack ?? workPack),
+                formTitle: '${draft.workPack.inspectionType} Form',
+                fields: formFieldsForWorkPack(draft.workPack),
                 tenantId: controller.context.tenantId,
                 tusClient: controller.tusClient,
                 onPickPhoto: InAppCameraPhotoService(context).pickImage,
@@ -715,7 +714,6 @@ class _ItemResponseFieldState extends State<_ItemResponseField> {
           },
         );
       case ChecklistResponseType.text:
-      default:
         return TextField(
           controller: _textController,
           decoration: const InputDecoration(

@@ -1,14 +1,22 @@
+// Package httpresponse is the single source of HTTP response bodies.
+//
+// The writers below are the canonical shapes for HTTP error bodies. Handlers
+// used to each define their own writeError/writeJSON with divergent
+// signatures; the wire formats here are what those handlers already emitted,
+// so routing them through this package changes no response bytes.
+//
+// One deliberate change came with the consolidation: these writers use
+// encoding/json/v2, whose MarshalWrite does not append the trailing newline
+// that encoding/json's Encoder.Encode did. The JSON payload is otherwise
+// byte-identical, and no client or test depends on that newline. Responses are
+// also key-deterministic, so map-shaped bodies no longer vary in field order
+// between runs.
 package httpresponse
 
 import (
 	"encoding/json/v2"
 	"net/http"
 )
-
-// The writers below are the canonical shapes for HTTP error bodies. Handlers
-// used to each define their own writeError/writeJSON with divergent
-// signatures; the wire formats here are what those handlers already emitted,
-// so routing them through this package changes no response bytes.
 
 func JSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")

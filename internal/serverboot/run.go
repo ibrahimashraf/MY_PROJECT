@@ -439,16 +439,7 @@ func Run() {
 	}
 
 	log.Printf("loaded authority packages for HTTP sync registry: count=%d", len(authorities)) //nolint:gosec // count from DB, not user input
-	deps.FlagAdminHandler = mustHandler(server.NewFeatureFlagAdminHandler(database))
-	deps.IdentityGrantHandler = mustHandler(server.NewIdentityGrantHandler(database, activeValidator, activeResolver))
-	deps.TrainingHandler = mustHandler(server.NewTrainingHandler(database))
-	deps.SettingsHandler = mustHandler(server.NewSettingsHandler(database))
-	deps.InspectionHandler = mustHandler(server.NewInspectionHandler(database))
-	deps.SearchHandler = mustHandler(server.NewSearchHandler(database))
-	deps.AuditLogHandler = mustHandler(server.NewAuditLogHandler(database))
-	deps.AnalyticsHandler = mustHandler(server.NewAnalyticsHandler(database))
-	deps.ReportsHandler = mustHandler(server.NewReportsHandler(database))
-	deps.LiftViewExportHandler = mustHandler(server.NewLiftViewExportHandler())
+	buildReadOnlyHandlers(&deps, database, activeValidator, activeResolver)
 	deps.WorkbenchHandler = workbenchhttp.NewHandler(database, devices)
 	deps.AdvisoryHandler = advisoryhttp.NewHandler(advisory.NewRegistry())
 
@@ -613,6 +604,22 @@ func Run() {
 		MaxHeaderBytes:    1 << 20,
 	}
 	serveHTTP(httpServer, riverQueue, database)
+}
+
+// buildReadOnlyHandlers wires the operational endpoints that only read from
+// the database. They share the same three inputs, so they are built together
+// rather than scattered through the boot sequence.
+func buildReadOnlyHandlers(deps *server.Dependencies, database *sql.DB, validator *oidcauth.Validator, resolver identity.Resolver) {
+	deps.FlagAdminHandler = mustHandler(server.NewFeatureFlagAdminHandler(database))
+	deps.IdentityGrantHandler = mustHandler(server.NewIdentityGrantHandler(database, validator, resolver))
+	deps.TrainingHandler = mustHandler(server.NewTrainingHandler(database))
+	deps.SettingsHandler = mustHandler(server.NewSettingsHandler(database))
+	deps.InspectionHandler = mustHandler(server.NewInspectionHandler(database))
+	deps.SearchHandler = mustHandler(server.NewSearchHandler(database))
+	deps.AuditLogHandler = mustHandler(server.NewAuditLogHandler(database))
+	deps.AnalyticsHandler = mustHandler(server.NewAnalyticsHandler(database))
+	deps.ReportsHandler = mustHandler(server.NewReportsHandler(database))
+	deps.LiftViewExportHandler = mustHandler(server.NewLiftViewExportHandler())
 }
 
 // mustHandler collapses the "construct a handler, abort if it failed" pattern
