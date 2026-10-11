@@ -13,6 +13,7 @@ on:
       - 'integin-pilot-source/**/*.go'
       - 'integin-pilot-source/go.mod'
       - 'integin-pilot-source/go.sum'
+  workflow_dispatch:
 
 jobs:
   cgo-guard:

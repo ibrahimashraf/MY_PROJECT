@@ -11,6 +11,7 @@ on:
     paths:
       - 'integin-pilot-source/migrations/**'
       - 'integin-pilot-source/cmd/integin-server/**'
+  workflow_dispatch:
 
 jobs:
   schema-guard:
