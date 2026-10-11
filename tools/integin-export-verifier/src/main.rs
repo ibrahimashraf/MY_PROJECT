@@ -14,7 +14,6 @@
 //! Completely offline: no database credentials, no network calls.
 
 use std::env;
-use std::fmt::Write as _;
 use std::fs;
 use std::io::{Read as _, Write as _};
 use std::path::{Path, PathBuf};
@@ -539,7 +538,7 @@ fn canonical_payload(m: &Manifest) -> Result<Vec<u8>, Error> {
         string_value(&mut out, &item.ciphertext_sha256);
         out.extend(b",");
         string_key(&mut out, "byte_length");
-        write!(out, "{}", item.byte_length).map_err(|e: std::fmt::Error| e.to_string())?;
+        write!(out, "{}", item.byte_length).map_err(|e: std::io::Error| e.to_string())?;
         out.extend(b",");
         string_key(&mut out, "encryption_algorithm");
         string_value(&mut out, &item.encryption_algorithm);
@@ -551,10 +550,10 @@ fn canonical_payload(m: &Manifest) -> Result<Vec<u8>, Error> {
     out.push(b']');
     out.extend(b",");
     string_key(&mut out, "object_count");
-    write!(out, "{}", m.object_count).map_err(|e: std::fmt::Error| e.to_string())?;
+    write!(out, "{}", m.object_count).map_err(|e: std::io::Error| e.to_string())?;
     out.extend(b",");
     string_key(&mut out, "total_byte_length");
-    write!(out, "{}", m.total_byte_length).map_err(|e: std::fmt::Error| e.to_string())?;
+    write!(out, "{}", m.total_byte_length).map_err(|e: std::io::Error| e.to_string())?;
     out.push(b'}');
     Ok(out)
 }
