@@ -10,7 +10,10 @@ OUTPUT_DIR="${OUTPUT_DIR:-dist}"
 TARGET="${TARGET:-x86_64-unknown-linux-musl}"
 
 echo "==> [1/4] Building Rust verifier release binary for target: $TARGET"
-if [ -n "$TARGET" ]; then
+if [ "${SKIP_BUILD:-0}" = "1" ]; then
+    echo "    Skipping build step (pre-built binary requested)"
+    BINARY="target/$TARGET/release/integin-export-verifier"
+elif [ -n "$TARGET" ]; then
     cargo build --release --target "$TARGET"
     BINARY="target/$TARGET/release/integin-export-verifier"
 else
