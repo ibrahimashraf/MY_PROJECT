@@ -335,6 +335,60 @@
                 standards: 'Crosby Western / McKissick Spec · ASME B30.26',
                 defaultProps: { sheaveDia: 0.6, wireDia: 32, wllTonnes: 40.0 },
                 cadBlock: 'SNATCH_BLOCK_DYN'
+            },
+            {
+                id: 'BLOCK_RIG_HOOK_PARAMETRIC',
+                category: 'rigging',
+                name: 'Crane Hook Block (Parametric Sheaves)',
+                code: 'HOOK-PARAM',
+                desc: 'Engineered crane hook block with selectable sheave bank (Ball, 1-Sh, 3-Sh, 5-Sh, 7-Sh) and safety latch.',
+                standards: 'DIN 15401 / DIN 15402 / ASME B30.10',
+                defaultProps: { sheaves: 3, wllTonnes: 80.0, tareWeightTonnes: 1.4 },
+                cadBlock: 'HOOK_BLOCK_DYN',
+                build3D: function (props) {
+                    const group = new THREE.Group();
+                    const sheaves = props.sheaves !== undefined ? props.sheaves : 3;
+
+                    if (sheaves === 0) {
+                        // Headache Ball
+                        const ballGeo = new THREE.SphereGeometry(0.35, 16, 16);
+                        const ballMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8 });
+                        group.add(new THREE.Mesh(ballGeo, ballMat));
+
+                        const hookGeo = new THREE.TorusGeometry(0.22, 0.08, 8, 16, Math.PI * 1.5);
+                        hookGeo.rotateZ(Math.PI / 4);
+                        const hook = new THREE.Mesh(hookGeo, ballMat);
+                        hook.position.set(0, -0.45, 0);
+                        group.add(hook);
+                    } else {
+                        // Multi-Sheave Block Body
+                        const bodyWidth = 0.2 + sheaves * 0.12;
+                        const bodyGeo = new THREE.BoxGeometry(0.7, 1.1, bodyWidth);
+                        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
+                        const body = new THREE.Mesh(bodyGeo, bodyMat);
+                        group.add(body);
+
+                        // Sheaves
+                        const sheaveMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
+                        const sheaveGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 16);
+                        sheaveGeo.rotateX(Math.PI / 2);
+                        const zStart = -bodyWidth / 2 + 0.1;
+                        for (let i = 0; i < sheaves; i++) {
+                            const sh = new THREE.Mesh(sheaveGeo, sheaveMat);
+                            sh.position.set(0, 0.2, zStart + i * 0.12);
+                            group.add(sh);
+                        }
+
+                        // Bottom Hook
+                        const hookMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.2 });
+                        const hookGeo = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI * 1.5);
+                        hookGeo.rotateZ(Math.PI / 4);
+                        const hook = new THREE.Mesh(hookGeo, hookMat);
+                        hook.position.set(0, -0.85, 0);
+                        group.add(hook);
+                    }
+                    return group;
+                }
             }
         ],
 

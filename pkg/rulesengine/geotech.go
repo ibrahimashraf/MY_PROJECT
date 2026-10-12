@@ -186,3 +186,57 @@ func BS5975MatStructuralCheck(padLoadT, matLenM, matWidthM, padLenM, matThicknes
 		Passed:            bendingStressMPa <= allowableBendingStressMPa,
 	}, nil
 }
+
+// BoussinesqSubsurfaceResult records stress attenuation at depth z and radial distance r.
+type BoussinesqSubsurfaceResult struct {
+	PadLoadT          float64 `json:"pad_load_t"`
+	DepthM            float64 `json:"depth_m"`
+	RadialDistanceM   float64 `json:"radial_distance_m"`
+	InducedStressKPa  float64 `json:"induced_stress_kpa"`
+	AllowableStressKPa float64 `json:"allowable_stress_kpa"`
+	Passed            bool    `json:"passed"`
+}
+
+// BoussinesqSubsurfaceStress calculates vertical induced stress sigma_z at depth z (m)
+// and radial offset r (m) from an outrigger point load P (tonnes):
+//
+//	sigma_z = (3 * P) / (2 * pi * z^2) * [1 / (1 + (r/z)^2)]^(5/2)
+//
+// P in tonnes is converted to kN (P * 9.80665).
+// Depth z must be strictly > 0 (subsurface singularity avoided).
+func BoussinesqSubsurfaceStress(padLoadT, depthM, radialDistM, allowableStressKPa float64) (BoussinesqSubsurfaceResult, error) {
+	if math.IsNaN(padLoadT) || math.IsNaN(depthM) || math.IsNaN(radialDistM) || math.IsNaN(allowableStressKPa) ||
+		math.IsInf(padLoadT, 0) || math.IsInf(depthM, 0) || math.IsInf(radialDistM, 0) || math.IsInf(allowableStressKPa, 0) {
+		return BoussinesqSubsurfaceResult{}, fmt.Errorf("geotech: NaN/Inf input rejected")
+	}
+	if padLoadT < 0 {
+		return BoussinesqSubsurfaceResult{}, fmt.Errorf("geotech: pad load must be >= 0, got %g", padLoadT)
+	}
+	if depthM <= 0 {
+		return BoussinesqSubsurfaceResult{}, fmt.Errorf("geotech: subsurface depth z must be > 0 m, got %g", depthM)
+	}
+	if radialDistM < 0 {
+		return BoussinesqSubsurfaceResult{}, fmt.Errorf("geotech: radial distance r must be >= 0 m, got %g", radialDistM)
+	}
+	if allowableStressKPa <= 0 {
+		return BoussinesqSubsurfaceResult{}, fmt.Errorf("geotech: allowable subsurface stress must be > 0 kPa, got %g", allowableStressKPa)
+	}
+
+	pKN := padLoadT * 9.80665
+	z2 := depthM * depthM
+	rOverZ := radialDistM / depthM
+	term := 1.0 / (1.0 + (rOverZ * rOverZ))
+	term5_2 := math.Pow(term, 2.5)
+
+	sigmaZ := (3.0 * pKN / (2.0 * math.Pi * z2)) * term5_2
+
+	return BoussinesqSubsurfaceResult{
+		PadLoadT:          padLoadT,
+		DepthM:            depthM,
+		RadialDistanceM:   radialDistM,
+		InducedStressKPa:  sigmaZ,
+		AllowableStressKPa: allowableStressKPa,
+		Passed:            sigmaZ <= allowableStressKPa,
+	}, nil
+}
+

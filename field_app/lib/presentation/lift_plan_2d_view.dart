@@ -1,9 +1,34 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// LiftPlanParameter represents a typed parameter bound to a Flutter lift plan element.
+class LiftPlanParameter {
+  final String id;
+  final String name;
+  final String type; // LINEAR, ROTATION, MASS, RATIO
+  final String unit;
+  final double value;
+  final double? minValue;
+  final double? maxValue;
+  final bool enabled;
+
+  const LiftPlanParameter({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.unit,
+    required this.value,
+    this.minValue,
+    this.maxValue,
+    this.enabled = true,
+  });
+}
+
 /// LiftPlan2DView provides an offline 2D CAD vector rendering of crane lift plans
 /// on rugged mobile field tablets (Item 3.13 / Hazard 12 air-gapped compliance).
 class LiftPlan2DView extends StatelessWidget {
+  final String id;
+  final bool enabled;
   final String craneModel;
   final double boomLengthMeters;
   final double workingRadiusMeters;
@@ -16,6 +41,8 @@ class LiftPlan2DView extends StatelessWidget {
 
   const LiftPlan2DView({
     super.key,
+    this.id = 'LIFT-PLAN-2D-CANVAS',
+    this.enabled = true,
     this.craneModel = 'Liebherr LTM 1500-8.1',
     this.boomLengthMeters = 36.9,
     this.workingRadiusMeters = 14.0,
@@ -26,6 +53,49 @@ class LiftPlan2DView extends StatelessWidget {
     this.groundBearingFoS = 1.68,
     this.showPlanView = true,
   });
+
+  List<LiftPlanParameter> get parameters => [
+        LiftPlanParameter(
+          id: '$id.boom_length',
+          name: 'Boom Length',
+          type: 'LINEAR',
+          unit: 'm',
+          value: boomLengthMeters,
+          minValue: 10.0,
+          maxValue: 90.0,
+          enabled: enabled,
+        ),
+        LiftPlanParameter(
+          id: '$id.working_radius',
+          name: 'Working Radius',
+          type: 'LINEAR',
+          unit: 'm',
+          value: workingRadiusMeters,
+          minValue: 3.0,
+          maxValue: 84.0,
+          enabled: enabled,
+        ),
+        LiftPlanParameter(
+          id: '$id.boom_angle',
+          name: 'Boom Angle',
+          type: 'ROTATION',
+          unit: 'deg',
+          value: boomAngleDeg,
+          minValue: 0.0,
+          maxValue: 85.0,
+          enabled: enabled,
+        ),
+        LiftPlanParameter(
+          id: '$id.slew_angle',
+          name: 'Slew Azimuth',
+          type: 'ROTATION',
+          unit: 'deg',
+          value: slewAngleDeg,
+          minValue: -180.0,
+          maxValue: 180.0,
+          enabled: enabled,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {

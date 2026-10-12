@@ -32,7 +32,6 @@ Thumbs.db
 
 # Agent session state & skill output (churns constantly, never commit) 
 .opencode/ 
-graphify-out/ 
 
 # Scratch screenshots & temp files 
 /app_*.png 

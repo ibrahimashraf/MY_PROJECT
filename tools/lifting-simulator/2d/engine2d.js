@@ -111,6 +111,19 @@ const LIFT_PHYSICS = {
             }
         }
         return 0.0; // Radius beyond chart boundary
+    },
+
+    // Auto-sizes mat area to guarantee FoS >= targetFos (default 1.5)
+    suggestMatArea(craneModel, craneState, grossLoadT, targetFos = 1.5, soilAllowableKP = 220) {
+        const outriggers = this.calculateOutriggers(craneModel, craneState, grossLoadT, soilAllowableKP);
+        const requiredArea = (outriggers.maxReactionT * 9.80665 * targetFos) / soilAllowableKP;
+        // Snap to nearest 0.5 m² between 1.0 and 12.0
+        const snapped = Math.max(1.0, Math.min(12.0, Math.ceil(requiredArea * 2) / 2));
+        return {
+            suggestedAreaM2: snapped,
+            requiredAreaExact: requiredArea,
+            maxReactionT: outriggers.maxReactionT
+        };
     }
 };
 

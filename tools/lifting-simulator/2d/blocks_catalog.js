@@ -248,6 +248,78 @@ const CRANE_BLOCKS_CATALOG = {
                 ]
             }
         ]
+    },
+    'GROVE_GMK_5250L': {
+        id: 'GROVE_GMK_5250L',
+        manufacturer: 'Grove',
+        model: 'GMK 5250L-1',
+        craneClass: 'All-Terrain Mobile Crane',
+        chassis: { lengthM: 15.29, widthM: 3.0, weightT: 60.0 },
+        outriggers: {
+            spanXM: 8.95,
+            spanZM: 7.8,
+            extensions: { '100%': 1.0, '75%': 0.75, '50%': 0.5, '0%': 0.0 },
+            defaultMatAreaM2: 3.0
+        },
+        boom: {
+            minLenM: 13.3,
+            maxLenM: 70.0,
+            pivotOffset: { x: -2.1, y: 2.9, z: 0.0 },
+            sections: [13.3, 22.8, 32.2, 41.7, 51.1, 60.6, 70.0]
+        },
+        counterweights: [14.5, 26.0, 44.5, 68.5, 80.0],
+        chart: [
+            {
+                boomLen: 41.7,
+                counterweightT: 80.0,
+                points: [
+                    { radiusM: 5.0, capacityT: 98.0 },
+                    { radiusM: 8.0, capacityT: 75.0 },
+                    { radiusM: 12.0, capacityT: 51.5 },
+                    { radiusM: 16.0, capacityT: 36.5 },
+                    { radiusM: 20.0, capacityT: 27.2 },
+                    { radiusM: 26.0, capacityT: 18.7 },
+                    { radiusM: 32.0, capacityT: 13.2 },
+                    { radiusM: 36.0, capacityT: 10.5 }
+                ]
+            }
+        ]
+    },
+    'SANY_SAC_2500S': {
+        id: 'SANY_SAC_2500S',
+        manufacturer: 'SANY',
+        model: 'SAC2500S',
+        craneClass: 'All-Terrain Mobile Crane',
+        chassis: { lengthM: 15.4, widthM: 3.0, weightT: 60.0 },
+        outriggers: {
+            spanXM: 8.8,
+            spanZM: 8.0,
+            extensions: { '100%': 1.0, '75%': 0.75, '50%': 0.5, '0%': 0.0 },
+            defaultMatAreaM2: 3.2
+        },
+        boom: {
+            minLenM: 13.5,
+            maxLenM: 73.0,
+            pivotOffset: { x: -2.0, y: 2.85, z: 0.0 },
+            sections: [13.5, 23.5, 33.5, 43.5, 53.5, 63.5, 73.0]
+        },
+        counterweights: [15.0, 30.0, 50.0, 70.0, 80.0],
+        chart: [
+            {
+                boomLen: 43.5,
+                counterweightT: 80.0,
+                points: [
+                    { radiusM: 5.0, capacityT: 95.0 },
+                    { radiusM: 8.0, capacityT: 72.0 },
+                    { radiusM: 12.0, capacityT: 49.0 },
+                    { radiusM: 16.0, capacityT: 34.8 },
+                    { radiusM: 20.0, capacityT: 25.5 },
+                    { radiusM: 26.0, capacityT: 17.5 },
+                    { radiusM: 32.0, capacityT: 12.0 },
+                    { radiusM: 38.0, capacityT: 8.8 }
+                ]
+            }
+        ]
     }
 };
 

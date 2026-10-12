@@ -64,6 +64,8 @@
                         <option value="TADANO_ATF_400G">Tadano ATF 400G-6</option>
                         <option value="TADANO_ATF_200G_5">Tadano ATF 200G-5</option>
                         <option value="DEMAG_AC_200_1">Demag AC 200-1</option>
+                        <option value="GROVE_GMK_5250L">Grove GMK 5250L-1</option>
+                        <option value="SANY_SAC_2500S">SANY SAC2500S</option>
                         <option value="KATO_CR_250">Kato CR-250</option>
                         <option value="MANITOWOC_MLC300">Manitowoc MLC300</option>
                     </select>
@@ -113,6 +115,17 @@
                     <label for="range-mat-area">Mat Area (m²)</label>
                     <input type="range" id="range-mat-area" min="1.0" max="8.0" step="0.5" value="4.0">
                 </div>
+                <div class="input-row" style="margin-top: 6px;">
+                    <button id="btn-auto-mat" class="btn-option" style="width: 100%; font-size: 11px; padding: 6px; background: #0369a1; color: white;">📐 Auto-Size Mats (FoS ≥ 1.5)</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <span class="section-head">CAD Tools</span>
+                <div class="input-row">
+                    <button id="btn-tape-tool" class="btn-option" style="width: 100%; font-size: 11px; padding: 6px;">📏 Tape Measure Mode</button>
+                </div>
+                <div id="tape-readout" class="hint-text" style="color: #38bdf8; display: none;">Distance: 0.00 m</div>
             </div>
 
             <div class="control-section">
@@ -300,6 +313,38 @@
 
             // 5. Kinematic Grip at Hook
             planVP.registerGrip('radius_slew', new Vector2D(hookX, hookZ), 10, 'active');
+
+            // 6. Tape Measure Graphic Overlay
+            if (tapeActive && tapeP1) {
+                const s1 = planVP.worldToScreen(tapeP1.x, tapeP1.y);
+                ctx.fillStyle = '#eab308';
+                ctx.beginPath();
+                ctx.arc(s1.x, s1.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (tapeP2) {
+                    const s2 = planVP.worldToScreen(tapeP2.x, tapeP2.y);
+                    ctx.beginPath();
+                    ctx.arc(s2.x, s2.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#eab308';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(s1.x, s1.y);
+                    ctx.lineTo(s2.x, s2.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    const dist = Math.hypot(tapeP2.x - tapeP1.x, tapeP2.y - tapeP1.y);
+                    const midX = (s1.x + s2.x) / 2;
+                    const midY = (s1.y + s2.y) / 2;
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillStyle = '#eab308';
+                    ctx.fillText(`${dist.toFixed(2)} m`, midX + 8, midY - 6);
+                }
+            }
         }
 
         function renderElevationView() {
@@ -437,6 +482,35 @@
                 render();
             });
 
+            // Auto-size Mat Handler
+            document.getElementById('btn-auto-mat').addEventListener('click', () => {
+                const crane = CRANE_BLOCKS_CATALOG[state.craneId];
+                const res = LIFT_PHYSICS.suggestMatArea(crane, state, state.grossLoadT, 1.5, 220);
+                state.matAreaM2 = res.suggestedAreaM2;
+                document.getElementById('range-mat-area').value = state.matAreaM2;
+                render();
+            });
+
+            // Tape Measure Tool
+            let tapeActive = false;
+            let tapeP1 = null;
+            let tapeP2 = null;
+            const tapeBtn = document.getElementById('btn-tape-tool');
+            const tapeReadout = document.getElementById('tape-readout');
+
+            tapeBtn.addEventListener('click', () => {
+                tapeActive = !tapeActive;
+                tapeBtn.classList.toggle('active', tapeActive);
+                tapeBtn.style.background = tapeActive ? '#eab308' : '';
+                tapeBtn.style.color = tapeActive ? '#000000' : '';
+                tapeReadout.style.display = tapeActive ? 'block' : 'none';
+                if (!tapeActive) {
+                    tapeP1 = null;
+                    tapeP2 = null;
+                    render();
+                }
+            });
+
             document.querySelectorAll('#group-outriggers .btn-option').forEach(btn => {
                 btn.addEventListener('click', e => {
                     document.querySelectorAll('#group-outriggers .btn-option').forEach(b => b.classList.remove('active'));
@@ -450,7 +524,25 @@
             let draggingPlan = false;
             planCanvas.addEventListener('mousedown', e => {
                 const rect = planCanvas.getBoundingClientRect();
-                const grip = planVP.findGrip(e.clientX - rect.left, e.clientY - rect.top);
+                const sx = e.clientX - rect.left;
+                const sy = e.clientY - rect.top;
+
+                if (tapeActive) {
+                    const wp = planVP.screenToWorld(sx, sy);
+                    if (!tapeP1 || (tapeP1 && tapeP2)) {
+                        tapeP1 = wp;
+                        tapeP2 = null;
+                        tapeReadout.textContent = `P1 set: (${wp.x.toFixed(1)}m, ${wp.y.toFixed(1)}m). Click P2.`;
+                    } else {
+                        tapeP2 = wp;
+                        const dist = Math.hypot(tapeP2.x - tapeP1.x, tapeP2.y - tapeP1.y);
+                        tapeReadout.textContent = `Distance: ${dist.toFixed(2)} m (ΔX: ${Math.abs(tapeP2.x - tapeP1.x).toFixed(2)}m, ΔZ: ${Math.abs(tapeP2.y - tapeP1.y).toFixed(2)}m)`;
+                    }
+                    render();
+                    return;
+                }
+
+                const grip = planVP.findGrip(sx, sy);
                 if (grip) draggingPlan = true;
             });
 

@@ -368,6 +368,33 @@ func TestBS5975MatStructuralCheck(t *testing.T) {
 	}
 }
 
+func TestBoussinesqSubsurfaceStress(t *testing.T) {
+	// Pad load = 50 tonnes (~490.33 kN)
+	// Depth z = 2.0 m directly beneath outrigger (r = 0.0 m)
+	// sigma_z = 3 * P / (2 * pi * z^2) = (3 * 490.3325) / (2 * pi * 4) = 1471 / 25.1327 = ~58.53 kPa
+	res, err := BoussinesqSubsurfaceStress(50, 2.0, 0.0, 100.0)
+	if err != nil {
+		t.Fatalf("BoussinesqSubsurfaceStress failed: %v", err)
+	}
+	if math.Abs(res.InducedStressKPa-58.53) > 0.5 {
+		t.Errorf("expected ~58.53 kPa directly beneath pad, got %.2f", res.InducedStressKPa)
+	}
+	if !res.Passed {
+		t.Errorf("58.53 kPa <= 100 kPa allowable must pass")
+	}
+
+	// Boundary & error checks
+	if _, err := BoussinesqSubsurfaceStress(50, 0.0, 0.0, 100.0); err == nil {
+		t.Fatal("depth z = 0 must fail (singularity)")
+	}
+	if _, err := BoussinesqSubsurfaceStress(50, 2.0, -1.0, 100.0); err == nil {
+		t.Fatal("negative radial distance must fail")
+	}
+	if _, err := BoussinesqSubsurfaceStress(50, 2.0, 0.0, -10.0); err == nil {
+		t.Fatal("negative allowable stress must fail")
+	}
+}
+
 func TestVarSetSafeSet(t *testing.T) {
 	v := NewVarSet("foo", "bar")
 	if err := v.Set("foo", 42); err != nil {

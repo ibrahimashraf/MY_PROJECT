@@ -28,6 +28,7 @@ class DynamicFormFieldDefinition {
     required this.label,
     required this.type,
     this.required = true,
+    this.enabled = true,
     this.helpText,
     this.minValue,
     this.maxValue,
@@ -38,6 +39,7 @@ class DynamicFormFieldDefinition {
   final String label;
   final FieldPrimitiveType type;
   final bool required;
+  final bool enabled;
   final String? helpText;
   final double? minValue;
   final double? maxValue;

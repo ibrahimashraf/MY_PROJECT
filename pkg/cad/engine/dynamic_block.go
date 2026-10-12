@@ -18,11 +18,14 @@ const (
 
 // Parameter represents a dynamic grip or constraint on a CAD block.
 type Parameter struct {
+	ID           string        `json:"id"`
 	Name         string        `json:"name"`
 	Type         ParameterType `json:"type"`
+	Unit         string        `json:"unit,omitempty"`
 	DefaultValue float64       `json:"default_value"`
 	MinValue     float64       `json:"min_value,omitempty"`
 	MaxValue     float64       `json:"max_value,omitempty"`
+	Enabled      bool          `json:"enabled"`
 }
 
 // ActionType defines transformations driven by parameters.
@@ -36,15 +39,19 @@ const (
 
 // Action defines how entities transform when a parameter changes.
 type Action struct {
+	ID            string     `json:"id"`
 	Name          string     `json:"name"`
 	Type          ActionType `json:"type"`
 	ParameterName string     `json:"parameter_name"`
 	TargetIndices []int      `json:"target_indices"` // Indices of affected base entities
+	Enabled       bool       `json:"enabled"`
 }
 
 // DynamicBlockDef defines a reusable parametric dynamic block template.
 type DynamicBlockDef struct {
+	ID           string       `json:"id"`
 	Name         string       `json:"name"`
+	Enabled      bool         `json:"enabled"`
 	BaseEntities []dxf.Entity `json:"base_entities"`
 	Parameters   []Parameter  `json:"parameters"`
 	Actions      []Action     `json:"actions"`
@@ -52,7 +59,9 @@ type DynamicBlockDef struct {
 
 // DynamicBlockInstance is an instantiated block with evaluated parameter values.
 type DynamicBlockInstance struct {
+	ID          string             `json:"id"`
 	DefName     string             `json:"def_name"`
+	Enabled     bool               `json:"enabled"`
 	ParamValues map[string]float64 `json:"param_values"`
 	Insertion   dxf.Point3D        `json:"insertion"`
 	Def         *DynamicBlockDef   `json:"-"`
@@ -65,7 +74,9 @@ func NewDynamicBlockInstance(def *DynamicBlockDef, insertion dxf.Point3D) *Dynam
 		values[p.Name] = p.DefaultValue
 	}
 	return &DynamicBlockInstance{
+		ID:          def.ID,
 		DefName:     def.Name,
+		Enabled:     true,
 		ParamValues: values,
 		Insertion:   insertion,
 		Def:         def,

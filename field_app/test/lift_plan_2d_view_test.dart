@@ -67,4 +67,24 @@ void main() {
     expect(find.text('Cap: 100%'), findsOneWidget);
     expect(find.text('FoS: 1.15'), findsOneWidget);
   });
+
+  test('LiftPlan2DView exposes deterministic id, enabled state, and typed parameters', () {
+    const view = LiftPlan2DView(
+      id: 'CRANE-ALPHA-2D',
+      enabled: true,
+      boomLengthMeters: 42.0,
+      workingRadiusMeters: 16.0,
+      boomAngleDeg: 65.0,
+      slewAngleDeg: 30.0,
+    );
+
+    expect(view.id, 'CRANE-ALPHA-2D');
+    expect(view.enabled, isTrue);
+    expect(view.parameters.length, 4);
+    expect(view.parameters.first.id, 'CRANE-ALPHA-2D.boom_length');
+    expect(view.parameters.first.type, 'LINEAR');
+    expect(view.parameters.first.unit, 'm');
+    expect(view.parameters.first.value, 42.0);
+    expect(view.parameters.first.enabled, isTrue);
+  });
 }

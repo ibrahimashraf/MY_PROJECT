@@ -127,5 +127,70 @@
         return root;
     }
 
-    return { parseOBJ, createOBJGroup };
+    function parsePLY(text) {
+        if (typeof text !== 'string') throw new Error('PLY source must be text');
+        const lines = text.split(/\r?\n/);
+        if (!lines[0].startsWith('ply')) throw new Error('Not a valid PLY header');
+
+        let vertexCount = 0;
+        let headerEnded = false;
+        let headerEndIndex = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('element vertex ')) {
+                vertexCount = parseInt(line.split(' ')[2], 10);
+            }
+            if (line === 'end_header') {
+                headerEnded = true;
+                headerEndIndex = i + 1;
+                break;
+            }
+        }
+
+        if (!headerEnded || vertexCount <= 0) throw new Error('Invalid PLY vertex header');
+        const positions = [];
+        const colors = [];
+
+        for (let i = headerEndIndex; i < lines.length && positions.length / 3 < vertexCount; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const parts = line.split(/\s+/);
+            if (parts.length >= 3) {
+                positions.push(finite(parts[0], 'ply x'), finite(parts[1], 'ply y'), finite(parts[2], 'ply z'));
+                if (parts.length >= 6) {
+                    colors.push(Number(parts[3]) / 255, Number(parts[4]) / 255, Number(parts[5]) / 255);
+                } else {
+                    colors.push(0.2, 0.7, 0.9);
+                }
+            }
+        }
+
+        return {
+            vertices: positions.length / 3,
+            positions: new Float32Array(positions),
+            colors: new Float32Array(colors)
+        };
+    }
+
+    function createPLYGroup(parsed, THREE) {
+        if (!THREE) throw new Error('Three.js is required to create a PLY point cloud');
+        const root = new THREE.Group();
+        root.name = 'Imported PLY Drone / Splat Reference';
+        root.userData.sourceType = 'PLY_REFERENCE';
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(parsed.positions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(parsed.colors, 3));
+        geometry.computeBoundingSphere();
+
+        const material = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.95 });
+        const points = new THREE.Points(geometry, material);
+        points.name = 'DronePointCloud';
+        points.userData = { nodeId: 'SITE-PLY-1', sourceType: 'PLY_REFERENCE' };
+        root.add(points);
+        return root;
+    }
+
+    return { parseOBJ, createOBJGroup, parsePLY, createPLYGroup };
 });

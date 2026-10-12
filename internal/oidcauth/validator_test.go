@@ -141,6 +141,13 @@ type rotatableOIDCServer struct {
 	keysFail bool
 }
 
+// testJWKSRefresh is a deliberately short refresh window so rotation and
+// fail-closed behaviour are observable within a test. Production clamps
+// INTEGIN_OIDC_JWKS_REFRESH_SECONDS to [30, 3600] (see config.go), so the
+// nanosecond interval earlier tests used is unreachable in deployment; it made
+// every Validate perform a full HTTP round-trip and the tests timing-flaky.
+const testJWKSRefresh = 60 * time.Millisecond
+
 func newRotatableOIDCServer(t *testing.T, initial map[string]*rsa.PrivateKey) *rotatableOIDCServer {
 	t.Helper()
 	rotating := &rotatableOIDCServer{keys: initial}
@@ -192,7 +199,7 @@ func TestValidatorRotatesJWKSAndRejectsTokensFromRetiredKeys(t *testing.T) {
 		t.Fatalf("generate key B: %v", err)
 	}
 	rotating := newRotatableOIDCServer(t, map[string]*rsa.PrivateKey{"key-A": keyA})
-	validator, err := NewValidator(context.Background(), Config{Enabled: true, Issuer: rotating.server.URL, Audience: "integin-api-pilot", AllowInsecureLoopbackIssuer: true, ClockSkew: time.Minute, MaxTokenAge: time.Hour, JWKSRefresh: time.Nanosecond}, nil)
+	validator, err := NewValidator(context.Background(), Config{Enabled: true, Issuer: rotating.server.URL, Audience: "integin-api-pilot", AllowInsecureLoopbackIssuer: true, ClockSkew: time.Minute, MaxTokenAge: time.Hour, JWKSRefresh: testJWKSRefresh}, nil)
 	if err != nil {
 		t.Fatalf("construct validator: %v", err)
 	}
@@ -204,6 +211,9 @@ func TestValidatorRotatesJWKSAndRejectsTokensFromRetiredKeys(t *testing.T) {
 
 	// Rotate: key-A is retired from the JWKS and key-B becomes the active signing key.
 	rotating.setKeys(map[string]*rsa.PrivateKey{"key-B": keyB})
+	// Let the JWKS cache age past the refresh window so the next validation
+	// deterministically refetches, rather than racing it.
+	time.Sleep(testJWKSRefresh + 20*time.Millisecond)
 
 	// A fresh token signed by the retired key fails closed (a distinct token
 	// avoids the bounded verify cache masking the rotation).
@@ -229,7 +239,7 @@ func TestValidatorRefreshFailureFailsClosed(t *testing.T) {
 		t.Fatalf("generate key A: %v", err)
 	}
 	rotating := newRotatableOIDCServer(t, map[string]*rsa.PrivateKey{"key-A": keyA})
-	validator, err := NewValidator(context.Background(), Config{Enabled: true, Issuer: rotating.server.URL, Audience: "integin-api-pilot", AllowInsecureLoopbackIssuer: true, ClockSkew: time.Minute, MaxTokenAge: time.Hour, JWKSRefresh: time.Nanosecond}, nil)
+	validator, err := NewValidator(context.Background(), Config{Enabled: true, Issuer: rotating.server.URL, Audience: "integin-api-pilot", AllowInsecureLoopbackIssuer: true, ClockSkew: time.Minute, MaxTokenAge: time.Hour, JWKSRefresh: testJWKSRefresh}, nil)
 	if err != nil {
 		t.Fatalf("construct validator: %v", err)
 	}
@@ -241,6 +251,7 @@ func TestValidatorRefreshFailureFailsClosed(t *testing.T) {
 	// Break the JWKS endpoint. The next uncached validation must fail closed
 	// rather than reuse stale keys. A distinct subject avoids the verify cache.
 	rotating.setKeysFailure(true)
+	time.Sleep(testJWKSRefresh + 20*time.Millisecond)
 	second := signedTokenFrom(t, keyA, "key-A", rotating.server.URL, "integin-api-pilot", "subject-other", time.Now().UTC(), []string{"pwd"})
 	if _, err := validator.Validate(context.Background(), second); err == nil {
 		t.Fatal("validation must fail closed when the JWKS refresh fails")

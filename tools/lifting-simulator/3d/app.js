@@ -119,6 +119,7 @@
         }
 
         window.addEventListener('resize', onWindowResize);
+        setupXRAndDrone();
         animate();
     }
 
@@ -575,11 +576,23 @@
         }
         try {
             const fileText = await file.text();
-            const parsed = window.INTEGIN_OBJ.parseOBJ(fileText);
-            const group = window.INTEGIN_OBJ.createOBJGroup(parsed, THREE);
+            let group = null;
+            let verticesCount = 0;
+
+            if (file.name.toLowerCase().endsWith('.ply')) {
+                const parsedPLY = window.INTEGIN_OBJ.parsePLY(fileText);
+                group = window.INTEGIN_OBJ.createPLYGroup(parsedPLY, THREE);
+                verticesCount = parsedPLY.vertices;
+            } else {
+                const parsed = window.INTEGIN_OBJ.parseOBJ(fileText);
+                group = window.INTEGIN_OBJ.createOBJGroup(parsed, THREE);
+                verticesCount = parsed.vertices;
+            }
+
             clearImportedSite();
             importedSiteGroup = group;
             scene.add(group);
+            if (status) status.textContent = `Imported ${verticesCount} points/vertices from ${file.name}.`;
 
             // Call server for authoritative spatial clearance
             apiFetch('/api/v1/liftviews/evaluate4d', {
@@ -1523,6 +1536,33 @@
             });
         });
 
+        // Hook Block Selectors (swaps 3D hook block geometry)
+        const hookBlockDef = window.INTEGIN_BLOCKS.getBlockById('BLOCK_RIG_HOOK_PARAMETRIC');
+        const hook1Sel = document.getElementById('crane1-hook-select');
+        if (hook1Sel && hookBlockDef) {
+            hook1Sel.addEventListener('change', (e) => {
+                const sheaves = parseInt(e.target.value, 10);
+                scene.remove(hook1Mesh);
+                disposeObject(hook1Mesh);
+                hook1Mesh = hookBlockDef.build3D({ sheaves });
+                hook1Mesh.userData.nodeId = 'HOOK-ALPHA';
+                scene.add(hook1Mesh);
+                updateKinematics();
+            });
+        }
+        const hook2Sel = document.getElementById('crane2-hook-select');
+        if (hook2Sel && hookBlockDef) {
+            hook2Sel.addEventListener('change', (e) => {
+                const sheaves = parseInt(e.target.value, 10);
+                scene.remove(hook2Mesh);
+                disposeObject(hook2Mesh);
+                hook2Mesh = hookBlockDef.build3D({ sheaves });
+                hook2Mesh.userData.nodeId = 'HOOK-BETA';
+                scene.add(hook2Mesh);
+                updateKinematics();
+            });
+        }
+
         // Plan inputs: user data straight into state (engine gates it all).
         const planBind = [
             ['in-load', (v) => { state.load.massTonnes = v; }],
@@ -2052,17 +2092,94 @@
         el.textContent = `${found.system.name} › ${found.comp.name} · ${viewMode}`;
     }
 
-    function onWindowResize() {
-        const container = document.getElementById('canvas-container');
-        if (!container || !camera || !renderer) return;
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
+    // VR (WebXR) and Drone Camera State
+    let vrSession = null;
+    let droneCamActive = false;
+    let droneAngle = 0;
+
+    function setupXRAndDrone() {
+        // Drone Cam toggle
+        const btnDrone = document.getElementById('btn-drone-cam');
+        if (btnDrone) {
+            btnDrone.addEventListener('click', () => {
+                droneCamActive = !droneCamActive;
+                btnDrone.classList.toggle('active', droneCamActive);
+                btnDrone.style.background = droneCamActive ? '#0284c7' : '';
+                if (controls) controls.enabled = !droneCamActive;
+            });
+        }
+
+        // VR WebXR toggle
+        const btnVR = document.getElementById('btn-vr-toggle');
+        if (btnVR) {
+            if (navigator.xr && renderer && renderer.xr) {
+                renderer.xr.enabled = true;
+                navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                    if (!supported) {
+                        btnVR.title = 'WebXR Immersive VR not supported on this display/browser';
+                        btnVR.style.opacity = '0.6';
+                    }
+                }).catch(() => {
+                    btnVR.style.opacity = '0.6';
+                });
+
+                btnVR.addEventListener('click', async () => {
+                    if (!navigator.xr) {
+                        alert('WebXR is not supported on this browser or requires HTTPS / localhost.');
+                        return;
+                    }
+                    try {
+                        if (!vrSession) {
+                            vrSession = await navigator.xr.requestSession('immersive-vr', {
+                                optionalFeatures: ['local-floor', 'bounded-floor']
+                            });
+                            await renderer.xr.setSession(vrSession);
+                            btnVR.textContent = '❌ Exit VR';
+                            btnVR.classList.add('active');
+                            btnVR.style.background = '#dc2626';
+
+                            vrSession.addEventListener('end', () => {
+                                vrSession = null;
+                                btnVR.textContent = '🥽 VR';
+                                btnVR.classList.remove('active');
+                                btnVR.style.background = '';
+                            });
+                        } else {
+                            await vrSession.end();
+                        }
+                    } catch (err) {
+                        console.error('Failed to start WebXR session:', err);
+                        alert('Could not start VR session: ' + err.message);
+                    }
+                });
+            } else {
+                btnVR.title = 'WebXR unavailable';
+                btnVR.style.opacity = '0.6';
+            }
+        }
     }
 
     function animate() {
-        requestAnimationFrame(animate);
-        if (controls) controls.update();
+        if (renderer && renderer.xr && renderer.xr.enabled && renderer.xr.isPresenting) {
+            renderer.setAnimationLoop(renderFrame);
+        } else {
+            requestAnimationFrame(animate);
+            renderFrame();
+        }
+    }
+
+    function renderFrame() {
+        if (droneCamActive && camera) {
+            droneAngle += 0.005;
+            const radius = 55;
+            camera.position.x = Math.sin(droneAngle) * radius;
+            camera.position.z = Math.cos(droneAngle) * radius;
+            camera.position.y = 28 + Math.sin(droneAngle * 0.5) * 6;
+            camera.lookAt(0, 10, 0);
+        } else if (controls) {
+            controls.update();
+        }
+
         if (renderer && scene && camera) {
             renderer.render(scene, camera);
         }

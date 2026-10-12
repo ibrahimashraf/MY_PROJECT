@@ -10,16 +10,26 @@
                 id: 'SYS-HOIST', code: 'HS', name: 'Hoisting', icon: '🏗️',
                 components: [
                     {
-                        id: 'CRN-ALPHA', level: 'Level 2 · assembly', name: 'Crane Alpha · reference geometry',
+                        id: 'CRN-ALPHA', enabled: true, level: 'Level 2 · assembly', name: 'Crane Alpha · reference geometry',
                         status: 'Active', desc: 'Primary mobile crane. Boom tip position and working radius are solved live from boom/slew state.',
+                        parameters: [
+                            { id: 'crane1-angle', name: 'Boom Angle', type: 'ROTATION', unit: 'deg', min: 30, max: 80, defaultValue: 65, enabled: true },
+                            { id: 'crane1-slew', name: 'Slew Angle', type: 'ROTATION', unit: 'deg', min: -90, max: 90, defaultValue: 15, enabled: true },
+                            { id: 'in-boom1', name: 'Boom Length', type: 'LINEAR', unit: 'm', min: 10, max: 90, defaultValue: 35, enabled: true }
+                        ],
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
                         safety: 'Anti-two-block monitored. Stop-work on LMI trigger.',
                         evidence: 'OEM load chart (owner-supplied, bound at plan build).'
                     },
                     {
-                        id: 'CRN-BETA', level: 'Level 2 · assembly', name: 'Crane Beta · reference geometry',
+                        id: 'CRN-BETA', enabled: true, level: 'Level 2 · assembly', name: 'Crane Beta · reference geometry',
                         status: 'Active', desc: 'Secondary mobile crane. Shares the vessel load by lever rule over hook span.',
+                        parameters: [
+                            { id: 'crane2-angle', name: 'Boom Angle', type: 'ROTATION', unit: 'deg', min: 30, max: 80, defaultValue: 60, enabled: true },
+                            { id: 'crane2-slew', name: 'Slew Angle', type: 'ROTATION', unit: 'deg', min: -90, max: 90, defaultValue: -20, enabled: true },
+                            { id: 'in-boom2', name: 'Boom Length', type: 'LINEAR', unit: 'm', min: 10, max: 90, defaultValue: 35, enabled: true }
+                        ],
                         specs: [['Boom length', 'user-set'], ['Boom angle', 'live'], ['Slew angle', 'live'], ['Counterweight', '20 t'], ['Chassis', '60 t']],
                         standards: [['ASME B30.5', 'Mobile crane capacity and setup'], ['rulesengine/crane_lmi.go', 'Moment utilization gate ≤ 90%']],
                         safety: 'Anti-two-block monitored. Stop-work on LMI trigger.',
