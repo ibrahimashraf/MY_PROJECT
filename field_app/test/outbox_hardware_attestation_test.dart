@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integin_field_app/domain/models.dart';
 import 'package:integin_field_app/security/hardware_attestation_provider.dart';

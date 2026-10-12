@@ -8,13 +8,13 @@ class TusClient {
   }
 
   // Complete placeholder – returns a dummy completion result.
-  Future<_CompletionResult> complete(String uploadId) async {
+  Future<CompletionResult> complete(String uploadId) async {
     // Return a dummy key.
-    return _CompletionResult(key: 'dummy-key');
+    return CompletionResult(key: 'dummy-key');
   }
 }
 
-class _CompletionResult {
+class CompletionResult {
   final String key;
-  _CompletionResult({required this.key});
+  CompletionResult({required this.key});
 }
