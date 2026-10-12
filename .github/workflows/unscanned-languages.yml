@@ -25,11 +25,13 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: integin-source/field_app
+        working-directory: integin-pilot-source/field_app
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: false
+          # Dart lives in the integri-pilot-source submodule; the workflow must
+          # materialise it or there is nothing to analyse.
+          submodules: true
 
       - uses: subosito/flutter-action@v2
         with:

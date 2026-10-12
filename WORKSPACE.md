@@ -22,7 +22,7 @@ The product is INTEGIN (Integrated Inspection & Assurance), with the modular Go 
 
 ### Strict Operating Rules:
 - Zero New Root Files: Never create new markdown or tracking files in the root directory.
-- Single Active Source: Make all code changes in `c:\MY_PROJECT\integin-pilot-source/`. Never modify `integin-source/` (it is a read-only comparison snapshot).
+- Single Active Source: Make all code changes in `c:\MY_PROJECT\integin-pilot-source/`. That submodule is the only source tree; the former `integin-source/` comparison snapshot was removed (stale since the initial commit, superseded by the submodule).
 - Mandatory Agent Memory Codex (40 Grand Hazards): You MUST read and obey `.agents/rules/agent-immunity-harness.md` before writing code. Defend actively against all 40 cognitive, mechanical, concurrency, and behavioral LLM hazards from line one.
 - Token & Cost Optimization: Obey `docs/architecture/AI_TOKEN_AND_COST_OPTIMIZATION_GUIDE.md` (surgical line-slices, concise output, no conversational fluff, and prompt session resets after milestones to slash token burn by 80–95%).
 - Multi-Tenant RLS: Every query on domain tables must set session tenant GUCs (`SELECT set_config('integin.tenant_id', ..., true)` with `is_local = true`).
@@ -53,7 +53,6 @@ c:\MY_PROJECT\
 │   ├── quiet-signal/        # 📊 OPERATIONS UI: React 19 + TypeScript + Vite web console
 │   └── deploy/              # 🐳 DEPLOYMENT: Docker Compose stacks, worker profiles, and systemd templates
 │
-├── integin-source/            # 🔒 FROZEN BASELINE: Read-only reference snapshot (NEVER MODIFY)
 ├── integin-pilot-admin/       # 🛡️ PILOT GOVERNANCE: OpenBao security policies and cryptographic manifests
 ├── docs/                    # 📚 PERMANENT REGISTRY: Governed architecture, ADRs, and evidence
 │   ├── architecture/        # ADRs, design specs, [Global Architecture Plan](./docs/architecture/GLOBAL_ARCHITECTURE_PLAN.md), [GitHub Repos](./docs/architecture/GITHUB_REPOSITORIES_REFERENCE.md)
