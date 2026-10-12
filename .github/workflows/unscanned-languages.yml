@@ -60,10 +60,10 @@ jobs:
 
       - name: ShellCheck tracked shell scripts
         run: |
-          # operations/ is vendored upstream (Keycloak, GnuPG, Gpg4win): those
-          # scripts are not ours to fix, and they dominate the findings.
-          # SC2086 excluded: first-party scripts quote inconsistently by design.
-          files=$(git ls-files '*.sh' | grep -v '^operations/' || true)
+          # First-party scripts only. Agent-harness skill copies under
+          # .agents/.claude/.gemini/etc. are vendored and not ours to fix.
+          # SC2086 excluded: our scripts quote inconsistently by design.
+          files=$(git ls-files '*.sh' | grep -vE '^(\.agents|\.claude|\.codebuddy|\.gemini|\.kiro|\.qoder|agent)/' || true)
           if [ -z "$files" ]; then
             echo "No first-party shell scripts; nothing to check."
             exit 0
