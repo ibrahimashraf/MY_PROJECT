@@ -64,5 +64,22 @@ Thumbs.db
 
 # Project-local configs & bench directories
 .npmrc
-bench_pdf/*.pdf
-bench_pdf/*.png
+bench_pdf/
+
+# ==============================================================================
+# Local Agent Configurations & Duplicates (Canonical in .agents/)
+# ==============================================================================
+.claude/
+.codebuddy/
+.codex
+.gemini/
+.impeccable/
+.kiro/
+.qoder/
+agent/
+
+# ==============================================================================
+# Local State, Planning & Scratch
+# ==============================================================================
+.opencode/
+.planning/

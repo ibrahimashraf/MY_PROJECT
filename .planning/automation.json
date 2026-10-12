@@ -1,7 +1,0 @@
-{
-  "enabled": false,
-  "project_root": "C:\\MY_PROJECT",
-  "max_context_chars": 2000,
-  "completion_timeout_seconds": 3,
-  "fail_open_completion": true
-}
