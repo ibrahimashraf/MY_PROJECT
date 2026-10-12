@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InteginCommandContract",
+  "description": "Canonical contract specification for domain commands and results across Go, Dart, and Rust.",
+  "definitions": {
+    "DomainCommand": {
+      "type": "object",
+      "required": ["id", "tenant_id", "organization_id", "actor_id", "payload", "timestamp"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable dot-delimited command identifier (e.g. passport.custody.transfer)"
+        },
+        "tenant_id": {
+          "type": "string",
+          "description": "PostgreSQL RLS boundary identifier"
+        },
+        "organization_id": {
+          "type": "string",
+          "description": "Sub-tenant or enterprise organization identifier"
+        },
+        "actor_id": {
+          "type": "string",
+          "description": "W3C DID of user, agent, or service account invoking command"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Arbitrary typed JSON payload validated by specific command handler"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC3339 execution timestamp"
+        }
+      }
+    },
+    "DomainCommandResult": {
+      "type": "object",
+      "required": ["command_id", "status", "revision"],
+      "properties": {
+        "command_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["SUCCESS", "FAILED"]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output": {
+          "type": "object"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "CASChunkManifest": {
+      "type": "object",
+      "required": ["root_sha256", "total_bytes", "chunk_size", "chunks"],
+      "properties": {
+        "root_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "total_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "chunk_size": {
+          "type": "integer",
+          "default": 65536
+        },
+        "chunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["offset", "byte_length", "sha256"],
+            "properties": {
+              "offset": { "type": "integer" },
+              "byte_length": { "type": "integer" },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

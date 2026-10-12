@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "integin-loopback": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "cd c:\\MY_PROJECT\\integin-pilot-source; $env:CGO_ENABLED='0'; go run ./cmd/integin-server --mcp"
+      ],
+      "env": {
+        "CGO_ENABLED": "0",
+        "INTEGIN_DEPLOY_MODE": "cloud"
+      }
+    }
+  }
+}
