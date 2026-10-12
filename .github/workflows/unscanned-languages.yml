@@ -1,0 +1,87 @@
+﻿name: Unscanned-Language Gate
+
+# CodeQL has no extractor for Dart or shell. This is the compensating control
+# so those files are not silently unscanned: Dart via the analyzer, shell via
+# ShellCheck. Everything CodeQL does cover lives in codeql.yml.
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unlang-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dart:
+    name: Dart Analyze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: integin-source/field_app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          channel: stable
+          cache: true
+
+      # pubspec.lock is committed: resolve offline-deterministic, and pin exact
+      # transitive versions rather than whatever stable resolves today.
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: "Analyze (lenient pass, informational findings do not fail)"
+        run: flutter analyze --no-fatal-infos
+
+      - name: "Analyze (strict pass, errors + warnings + infos are fatal)"
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: ShellCheck tracked shell scripts
+        run: |
+          # SC2086 is off: the repo's scripts quote inconsistently on purpose
+          # paths; treat every other ShellCheck finding as real.
+          files=$(git ls-files '*.sh')
+          if [ -z "$files" ]; then
+            echo "No tracked shell scripts; nothing to check."
+            exit 0
+          fi
+          echo "$files" | tr '\n' '\0' \
+            | xargs -0 shellcheck --severity=warning --exclude=SC2086 -
+
+  actionlint:
+    name: actionlint (workflow syntax)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      # Cheap insurance: a malformed matrix expression in codeql.yml fails the
+      # scan at runtime, i.e. after a push has already been analysed.
+      - name: Lint workflow files
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+            | bash
+          ./actionlint -color
