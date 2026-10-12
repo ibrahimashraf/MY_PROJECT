@@ -33,7 +33,8 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: stable
+          # channel only: passing flutter-version makes the action try to
+          # resolve a release literally named "stable" and exit 1.
           channel: stable
           cache: true
 
@@ -59,11 +60,12 @@ jobs:
 
       - name: ShellCheck tracked shell scripts
         run: |
-          # SC2086 is off: the repo's scripts quote inconsistently on purpose
-          # paths; treat every other ShellCheck finding as real.
-          files=$(git ls-files '*.sh')
+          # operations/ is vendored upstream (Keycloak, GnuPG, Gpg4win): those
+          # scripts are not ours to fix, and they dominate the findings.
+          # SC2086 excluded: first-party scripts quote inconsistently by design.
+          files=$(git ls-files '*.sh' | grep -v '^operations/' || true)
           if [ -z "$files" ]; then
-            echo "No tracked shell scripts; nothing to check."
+            echo "No first-party shell scripts; nothing to check."
             exit 0
           fi
           echo "$files" | tr '\n' '\0' \
