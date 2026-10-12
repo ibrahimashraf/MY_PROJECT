@@ -97,6 +97,7 @@ type Dependencies struct {
 	ATEXHandler             http.Handler
 	PhotogrammetryHandler   http.Handler
 	PipingHandler           http.Handler
+	AgentMCPHandler         http.Handler
 	Readiness               func(context.Context) error
 	ReadinessTimeout        time.Duration
 }

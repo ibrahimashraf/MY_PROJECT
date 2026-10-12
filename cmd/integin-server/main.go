@@ -21,6 +21,8 @@ import (
 
 	"integin/internal/serverboot"
 	"integin/migrations"
+	"integin/pkg/agentmcp"
+	"integin/pkg/domain"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -41,8 +43,13 @@ func run(args []string) error {
 	fs := flag.NewFlagSet("integin-server", flag.ContinueOnError)
 	mode := fs.String("mode", "", "deployment topology: cloud|sovereign|airgap (default: INTEGIN_DEPLOY_MODE or cloud)")
 	migrateFlag := fs.Bool("migrate", false, "run database migrations before starting or exit")
+	mcpFlag := fs.Bool("mcp", false, "run loopback MCP agent server over stdin/stdout")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+
+	if *mcpFlag {
+		return runMCPLoopback()
 	}
 
 	if *migrateFlag {
@@ -114,4 +121,20 @@ func runMigrate(args []string) error {
 	}
 
 	return nil
+}
+
+func runMCPLoopback() error {
+	dispatcher := domain.NewDispatcher()
+	domain.RegisterDefaultCommands(dispatcher)
+
+	srv, err := agentmcp.NewServer(agentmcp.ServerConfig{
+		ReadRoot:  ".",
+		WriteRoot: ".",
+	}, dispatcher)
+	if err != nil {
+		return fmt.Errorf("failed to create MCP server: %w", err)
+	}
+
+	ctx := context.Background()
+	return srv.ServeStream(ctx, os.Stdin, os.Stdout)
 }

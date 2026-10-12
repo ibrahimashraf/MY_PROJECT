@@ -237,6 +237,9 @@ func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
 		mux.Handle("/api/v1/piping", d.PipingHandler)
 		mux.Handle("/api/v1/piping/", d.PipingHandler)
 	}
+	if d.AgentMCPHandler != nil {
+		mux.Handle("/api/v1/mcp", d.AgentMCPHandler)
+	}
 }
 
 // principalAuth is the outcome of authenticating a request's bearer token.

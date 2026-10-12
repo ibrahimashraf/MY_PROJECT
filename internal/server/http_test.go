@@ -664,3 +664,27 @@ func TestOIDCAuthRejectsUnresolvedMembershipWithForbidden(t *testing.T) {
 		t.Fatalf("code=%d, want 403 Forbidden; body=%s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestNewMuxMountsAgentMCPRoute(t *testing.T) {
+	reached := false
+	mcpHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reached = true
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"jsonrpc":"2.0","result":"ok"}`))
+	})
+
+	mux := NewMux(Dependencies{
+		AgentMCPHandler: mcpHandler,
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp", strings.NewReader(`{}`))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if !reached {
+		t.Fatal("expected request to reach AgentMCPHandler")
+	}
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code=%d, want 200", rec.Code)
+	}
+}

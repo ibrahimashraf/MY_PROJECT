@@ -12,6 +12,10 @@
 //! 4. Verifies `export_signature` over the canonical payload with Ed25519.
 //!
 //! Completely offline: no database credentials, no network calls.
+#![forbid(unsafe_code)]
+#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
+pub mod cas;
 
 use std::env;
 use std::fs;
