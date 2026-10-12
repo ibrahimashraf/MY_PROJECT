@@ -14,11 +14,11 @@
 │                        INTEGIN TECHNOLOGY & ECOSYSTEM TAXONOMY                         │
 ├──────────────────────────┬──────────────────────────┬──────────────────────────────────┤
 │ 1. Core Language & Engine│ 2. Edge, Mobile & Tablet │ 3. AI Agent Harnesses & Memory   │
-│    • go.dev (Golang)     │    • flutter.dev         │    • Graphify-Labs/graphify      │
+│    • go.dev (Golang)     │    • flutter.dev         │    • tt-a1i/archify              │
 │    • awesome-go (avelino)│    • pub.dev (cel, drift)│    • affaan-m/ECC                │
 │    • awesome-go (uhub)   │    • flutterawesome.com  │    • supermemoryai/supermemory   │
 │                          │    • flutterflow.io      │    • tt-a1i/hive & mco-org/mco   │
-│                          │    • awesome-dart        │    • archify & simplify-codebase │
+│                          │    • awesome-dart        │    • tt-a1i/simplify-codebase    │
 ├──────────────────────────┼──────────────────────────┼──────────────────────────────────┤
 │ 4. Database, RLS & ORM   │ 5. Secrets & Appliance   │ 6. Security & Infrastructure     │
 │    • awesome-postgres    │    • Infisical/infisical │    • Awesome-Hacking             │
@@ -78,11 +78,9 @@
 
 ## 🧠 Group 3: AI Agent Orchestration, Knowledge Graphs & Memory
 
-### 8. [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)
-*   **Domain**: Deterministic Codebase & Document Knowledge Graph Visualizer.
-*   **Role in INTEGIN**:
-    *   Transforms ASTs, SQL schemas, 70 migrations, and documentation into a queryable knowledge graph for multi-agent navigation.
-    *   Directly models the **Federated Standards Knowledge Graph** (`pkg/standardsync`), linking standard codes (e.g. ASME B30.5) to equipment DIDs and calculation formulas.
+### 8. [tt-a1i/archify](https://github.com/tt-a1i/archify)
+*   **Domain**: Validated Architecture, Workflow, Sequence & State Visualizer.
+*   **Role in INTEGIN**: Installed skill in `.agents/skills/archify` generating explorable standalone HTML with inline SVG, dark/light themes, trace motion, and asset export to model system architectures, data flows, and state machines.
 
 ### 9. [affaan-m/ECC](https://github.com/affaan-m/ECC)
 *   **Domain**: Everything Claude Code / Multi-Agent Operating Harness.
@@ -92,9 +90,9 @@
 *   **Domain**: Memory & Context Engine for AI, Vector Search & Knowledge Hub.
 *   **Role in INTEGIN**: Reference architecture for the **Perplexity-style AI Synthesizer** in `pkg/standardsync/search.go`. Powers local vector abstract indexing and semantic search over engineering standards.
 
-### 11. [tt-a1i/archify](https://github.com/tt-a1i/archify) & [tt-a1i/simplify-codebase](https://github.com/tt-a1i/simplify-codebase)
-*   **Domain**: Local architecture visualizer and codebase entropy recovery.
-*   **Role in INTEGIN**: Installed skills in `.agents/skills/` used for standalone interactive SVG diagrams and dead-code elimination audits.
+### 11. [tt-a1i/simplify-codebase](https://github.com/tt-a1i/simplify-codebase)
+*   **Domain**: Codebase Entropy Recovery & Accidental Complexity Removal.
+*   **Role in INTEGIN**: Installed skill in `.agents/skills/simplify-codebase` used for evidence-backed deletion or consolidation of dead code, duplicate state, redundant layers, and entropy audits.
 
 ### 12. [mco-org/mco](https://github.com/mco-org/mco) & [tt-a1i/hive](https://github.com/tt-a1i/hive)
 *   **Domain**: Multi-provider AI coordination and local PTY agent supervisor.
