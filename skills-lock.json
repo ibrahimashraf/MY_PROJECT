@@ -54,6 +54,12 @@
       "sourceType": "github",
       "skillPath": "skills/superpowers-issue-bridge/SKILL.md",
       "computedHash": "f260d7303b9b9e503f412ebd5d809d895d6e3e8e7431ecc986a32a403c0f37c7"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "88aadd21220542083a455e373bd162ffe7843266a71f06f4d837bb3b34f9c9c7"
     }
   }
 }

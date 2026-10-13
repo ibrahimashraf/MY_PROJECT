@@ -7,7 +7,7 @@
 
 ---
 
-## 📑 Master Repository & Tooling Taxonomy (24 Resources)
+## 📑 Master Repository & Tooling Taxonomy (27 Resources)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -19,12 +19,13 @@
 │    • awesome-go (uhub)   │    • flutterawesome.com  │    • supermemoryai/supermemory   │
 │                          │    • flutterflow.io      │    • tt-a1i/hive & mco-org/mco   │
 │                          │    • awesome-dart        │    • tt-a1i/simplify-codebase    │
+│                          │    • awesome-android-ui  │                                  │
 ├──────────────────────────┼──────────────────────────┼──────────────────────────────────┤
-│ 4. Database, RLS & ORM   │ 5. Secrets & Appliance   │ 6. Security & Infrastructure     │
+│ 4. Database, RLS & ORM   │ 5. Secrets & Appliance   │ 6. Security, Intel & Scalability │
 │    • awesome-postgres    │    • Infisical/infisical │    • Awesome-Hacking             │
 │    • PostgREST/postgrest │    • coollabsio/coolify  │    • awesome-scalability         │
-│    • drizzle-team/drizzle│    • awesome-selfhosted  │                                  │
-│    • prisma/orm          │                          │                                  │
+│    • drizzle-team/drizzle│    • awesome-selfhosted  │    • jivoi/awesome-osint         │
+│    • prisma/orm          │                          │    • sindresorhus/awesome        │
 └──────────────────────────┴──────────────────────────┴──────────────────────────────────┘
 ```
 
@@ -74,27 +75,31 @@
 *   **Domain**: Curated Dart libraries and ecosystem resources.
 *   **Role in INTEGIN**: Deep references for offline-first state synchronization, memory optimization, and background sync workers.
 
+### 8. [wasabeef/awesome-android-ui](https://github.com/wasabeef/awesome-android-ui)
+*   **Domain**: Curated Android UI / UX Libraries, Animations, and Custom Components.
+*   **Role in INTEGIN**: Direct visual and component reference for `field_app/` (industrial Android rugged tablets). Provides patterns for high-contrast inspection checklists, hazardous-area high-visibility layouts, reactive status indicators, custom canvas signatures, and hardware-accelerated rendering.
+
 ---
 
 ## 🧠 Group 3: AI Agent Orchestration, Knowledge Graphs & Memory
 
-### 8. [tt-a1i/archify](https://github.com/tt-a1i/archify)
+### 9. [tt-a1i/archify](https://github.com/tt-a1i/archify)
 *   **Domain**: Validated Architecture, Workflow, Sequence & State Visualizer.
 *   **Role in INTEGIN**: Installed skill in `.agents/skills/archify` generating explorable standalone HTML with inline SVG, dark/light themes, trace motion, and asset export to model system architectures, data flows, and state machines.
 
-### 9. [affaan-m/ECC](https://github.com/affaan-m/ECC)
+### 10. [affaan-m/ECC](https://github.com/affaan-m/ECC)
 *   **Domain**: Everything Claude Code / Multi-Agent Operating Harness.
 *   **Role in INTEGIN**: Agent harness providing coordinated sub-agents (planners, security auditors, TDD runners) and persistent session memory across agent invocations. Complements local skills in `.agents/skills/`.
 
-### 10. [supermemoryai/supermemory](https://github.com/supermemoryai/supermemory)
+### 11. [supermemoryai/supermemory](https://github.com/supermemoryai/supermemory)
 *   **Domain**: Memory & Context Engine for AI, Vector Search & Knowledge Hub.
 *   **Role in INTEGIN**: Reference architecture for the **Perplexity-style AI Synthesizer** in `pkg/standardsync/search.go`. Powers local vector abstract indexing and semantic search over engineering standards.
 
-### 11. [tt-a1i/simplify-codebase](https://github.com/tt-a1i/simplify-codebase)
+### 12. [tt-a1i/simplify-codebase](https://github.com/tt-a1i/simplify-codebase)
 *   **Domain**: Codebase Entropy Recovery & Accidental Complexity Removal.
 *   **Role in INTEGIN**: Installed skill in `.agents/skills/simplify-codebase` used for evidence-backed deletion or consolidation of dead code, duplicate state, redundant layers, and entropy audits.
 
-### 12. [mco-org/mco](https://github.com/mco-org/mco) & [tt-a1i/hive](https://github.com/tt-a1i/hive)
+### 13. [mco-org/mco](https://github.com/mco-org/mco) & [tt-a1i/hive](https://github.com/tt-a1i/hive)
 *   **Domain**: Multi-provider AI coordination and local PTY agent supervisor.
 *   **Role in INTEGIN**: Active multi-agent execution skills for structured debates and local CLI dispatch.
 
@@ -102,22 +107,22 @@
 
 ## 🗄️ Group 4: Database Engineering, RLS & Object-Relational Models
 
-### 13. [pg-tr/awesome-postgres](https://github.com/pg-tr/awesome-postgres)
+### 14. [pg-tr/awesome-postgres](https://github.com/pg-tr/awesome-postgres)
 *   **Domain**: Exhaustive Directory of PostgreSQL Extensions, Performance, and HA Tools.
 *   **Role in INTEGIN**: Architectural reference for:
     *   `pg_stat_statements` & `pg_trgm` query optimization.
     *   PostgreSQL Heap-Only Tuple (HOT) in-place page tuning (`fillfactor = 85`).
     *   `pg_partman` automated 24-hr partition management for `sync_idempotency_cache` and `sync_receipt`.
 
-### 14. [PostgREST/postgrest](https://github.com/PostgREST/postgrest)
+### 15. [PostgREST/postgrest](https://github.com/PostgREST/postgrest)
 *   **Domain**: Standalone Web Server Turning PostgreSQL Schemas into RESTful APIs.
 *   **Role in INTEGIN**: The industry standard for **Row-Level Security (RLS) API enforcement**. Serves as our architectural reference model for how session GUCs (`integin.tenant_id`, `integin.organization_id`) are injected from JWT claims and enforced automatically by PostgreSQL policies.
 
-### 15. [drizzle-team/drizzle-orm](https://github.com/drizzle-team/drizzle-orm)
+### 16. [drizzle-team/drizzle-orm](https://github.com/drizzle-team/drizzle-orm)
 *   **Domain**: Headless, Zero-Overhead TypeScript ORM for SQL Databases.
 *   **Role in INTEGIN**: Reference model for strict schema declaration and type safety in the `quiet-signal/` operations console (React 19 + TypeScript).
 
-### 16. [prisma/orm](https://github.com/prisma/orm)
+### 17. [prisma/orm](https://github.com/prisma/orm)
 *   **Domain**: Declarative Relational Schema Modeling & Migration Tool.
 *   **Role in INTEGIN**: Visual schema modeling and relational data browser reference. (Note: Kept strictly separate from the core Go engine to preserve zero-overhead Go performance).
 
@@ -125,32 +130,40 @@
 
 ## 🛡️ Group 5: Secrets Management, Sovereign Appliance & Cloud Deployment
 
-### 17. [Infisical/infisical](https://github.com/Infisical/infisical)
+### 18. [Infisical/infisical](https://github.com/Infisical/infisical)
 *   **Domain**: Open-Source Secret Management, Dynamic PKI & Key Management Service (KMS).
 *   **Role in INTEGIN**:
     *   Architectural pattern for **Tier L0 Dynamic Licensing & PKI Key Rotation**.
     *   Provides Go SDK (`infisical-go`) for securely injecting database credentials, Keycloak secrets, and Ed25519 vendor signing keys into `integin-server` in containerized cloud environments.
 
-### 18. [coollabsio/coolify](https://github.com/coollabsio/coolify)
+### 19. [coollabsio/coolify](https://github.com/coollabsio/coolify)
 *   **Domain**: Open-Source, Self-Hostable PaaS (Alternative to Heroku/Netlify).
 *   **Role in INTEGIN**: **The Golden Model for Deliverable 4.3: Air-Gapped Sovereign Edge Appliance**. Coolify demonstrates how to orchestrate Docker Compose, Traefik ingress, automated health checks, and PostgreSQL on a single sovereign physical server with zero external cloud dependencies.
 
-### 19. [awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted)
+### 20. [awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted)
 *   **Domain**: Curated List of Network Services and Web Apps for Local Hosting.
 *   **Role in INTEGIN**: Blueprint for air-gapped backups (`pgBackRest`), offline reverse proxies (`Traefik`, `Caddy`), and local S3 object stores (`RustFS`, `MinIO`).
 
 ---
 
-## ⚡ Group 6: Scalability & Adversarial Security
+## ⚡ Group 6: Security, Open Intelligence (OSINT) & Scalability
 
-### 20. [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability)
+### 21. [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability)
 *   **Domain**: Large-Scale System Architecture Patterns.
 *   **Role in INTEGIN**: Blueprints for cell-based blast radius isolation, connection pooling via PgDog, and distributed idempotency.
 
-### 21. [Awesome-Hacking](https://github.com/Hack-with-Github/Awesome-Hacking)
+### 22. [Awesome-Hacking](https://github.com/Hack-with-Github/Awesome-Hacking)
 *   **Domain**: Security Hardening & Penetration Testing Resources.
 *   **Role in INTEGIN**: Adversarial test vectors used in `integin-live-matrix` to attack PostgreSQL RLS, test GUC leakage, and prevent timing attacks on cryptographic signatures.
 
+### 23. [jivoi/awesome-osint](https://github.com/jivoi/awesome-osint)
+*   **Domain**: Curated Directory of Open Source Intelligence (OSINT) Tools & Threat Reconnaissance.
+*   **Role in INTEGIN**: Reference catalog for sovereign asset discovery, vendor credential validation, supply-chain certificate intelligence, threat surface reconnaissance, and public certificate transparency auditing for Tier L0 & L9 asset passports.
+
+### 24. [sindresorhus/awesome](https://github.com/sindresorhus/awesome)
+*   **Domain**: The Master Awesome Lists Directory & Community Knowledge Index.
+*   **Role in INTEGIN**: Root taxonomy and vetting index for discovering state-of-the-art libraries, security tools, cryptographic algorithms, and engineering patterns conforming to the Ponytail efficiency ladder.
+
 ---
 
-*Catalog v2.0.0 — Reconciled and Adopted into INTEGIN Master Architecture.*
+*Catalog v2.1.0 — Reconciled and Adopted into INTEGIN Master Architecture.*
