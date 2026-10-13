@@ -1,0 +1,46 @@
+# Local secrets and credentials 
+.env 
+.env.* 
+!.env.example 
+*.pem 
+*.key 
+*.p12 
+*.pfx 
+ 
+# Local runtime and protected artifacts 
+operations/pilot/runtime/ 
+private/ 
+/evidence/ 
+docs/evidence/pilot-backups/ 
+ 
+# Build and dependency output 
+*.exe 
+**/build/ 
+**/.dart_tool/ 
+**/.venv/ 
+**/.verification-venv/ 
+**/__pycache__/ 
+**/.pytest_cache/ 
+**/node_modules/ 
+*.log 
+ 
+# IDE and operating-system state 
+.idea/ 
+.vscode/ 
+.DS_Store 
+Thumbs.db 
+
+# Agent session state & skill output (churns constantly, never commit) 
+.opencode/ 
+
+# Scratch screenshots & temp files 
+/app_*.png 
+/integin_screenshot*.png 
+*.tmp 
+*~ 
+
+# Build leftovers not covered above 
+*.apk 
+*.aab 
+**/.gradle/ 
+target/ 

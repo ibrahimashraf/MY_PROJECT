@@ -1,0 +1,451 @@
+package server
+
+import (
+	"fmt"
+	"net/http"
+	"runtime"
+	"strings"
+	"time"
+
+	"integin/internal/evidenceapi"
+	"integin/internal/identity"
+	"integin/internal/localprovision"
+	"integin/internal/middleware"
+	"integin/internal/syncapi"
+	"integin/pkg/telemetry"
+)
+
+// idempotencyWrapper wraps an ingress handler with the idempotency middleware.
+// It is nil when no database is available, in which case the handler is
+// exposed unwrapped (existing behavior).
+type idempotencyWrapper func(http.Handler) http.Handler
+
+func wrapOrIdentity(wrapper idempotencyWrapper, handler http.Handler) http.Handler {
+	if wrapper == nil {
+		return handler
+	}
+	return wrapper(handler)
+}
+
+func registerCoreRoutes(mux *http.ServeMux, d Dependencies, rateLimiter *middleware.RateLimiter, syncHandler http.Handler, withIdempotency idempotencyWrapper) {
+	mux.Handle("/metrics", telemetryMetricsHandler(telemetry.DefaultMetrics(), d, rateLimiter))
+	// NOTE: syncHandler already carries the Sync-scoped idempotency wrapper
+	// (applied in NewMux). Do NOT wrap it again here: a second wrapper opens
+	// a second claim transaction on the same request, and its INSERT trigger
+	// scan blocks on the first claim's uncommitted row — an undetectable
+	// self-deadlock that hangs every /sync request until client timeout.
+	mux.Handle("/sync", syncHandler)
+	mux.Handle("/api/v1/sync", syncHandler)
+	if d.PilotManifestHandler != nil {
+		mux.Handle("/work-package-manifest", d.PilotManifestHandler)
+	}
+	if d.OIDCSessionHandler != nil {
+		mux.Handle("/identity/session", d.OIDCSessionHandler)
+	}
+	if d.SessionRevocationHandler != nil {
+		mux.Handle("/identity/session/revoke", d.SessionRevocationHandler)
+	}
+	if d.SessionRevokeAllHandler != nil {
+		mux.Handle("/identity/session/revoke-all", d.SessionRevokeAllHandler)
+	}
+	if d.WorkOrderHandler != nil {
+		mux.Handle("/work-orders/partial-submissions", d.WorkOrderHandler)
+	}
+	if d.WorkOrderHandoverHandler != nil {
+		mux.Handle("/work-orders/handovers/", d.WorkOrderHandoverHandler)
+	}
+	if d.WorkOrderAssignmentHandler != nil {
+		mux.Handle("/work-orders/assignments", d.WorkOrderAssignmentHandler)
+	}
+	if d.WorkOrderEvidenceHandler != nil {
+		mux.Handle("/work-orders/", d.WorkOrderEvidenceHandler)
+	}
+	if d.WorkOrderReconciliationHandler != nil {
+		mux.Handle("/api/v1/work-orders/provisional", d.WorkOrderReconciliationHandler)
+		mux.Handle("/api/v1/work-orders/receipts/", d.WorkOrderReconciliationHandler)
+		mux.Handle("/api/v1/work-orders/held", d.WorkOrderReconciliationHandler)
+	}
+	if d.CertificateHandler != nil {
+		mux.Handle("/certificates/", d.CertificateHandler)
+	}
+	if d.CertificatePublicHandler != nil {
+		mux.Handle("/verify/certificates/", d.CertificatePublicHandler)
+	}
+	mux.Handle("/verify", publicVerifierHandler())
+	mux.Handle("/verify/", publicVerifierHandler())
+	if d.EvidenceStore != nil {
+		mux.Handle("/evidence", wrapOrIdentity(withIdempotency, newEvidenceHandler(d)))
+	}
+	if d.EvidenceRegistrationHandler != nil {
+		mux.Handle("/evidence/metadata-registrations", d.EvidenceRegistrationHandler)
+	}
+	if d.LocalProvisioning != nil {
+		mux.Handle("/local/provision", d.LocalProvisioning)
+	}
+	if d.ShortLinkHandler != nil {
+		mux.Handle("/s/", d.ShortLinkHandler)
+	}
+	if d.QRNFCHandler != nil {
+		mux.Handle("/qr-nfc/verify", d.QRNFCHandler)
+	}
+	if d.DeviceEnrollmentHandler != nil {
+		mux.Handle("/v1/device-enrollment/", d.DeviceEnrollmentHandler)
+		mux.Handle("/v1/devices/", d.DeviceEnrollmentHandler)
+	}
+}
+
+func registerLicensedAPIRoutes(mux *http.ServeMux, d Dependencies) {
+	if d.LicenseHandler != nil {
+		mux.Handle("/api/v1/licenses/", d.LicenseHandler)
+	}
+	if d.FlagAdminHandler != nil {
+		mux.Handle("/api/v1/admin/feature-flags", d.FlagAdminHandler)
+		mux.Handle("/api/v1/admin/feature-flags/", d.FlagAdminHandler)
+	}
+	if d.IdentityGrantHandler != nil {
+		mux.Handle("/api/v1/admin/identity-grants", d.IdentityGrantHandler)
+	}
+	if d.TrainingHandler != nil {
+		mux.Handle("/api/v1/training/", d.TrainingHandler)
+	}
+	if d.SettingsHandler != nil {
+		mux.Handle("/api/v1/admin/settings", d.SettingsHandler)
+		mux.Handle("/api/v1/admin/settings/", d.SettingsHandler)
+	}
+	if d.InspectionHandler != nil {
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.InspectionHandler)
+		mux.Handle("/api/v1/inspections", gated)
+	}
+	if d.SearchHandler != nil {
+		mux.Handle("/api/v1/search/", d.SearchHandler)
+	}
+	if d.AuditLogHandler != nil {
+		mux.Handle("/api/v1/audit-log", d.AuditLogHandler)
+		mux.Handle("/api/v1/audit-log/", d.AuditLogHandler)
+	}
+	if d.AnalyticsHandler != nil {
+		mux.Handle("/api/v1/analytics/", d.AnalyticsHandler)
+	}
+	if d.AdvisoryHandler != nil {
+		mux.Handle("/api/v1/advisory", d.AdvisoryHandler)
+		mux.Handle("/api/v1/advisory/", d.AdvisoryHandler)
+	}
+	if d.ContextGroundHandler != nil {
+		mux.Handle("/api/v1/context/ground", d.ContextGroundHandler)
+		mux.Handle("/api/v1/context/", d.ContextGroundHandler)
+	}
+	if d.ReportsHandler != nil {
+		mux.Handle("/api/v1/reports/", d.ReportsHandler)
+	}
+	if d.LiftViewExportHandler != nil {
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.LiftViewExportHandler)
+		mux.Handle("/api/v1/liftviews/export", gated)
+		mux.Handle("/api/v1/liftviews/cranes", gated)
+		mux.Handle("/api/v1/liftviews/evaluate4d", gated)
+		mux.Handle("/api/v1/liftviews/renewal", gated)
+		mux.Handle("/api/v1/liftviews/share", d.LiftViewExportHandler)
+	}
+	if d.ShortLinkHandler != nil {
+		mux.Handle("/api/v1/admin/shortlinks", d.ShortLinkHandler)
+		mux.Handle("/api/v1/admin/shortlinks/", d.ShortLinkHandler)
+	}
+	if d.AssuranceHandler != nil {
+		mux.Handle("/api/v1/assurance", d.AssuranceHandler)
+		mux.Handle("/api/v1/assurance/", d.AssuranceHandler)
+	}
+	if d.FormDefinitionHandler != nil {
+		mux.Handle("/api/v1/form-definitions", d.FormDefinitionHandler)
+		mux.Handle("/api/v1/form-definitions/", d.FormDefinitionHandler)
+	}
+	if d.EvidencePackHandler != nil {
+		mux.Handle("/api/v1/evidence-packs", d.EvidencePackHandler)
+		mux.Handle("/api/v1/evidence-packs/", d.EvidencePackHandler)
+	}
+	if d.AssetEntitlementHandler != nil {
+		mux.Handle("/api/v1/asset-entitlements", d.AssetEntitlementHandler)
+		mux.Handle("/api/v1/asset-entitlements/", d.AssetEntitlementHandler)
+	}
+	if d.DPPHandler != nil {
+		mux.Handle("/dpp/", d.DPPHandler)
+		mux.Handle("/api/v1/dpp/", d.DPPHandler)
+	}
+	if d.TUSHandler != nil {
+		gated := requireTUSAuth(d.Validator, d.Resolver, d.UploadTokenSecret, authorityRegistryForUploadTokens(d), d.TUSHandler)
+		mux.Handle("/uploads", gated)
+		mux.Handle("/uploads/", gated)
+	}
+	if d.PilotEnrollHandler != nil {
+		stripped := http.StripPrefix("/enroll", d.PilotEnrollHandler)
+		mux.Handle("/enroll/challenge", stripped)
+		mux.Handle("/enroll/submit", stripped)
+	}
+	if d.WorkOrderAssignmentHandler != nil {
+		mux.Handle("/api/v1/work-orders/", d.WorkOrderAssignmentHandler)
+	}
+	if d.SchedulingHandler != nil {
+		mux.Handle("/api/v1/scheduling/", d.SchedulingHandler)
+	}
+	if d.WorkbenchHandler != nil {
+		mux.Handle("/api/v1/devices", d.WorkbenchHandler)
+		mux.Handle("/api/v1/devices/", d.WorkbenchHandler)
+		mux.Handle("/api/v1/sync/held", d.WorkbenchHandler)
+		mux.Handle("/api/v1/sync/reconcile", d.WorkbenchHandler)
+		mux.Handle("/api/v1/legal-holds", d.WorkbenchHandler)
+		mux.Handle("/api/v1/legal-holds/", d.WorkbenchHandler)
+		mux.Handle("/api/v1/retention-policies", d.WorkbenchHandler)
+		mux.Handle("/api/v1/retention-policies/", d.WorkbenchHandler)
+		mux.Handle("/api/v1/exports/approvals", d.WorkbenchHandler)
+	}
+	if d.JurisdictionHandler != nil {
+		mux.Handle("/api/v1/jurisdictions", d.JurisdictionHandler)
+		mux.Handle("/api/v1/jurisdictions/", d.JurisdictionHandler)
+	}
+	if d.QueryHandler != nil {
+		gated := requireOIDCAuth(d.Validator, d.Resolver, d.QueryHandler)
+		mux.Handle("/api/v1/query", gated)
+		mux.Handle("/api/v1/query/", gated)
+	}
+	if d.RoboticsHandler != nil {
+		mux.Handle("/api/v1/robotics", d.RoboticsHandler)
+		mux.Handle("/api/v1/robotics/", d.RoboticsHandler)
+	}
+	if d.TelemetryStreamHandler != nil {
+		mux.Handle("/api/v1/telemetry", d.TelemetryStreamHandler)
+		mux.Handle("/api/v1/telemetry/", d.TelemetryStreamHandler)
+	}
+	if d.CARHandler != nil {
+		mux.Handle("/api/v1/car", d.CARHandler)
+		mux.Handle("/api/v1/car/", d.CARHandler)
+	}
+	if d.FederationHandler != nil {
+		mux.Handle("/api/v1/federation", d.FederationHandler)
+		mux.Handle("/api/v1/federation/", d.FederationHandler)
+	}
+	if d.RiskHandler != nil {
+		mux.Handle("/api/v1/risk", d.RiskHandler)
+		mux.Handle("/api/v1/risk/", d.RiskHandler)
+	}
+	if d.ATEXHandler != nil {
+		mux.Handle("/api/v1/atex", d.ATEXHandler)
+		mux.Handle("/api/v1/atex/", d.ATEXHandler)
+	}
+	if d.PhotogrammetryHandler != nil {
+		mux.Handle("/api/v1/photogrammetry", d.PhotogrammetryHandler)
+		mux.Handle("/api/v1/photogrammetry/", d.PhotogrammetryHandler)
+	}
+	if d.PipingHandler != nil {
+		mux.Handle("/api/v1/piping", d.PipingHandler)
+		mux.Handle("/api/v1/piping/", d.PipingHandler)
+	}
+	if d.AgentMCPHandler != nil {
+		mux.Handle("/api/v1/mcp", d.AgentMCPHandler)
+	}
+}
+
+// principalAuth is the outcome of authenticating a request's bearer token.
+// tokenValid and membershipResolved are reported separately because the two
+// callers diverge: requireOIDCAuth admits a token-valid request even when
+// membership lookup fails, while requireTUSAuth requires both.
+type principalAuth struct {
+	membership         identity.Membership
+	tokenValid         bool
+	resolverConfigured bool
+	membershipResolved bool
+}
+
+// authenticateBearer validates the Authorization bearer token and, when both a
+// validator and a resolver are configured, resolves the principal's membership.
+func authenticateBearer(request *http.Request, validator TokenValidator, resolver identity.Resolver) principalAuth {
+	var result principalAuth
+	raw, ok := bearerToken(request.Header.Get("Authorization"))
+	if !ok {
+		return result
+	}
+	if validator != nil {
+		if principal, err := validator.Validate(request.Context(), raw); err == nil {
+			result.tokenValid = true
+			if resolver != nil {
+				result.resolverConfigured = true
+				if membership, err := resolver.Resolve(request.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject}); err == nil {
+					result.membership = membership
+					result.membershipResolved = true
+				}
+			}
+		}
+	}
+	return result
+}
+
+func requireOIDCAuth(validator TokenValidator, resolver identity.Resolver, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Strip untrusted tenant/identity headers to prevent spoofing
+		request.Header.Del("X-Tenant-ID")
+		request.Header.Del("X-Organization-ID")
+		request.Header.Del("X-Actor-ID")
+
+		auth := authenticateBearer(request, validator, resolver)
+		// A valid token is not sufficient: the principal must also resolve to a
+		// tenant membership, otherwise there is no tenant to authorize against.
+		// Admitting the request would push the failure downstream into a 400 for
+		// a missing tenant header.
+		if auth.tokenValid && auth.membershipResolved {
+			request.Header.Set("X-Tenant-ID", auth.membership.TenantID)
+			request.Header.Set("X-Organization-ID", auth.membership.OrganizationID)
+			request.Header.Set("X-Actor-ID", auth.membership.ActorID)
+			next.ServeHTTP(writer, request)
+			return
+		}
+		// A resolver was configured and could not map this principal to a
+		// tenant: there is no tenant to authorize against, so refuse. With no
+		// resolver configured there is no membership to check, and routes that
+		// do not require tenant identity still serve.
+		if auth.tokenValid && auth.resolverConfigured {
+			writeOperationalJSON(writer, http.StatusForbidden, `{"error":"no_tenant_membership"}`)
+			return
+		}
+		if auth.tokenValid {
+			next.ServeHTTP(writer, request)
+			return
+		}
+		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+	})
+}
+
+func requireTUSAuth(validator TokenValidator, resolver identity.Resolver, uploadSecret string, authorities *syncapi.AuthorityRegistry, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Strip incoming headers to prevent injection attacks from OIDC clients.
+		request.Header.Del("X-TUS-Tenant-ID")
+		request.Header.Del("X-TUS-Session-ID")
+
+		raw, ok := bearerToken(request.Header.Get("Authorization"))
+		if !ok {
+			writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+			return
+		}
+
+		auth := authenticateBearer(request, validator, resolver)
+		if auth.tokenValid && auth.membershipResolved {
+			request.Header.Set("X-TUS-Tenant-ID", auth.membership.TenantID)
+			request.Header.Set("X-TUS-Session-ID", auth.membership.ActorID)
+			next.ServeHTTP(writer, request)
+			return
+		}
+		if uploadSecret != "" {
+			claims, err := localprovision.ValidateUploadToken(uploadSecret, raw, time.Now().UTC())
+			if err == nil && uploadTokenAuthorityCurrent(claims, authorities, time.Now().UTC()) {
+				authz, _ := authorities.Get(claims.AuthorityID)
+				if authz.TenantID == claims.TenantID {
+					request.Header.Set("X-TUS-Tenant-ID", claims.TenantID)
+					request.Header.Set("X-TUS-Session-ID", claims.SessionID)
+					next.ServeHTTP(writer, request)
+					return
+				}
+			}
+		}
+		if validator == nil && uploadSecret == "" {
+			writeOperationalJSON(writer, http.StatusServiceUnavailable, `{"error":"service_unavailable"}`)
+			return
+		}
+		writeOperationalJSON(writer, http.StatusUnauthorized, `{"error":"authentication_failed"}`)
+	})
+}
+
+// uploadTokenAuthorityCurrent proves a provision-bound token still names a
+// live authority on this server. A valid HMAC alone is not enough: the
+// signature only proves this server once issued the token, not that the bound
+// authority is still registered, still belongs to the named device and epoch,
+// and has not expired.
+func uploadTokenAuthorityCurrent(claims localprovision.UploadTokenClaims, authorities *syncapi.AuthorityRegistry, now time.Time) bool {
+	if authorities == nil {
+		return false
+	}
+	authority, exists := authorities.Get(claims.AuthorityID)
+	if !exists {
+		return false
+	}
+	if authority.DeviceID != claims.DeviceID || authority.Epoch != claims.Epoch {
+		return false
+	}
+	return now.Before(authority.ExpiresAt.Add(time.Minute))
+}
+
+// authorityRegistryForUploadTokens is the registry the /uploads gate must
+// consult: the mux-owned registry, which carries every authority registered
+// since boot (including those issued after startup by local provisioning and
+// pilot enrollment), not the startup snapshot the sync handler was built with.
+func authorityRegistryForUploadTokens(d Dependencies) *syncapi.AuthorityRegistry {
+	if d.UploadAuthorityRegistry != nil {
+		return d.UploadAuthorityRegistry
+	}
+	return d.AuthorityRegistry
+}
+
+func bearerToken(value string) (string, bool) {
+	parts := strings.Fields(value)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
+}
+
+func newEvidenceHandler(d Dependencies) http.Handler {
+	return evidenceapi.Handler{Store: d.EvidenceStore, Validator: d.Validator, Resolver: d.Resolver}
+}
+
+// telemetryMetricsHandler composes the observability contract exposition with
+// the runtime process, rate-limit, and database families.
+func telemetryMetricsHandler(metrics *telemetry.Metrics, d Dependencies, rateLimiter *middleware.RateLimiter) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodGet && request.Method != http.MethodHead {
+			writer.Header().Set("Allow", "GET, HEAD")
+			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		writer.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+		if err := metrics.WritePrometheus(writer); err != nil {
+			return // client disconnected; nothing further to do
+		}
+		writeLegacyMetrics(writer, d, rateLimiter)
+	})
+}
+
+// writeLegacyMetrics emits the process-level families that predate the
+// telemetry contract; each value is a concrete observable, never a label.
+func writeLegacyMetrics(writer http.ResponseWriter, d Dependencies, rateLimiter *middleware.RateLimiter) {
+	allowed, denied := rateLimiter.Stats()
+	fmt.Fprintf(writer, "# HELP integin_ratelimit_allowed_total Total requests allowed by rate limiter.\n")
+	fmt.Fprintf(writer, "# TYPE integin_ratelimit_allowed_total counter\n")
+	fmt.Fprintf(writer, "integin_ratelimit_allowed_total %d\n", allowed)
+	fmt.Fprintf(writer, "# HELP integin_ratelimit_denied_total Total requests denied by rate limiter.\n")
+	fmt.Fprintf(writer, "# TYPE integin_ratelimit_denied_total counter\n")
+	fmt.Fprintf(writer, "integin_ratelimit_denied_total %d\n", denied)
+	fmt.Fprintf(writer, "# HELP integin_go_goroutines Current goroutines.\n")
+	fmt.Fprintf(writer, "# TYPE integin_go_goroutines gauge\n")
+	fmt.Fprintf(writer, "integin_go_goroutines %d\n", runtime.NumGoroutine())
+	if d.SyncProcessor != nil {
+		fmt.Fprintf(writer, "# HELP integin_sync_offline_hmac_fallback_total Total offline sync transactions accepted via deprecated HMAC fallback.\n")
+		fmt.Fprintf(writer, "# TYPE integin_sync_offline_hmac_fallback_total counter\n")
+		fmt.Fprintf(writer, "integin_sync_offline_hmac_fallback_total %d\n", d.SyncProcessor.HMACFallbackCount.Load())
+	}
+	if d.DB != nil {
+		stats := d.DB.Stats()
+		fmt.Fprintf(writer, "# HELP integin_db_max_open_connections Maximum open database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_max_open_connections gauge\n")
+		fmt.Fprintf(writer, "integin_db_max_open_connections %d\n", stats.MaxOpenConnections)
+		fmt.Fprintf(writer, "# HELP integin_db_open_connections Current open database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_open_connections gauge\n")
+		fmt.Fprintf(writer, "integin_db_open_connections %d\n", stats.OpenConnections)
+		fmt.Fprintf(writer, "# HELP integin_db_in_use Current in-use database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_in_use gauge\n")
+		fmt.Fprintf(writer, "integin_db_in_use %d\n", stats.InUse)
+		fmt.Fprintf(writer, "# HELP integin_db_idle Current idle database connections.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_idle gauge\n")
+		fmt.Fprintf(writer, "integin_db_idle %d\n", stats.Idle)
+		fmt.Fprintf(writer, "# HELP integin_db_wait_count Total database connections waited for.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_wait_count counter\n")
+		fmt.Fprintf(writer, "integin_db_wait_count %d\n", stats.WaitCount)
+		fmt.Fprintf(writer, "# HELP integin_db_wait_duration_ms Total database connection wait duration.\n")
+		fmt.Fprintf(writer, "# TYPE integin_db_wait_duration_ms counter\n")
+		fmt.Fprintf(writer, "integin_db_wait_duration_ms %d\n", stats.WaitDuration.Milliseconds())
+	}
+}

@@ -1,0 +1,9 @@
+field_app/
+deployments/
+deploy/
+docs/
+.git/
+.code-review-graph/
+*.md
+*.yml
+*.yaml

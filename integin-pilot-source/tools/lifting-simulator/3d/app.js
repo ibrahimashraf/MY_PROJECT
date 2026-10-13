@@ -1,0 +1,2193 @@
+// INTEGIN 3D Spatial Collision & 4D Tandem Lift Simulator
+// Standalone WebGL / Canvas implementation with deterministic physics evaluation
+
+(function() {
+    'use strict';
+
+    // State Variables
+    let scene, camera, renderer, controls, envGroup, importedSiteGroup;
+    let crane1Group, crane2Group, crane3Group, crane4Group;
+    let boom1, boom2, boom3, boom4, suspendedLoad;
+    let hook1Mesh, hook2Mesh, hook3Mesh, hook4Mesh;
+    let slingLines, hoistLines;
+    let isPlaying = false;
+    let playInterval = null;
+    let selectedId = null;
+    let viewMode = 'fade';
+    let inspectorTab = 'Overview';
+    let verdictTimer = null;
+    let verdictOnline = false;
+    const live = { radius1: 0, radius2: 0, radius3: 0, radius4: 0, share1: 52, share2: 48, share3: 0, share4: 0, clearance: '', fos: 0, fosText: '' };
+
+    const state = {
+        time: 0.0,
+        window: 60.0,
+        environment: 'factory',
+        liftMode: 'tandem', // 'tandem', 'triple', 'quad', 'single', 'tailing'
+        crane1: { x: -15, z: 0, boomAngle: 65, slewAngle: 15, boomLength: 30 },
+        crane2: { x: 15, z: 0, boomAngle: 60, slewAngle: -20, boomLength: 28 },
+        crane1Model: '',
+        crane2Model: '',
+        crane3: { x: 0, z: 18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
+        crane4: { x: 0, z: -18, boomAngle: 62, slewAngle: 0, boomLength: 30 },
+        load: { massTonnes: 45.0, length: 12.0, radius: 1.5 },
+        loadBlockId: 'BLOCK_LOAD_VESSEL',
+        allowableGbpKPa: 220.0,
+        hazards: [],
+        methodSteps: [],
+        // User-supplied plan data. Defaults mirror the demo scenario; the
+        // engine treats every value as untrusted input and gates it.
+        plan: {
+            cap1: 40, cap2: 40, counterweight: 20, spread: 8.5,
+            chassis1: 60, chassis2: 60,
+            slingAngle: 60, slingMBL: 30, rigging: 2,
+            matArea: 3.0, cogOffset: -1
+        }
+    };
+
+    function init() {
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 600;
+
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a1120);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
+        camera.position.set(0, 35, 55);
+
+        // Renderer with graceful fallback for legacy / software-only devices
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, failIfMajorPerformanceCaveat: false });
+        } catch (e) {
+            console.warn('Hardware WebGL failed, falling back without antialiasing:', e);
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'low-power' });
+            } catch (err) {
+                console.error('WebGL unavailable on this device/browser:', err);
+                const notice = document.createElement('div');
+                notice.style.cssText = 'color:#f87171;padding:24px;text-align:center;font-family:sans-serif;background:#1e293b;border-radius:8px;margin:20px;';
+                notice.innerHTML = '<h3>⚠️ Hardware Acceleration / 3D Graphics Unavailable</h3><p>Your browser or OS does not currently provide WebGL/WebGPU acceleration. Telemetry and calculations remain 100% active in the control panels.</p>';
+                container.appendChild(notice);
+                return;
+            }
+        }
+        renderer.setSize(width, height);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        // OrbitControls
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+        }
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        ambientLight.name = 'ambientLight';
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.name = 'dirLight';
+        dirLight.position.set(20, 50, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // Ground & Environment Root Group
+        envGroup = new THREE.Group();
+        envGroup.name = 'envGroup';
+        scene.add(envGroup);
+
+        applyEnvironment(state.environment);
+        buildSceneObjects();
+        setupEventListeners();
+        renderPlanningRows();
+        loadCraneModels();
+        buildSystemsList();
+        buildBlocksList();
+        setupBlocksTabs();
+
+        // Initialize timeline to stage 0
+        const sliderTime = document.getElementById('time-slider');
+        if (sliderTime) {
+            sliderTime.dispatchEvent(new Event('input'));
+        } else {
+            updateKinematics();
+        }
+
+        window.addEventListener('resize', onWindowResize);
+        setupXRAndDrone();
+        animate();
+    }
+
+    function applyEnvironment(envName) {
+        if (!envGroup) return;
+        state.environment = envName;
+
+        // Clear existing environment props
+        while (envGroup.children.length > 0) {
+            const obj = envGroup.children[0];
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                else obj.material.dispose();
+            }
+            envGroup.remove(obj);
+        }
+
+        const amb = scene.getObjectByName('ambientLight');
+        const dir = scene.getObjectByName('dirLight');
+
+        switch (envName) {
+            case 'offshore_marine': {
+                scene.background = new THREE.Color(0x0c2438);
+                if (amb) amb.color.setHex(0x7dd3fc);
+                if (dir) { dir.color.setHex(0xe0f2fe); dir.position.set(30, 60, 20); }
+
+                // Ocean water plane
+                const waterGeo = new THREE.PlaneGeometry(300, 300, 32, 32);
+                const waterMat = new THREE.MeshStandardMaterial({
+                    color: 0x0369a1,
+                    roughness: 0.1,
+                    metalness: 0.8,
+                    transparent: true,
+                    opacity: 0.88
+                });
+                const water = new THREE.Mesh(waterGeo, waterMat);
+                water.rotation.x = -Math.PI / 2;
+                water.position.y = -0.4;
+                envGroup.add(water);
+
+                // Heavy Crane Barge Pontoon Hull
+                const bargeMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.3 });
+                const barge = new THREE.Mesh(new THREE.BoxGeometry(64, 5.0, 48), bargeMat);
+                barge.position.set(0, -2.5, 5);
+                envGroup.add(barge);
+
+                // Deck checker / non-slip boundary
+                const deckMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 });
+                const deck = new THREE.Mesh(new THREE.BoxGeometry(60, 0.2, 44), deckMat);
+                deck.position.set(0, 0.05, 5);
+                envGroup.add(deck);
+
+                // Barge mooring bollards & safety railings
+                const bollardGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.9, 12);
+                const bollardMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+                [-28, 28].forEach(bx => {
+                    [-18, 0, 18].forEach(bz => {
+                        const b = new THREE.Mesh(bollardGeo, bollardMat);
+                        b.position.set(bx, 0.5, bz + 5);
+                        envGroup.add(b);
+                    });
+                });
+                break;
+            }
+
+            case 'drillship': {
+                scene.background = new THREE.Color(0x0f172a);
+                if (amb) amb.color.setHex(0x94a3b8);
+                if (dir) { dir.color.setHex(0xf8fafc); dir.position.set(25, 65, 30); }
+
+                // Sea surface
+                const waterGeo = new THREE.PlaneGeometry(300, 300);
+                const waterMat = new THREE.MeshStandardMaterial({ color: 0x0f2b46, roughness: 0.2, metalness: 0.7 });
+                const sea = new THREE.Mesh(waterGeo, waterMat);
+                sea.rotation.x = -Math.PI / 2;
+                sea.position.y = -1.2;
+                envGroup.add(sea);
+
+                // Drillship Main Deck Hull
+                const hullMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+                const hull = new THREE.Mesh(new THREE.BoxGeometry(50, 4.0, 90), hullMat);
+                hull.position.set(0, -2.0, 0);
+                envGroup.add(hull);
+
+                // Moonpool Opening & Wellhead Skid Surround
+                const moonpoolBorder = new THREE.Mesh(new THREE.BoxGeometry(16, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
+                moonpoolBorder.position.set(0, 0.2, 10);
+                envGroup.add(moonpoolBorder);
+                const moonpoolHole = new THREE.Mesh(new THREE.BoxGeometry(13, 0.8, 13), new THREE.MeshBasicMaterial({ color: 0x020617 }));
+                moonpoolHole.position.set(0, 0.3, 10);
+                envGroup.add(moonpoolHole);
+
+                // Drill Floor Substructure & Lattice Derrick Tower
+                const derrickMat = new THREE.MeshStandardMaterial({ color: 0xd97706, wireframe: true });
+                const derrick = new THREE.Mesh(new THREE.CylinderGeometry(2, 6, 28, 4), derrickMat);
+                derrick.position.set(0, 14, -20);
+                derrick.rotation.y = Math.PI / 4;
+                envGroup.add(derrick);
+
+                // Tubular Casing / Drill Pipe Racks
+                const pipeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.3 });
+                for (let i = 0; i < 6; i++) {
+                    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 18, 8), pipeMat);
+                    pipe.rotation.x = Math.PI / 2;
+                    pipe.position.set(-18 + i * 0.8, 0.3, 0);
+                    envGroup.add(pipe);
+                }
+                break;
+            }
+
+            case 'jackup': {
+                scene.background = new THREE.Color(0x111c2e);
+                if (amb) amb.color.setHex(0x93c5fd);
+                if (dir) { dir.color.setHex(0xffedd5); dir.position.set(20, 70, 20); }
+
+                // Sea plane
+                const waterGeo = new THREE.PlaneGeometry(300, 300);
+                const waterMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.2 });
+                const ocean = new THREE.Mesh(waterGeo, waterMat);
+                ocean.rotation.x = -Math.PI / 2;
+                ocean.position.y = -8.0;
+                envGroup.add(ocean);
+
+                // Elevated Jack-Up Triangular / Polygonal Hull
+                const jackHullMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+                const jackHull = new THREE.Mesh(new THREE.BoxGeometry(52, 3.5, 48), jackHullMat);
+                jackHull.position.set(0, -1.75, 4);
+                envGroup.add(jackHull);
+
+                // Three Massive Lattice/Truss Jack-Up Legs extending down through water
+                const legMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, wireframe: true });
+                [[-20, -16], [20, -16], [0, 24]].forEach(([lx, lz]) => {
+                    const leg = new THREE.Mesh(new THREE.BoxGeometry(4.5, 45, 4.5), legMat);
+                    leg.position.set(lx, 10, lz);
+                    envGroup.add(leg);
+
+                    // Spud can guide housing
+                    const guide = new THREE.Mesh(new THREE.BoxGeometry(6.5, 5, 6.5), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+                    guide.position.set(lx, 0, lz);
+                    envGroup.add(guide);
+                });
+
+                // Cantilever Drill Floor Structure
+                const cantiMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+                const cantilever = new THREE.Mesh(new THREE.BoxGeometry(18, 2.5, 24), cantiMat);
+                cantilever.position.set(0, 1.25, -18);
+                envGroup.add(cantilever);
+                break;
+            }
+
+            case 'desert': {
+                scene.background = new THREE.Color(0xfde68a);
+                if (amb) amb.color.setHex(0xfef08a);
+                if (dir) { dir.color.setHex(0xfffbeb); dir.position.set(40, 60, -30); }
+
+                // Vast Sand & Compacted Soil Plane
+                const sandGeo = new THREE.PlaneGeometry(300, 300, 32, 32);
+                const sandMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.95 });
+                const terrain = new THREE.Mesh(sandGeo, sandMat);
+                terrain.rotation.x = -Math.PI / 2;
+                terrain.position.y = -0.05;
+                envGroup.add(terrain);
+
+                // Desert Dunes & Berms in background
+                const duneMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 1.0 });
+                [-45, 45].forEach((dx) => {
+                    const dune = new THREE.Mesh(new THREE.ConeGeometry(18, 6, 8), duneMat);
+                    dune.position.set(dx, 2.5, -45);
+                    dune.scale.set(1.6, 1, 1.2);
+                    envGroup.add(dune);
+                });
+
+                // Wellhead Christmas Tree assembly prop
+                const xTreeMat = new THREE.MeshStandardMaterial({ color: 0x15803d, metalness: 0.6 });
+                const xTreeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.0, 3.0, 8), xTreeMat);
+                xTreeBase.position.set(18, 1.5, 12);
+                envGroup.add(xTreeBase);
+                const xTreeArm = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.5, 0.5), xTreeMat);
+                xTreeArm.position.set(18, 2.5, 12);
+                envGroup.add(xTreeArm);
+                break;
+            }
+
+            case 'gas_plant': {
+                scene.background = new THREE.Color(0x0f172a);
+                if (amb) amb.color.setHex(0x94a3b8);
+                if (dir) { dir.color.setHex(0xf1f5f9); dir.position.set(-30, 60, 20); }
+
+                // Concrete pad & gravel ground
+                const slabGeo = new THREE.PlaneGeometry(300, 300);
+                const slabMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+                const slab = new THREE.Mesh(slabGeo, slabMat);
+                slab.rotation.x = -Math.PI / 2;
+                slab.position.y = -0.05;
+                envGroup.add(slab);
+
+                // Vertical Distillation Fractionation Columns
+                const colMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7, roughness: 0.3 });
+                const col1 = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 32, 16), colMat);
+                col1.position.set(-28, 16, -20);
+                envGroup.add(col1);
+
+                const col2 = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 24, 16), colMat);
+                col2.position.set(-22, 12, -22);
+                envGroup.add(col2);
+
+                // Elevated Process Pipe Racks
+                const rackMat = new THREE.MeshStandardMaterial({ color: 0x64748b, wireframe: true });
+                const rack = new THREE.Mesh(new THREE.BoxGeometry(4, 8, 50), rackMat);
+                rack.position.set(24, 4, 0);
+                envGroup.add(rack);
+
+                // Multi-tier Process Piping inside rack
+                const pMat1 = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8 });
+                const pMat2 = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8 });
+                [-1, 1].forEach((px) => {
+                    const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 50, 8), pMat1);
+                    p1.rotation.x = Math.PI / 2;
+                    p1.position.set(24 + px, 5.5, 0);
+                    envGroup.add(p1);
+
+                    const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 50, 8), pMat2);
+                    p2.rotation.x = Math.PI / 2;
+                    p2.position.set(24 + px, 7.0, 0);
+                    envGroup.add(p2);
+                });
+
+                // LNG Cryogenic Spherical Tank in distance
+                const sphereMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.4 });
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(9, 20, 20), sphereMat);
+                sphere.position.set(0, 11, -48);
+                envGroup.add(sphere);
+                const sphereLegs = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 5, 8, 1, true), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+                sphereLegs.position.set(0, 2.5, -48);
+                envGroup.add(sphereLegs);
+                break;
+            }
+
+            case 'port': {
+                scene.background = new THREE.Color(0x1e293b);
+                if (amb) amb.color.setHex(0x94a3b8);
+                if (dir) { dir.color.setHex(0xffedd5); dir.position.set(20, 50, -30); }
+
+                // Water basin on positive Z side
+                const basinGeo = new THREE.PlaneGeometry(300, 150);
+                const basinMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.7 });
+                const basin = new THREE.Mesh(basinGeo, basinMat);
+                basin.rotation.x = -Math.PI / 2;
+                basin.position.set(0, -1.0, 95);
+                envGroup.add(basin);
+
+                // Heavy Reinforced Concrete Quay Apron (Z <= 20)
+                const quayGeo = new THREE.PlaneGeometry(300, 150);
+                const quayMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 });
+                const quay = new THREE.Mesh(quayGeo, quayMat);
+                quay.rotation.x = -Math.PI / 2;
+                quay.position.set(0, 0, -55);
+                envGroup.add(quay);
+
+                // Concrete Quay Wall Face dropping down to water
+                const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 });
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(300, 2.0, 1.0), wallMat);
+                wall.position.set(0, -0.5, 20);
+                envGroup.add(wall);
+
+                // Mooring Bollards along quay boundary
+                const bollardGeo = new THREE.CylinderGeometry(0.3, 0.35, 1.0, 12);
+                const bollardMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
+                for (let x = -60; x <= 60; x += 20) {
+                    const bollard = new THREE.Mesh(bollardGeo, bollardMat);
+                    bollard.position.set(x, 0.5, 19.2);
+                    envGroup.add(bollard);
+                }
+
+                // Staggered Cargo ISO Containers on dockside
+                const cColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b];
+                [[-26, -18], [-26, -12], [26, -18]].forEach(([cx, cz], idx) => {
+                    const cMesh = new THREE.Mesh(
+                        new THREE.BoxGeometry(6.0, 2.6, 2.4),
+                        new THREE.MeshStandardMaterial({ color: cColors[idx % cColors.length], roughness: 0.5 })
+                    );
+                    cMesh.position.set(cx, 1.3, cz);
+                    envGroup.add(cMesh);
+                });
+                break;
+            }
+
+            case 'construction': {
+                scene.background = new THREE.Color(0x1a2332);
+                if (amb) amb.color.setHex(0xe2e8f0);
+                if (dir) { dir.color.setHex(0xfef08a); dir.position.set(30, 65, 25); }
+
+                // Graded Dirt / Hardcore Aggregate Ground Plane
+                const groundGeo = new THREE.PlaneGeometry(300, 300, 32, 32);
+                const groundMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.95 });
+                const ground = new THREE.Mesh(groundGeo, groundMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.05;
+                envGroup.add(ground);
+
+                // Concrete Substructure Foundation Pad with starter rebar
+                const padMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+                const fPad = new THREE.Mesh(new THREE.BoxGeometry(40, 0.8, 30), padMat);
+                fPad.position.set(0, 0.4, -10);
+                envGroup.add(fPad);
+
+                // Reinforced Concrete Building Columns / Pylons Under Construction
+                const colMat = new THREE.MeshStandardMaterial({ color: 0xa8a29e, roughness: 0.85 });
+                const rebarMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.7, roughness: 0.4 });
+                [[-14, -20], [-14, 0], [14, -20], [14, 0]].forEach(([cx, cz]) => {
+                    const col = new THREE.Mesh(new THREE.BoxGeometry(2.2, 10, 2.2), colMat);
+                    col.position.set(cx, 5.0, cz);
+                    envGroup.add(col);
+
+                    // Rebar cage cages protruding from top
+                    for (let r = 0; r < 4; r++) {
+                        const rx = (r % 2 === 0 ? -0.8 : 0.8);
+                        const rz = (r < 2 ? -0.8 : 0.8);
+                        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.5, 6), rebarMat);
+                        bar.position.set(cx + rx, 11.5, cz + rz);
+                        envGroup.add(bar);
+                    }
+                });
+
+                // Heavy Modular Scaffolding Lattice Tower
+                const scaffMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true });
+                const scaff = new THREE.Mesh(new THREE.BoxGeometry(6, 18, 6), scaffMat);
+                scaff.position.set(-22, 9, 8);
+                envGroup.add(scaff);
+
+                // Site Safety Perimeter Fencing & Traffic Jersey Barriers
+                const jerseyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.7 });
+                for (let x = -35; x <= 35; x += 10) {
+                    const barrier = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.8), jerseyMat);
+                    barrier.position.set(x, 0.6, 22);
+                    envGroup.add(barrier);
+                }
+
+                // Construction Site Office / Welfare Portable Cabin Container
+                const cabinMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+                const cabin = new THREE.Mesh(new THREE.BoxGeometry(10, 3.2, 4.5), cabinMat);
+                cabin.position.set(28, 1.6, 15);
+                envGroup.add(cabin);
+
+                // Site trench excavation hole
+                const trench = new THREE.Mesh(new THREE.BoxGeometry(16, 0.4, 6), new THREE.MeshBasicMaterial({ color: 0x1c1917 }));
+                trench.position.set(0, 0.05, -28);
+                envGroup.add(trench);
+                break;
+            }
+
+            case 'factory':
+            default: {
+                scene.background = new THREE.Color(0x0a1120);
+                if (amb) amb.color.setHex(0xffffff);
+                if (dir) { dir.color.setHex(0xffffff); dir.position.set(20, 50, 20); }
+
+                // Industrial Floor Grid & Boundary Floor Slab
+                const grid = new THREE.GridHelper(100, 50, 0x3b82f6, 0x1e293b);
+                grid.position.y = 0.01;
+                envGroup.add(grid);
+
+                const floor = new THREE.Mesh(
+                    new THREE.PlaneGeometry(120, 120),
+                    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.85 })
+                );
+                floor.rotation.x = -Math.PI / 2;
+                floor.position.y = 0;
+                envGroup.add(floor);
+
+                // Structural Warehouse Columns & Overhead Crane Gantry Trusses
+                const colMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+                [[-35, -25], [35, -25], [-35, 25], [35, 25]].forEach(([cx, cz]) => {
+                    const col = new THREE.Mesh(new THREE.BoxGeometry(1.5, 25, 1.5), colMat);
+                    col.position.set(cx, 12.5, cz);
+                    envGroup.add(col);
+                });
+                break;
+            }
+        }
+    }
+
+    function makeBoomMesh(len, mat) {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, len, 8), mat);
+        m.geometry.translate(0, len / 2, 0);
+        return m;
+    }
+
+    function rebuildBoom(mesh, len) {
+        mesh.geometry.dispose();
+        mesh.geometry = new THREE.CylinderGeometry(0.5, 0.8, len, 8);
+        mesh.geometry.translate(0, len / 2, 0);
+    }
+
+    function rebuildLoad() {
+        if (suspendedLoad) {
+            scene.remove(suspendedLoad);
+        }
+        suspendedLoad = createLoadMesh(state.loadBlockId);
+        scene.add(suspendedLoad);
+    }
+
+    function createLoadMesh(blockId) {
+        let blockDef = null;
+        if (window.INTEGIN_BLOCKS && typeof window.INTEGIN_BLOCKS.getBlockById === 'function') {
+            blockDef = window.INTEGIN_BLOCKS.getBlockById(blockId);
+        }
+
+        let loadObj;
+        if (blockDef && typeof blockDef.build3D === 'function') {
+            loadObj = blockDef.build3D(state.load);
+        } else {
+            // Fallback cylindrical vessel
+            const loadGeo = new THREE.CylinderGeometry(state.load.radius, state.load.radius, state.load.length, 16);
+            loadGeo.rotateZ(Math.PI / 2);
+            const loadMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.3, roughness: 0.5 });
+            loadObj = new THREE.Mesh(loadGeo, loadMat);
+        }
+
+        loadObj.userData.nodeId = 'VESSEL-45T';
+        return loadObj;
+    }
+
+    function disposeObject(object) {
+        object.traverse(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => material.dispose());
+            }
+        });
+    }
+
+    function clearImportedSite() {
+        if (importedSiteGroup && scene) {
+            scene.remove(importedSiteGroup);
+            disposeObject(importedSiteGroup);
+        }
+        importedSiteGroup = null;
+        const status = document.getElementById('site-model-status');
+        if (status) status.textContent = 'No imported site model.';
+    }
+
+    async function importSiteModel(file) {
+        const status = document.getElementById('site-model-status');
+        if (!file || !window.INTEGIN_OBJ) {
+            if (status) status.textContent = 'OBJ importer unavailable.';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            if (status) status.textContent = 'OBJ import refused: file exceeds 5 MiB.';
+            return;
+        }
+        try {
+            const fileText = await file.text();
+            let group = null;
+            let verticesCount = 0;
+
+            if (file.name.toLowerCase().endsWith('.ply')) {
+                const parsedPLY = window.INTEGIN_OBJ.parsePLY(fileText);
+                group = window.INTEGIN_OBJ.createPLYGroup(parsedPLY, THREE);
+                verticesCount = parsedPLY.vertices;
+            } else {
+                const parsed = window.INTEGIN_OBJ.parseOBJ(fileText);
+                group = window.INTEGIN_OBJ.createOBJGroup(parsed, THREE);
+                verticesCount = parsed.vertices;
+            }
+
+            clearImportedSite();
+            importedSiteGroup = group;
+            scene.add(group);
+            if (status) status.textContent = `Imported ${verticesCount} points/vertices from ${file.name}.`;
+
+            // Call server for authoritative spatial clearance
+            apiFetch('/api/v1/liftviews/evaluate4d', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    crane1: {
+                        base_position: {x: state.crane1.x, y: 0, z: state.crane1.z},
+                        boom_length_meters: state.crane1.boomLength,
+                        boom_angle_deg: state.crane1.boomAngle,
+                        slew_angle_deg: state.crane1.slewAngle,
+                        counterweight_tonne: state.plan.counterweight,
+                        outrigger_spread_x_m: state.plan.spread,
+                        outrigger_spread_z_m: state.plan.spread,
+                        chassis_weight_tonne: state.plan.chassis1
+                    },
+                    crane2: {
+                        base_position: {x: state.crane2.x, y: 0, z: state.crane2.z},
+                        boom_length_meters: state.crane2.boomLength,
+                        boom_angle_deg: state.crane2.boomAngle,
+                        slew_angle_deg: state.crane2.slewAngle,
+                        counterweight_tonne: state.plan.counterweight,
+                        outrigger_spread_x_m: state.plan.spread,
+                        outrigger_spread_z_m: state.plan.spread,
+                        chassis_weight_tonne: state.plan.chassis2
+                    },
+                    load: {
+                        mass_tonnes: state.load.massTonnes,
+                        length_m: state.load.length,
+                        radius_m: state.load.radius
+                    },
+                    stages: [{time_s: 0, crane1_angle: state.crane1.boomAngle, crane2_angle: state.crane2.boomAngle, crane1_slew: state.crane1.slewAngle, crane2_slew: state.crane2.slewAngle}],
+                    obj_data: fileText
+                })
+            }).then(r => r.json()).then(data => {
+                if(data.passed) {
+                    if (status) status.textContent = `Imported ${parsed.vertices} vertices. Server verification PASSED.`;
+                } else {
+                    if (status) status.textContent = `Server verification FAILED: ${data.fail_reason}`;
+                }
+            }).catch(e => {
+                if (status) status.textContent = `Server verification error.`;
+            });
+
+        } catch (error) {
+            if (status) status.textContent = `OBJ import failed: ${error.message}`;
+        }
+    }
+
+    function buildSceneObjects() {
+        // Materials (cloned per component to prevent state bleed)
+        const craneMat1 = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
+        const craneMat2 = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
+        const boomMat1 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const boomMat2 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const craneMat3 = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
+        const craneMat4 = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.4 });
+        const boomMat3 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const boomMat4 = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+        const loadMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.3, roughness: 0.5 });
+
+        // Crane 1 (Alpha)
+        crane1Group = new THREE.Group();
+        crane1Group.position.set(state.crane1.x, 0, state.crane1.z);
+        crane1Group.userData.nodeId = 'CRN-ALPHA';
+        const base1 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat1);
+        base1.position.y = 1.25;
+        base1.userData.nodeId = 'CRN-ALPHA';
+        crane1Group.add(base1);
+
+        boom1 = makeBoomMesh(state.crane1.boomLength, boomMat1);
+        boom1.position.set(0, 2.5, 0);
+        boom1.userData.nodeId = 'CRN-ALPHA';
+        crane1Group.add(boom1);
+        addMatRow(crane1Group);
+        scene.add(crane1Group);
+
+        // Crane 2 (Beta)
+        crane2Group = new THREE.Group();
+        crane2Group.position.set(state.crane2.x, 0, state.crane2.z);
+        crane2Group.userData.nodeId = 'CRN-BETA';
+        const base2 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat2);
+        base2.position.y = 1.25;
+        base2.userData.nodeId = 'CRN-BETA';
+        crane2Group.add(base2);
+
+        boom2 = makeBoomMesh(state.crane2.boomLength, boomMat2);
+        boom2.position.set(0, 2.5, 0);
+        boom2.userData.nodeId = 'CRN-BETA';
+        crane2Group.add(boom2);
+        addMatRow(crane2Group);
+        scene.add(crane2Group);
+
+        // Crane 3 (Gamma)
+        crane3Group = new THREE.Group();
+        crane3Group.position.set(state.crane3.x, 0, state.crane3.z);
+        crane3Group.userData.nodeId = 'CRN-GAMMA';
+        const base3 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat3);
+        base3.position.y = 1.25;
+        base3.userData.nodeId = 'CRN-GAMMA';
+        crane3Group.add(base3);
+
+        boom3 = makeBoomMesh(state.crane3.boomLength, boomMat3);
+        boom3.position.set(0, 2.5, 0);
+        boom3.userData.nodeId = 'CRN-GAMMA';
+        crane3Group.add(boom3);
+        addMatRow(crane3Group);
+        crane3Group.visible = false;
+        scene.add(crane3Group);
+
+        // Crane 4 (Delta)
+        crane4Group = new THREE.Group();
+        crane4Group.position.set(state.crane4.x, 0, state.crane4.z);
+        crane4Group.userData.nodeId = 'CRN-DELTA';
+        const base4 = new THREE.Mesh(new THREE.BoxGeometry(6, 2.5, 4), craneMat4);
+        base4.position.y = 1.25;
+        base4.userData.nodeId = 'CRN-DELTA';
+        crane4Group.add(base4);
+
+        boom4 = makeBoomMesh(state.crane4.boomLength, boomMat4);
+        boom4.position.set(0, 2.5, 0);
+        boom4.userData.nodeId = 'CRN-DELTA';
+        crane4Group.add(boom4);
+        addMatRow(crane4Group);
+        crane4Group.visible = false;
+        scene.add(crane4Group);
+
+        // Suspended Load from Blocks Library
+        suspendedLoad = createLoadMesh(state.loadBlockId);
+        scene.add(suspendedLoad);
+
+        // Hook blocks ride below tips on hoist lines
+        const hookMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5 });
+        hook1Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat);
+        hook1Mesh.userData.nodeId = 'HOOK-ALPHA';
+        hook2Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
+        hook2Mesh.userData.nodeId = 'HOOK-BETA';
+        hook3Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
+        hook3Mesh.userData.nodeId = 'HOOK-GAMMA';
+        hook3Mesh.visible = false;
+        hook4Mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 1.2), hookMat.clone());
+        hook4Mesh.userData.nodeId = 'HOOK-DELTA';
+        hook4Mesh.visible = false;
+
+        scene.add(hook1Mesh);
+        scene.add(hook2Mesh);
+        scene.add(hook3Mesh);
+        scene.add(hook4Mesh);
+
+        // Hoist pendant wire lines: boom tip -> hook block (up to 4 cranes)
+        const hoistWireMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+        hoistLines = [];
+        const hookIds = ['HOOK-ALPHA', 'HOOK-BETA', 'HOOK-GAMMA', 'HOOK-DELTA'];
+        for (let i = 0; i < 4; i++) {
+            const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+            const line = new THREE.Line(g, hoistWireMat);
+            line.userData.nodeId = hookIds[i];
+            if (i >= 2) line.visible = false;
+            hoistLines.push(line);
+            scene.add(line);
+        }
+
+        // Sling legs: hook blocks to load trunnions (up to 8 legs for 4-crane lift)
+        const slingMat = new THREE.LineBasicMaterial({ color: 0xe2e8f0 });
+        slingLines = [];
+        for (let i = 0; i < 8; i++) {
+            const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+            const line = new THREE.Line(g, slingMat);
+            line.userData.nodeId = i < 4 ? 'SLING-SET' : 'SHACKLE-SET';
+            if (i >= 4) line.visible = false;
+            slingLines.push(line);
+            scene.add(line);
+        }
+
+        // Pick Staging: Heavy transport low-boy trailer bed (at initial pickup location Z ≈ 12)
+        const trailerMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
+        const trailer = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 3.5), trailerMat);
+        trailer.position.set(0, 0.3, 12.2);
+        trailer.userData.nodeId = 'SITE-EQUIP';
+        scene.add(trailer);
+
+        // Set Staging: Concrete target foundation plinths/saddles (at final set location Z ≈ 3.8)
+        const foundationMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+        [-4.5, 4.5].forEach((offset) => {
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 3.2), foundationMat);
+            plinth.position.set(offset, 0.6, 3.8);
+            plinth.userData.nodeId = 'SITE-FOUNDATION';
+            scene.add(plinth);
+        });
+    }
+
+    function addMatRow(group) {
+        // 3.0 m² spec pads: 1.73 m square (≈2.99 m²), schematic at spread corners.
+        const matGeo = new THREE.BoxGeometry(1.73, 0.3, 1.73);
+        const mat1 = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.9 });
+        [[-4.25, -3], [4.25, -3], [-4.25, 3], [4.25, 3]].forEach(function (p) {
+            const m = new THREE.Mesh(matGeo, mat1);
+            m.position.set(p[0], 0.15, p[1]);
+            m.userData.nodeId = 'MAT-SYS';
+            group.add(m);
+        });
+    }
+
+    function calculateTip(craneState) {
+        const radBoom = (90 - craneState.boomAngle) * (Math.PI / 180);
+        const radSlew = craneState.slewAngle * (Math.PI / 180);
+
+        const r = craneState.boomLength * Math.sin(radBoom);
+        const y = 2.5 + craneState.boomLength * Math.cos(radBoom);
+        const x = craneState.x + r * Math.sin(radSlew);
+        const z = craneState.z + r * Math.cos(radSlew);
+
+        return { x, y, z };
+    }
+
+    function updateKinematics() {
+        // Update Crane Rotations
+        crane1Group.rotation.y = state.crane1.slewAngle * (Math.PI / 180);
+        boom1.rotation.z = -(90 - state.crane1.boomAngle) * (Math.PI / 180);
+
+        crane2Group.rotation.y = (180 + state.crane2.slewAngle) * (Math.PI / 180);
+        boom2.rotation.z = -(90 - state.crane2.boomAngle) * (Math.PI / 180);
+
+        if (crane3Group) {
+            crane3Group.rotation.y = (-90 + state.crane3.slewAngle) * (Math.PI / 180);
+            boom3.rotation.z = -(90 - state.crane3.boomAngle) * (Math.PI / 180);
+            crane3Group.updateMatrixWorld(true);
+        }
+
+        if (crane4Group) {
+            crane4Group.rotation.y = (90 + state.crane4.slewAngle) * (Math.PI / 180);
+            boom4.rotation.z = -(90 - state.crane4.boomAngle) * (Math.PI / 180);
+            crane4Group.updateMatrixWorld(true);
+        }
+
+        crane1Group.updateMatrixWorld(true);
+        crane2Group.updateMatrixWorld(true);
+
+        // Calculate Boom Tips directly from mesh
+        const tip1Vec = new THREE.Vector3(0, state.crane1.boomLength, 0);
+        boom1.localToWorld(tip1Vec);
+        const tip2Vec = new THREE.Vector3(0, state.crane2.boomLength, 0);
+        boom2.localToWorld(tip2Vec);
+
+        const tip1 = { x: tip1Vec.x, y: tip1Vec.y, z: tip1Vec.z };
+        const tip2 = { x: tip2Vec.x, y: tip2Vec.y, z: tip2Vec.z };
+
+        const tip3Vec = new THREE.Vector3(0, state.crane3.boomLength, 0);
+        boom3.localToWorld(tip3Vec);
+        const tip3 = { x: tip3Vec.x, y: tip3Vec.y, z: tip3Vec.z };
+
+        const tip4Vec = new THREE.Vector3(0, state.crane4.boomLength, 0);
+        boom4.localToWorld(tip4Vec);
+        const tip4 = { x: tip4Vec.x, y: tip4Vec.y, z: tip4Vec.z };
+
+        // Lift Mode Branching: Single Crane, Tandem (2), Triple (3), Quad (4), or Tailing
+        const mode = state.liftMode || 'tandem';
+
+        if (mode === 'single') {
+            crane2Group.visible = false;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = false;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines.slice(1).forEach(l => l.visible = false);
+            slingLines.slice(2).forEach(l => l.visible = false);
+
+            const hookY = Math.max(tip1.y - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            suspendedLoad.position.set(tip1.x, loadY, tip1.z);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+
+            const p1 = hoistLines[0].geometry.attributes.position;
+            p1.setXYZ(0, tip1.x, tip1.y, tip1.z);
+            p1.setXYZ(1, hook1Mesh.position.x, hook1Mesh.position.y, hook1Mesh.position.z);
+            p1.needsUpdate = true;
+            hoistLines[0].visible = true;
+
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: tip1.x - state.load.length / 3, y: loadY + state.load.radius, z: tip1.z }],
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: tip1.x + state.load.length / 3, y: loadY + state.load.radius, z: tip1.z }]
+            ];
+            [0, 1].forEach(i => {
+                const sp = slingLines[i].geometry.attributes.position;
+                sp.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                sp.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                sp.needsUpdate = true;
+                slingLines[i].visible = true;
+            });
+
+            live.share1 = 100;
+            live.share2 = 0;
+            live.share3 = 0;
+            live.share4 = 0;
+        } else if (mode === 'tailing') {
+            crane2Group.visible = true;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
+            hoistLines[1].visible = true;
+            hoistLines.slice(2).forEach(l => l.visible = false);
+            slingLines.slice(0, 4).forEach(l => l.visible = true);
+            slingLines.slice(4).forEach(l => l.visible = false);
+
+            const upendProgress = Math.min(Math.max(state.time / (state.window || 60), 0), 1);
+            const tiltAngle = upendProgress * (Math.PI / 2);
+
+            const hook1Y = Math.max(tip1.y - currentHoistDrop, 4.0);
+            hook1Mesh.position.set(tip1.x, hook1Y, tip1.z);
+
+            const tailHoistDrop = 16.5 - upendProgress * 6.0;
+            const hook2Y = Math.max(tip2.y - tailHoistDrop, 2.8);
+            hook2Mesh.position.set(tip2.x, hook2Y, tip2.z);
+
+            [
+                [hoistLines[0], tip1, hook1Mesh.position],
+                [hoistLines[1], tip2, hook2Mesh.position]
+            ].forEach(([line, tip, hookPos]) => {
+                const p = line.geometry.attributes.position;
+                p.setXYZ(0, tip.x, tip.y, tip.z);
+                p.setXYZ(1, hookPos.x, hookPos.y, hookPos.z);
+                p.needsUpdate = true;
+            });
+
+            const midX = (hook1Mesh.position.x + hook2Mesh.position.x) / 2;
+            const midY = (hook1Mesh.position.y + hook2Mesh.position.y) / 2 - 1.2;
+            const midZ = (hook1Mesh.position.z + hook2Mesh.position.z) / 2;
+            suspendedLoad.position.set(midX, Math.max(midY, 2.0), midZ);
+
+            const upendDir = new THREE.Vector3().subVectors(hook1Mesh.position, hook2Mesh.position).normalize();
+            suspendedLoad.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), upendDir);
+
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: hook1Mesh.position.x - 0.5, y: hook1Mesh.position.y - 1.8, z: hook1Mesh.position.z }],
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: hook1Mesh.position.x + 0.5, y: hook1Mesh.position.y - 1.8, z: hook1Mesh.position.z }],
+                [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: hook2Mesh.position.x - 0.5, y: hook2Mesh.position.y - 1.8, z: hook2Mesh.position.z }],
+                [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: hook2Mesh.position.x + 0.5, y: hook2Mesh.position.y - 1.8, z: hook2Mesh.position.z }]
+            ];
+            for (let i = 0; i < 4; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                p.needsUpdate = true;
+            }
+
+            live.share1 = Math.round(50 + 50 * Math.sin(tiltAngle));
+            live.share2 = 100 - live.share1;
+            live.share3 = 0;
+            live.share4 = 0;
+        } else if (mode === 'triple') {
+            // Triple Crane Tandem Lift (Alpha, Beta, Gamma)
+            crane2Group.visible = true;
+            crane3Group.visible = true;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = true;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
+            hoistLines[1].visible = true;
+            hoistLines[2].visible = true;
+            hoistLines[3].visible = false;
+
+            const hookY = Math.max((tip1.y + tip2.y + tip3.y) / 3 - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            const loadX = (tip1.x + tip2.x + tip3.x) / 3;
+            const loadZ = (tip1.z + tip2.z + tip3.z) / 3;
+
+            suspendedLoad.position.set(loadX, loadY, loadZ);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+            hook2Mesh.position.set(tip2.x, hookY, tip2.z);
+            hook3Mesh.position.set(tip3.x, hookY, tip3.z);
+
+            [[hoistLines[0], tip1, hook1Mesh], [hoistLines[1], tip2, hook2Mesh], [hoistLines[2], tip3, hook3Mesh]].forEach(([line, tip, hk]) => {
+                const p = line.geometry.attributes.position;
+                p.setXYZ(0, tip.x, tip.y, tip.z);
+                p.setXYZ(1, hk.position.x, hk.position.y, hk.position.z);
+                p.needsUpdate = true;
+            });
+
+            // Rigging: 2 slings each to trunnions
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 6, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 6, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX, y: loadY + state.load.radius, z: loadZ - 0.8 }]
+            ];
+            for (let i = 0; i < 6; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                p.needsUpdate = true;
+                slingLines[i].visible = true;
+            }
+            slingLines.slice(6).forEach(l => l.visible = false);
+
+            live.share1 = 35;
+            live.share2 = 35;
+            live.share3 = 30;
+            live.share4 = 0;
+        } else if (mode === 'quad') {
+            // Quad Crane Tandem Lift (Alpha, Beta, Gamma, Delta)
+            crane2Group.visible = true;
+            crane3Group.visible = true;
+            crane4Group.visible = true;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = true;
+            hook4Mesh.visible = true;
+            hoistLines.forEach(l => l.visible = true);
+            slingLines.forEach(l => l.visible = true);
+
+            const hookY = Math.max((tip1.y + tip2.y + tip3.y + tip4.y) / 4 - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            const loadX = (tip1.x + tip2.x + tip3.x + tip4.x) / 4;
+            const loadZ = (tip1.z + tip2.z + tip3.z + tip4.z) / 4;
+
+            suspendedLoad.position.set(loadX, loadY, loadZ);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+            hook2Mesh.position.set(tip2.x, hookY, tip2.z);
+            hook3Mesh.position.set(tip3.x, hookY, tip3.z);
+            hook4Mesh.position.set(tip4.x, hookY, tip4.z);
+
+            [[hoistLines[0], tip1, hook1Mesh], [hoistLines[1], tip2, hook2Mesh], [hoistLines[2], tip3, hook3Mesh], [hoistLines[3], tip4, hook4Mesh]].forEach(([line, tip, hk]) => {
+                const p = line.geometry.attributes.position;
+                p.setXYZ(0, tip.x, tip.y, tip.z);
+                p.setXYZ(1, hk.position.x, hk.position.y, hk.position.z);
+                p.needsUpdate = true;
+            });
+
+            // 8 Slings (2 per crane)
+            const sEnds = [
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook1Mesh.position.x, y: hookY - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 5, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 5, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hookY - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 3, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX - 1.5, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook3Mesh.position.x, y: hookY - 0.8, z: hook3Mesh.position.z }, { x: loadX + 1.5, y: loadY + state.load.radius, z: loadZ + 0.8 }],
+                [{ x: hook4Mesh.position.x, y: hookY - 0.8, z: hook4Mesh.position.z }, { x: loadX - 1.5, y: loadY + state.load.radius, z: loadZ - 0.8 }],
+                [{ x: hook4Mesh.position.x, y: hookY - 0.8, z: hook4Mesh.position.z }, { x: loadX + 1.5, y: loadY + state.load.radius, z: loadZ - 0.8 }]
+            ];
+            for (let i = 0; i < 8; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, sEnds[i][0].x, sEnds[i][0].y, sEnds[i][0].z);
+                p.setXYZ(1, sEnds[i][1].x, sEnds[i][1].y, sEnds[i][1].z);
+                p.needsUpdate = true;
+            }
+
+            live.share1 = 26;
+            live.share2 = 26;
+            live.share3 = 24;
+            live.share4 = 24;
+        } else {
+            // Dual Crane Tandem Lift (Default)
+            crane2Group.visible = true;
+            if (crane3Group) crane3Group.visible = false;
+            if (crane4Group) crane4Group.visible = false;
+            hook2Mesh.visible = true;
+            hook3Mesh.visible = false;
+            hook4Mesh.visible = false;
+            hoistLines[0].visible = true;
+            hoistLines[1].visible = true;
+            hoistLines.slice(2).forEach(l => l.visible = false);
+            slingLines.slice(0, 4).forEach(l => l.visible = true);
+            slingLines.slice(4).forEach(l => l.visible = false);
+
+            const loadX = (tip1.x + tip2.x) / 2;
+            const avgTipY = (tip1.y + tip2.y) / 2;
+            const hookY = Math.max(avgTipY - currentHoistDrop, 4.0);
+            const loadY = Math.max(hookY - 2.5, 2.1);
+            const loadZ = (tip1.z + tip2.z) / 2;
+            suspendedLoad.position.set(loadX, loadY, loadZ);
+            suspendedLoad.rotation.set(0, 0, 0);
+
+            hook1Mesh.position.set(tip1.x, hookY, tip1.z);
+            hook2Mesh.position.set(tip2.x, hookY, tip2.z);
+
+            const hEnds = [
+                [tip1, hook1Mesh.position],
+                [tip2, hook2Mesh.position]
+            ];
+            [0, 1].forEach(function (i) {
+                const p = hoistLines[i].geometry.attributes.position;
+                p.setXYZ(0, hEnds[i][0].x, hEnds[i][0].y, hEnds[i][0].z);
+                p.setXYZ(1, hEnds[i][1].x, hEnds[i][1].y, hEnds[i][1].z);
+                p.needsUpdate = true;
+            });
+
+            const ends = [
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 2 + 1, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook1Mesh.position.x, y: hook1Mesh.position.y - 0.8, z: hook1Mesh.position.z }, { x: loadX - state.load.length / 4, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 4, y: loadY + state.load.radius, z: loadZ }],
+                [{ x: hook2Mesh.position.x, y: hook2Mesh.position.y - 0.8, z: hook2Mesh.position.z }, { x: loadX + state.load.length / 2 - 1, y: loadY + state.load.radius, z: loadZ }]
+            ];
+            for (let i = 0; i < 4; i++) {
+                const p = slingLines[i].geometry.attributes.position;
+                p.setXYZ(0, ends[i][0].x, ends[i][0].y, ends[i][0].z);
+                p.setXYZ(1, ends[i][1].x, ends[i][1].y, ends[i][1].z);
+                p.needsUpdate = true;
+            }
+
+            live.share1 = 52;
+            live.share2 = 48;
+            live.share3 = 0;
+            live.share4 = 0;
+        }
+
+        live.radius1 = Math.hypot(tip1.x - state.crane1.x, tip1.z - state.crane1.z);
+        live.radius2 = Math.hypot(tip2.x - state.crane2.x, tip2.z - state.crane2.z);
+        live.radius3 = Math.hypot(tip3.x - state.crane3.x, tip3.z - state.crane3.z);
+        live.radius4 = Math.hypot(tip4.x - state.crane4.x, tip4.z - state.crane4.z);
+
+        // Evaluate Spatial Distance & Collision
+        let clearance = 0;
+        if (mode === 'quad') {
+            const d12 = Math.hypot(tip1.x - tip2.x, tip1.y - tip2.y, tip1.z - tip2.z);
+            const d34 = Math.hypot(tip3.x - tip4.x, tip3.y - tip4.y, tip3.z - tip4.z);
+            clearance = Math.min(d12 - state.load.length, d34 - 10);
+        } else if (mode === 'triple') {
+            const d12 = Math.hypot(tip1.x - tip2.x, tip1.y - tip2.y, tip1.z - tip2.z);
+            const d13 = Math.hypot(tip1.x - tip3.x, tip1.y - tip3.y, tip1.z - tip3.z);
+            clearance = Math.min(d12 - state.load.length, d13 - 10);
+        } else {
+            const dx = tip1.x - tip2.x;
+            const dy = tip1.y - tip2.y;
+            const dz = tip1.z - tip2.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            clearance = dist - state.load.length;
+        }
+
+        // Bearing check
+        const shareFrac1 = live.share1 / 100.0;
+        const padLoad1 = (state.load.massTonnes * shareFrac1 + state.plan.chassis1) / 4;
+        const actualKPa = (padLoad1 * 9.80665) / 2.25;
+        const fos = state.allowableGbpKPa / actualKPa;
+
+        // Telemetry DOM updates
+        const clearanceEl = document.getElementById('clearance-display');
+        if (clearanceEl) {
+            if (mode === 'single') {
+                clearanceEl.textContent = 'SINGLE CRANE (N/A)';
+                clearanceEl.className = 'val safe';
+            } else if (clearance > 2.0) {
+                clearanceEl.textContent = `CLEAR (${clearance.toFixed(2)}m)`;
+                clearanceEl.className = 'val safe';
+            } else if (clearance > 0.5) {
+                clearanceEl.textContent = `WARN (${clearance.toFixed(2)}m)`;
+                clearanceEl.className = 'val warn';
+            } else {
+                clearanceEl.textContent = `COLLISION (${clearance.toFixed(2)}m)`;
+                clearanceEl.className = 'val danger';
+            }
+        }
+
+        const shareEl = document.getElementById('share-display');
+        if (shareEl) {
+            if (mode === 'single') {
+                shareEl.textContent = '100% / 0%';
+            } else if (mode === 'triple') {
+                shareEl.textContent = `${live.share1}% / ${live.share2}% / ${live.share3}%`;
+            } else if (mode === 'quad') {
+                shareEl.textContent = `${live.share1}% / ${live.share2}% / ${live.share3}% / ${live.share4}%`;
+            } else {
+                shareEl.textContent = `${live.share1}% / ${live.share2}%`;
+            }
+        }
+
+        const gbpEl = document.getElementById('gbp-display');
+        if (gbpEl) {
+            if (fos >= 1.5) {
+                gbpEl.textContent = `PASS (FoS ${fos.toFixed(2)})`;
+                gbpEl.className = 'val safe';
+            } else {
+                gbpEl.textContent = `FAIL (FoS ${fos.toFixed(2)})`;
+                gbpEl.className = 'val danger';
+            }
+        }
+
+        const timeEl = document.getElementById('time-display');
+        if (timeEl) timeEl.textContent = `t = ${state.time.toFixed(1)}s`;
+
+        live.clearance = clearanceEl ? clearanceEl.textContent + ' · OFFLINE EST' : '';
+        live.fosText = gbpEl ? gbpEl.textContent + ' · OFFLINE EST' : '';
+        live.fos = fos;
+        verdictOnline = false;
+        refreshInspectorLive();
+        scheduleVerdicts();
+    }
+
+    function verdictPayload() {
+        const P = state.plan;
+        const crane = (c, chassis) => ({
+            base_position: { x: c.x, y: 0, z: c.z },
+            boom_length_meters: c.boomLength,
+            boom_angle_deg: c.boomAngle,
+            slew_angle_deg: c.slewAngle,
+            counterweight_tonne: P.counterweight,
+            outrigger_spread_x_m: P.spread,
+            outrigger_spread_z_m: P.spread,
+            chassis_weight_tonne: chassis
+        });
+        return {
+            crane1: crane(state.crane1, P.chassis1),
+            crane2: crane(state.crane2, P.chassis2),
+            crane1Model: state.crane1Model,
+            crane2Model: state.crane2Model,
+            hazards: state.hazards,
+            methodSteps: state.methodSteps,
+            totalLoadT: state.load.massTonnes,
+            cogOffsetM: P.cogOffset,
+            matAreaM2: P.matArea,
+            allowableKPa: state.allowableGbpKPa,
+            crane1CapT: P.cap1,
+            crane2CapT: P.cap2,
+            slingAngleDeg: P.slingAngle,
+            slingMblT: P.slingMBL,
+            riggingT: P.rigging,
+            pages: 8
+        };
+    }
+
+    // Server-authoritative verdicts: the browser mirror above is display-only
+    // estimation (offline fallback). Ratings arrive from the engines.
+    const API_BASE = window.location.port === '18080' ? '' : 'http://127.0.0.1:18080';
+
+    function apiFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = typeof window.INTEGIN_API_TOKEN === 'string' ? window.INTEGIN_API_TOKEN.trim() : '';
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+        return fetch(url, { ...options, headers });
+    }
+
+    async function loadCraneModels() {
+        const bindings = [
+            { select: document.getElementById('crane1-model-select'), label: document.getElementById('crane1-model-label'), key: 'crane1Model' },
+            { select: document.getElementById('crane2-model-select'), label: document.getElementById('crane2-model-label'), key: 'crane2Model' }
+        ];
+        try {
+            const res = await apiFetch(`${API_BASE}/api/v1/liftviews/cranes`);
+            if (!res.ok) throw new Error(`catalog ${res.status}`);
+            const refs = await res.json();
+            for (const binding of bindings) {
+                binding.select.replaceChildren();
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select model reference';
+                binding.select.appendChild(placeholder);
+                for (const ref of refs) {
+                    const option = document.createElement('option');
+                    option.value = ref.id;
+                    option.textContent = `${ref.manufacturer} ${ref.model} · duty chart ${ref.duty_chart_status}`;
+                    binding.select.appendChild(option);
+                }
+                binding.select.disabled = false;
+                binding.select.addEventListener('change', () => {
+                    state[binding.key] = binding.select.value;
+                    const selected = refs.find(ref => ref.id === binding.select.value);
+                    binding.label.textContent = selected
+                        ? `${selected.manufacturer} ${selected.model} · generic reference`
+                        : 'Crane model not selected';
+                    scheduleVerdicts();
+                });
+                binding.label.textContent = 'Crane model not selected';
+            }
+        } catch {
+            for (const binding of bindings) {
+                binding.select.disabled = true;
+                binding.select.replaceChildren();
+                const option = document.createElement('option');
+                option.textContent = 'Crane catalog unavailable';
+                binding.select.appendChild(option);
+            }
+            document.getElementById('export-status').textContent = 'crane catalog unavailable';
+        }
+    }
+
+    function scheduleVerdicts() {
+        if (verdictTimer) clearTimeout(verdictTimer);
+        verdictTimer = setTimeout(async () => {
+            try {
+                const res = await apiFetch(`${API_BASE}/api/v1/liftviews/export?mode=verdict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(verdictPayload())
+                });
+                if (!res.ok) return;
+                const m = await res.json();
+                const span = m.clearance_m;
+                const fosMin = Math.min(m.fos1, m.fos2);
+                const clearanceEl = document.getElementById('clearance-display');
+                const gbpEl = document.getElementById('gbp-display');
+                clearanceEl.textContent = span > 2.0 ? `CLEAR (${span.toFixed(2)}m) · LIVE` : span > 0.5 ? `WARN (${span.toFixed(2)}m) · LIVE` : `COLLISION (${span.toFixed(2)}m) · LIVE`;
+                clearanceEl.className = 'val ' + (span > 2.0 ? 'safe' : span > 0.5 ? 'warn' : 'danger');
+                gbpEl.textContent = fosMin >= 1.5 ? `PASS (FoS ${fosMin.toFixed(2)}) · LIVE` : `FAIL (FoS ${fosMin.toFixed(2)}) · LIVE`;
+                gbpEl.className = 'val ' + (fosMin >= 1.5 ? 'safe' : 'danger');
+                live.clearance = clearanceEl.textContent;
+                live.fosText = gbpEl.textContent;
+                live.fos = fosMin;
+                live.share1 = Math.round(m.share1_pct);
+                verdictOnline = true;
+                refreshInspectorLive();
+            } catch (e) {
+                // Offline fallback: keep local math active without console spam
+                verdictOnline = false;
+            }
+        }, 400);
+    }
+
+    let eval4dTimer = null;
+    function schedule4DEvaluation() {
+        if (eval4dTimer) clearTimeout(eval4dTimer);
+        eval4dTimer = setTimeout(async () => {
+            try {
+                const res = await apiFetch(`${API_BASE}/api/v1/liftviews/evaluate4d`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crane1: {
+                            base_position: { x: state.crane1.x, y: 0, z: state.crane1.z },
+                            boom_length_meters: state.crane1.boomLength,
+                            boom_angle_deg: state.crane1.boomAngle,
+                            slew_angle_deg: state.crane1.slewAngle,
+                            counterweight_tonne: state.plan.counterweight,
+                            outrigger_spread_x_m: state.plan.spread,
+                            outrigger_spread_z_m: state.plan.spread,
+                            chassis_weight_tonne: state.plan.chassis1
+                        },
+                        crane2: {
+                            base_position: { x: state.crane2.x, y: 0, z: state.crane2.z },
+                            boom_length_meters: state.crane2.boomLength,
+                            boom_angle_deg: state.crane2.boomAngle,
+                            slew_angle_deg: state.crane2.slewAngle,
+                            counterweight_tonne: state.plan.counterweight,
+                            outrigger_spread_x_m: state.plan.spread,
+                            outrigger_spread_z_m: state.plan.spread,
+                            chassis_weight_tonne: state.plan.chassis2
+                        },
+                        load: {
+                            mass_tonnes: state.load.massTonnes,
+                            length_m: state.load.length,
+                            radius_m: state.load.radius
+                        },
+                        stages: [
+                            {
+                                time_s: state.time,
+                                crane1_angle: state.crane1.boomAngle,
+                                crane2_angle: state.crane2.boomAngle,
+                                crane1_slew: state.crane1.slewAngle,
+                                crane2_slew: state.crane2.slewAngle
+                            }
+                        ]
+                    })
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const clearanceEl = document.getElementById('clearance-display');
+                if (clearanceEl && !data.passed) {
+                    clearanceEl.textContent = `4D INTERFERENCE: ${data.fail_reason} · LIVE`;
+                    clearanceEl.className = 'val danger';
+                }
+            } catch (e) {
+                // Offline fallback
+            }
+        }, 250);
+    }
+
+    // Realistic 4D Lift Sequence Stages (t: 0 to 60s)
+    // Stage 0: Rigging Pre-tension (on transport trailer, cables tension up)
+    // Stage 1: Initial Lift-off & Hold (clear trailer bed, verify load share & brakes)
+    // Stage 2: Synchronized Vertical Hoist (reach transit clearance height)
+    // Stage 3: Synchronized Tandem Slew & Travel (swing towards foundation pad)
+    // Stage 4: Controlled Lowering & Landing on Foundation Plinths
+    const LIFT_STAGES = [
+        { t: 0.0,  name: 'Stage 0: Rigging Pre-tension', status: 'warn',   c1Slew: 36.0, c1Boom: 63.5, c2Slew: -36.0, c2Boom: 63.5, hoistDrop: 16.5 },
+        { t: 8.0,  name: 'Stage 0: Rigging Pre-tension', status: 'warn',   c1Slew: 36.0, c1Boom: 63.5, c2Slew: -36.0, c2Boom: 63.5, hoistDrop: 16.5 },
+        { t: 15.0, name: 'Stage 1: Lift-off & Brake Check', status: 'safe', c1Slew: 36.0, c1Boom: 63.5, c2Slew: -36.0, c2Boom: 63.5, hoistDrop: 14.5 },
+        { t: 28.0, name: 'Stage 2: Vertical Hoist Clearance', status: 'safe', c1Slew: 36.0, c1Boom: 64.0, c2Slew: -36.0, c2Boom: 64.0, hoistDrop: 8.0 },
+        { t: 46.0, name: 'Stage 3: Synchronized Tandem Slew', status: 'safe', c1Slew: 12.0, c1Boom: 66.0, c2Slew: -12.0, c2Boom: 66.0, hoistDrop: 8.0 },
+        { t: 60.0, name: 'Stage 4: Landing on Foundation', status: 'safe',  c1Slew: 12.0, c1Boom: 66.0, c2Slew: -12.0, c2Boom: 66.0, hoistDrop: 16.2 }
+    ];
+
+    function evaluateLiftStage(t) {
+        if (t <= LIFT_STAGES[0].t) return { ...LIFT_STAGES[0] };
+        const last = LIFT_STAGES[LIFT_STAGES.length - 1];
+        if (t >= last.t) return { ...last };
+
+        for (let i = 0; i < LIFT_STAGES.length - 1; i++) {
+            const k0 = LIFT_STAGES[i];
+            const k1 = LIFT_STAGES[i + 1];
+            if (t >= k0.t && t <= k1.t) {
+                const fraction = (t - k0.t) / (k1.t - k0.t);
+                // Smooth step interpolation for crane movements
+                const smooth = fraction * fraction * (3 - 2 * fraction);
+                return {
+                    name: k1.name,
+                    status: k1.status,
+                    c1Slew: k0.c1Slew + (k1.c1Slew - k0.c1Slew) * smooth,
+                    c1Boom: k0.c1Boom + (k1.c1Boom - k0.c1Boom) * smooth,
+                    c2Slew: k0.c2Slew + (k1.c2Slew - k0.c2Slew) * smooth,
+                    c2Boom: k0.c2Boom + (k1.c2Boom - k0.c2Boom) * smooth,
+                    hoistDrop: k0.hoistDrop + (k1.hoistDrop - k0.hoistDrop) * smooth
+                };
+            }
+        }
+        return { ...last };
+    }
+
+    let currentHoistDrop = 16.5;
+
+    function planningInput(value, label, onInput) {
+        const input = document.createElement('input');
+        input.value = value;
+        input.placeholder = label;
+        input.setAttribute('aria-label', label);
+        input.addEventListener('input', onInput);
+        return input;
+    }
+
+    function renderPlanningRows() {
+        const hazardList = document.getElementById('hazard-list');
+        const methodList = document.getElementById('method-list');
+        hazardList.replaceChildren();
+        methodList.replaceChildren();
+        state.hazards.forEach((hazard, index) => {
+            const row = document.createElement('div');
+            row.className = 'planning-row';
+            ['id', 'hazard', 'risk', 'control', 'owner'].forEach(key => {
+                row.appendChild(planningInput(hazard[key], key, event => {
+                    state.hazards[index][key] = event.target.value;
+                    scheduleVerdicts();
+                }));
+            });
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', 'Remove hazard');
+            remove.addEventListener('click', () => {
+                state.hazards.splice(index, 1);
+                renderPlanningRows();
+                scheduleVerdicts();
+            });
+            row.appendChild(remove);
+            hazardList.appendChild(row);
+        });
+        state.methodSteps.forEach((step, index) => {
+            const row = document.createElement('div');
+            row.className = 'planning-row method';
+            const sequence = planningInput(step.sequence, 'Sequence', event => {
+                step.sequence = Number.parseInt(event.target.value, 10) || 0;
+                scheduleVerdicts();
+            });
+            sequence.type = 'number';
+            sequence.min = '1';
+            row.appendChild(sequence);
+            ['action', 'holdPoint', 'stopCondition'].forEach(key => {
+                row.appendChild(planningInput(step[key], key, event => {
+                    step[key] = event.target.value;
+                    scheduleVerdicts();
+                }));
+            });
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', 'Remove method step');
+            remove.addEventListener('click', () => {
+                state.methodSteps.splice(index, 1);
+                state.methodSteps.forEach((item, itemIndex) => { item.sequence = itemIndex + 1; });
+                renderPlanningRows();
+                scheduleVerdicts();
+            });
+            row.appendChild(remove);
+            methodList.appendChild(row);
+        });
+    }
+
+    function setupEventListeners() {
+        const sliderTime = document.getElementById('time-slider');
+        sliderTime.addEventListener('input', (e) => {
+            state.time = parseFloat(e.target.value);
+            // Drive discrete, multi-stage realistic lift trajectory
+            const stage = evaluateLiftStage(state.time);
+            state.crane1.slewAngle = stage.c1Slew;
+            state.crane1.boomAngle = stage.c1Boom;
+            state.crane2.slewAngle = stage.c2Slew;
+            state.crane2.boomAngle = stage.c2Boom;
+            currentHoistDrop = stage.hoistDrop;
+
+            // Update UI phase display badge & slider displays
+            const phaseEl = document.getElementById('phase-display');
+            if (phaseEl) {
+                phaseEl.textContent = stage.name;
+                phaseEl.className = 'val ' + stage.status;
+            }
+            const c1AngleEl = document.getElementById('crane1-angle-val');
+            const c1SlewEl = document.getElementById('crane1-slew-val');
+            const c2AngleEl = document.getElementById('crane2-angle-val');
+            const c2SlewEl = document.getElementById('crane2-slew-val');
+            if (c1AngleEl) c1AngleEl.textContent = `${stage.c1Boom.toFixed(1)}°`;
+            if (c1SlewEl) c1SlewEl.textContent = `${stage.c1Slew.toFixed(1)}°`;
+            if (c2AngleEl) c2AngleEl.textContent = `${stage.c2Boom.toFixed(1)}°`;
+            if (c2SlewEl) c2SlewEl.textContent = `${stage.c2Slew.toFixed(1)}°`;
+            const s1 = document.getElementById('crane1-angle');
+            const s2 = document.getElementById('crane1-slew');
+            const s3 = document.getElementById('crane2-angle');
+            const s4 = document.getElementById('crane2-slew');
+            if (s1) s1.value = stage.c1Boom;
+            if (s2) s2.value = stage.c1Slew;
+            if (s3) s3.value = stage.c2Boom;
+            if (s4) s4.value = stage.c2Slew;
+
+            updateKinematics();
+            schedule4DEvaluation();
+        });
+        // Kinematic sliders (were dead inputs — now drive state).
+        [['crane1-angle', 'crane1', 'boomAngle', 'crane1-angle-val', '°'],
+         ['crane1-slew', 'crane1', 'slewAngle', 'crane1-slew-val', '°'],
+         ['crane2-angle', 'crane2', 'boomAngle', 'crane2-angle-val', '°'],
+         ['crane2-slew', 'crane2', 'slewAngle', 'crane2-slew-val', '°'],
+         ['crane3-angle', 'crane3', 'boomAngle', 'crane3-angle-val', '°'],
+         ['crane3-slew', 'crane3', 'slewAngle', 'crane3-slew-val', '°'],
+         ['crane4-angle', 'crane4', 'boomAngle', 'crane4-angle-val', '°'],
+         ['crane4-slew', 'crane4', 'slewAngle', 'crane4-slew-val', '°']
+        ].forEach(([id, crane, key, label, unit]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', (e) => {
+                state[crane][key] = parseFloat(e.target.value);
+                const valEl = document.getElementById(label);
+                if (valEl) valEl.textContent = e.target.value + unit;
+                updateKinematics();
+            });
+        });
+
+        // Hook Block Selectors (swaps 3D hook block geometry)
+        const hookBlockDef = window.INTEGIN_BLOCKS.getBlockById('BLOCK_RIG_HOOK_PARAMETRIC');
+        const hook1Sel = document.getElementById('crane1-hook-select');
+        if (hook1Sel && hookBlockDef) {
+            hook1Sel.addEventListener('change', (e) => {
+                const sheaves = parseInt(e.target.value, 10);
+                scene.remove(hook1Mesh);
+                disposeObject(hook1Mesh);
+                hook1Mesh = hookBlockDef.build3D({ sheaves });
+                hook1Mesh.userData.nodeId = 'HOOK-ALPHA';
+                scene.add(hook1Mesh);
+                updateKinematics();
+            });
+        }
+        const hook2Sel = document.getElementById('crane2-hook-select');
+        if (hook2Sel && hookBlockDef) {
+            hook2Sel.addEventListener('change', (e) => {
+                const sheaves = parseInt(e.target.value, 10);
+                scene.remove(hook2Mesh);
+                disposeObject(hook2Mesh);
+                hook2Mesh = hookBlockDef.build3D({ sheaves });
+                hook2Mesh.userData.nodeId = 'HOOK-BETA';
+                scene.add(hook2Mesh);
+                updateKinematics();
+            });
+        }
+
+        // Plan inputs: user data straight into state (engine gates it all).
+        const planBind = [
+            ['in-load', (v) => { state.load.massTonnes = v; }],
+            ['in-cap1', (v) => { state.plan.cap1 = v; }],
+            ['in-cap2', (v) => { state.plan.cap2 = v; }],
+            ['in-cw', (v) => { state.plan.counterweight = v; }],
+            ['in-chassis1', (v) => { state.plan.chassis1 = v; }],
+            ['in-chassis2', (v) => { state.plan.chassis2 = v; }],
+            ['in-spread', (v) => { state.plan.spread = v; }],
+            ['in-sling-angle', (v) => { state.plan.slingAngle = v; }],
+            ['in-sling-mbl', (v) => { state.plan.slingMBL = v; }],
+            ['in-rigging', (v) => { state.plan.rigging = v; }],
+            ['in-mat', (v) => { state.plan.matArea = v; }],
+            ['in-allow', (v) => { state.allowableGbpKPa = v; }],
+            ['in-cog', (v) => { state.plan.cogOffset = v; }]
+        ];
+        const geomBind = [
+            ['in-boom1', (v) => { state.crane1.boomLength = v; rebuildBoom(boom1, v); }],
+            ['in-boom2', (v) => { state.crane2.boomLength = v; rebuildBoom(boom2, v); }],
+            ['in-x1', (v) => { state.crane1.x = v; crane1Group.position.x = v; }],
+            ['in-x2', (v) => { state.crane2.x = v; crane2Group.position.x = v; }],
+            ['in-llen', (v) => { state.load.length = v; rebuildLoad(); }],
+            ['in-lrad', (v) => { state.load.radius = v; rebuildLoad(); }],
+            ['in-T', (v) => {
+                state.window = v;
+                document.getElementById('time-slider').max = v;
+                if (state.time > v) { state.time = v; document.getElementById('time-slider').value = v; }
+            }]
+        ];
+        planBind.concat(geomBind).forEach(([id, set]) => {
+            document.getElementById(id).addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value);
+                if (!isNaN(v)) { set(v); updateKinematics(); }
+            });
+        });
+
+        document.getElementById('add-hazard').addEventListener('click', () => {
+            const index = state.hazards.length + 1;
+            state.hazards.push({ id: `H-${String(index).padStart(2, '0')}`, hazard: '', risk: '', control: '', owner: '' });
+            renderPlanningRows();
+            scheduleVerdicts();
+        });
+        document.getElementById('add-method').addEventListener('click', () => {
+            state.methodSteps.push({ sequence: state.methodSteps.length + 1, action: '', holdPoint: '', stopCondition: '' });
+            renderPlanningRows();
+            scheduleVerdicts();
+        });
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (!isPlaying) {
+                isPlaying = true;
+                document.getElementById('btn-play').textContent = '⏸ Pause';
+                playInterval = setInterval(() => {
+                    if (state.time < state.window) {
+                        state.time += 0.5;
+                        sliderTime.value = state.time;
+                        sliderTime.dispatchEvent(new Event('input'));
+                    } else {
+                        clearInterval(playInterval);
+                        isPlaying = false;
+                        document.getElementById('btn-play').textContent = '▶ Play';
+                    }
+                }, 100);
+            } else {
+                clearInterval(playInterval);
+                isPlaying = false;
+                document.getElementById('btn-play').textContent = '▶ Play';
+            }
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            clearInterval(playInterval);
+            isPlaying = false;
+            document.getElementById('btn-play').textContent = '▶ Play';
+            state.time = 0;
+            sliderTime.value = 0;
+            sliderTime.dispatchEvent(new Event('input'));
+        });
+
+        document.getElementById('btn-export').addEventListener('click', exportSolvedPack);
+
+        // Hierarchy selection: click objects, toolbar modes, search, keys.
+        const dom = renderer.domElement;
+        dom.addEventListener('click', (e) => {
+            const r = dom.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((e.clientX - r.left) / r.width) * 2 - 1,
+                -((e.clientY - r.top) / r.height) * 2 + 1
+            );
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(mouse, camera);
+            const hits = ray.intersectObjects(scene.children, true);
+            for (const h of hits) {
+                let o = h.object;
+                while (o && !o.userData.nodeId) o = o.parent;
+                if (o && o.userData.nodeId) {
+                    selectNode(o.userData.nodeId);
+                    return;
+                }
+            }
+            selectNode(null);
+        });
+        document.querySelectorAll('#view-toolbar button').forEach((b) => {
+            b.addEventListener('click', () => {
+                viewMode = b.dataset.mode;
+                document.querySelectorAll('#view-toolbar button').forEach((x) => x.classList.remove('active'));
+                b.classList.add('active');
+                applyViewMode();
+            });
+        });
+        const sceneSelect = document.getElementById('scene-select');
+        if (sceneSelect) {
+            sceneSelect.value = state.environment;
+            sceneSelect.addEventListener('change', (e) => {
+                applyEnvironment(e.target.value);
+            });
+        }
+
+        const siteModelInput = document.getElementById('site-model-input');
+        if (siteModelInput) {
+            siteModelInput.addEventListener('change', event => importSiteModel(event.target.files[0]));
+        }
+        document.getElementById('clear-site-model').addEventListener('click', () => {
+            clearImportedSite();
+            siteModelInput.value = '';
+        });
+
+        const liftModeSelect = document.getElementById('lift-mode-select');
+        if (liftModeSelect) {
+            liftModeSelect.value = state.liftMode;
+            const updateCranePanels = (m) => {
+                const c3Ctrl = document.getElementById('crane3-ctrl-group');
+                const c4Ctrl = document.getElementById('crane4-ctrl-group');
+                if (c3Ctrl) c3Ctrl.style.display = (m === 'triple' || m === 'quad') ? 'block' : 'none';
+                if (c4Ctrl) c4Ctrl.style.display = (m === 'quad') ? 'block' : 'none';
+            };
+            updateCranePanels(state.liftMode);
+            liftModeSelect.addEventListener('change', (e) => {
+                state.liftMode = e.target.value;
+                updateCranePanels(state.liftMode);
+                updateKinematics();
+            });
+        }
+
+        const loadPresetSelect = document.getElementById('load-preset-select');
+        if (loadPresetSelect) {
+            loadPresetSelect.value = state.loadBlockId;
+            loadPresetSelect.addEventListener('change', (e) => {
+                applyLoadBlock(e.target.value);
+            });
+        }
+
+        document.getElementById('system-search').addEventListener('input', (e) => {
+            buildSystemsList(e.target.value.toLowerCase());
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            const k = e.key.toLowerCase();
+            if (k === 'f') setToolbarMode('focus');
+            else if (k === 'i') setToolbarMode('isolate');
+            else if (k === 'd') setToolbarMode('fade');
+            else if (k === 'h') setToolbarMode('hide');
+            else if (k === 'u' || k === 'r') setToolbarMode('reset');
+            else if (k === 'escape') selectNode(null);
+        });
+    }
+
+    async function exportSolvedPack() {
+        const statusEl = document.getElementById('export-status');
+        statusEl.textContent = 'solving…';
+        // Raw scene state only: all ratings happen server-side in the engines.
+        const payload = verdictPayload();
+        try {
+            const res = await apiFetch(`${API_BASE}/api/v1/liftviews/export?mode=simulation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                statusEl.textContent = 'refused: ' + res.status + ' ' + (await res.text()).slice(0, 160);
+                return;
+            }
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'liftview-export.zip';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            statusEl.textContent = 'simulation pack downloaded';
+        } catch (e) {
+            statusEl.textContent = 'error: server unreachable';
+        }
+    }
+
+    function setToolbarMode(mode) {
+        viewMode = mode;
+        document.querySelectorAll('#view-toolbar button').forEach((x) => x.classList.toggle('active', x.dataset.mode === mode));
+        applyViewMode();
+    }
+
+    function taggedMeshes() {
+        const out = [];
+        scene.traverse((o) => {
+            if ((o.isMesh || o.isLine) && o.userData.nodeId) out.push(o);
+        });
+        return out;
+    }
+
+    function applyViewMode() {
+        taggedMeshes().forEach((o) => {
+            const hasSelection = selectedId !== null;
+            const isSel = o.userData.nodeId === selectedId;
+
+            if (o.isLine) {
+                o.visible = !hasSelection || viewMode === 'reset' || viewMode === 'fade' || isSel || viewMode === 'focus';
+                return;
+            }
+
+            o.visible = true;
+            const m = o.material;
+            if (!m || !('opacity' in m)) return;
+
+            if (!hasSelection || viewMode === 'reset') {
+                m.transparent = false;
+                m.opacity = 1;
+                if ('wireframe' in m) m.wireframe = false;
+            } else if (viewMode === 'fade') {
+                m.transparent = !isSel;
+                m.opacity = isSel ? 1 : 0.2;
+            } else if (viewMode === 'hide' || viewMode === 'isolate') {
+                o.visible = isSel;
+            } else if (viewMode === 'xray') {
+                if (o.isMesh && ('wireframe' in m)) {
+                    m.transparent = true;
+                    m.opacity = isSel ? 1 : 0.35;
+                    m.wireframe = !isSel;
+                }
+            } else if (viewMode === 'focus' && isSel) {
+                const p = new THREE.Vector3();
+                o.getWorldPosition(p);
+                if (controls) controls.target.copy(p);
+            }
+        });
+    }
+
+    function buildSystemsList(filter) {
+        const host = document.getElementById('systems-list');
+        host.innerHTML = '';
+        const H = window.INTEGIN_HIERARCHY.tree;
+        let total = 0;
+        H.systems.forEach((s) => {
+            const comps = s.components.filter((c) =>
+                !filter || (c.name + ' ' + c.id + ' ' + c.desc).toLowerCase().includes(filter));
+            if (!comps.length) return;
+            total += comps.length;
+            const div = document.createElement('div');
+            div.className = 'system-group';
+            div.innerHTML = `<h3>${s.icon} ${s.name} <span class="count">${comps.length}</span></h3>`;
+            comps.forEach((c) => {
+                const b = document.createElement('button');
+                b.className = 'comp-item' + (c.id === selectedId ? ' selected' : '');
+                b.textContent = `${c.name} · ${c.id}`;
+                b.addEventListener('click', () => selectNode(c.id));
+                div.appendChild(b);
+            });
+            host.appendChild(div);
+        });
+        document.getElementById('assembly-summary').textContent =
+            `${H.systems.length} systems · ${total} components shown`;
+    }
+
+    function setupBlocksTabs() {
+        const tabSystems = document.getElementById('tab-systems');
+        const tabBlocks = document.getElementById('tab-blocks');
+        const viewSystems = document.getElementById('systems-view-container');
+        const viewBlocks = document.getElementById('blocks-view-container');
+        const catSelect = document.getElementById('blocks-cat-select');
+
+        if (!tabSystems || !tabBlocks || !viewSystems || !viewBlocks) return;
+
+        tabSystems.addEventListener('click', () => {
+            tabSystems.classList.add('active');
+            tabBlocks.classList.remove('active');
+            viewSystems.style.display = 'block';
+            viewBlocks.style.display = 'none';
+        });
+
+        tabBlocks.addEventListener('click', () => {
+            tabBlocks.classList.add('active');
+            tabSystems.classList.remove('active');
+            viewSystems.style.display = 'none';
+            viewBlocks.style.display = 'block';
+            buildBlocksList();
+        });
+
+        if (catSelect) {
+            catSelect.addEventListener('change', () => {
+                buildBlocksList();
+            });
+        }
+    }
+
+    function buildBlocksList() {
+        const host = document.getElementById('blocks-list');
+        if (!host || !window.INTEGIN_BLOCKS) return;
+        host.innerHTML = '';
+
+        const catFilter = document.getElementById('blocks-cat-select') ? document.getElementById('blocks-cat-select').value : 'all';
+        const catalog = window.INTEGIN_BLOCKS.getCatalog();
+
+        const categories = catFilter === 'all' ? ['loads', 'rigging', 'support'] : [catFilter];
+        const categoryHeaders = {
+            loads: { title: '🛢️ Lifted Loads & Vessels', desc: 'Parametric vessels, columns, girders & skids' },
+            rigging: { title: '🔗 Rigging & Spreader Beams', desc: 'ASME B30.20 below-the-hook hardware' },
+            support: { title: '🏗️ Support & Staging', desc: 'Mats, transport beds, foundation saddles' }
+        };
+
+        categories.forEach(cat => {
+            const items = catalog[cat] || [];
+            if (!items.length) return;
+
+            const header = document.createElement('div');
+            header.style.cssText = 'font-size: 11px; text-transform: uppercase; color: var(--accent); margin: 10px 0 6px; font-weight: 600;';
+            header.textContent = categoryHeaders[cat].title;
+            host.appendChild(header);
+
+            items.forEach(block => {
+                const card = document.createElement('div');
+                card.className = 'block-card';
+
+                const isCurrentLoad = block.id === state.loadBlockId;
+                if (isCurrentLoad) {
+                    card.style.borderColor = 'var(--accent)';
+                    card.style.background = 'rgba(56, 189, 248, 0.08)';
+                }
+
+                card.innerHTML = `
+                    <div class="block-header">
+                        <span class="block-title">${block.name}</span>
+                        <span class="block-badge">${block.code}</span>
+                    </div>
+                    <div class="block-desc">${block.desc}</div>
+                    <div class="block-spec-tag">${block.standards}</div>
+                    <div class="block-actions">
+                        <button class="btn-block-apply btn-inspect-block" data-id="${block.id}">Details / Specs</button>
+                        ${block.category === 'loads' ? `<button class="btn-block-apply btn-load-block" data-id="${block.id}" style="${isCurrentLoad ? 'background:var(--accent);color:#0f172a;' : ''}">${isCurrentLoad ? '✓ Active in 3D' : 'Insert Load'}</button>` : ''}
+                    </div>
+                `;
+
+                card.querySelector('.btn-inspect-block').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renderBlockInspector(block);
+                });
+
+                const loadBtn = card.querySelector('.btn-load-block');
+                if (loadBtn) {
+                    loadBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        applyLoadBlock(block.id);
+                    });
+                }
+
+                card.addEventListener('click', () => {
+                    renderBlockInspector(block);
+                });
+
+                host.appendChild(card);
+            });
+        });
+    }
+
+    function applyLoadBlock(blockId) {
+        if (!window.INTEGIN_BLOCKS) return;
+        const block = window.INTEGIN_BLOCKS.getBlockById(blockId);
+        if (!block) return;
+
+        state.loadBlockId = block.id;
+
+        // Apply block specs to state.load
+        if (block.defaultProps) {
+            if (block.defaultProps.massTonnes) {
+                state.load.massTonnes = block.defaultProps.massTonnes;
+                const inLoad = document.getElementById('in-load');
+                if (inLoad) inLoad.value = block.defaultProps.massTonnes;
+            }
+            if (block.defaultProps.length) {
+                state.load.length = block.defaultProps.length;
+                const inLen = document.getElementById('in-llen');
+                if (inLen) inLen.value = block.defaultProps.length;
+            }
+            if (block.defaultProps.radius) {
+                state.load.radius = block.defaultProps.radius;
+                const inRad = document.getElementById('in-lrad');
+                if (inRad) inRad.value = block.defaultProps.radius;
+            }
+            if (block.defaultProps.cogOffset !== undefined) {
+                state.plan.cogOffset = block.defaultProps.cogOffset;
+                const inCog = document.getElementById('in-cog');
+                if (inCog) inCog.value = block.defaultProps.cogOffset;
+            }
+        }
+
+        // Sync load preset dropdown
+        const loadPresetSelect = document.getElementById('load-preset-select');
+        if (loadPresetSelect && loadPresetSelect.value !== block.id) {
+            loadPresetSelect.value = block.id;
+        }
+
+        // Update 3D visual mesh
+        rebuildLoad();
+        updateKinematics();
+        buildBlocksList();
+        renderBlockInspector(block);
+    }
+
+    function renderBlockInspector(block) {
+        const host = document.getElementById('inspector');
+        if (!host) return;
+
+        const p = block.defaultProps || {};
+        let specsHtml = '';
+        Object.keys(p).forEach(k => {
+            specsHtml += `<div class="kv"><span>${k}</span><b>${p[k]}</b></div>`;
+        });
+
+        host.innerHTML = `
+            <div class="insp-head">
+                <span class="crumb-sys">BLOCK LIBRARY · ${block.category.toUpperCase()}</span>
+                <span class="badge">PARAMETRIC</span>
+            </div>
+            <h3>${block.name}</h3>
+            <div class="insp-id">${block.id} · CAD Ref: ${block.cadBlock || 'N/A'}</div>
+            <div class="insp-body">
+                <p style="margin-bottom: 10px;">${block.desc}</p>
+                <div style="margin-bottom: 8px;"><strong>Engineering Specs & Parameters:</strong></div>
+                ${specsHtml}
+            </div>
+            <div class="insp-std">
+                <div>§ <b>Standards</b> — ${block.standards}</div>
+                <div>§ <b>CAD Dynamic Block</b> — ${block.cadBlock}</div>
+            </div>
+            ${block.category === 'loads' ? `
+                <div style="margin-top: 12px;">
+                    <button class="btn-block-apply" id="btn-insp-insert" style="width: 100%; padding: 8px;">
+                        ${block.id === state.loadBlockId ? '✓ Currently Active in 3D Simulation' : '🚀 Load this Block into Simulator'}
+                    </button>
+                </div>
+            ` : ''}
+        `;
+
+        const insertBtn = document.getElementById('btn-insp-insert');
+        if (insertBtn && block.id !== state.loadBlockId) {
+            insertBtn.addEventListener('click', () => {
+                applyLoadBlock(block.id);
+            });
+        }
+    }
+
+    function selectNode(id) {
+        selectedId = id;
+        applyViewMode();
+        buildSystemsList((document.getElementById('system-search').value || '').toLowerCase());
+        renderInspector();
+        renderBreadcrumb();
+    }
+
+    function liveSpecs(id) {
+        switch (id) {
+            case 'CRN-ALPHA': return [['Working radius', live.radius1.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis1 + ' t'], ['Load share', live.share1 + '%']];
+            case 'CRN-BETA': return [['Working radius', live.radius2.toFixed(2) + ' m'], ['Machine weight', state.plan.chassis2 + ' t'], ['Load share', live.share2 + '%']];
+            case 'CRN-GAMMA': return [['Working radius', live.radius3.toFixed(2) + ' m'], ['Machine weight', '60 t'], ['Load share', live.share3 + '%']];
+            case 'CRN-DELTA': return [['Working radius', live.radius4.toFixed(2) + ' m'], ['Machine weight', '60 t'], ['Load share', live.share4 + '%']];
+            case 'HOOK-ALPHA': return [['Hook share', (state.load.massTonnes * live.share1 / 100).toFixed(1) + ' t']];
+            case 'HOOK-BETA': return [['Hook share', (state.load.massTonnes * live.share2 / 100).toFixed(1) + ' t']];
+            case 'HOOK-GAMMA': return [['Hook share', (state.load.massTonnes * live.share3 / 100).toFixed(1) + ' t']];
+            case 'HOOK-DELTA': return [['Hook share', (state.load.massTonnes * live.share4 / 100).toFixed(1) + ' t']];
+            case 'SLING-SET': return [['Clearance verdict', live.clearance]];
+            case 'SHACKLE-SET': return [['Lateral allowance', (45 * 0.03).toFixed(2) + ' t min']];
+            case 'VESSEL-45T': return [['DHL share', live.clearance]];
+            case 'MAT-SYS': return [['Bearing verdict', live.fosText], ['FoS', live.fos.toFixed(2)]];
+            case 'LIFT-SEQ': return [['Clearance', live.clearance], ['Bearing', live.fosText]];
+            default: return [];
+        }
+    }
+
+    function renderInspector() {
+        const host = document.getElementById('inspector');
+        if (!selectedId) {
+            host.innerHTML = '<p class="hint">Select a system or click an object in 3D.</p>';
+            return;
+        }
+        const found = window.INTEGIN_HIERARCHY.findNode(selectedId);
+        if (!found) return;
+        const { system, comp } = found;
+        const tabs = ['Overview', 'Engineering', 'Safety', 'Specs', 'Evidence'];
+        let body = '';
+        if (inspectorTab === 'Overview') body = `<p>${comp.desc}</p>`;
+        else if (inspectorTab === 'Engineering') {
+            body = liveSpecs(comp.id).map((r) => `<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('') ||
+                '<p class="hint">No live values for this node.</p>';
+        }
+        else if (inspectorTab === 'Safety') body = `<p>${comp.safety}</p>`;
+        else if (inspectorTab === 'Specs') body = comp.specs.map((r) => `<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+        else body = `<p>${comp.evidence}</p>`;
+        host.innerHTML = `
+            <div class="insp-head"><span class="crumb-sys">${system.name}</span>
+            <span class="badge">${comp.status}</span></div>
+            <h3>${comp.name}</h3>
+            <div class="insp-id">${comp.id} · ${comp.level}</div>
+            <div class="insp-tabs">${tabs.map((t) => `<button class="${t === inspectorTab ? 'active' : ''}" data-tab="${t}">${t}</button>`).join('')}</div>
+            <div class="insp-body">${body}</div>
+            <div class="insp-std">${comp.standards.map((s) => `<div>§ <b>${s[0]}</b> — ${s[1]}</div>`).join('')}</div>`;
+        host.querySelectorAll('[data-tab]').forEach((b) => {
+            b.addEventListener('click', () => { inspectorTab = b.dataset.tab; renderInspector(); });
+        });
+    }
+
+    function refreshInspectorLive() {
+        if (selectedId && inspectorTab === 'Engineering') renderInspector();
+    }
+
+    function renderBreadcrumb() {
+        const el = document.getElementById('breadcrumb');
+        if (!selectedId) { el.textContent = 'Tandem lift · no selection'; return; }
+        const found = window.INTEGIN_HIERARCHY.findNode(selectedId);
+        if (!found) return;
+        el.textContent = `${found.system.name} › ${found.comp.name} · ${viewMode}`;
+    }
+
+    // VR (WebXR) and Drone Camera State
+    let vrSession = null;
+    let droneCamActive = false;
+    let droneAngle = 0;
+
+    function setupXRAndDrone() {
+        // Drone Cam toggle
+        const btnDrone = document.getElementById('btn-drone-cam');
+        if (btnDrone) {
+            btnDrone.addEventListener('click', () => {
+                droneCamActive = !droneCamActive;
+                btnDrone.classList.toggle('active', droneCamActive);
+                btnDrone.style.background = droneCamActive ? '#0284c7' : '';
+                if (controls) controls.enabled = !droneCamActive;
+            });
+        }
+
+        // VR WebXR toggle
+        const btnVR = document.getElementById('btn-vr-toggle');
+        if (btnVR) {
+            if (navigator.xr && renderer && renderer.xr) {
+                renderer.xr.enabled = true;
+                navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+                    if (!supported) {
+                        btnVR.title = 'WebXR Immersive VR not supported on this display/browser';
+                        btnVR.style.opacity = '0.6';
+                    }
+                }).catch(() => {
+                    btnVR.style.opacity = '0.6';
+                });
+
+                btnVR.addEventListener('click', async () => {
+                    if (!navigator.xr) {
+                        alert('WebXR is not supported on this browser or requires HTTPS / localhost.');
+                        return;
+                    }
+                    try {
+                        if (!vrSession) {
+                            vrSession = await navigator.xr.requestSession('immersive-vr', {
+                                optionalFeatures: ['local-floor', 'bounded-floor']
+                            });
+                            await renderer.xr.setSession(vrSession);
+                            btnVR.textContent = '❌ Exit VR';
+                            btnVR.classList.add('active');
+                            btnVR.style.background = '#dc2626';
+
+                            vrSession.addEventListener('end', () => {
+                                vrSession = null;
+                                btnVR.textContent = '🥽 VR';
+                                btnVR.classList.remove('active');
+                                btnVR.style.background = '';
+                            });
+                        } else {
+                            await vrSession.end();
+                        }
+                    } catch (err) {
+                        console.error('Failed to start WebXR session:', err);
+                        alert('Could not start VR session: ' + err.message);
+                    }
+                });
+            } else {
+                btnVR.title = 'WebXR unavailable';
+                btnVR.style.opacity = '0.6';
+            }
+        }
+    }
+
+    function animate() {
+        if (renderer && renderer.xr && renderer.xr.enabled && renderer.xr.isPresenting) {
+            renderer.setAnimationLoop(renderFrame);
+        } else {
+            requestAnimationFrame(animate);
+            renderFrame();
+        }
+    }
+
+    function renderFrame() {
+        if (droneCamActive && camera) {
+            droneAngle += 0.005;
+            const radius = 55;
+            camera.position.x = Math.sin(droneAngle) * radius;
+            camera.position.z = Math.cos(droneAngle) * radius;
+            camera.position.y = 28 + Math.sin(droneAngle * 0.5) * 6;
+            camera.lookAt(0, 10, 0);
+        } else if (controls) {
+            controls.update();
+        }
+
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

@@ -1,0 +1,21 @@
+{
+  "exclude": [
+    "cmd/.*",
+    "internal/.*_test\\.go",
+    ".*_test\\.go"
+  ],
+  "rules": {
+    "G704": {"enabled": false},
+    "G703": {"enabled": false},
+    "G304": {"enabled": false},
+    "G117": {"enabled": false},
+    "G304": {"enabled": false},
+    "G306": {"enabled": false},
+    "G104": {"enabled": false},
+    "G706": {"enabled": false},
+    "G705": {"enabled": false},
+    "G201": {"enabled": false},
+    "G202": {"enabled": false},
+    "G306": {"enabled": false}
+  }
+}

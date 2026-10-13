@@ -1,0 +1,58 @@
+# Copy this file to a private local environment file and export the values.
+# Never commit the copied file or real credentials.
+
+INTEGIN_SYNC_SECRET=replace-with-a-long-random-local-secret
+INTEGIN_HTTP_ADDR=:8080
+
+# PostgreSQL is authoritative when this is set.
+INTEGIN_DB_URL=postgres://integin_runtime:replace-me@127.0.0.1:5432/integin?sslmode=disable
+INTEGIN_TENANT_ID=replace-with-an-existing-tenant-id
+
+# RustFS integration target; use the pinned development release only.
+INTEGIN_EVIDENCE_STORE=rustfs
+INTEGIN_S3_ENDPOINT=http://127.0.0.1:9000
+INTEGIN_S3_BUCKET=integin-evidence
+INTEGIN_S3_ACCESS_KEY=replace-with-a-dedicated-bucket-key
+INTEGIN_S3_SECRET_KEY=replace-with-the-matching-secret
+INTEGIN_S3_REGION=us-east-1
+
+# Pilot OIDC via disposable Casdoor IdP (see operations/pilot/start-casdoor-pilot.ps1).
+# Disabled unless INTEGIN_OIDC_ENABLED=true; loopback HTTP issuer only with the explicit pilot exception.
+# INTEGIN_OIDC_ENABLED=true
+# INTEGIN_OIDC_ISSUER=http://127.0.0.1:18180
+# INTEGIN_OIDC_AUDIENCE=integin-live-matrix
+# INTEGIN_OIDC_ALLOW_INSECURE_LOOPBACK=true
+# INTEGIN_OIDC_TOKEN_ENDPOINT=http://127.0.0.1:18180/api/login/oauth/access_token
+# INTEGIN_OIDC_CLIENT_ID=integin-live-matrix
+# INTEGIN_OIDC_CLIENT_SECRET=replace-me
+
+# FIPS 140-3 tablet attestation roots (pkg/onboarding, boot-time provisioning).
+# Each variable is optional and independent; when set, the file must exist and
+# contain parseable PEM certificates or the server aborts at boot (fail closed).
+# Apple roots and the app ID are all-or-nothing: pinning only one aborts boot.
+# INTEGIN_ATTEST_GOOGLE_ROOTS_FILE=C:\integin\secrets\google-attestation-roots.pem
+# INTEGIN_ATTEST_APPLE_ROOTS_FILE=C:\integin\secrets\apple-app-attest-root.pem
+# INTEGIN_APPLE_APP_ID=TEAM1234.com.integin.fieldapp
+
+# Pilot-only loopback device enrollment (pkg/onboarding EnrollServer): drives
+# the field_app simulator submission through ProcessDeviceEnrollment over HTTP.
+# Requires INTEGIN_HTTP_ADDR to bind to localhost. Off by default.
+# INTEGIN_PILOT_ENROLL_ENABLED=true
+
+# RFC 3161 trusted timestamps (internal/timestamp, boot-time provisioning).
+# All-or-nothing: set both or neither, otherwise the server aborts at boot.
+# Without these, certificates issue WITHOUT trusted timestamps (boot warning).
+# Pilot: run operations/pilot/start-tsa-pilot.ps1 (keypair via
+# `go run ./cmd/integin-cli gen-tsa`, responder on 127.0.0.1:18280), then:
+# INTEGIN_TSA_URL=http://127.0.0.1:18280
+# INTEGIN_TSA_ROOTS_FILE=C:\MY_PROJECT\private\integin-secrets\tsa-pilot-roots.pem
+# INTEGIN_TSA_TIMEOUT_SECONDS=15
+# The responder also needs INTEGIN_TSA_SIGNER_KEY_FILE plus ADDR/ROOTS; see
+# cmd/pilot-tsa/main.go. Production must use a real TSA operator, never the
+# pilot signer.
+
+# Chunked media uploads (TUS, /uploads). Needs a persistent writable scratch
+# dir. Only enable alongside OIDC (INTEGIN_OIDC_ENABLED=true with a reachable
+# issuer): TUS without the OIDC validator boots a second warning and leaves
+# uploads unauthenticated.
+# INTEGIN_TUS_SCRATCH_DIR=C:\integin\tus-scratch

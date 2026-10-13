@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Compatibility alias: GLOBAL_ARCHITECTURE_PLAN.md §4 names this path
+# (config/k8s/) for the Kubernetes production manifests. The implementation
+# lives in deploy/k8s/cells/ (sovereign cell-based sharding). No duplicated
+# manifests — this kustomization only references the real one.
+resources:
+  - ../../deploy/k8s/cells

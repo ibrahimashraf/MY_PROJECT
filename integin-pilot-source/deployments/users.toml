@@ -1,0 +1,11 @@
+[[users]]
+name = "postgres"
+database = "integin_migration_test"
+password = "postgres_local_test_password"
+pool_size = 80
+
+[[users]]
+name = "integin_owner"
+database = "integin_appliance"
+password = "integin_sovereign_db_secret"
+pool_size = 80

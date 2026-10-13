@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # pgdog: Rust-based multi-threaded connection pooler and query router
+  # Sits in front of PostgreSQL to multiplex client connections down to backend DB processes.
+  pgdog:
+    image: ghcr.io/pgdogdev/pgdog:main
+    container_name: integin-pgdog
+    ports:
+      - "6432:6432"
+    volumes:
+      - ./pgdog.toml:/pgdog/pgdog.toml:ro
+      - ./users.toml:/pgdog/users.toml:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M

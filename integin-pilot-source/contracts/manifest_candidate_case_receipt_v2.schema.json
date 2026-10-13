@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integin.local/contracts/manifest_candidate_case_receipt_v2.schema.json",
+  "title": "INTEGIN Manifest Candidate Case Receipt v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "candidate_run_id", "case", "expected_outcome", "observed_outcome", "status", "event_source", "transport", "replay_state", "generated_at"],
+  "properties": {
+    "contract_version": {"const": "2"},
+    "candidate_run_id": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "case": {"enum": ["field_binding", "valid_proof", "replay", "signature_invalid", "package_hash_invalid", "expired", "authority_mismatch", "key_unknown"]},
+    "expected_outcome": {"enum": ["verified_cached", "proof_valid", "replay_rejected", "signature_invalid", "package_hash_invalid", "expired", "authority_mismatch", "key_unknown"]},
+    "observed_outcome": {"enum": ["verified_cached", "proof_valid", "replay_rejected", "signature_invalid", "package_hash_invalid", "expired", "authority_mismatch", "key_unknown"]},
+    "status": {"enum": ["passed", "failed"]},
+    "event_source": {"enum": ["manifest_http", "field_binding"]},
+    "transport": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["kind", "http_status"], "properties": {"kind": {"const": "http"}, "http_status": {"type": "integer", "minimum": 100, "maximum": 599}}},
+        {"type": "object", "additionalProperties": false, "required": ["kind"], "properties": {"kind": {"const": "field_binding"}}}
+      ]
+    },
+    "replay_state": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["scope", "before", "after", "delta"], "properties": {"scope": {"const": "verified_tenant"}, "before": {"type": "integer", "minimum": 0}, "after": {"type": "integer", "minimum": 0}, "delta": {"type": "integer", "minimum": 0}}},
+        {"type": "object", "additionalProperties": false, "required": ["scope"], "properties": {"scope": {"const": "not_applicable"}}}
+      ]
+    },
+    "correlation_id": {"type": "string", "pattern": "^[a-f0-9]{8,128}$"},
+    "manifest_id_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"}
+  }
+}

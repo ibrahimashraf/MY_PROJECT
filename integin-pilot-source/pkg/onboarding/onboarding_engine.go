@@ -1,0 +1,340 @@
+package onboarding
+
+import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"time"
+)
+
+// Simulator handles end-to-end device cryptographic enrollment and authority gating.
+type EnrollmentSimulator struct {
+	serverPubKey     ed25519.PublicKey
+	serverPrivKey    ed25519.PrivateKey
+	deviceStore      map[string]DeviceTrustRecord
+	challenges       map[string]DeviceEnrollmentChallenge
+	manifests        map[string]WorkPackageManifest
+	toolStore        map[string]CalibratedToolRecord
+	attestationRoots *x509.CertPool
+	appleAttestRoots *x509.CertPool
+	expectedAppID    string
+}
+
+func NewEnrollmentSimulator(opts ...func(*EnrollmentSimulator)) (*EnrollmentSimulator, error) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	s := &EnrollmentSimulator{
+		serverPubKey:  pub,
+		serverPrivKey: priv,
+		deviceStore:   make(map[string]DeviceTrustRecord),
+		challenges:    make(map[string]DeviceEnrollmentChallenge),
+		manifests:     make(map[string]WorkPackageManifest),
+		toolStore:     make(map[string]CalibratedToolRecord),
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s, nil
+}
+
+// WithAttestationRoots configures Android attestation roots for the simulator.
+func WithAttestationRoots(roots *x509.CertPool) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.attestationRoots = roots }
+}
+
+// WithAppleAttestRoots configures Apple App Attest roots for the simulator.
+func WithAppleAttestRoots(roots *x509.CertPool) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.appleAttestRoots = roots }
+}
+
+// WithExpectedAppID configures the expected Apple App ID for the simulator.
+func WithExpectedAppID(appID string) func(*EnrollmentSimulator) {
+	return func(s *EnrollmentSimulator) { s.expectedAppID = appID }
+}
+
+// SetAttestationRoots sets the Android attestation roots on the simulator.
+func (s *EnrollmentSimulator) SetAttestationRoots(roots *x509.CertPool) {
+	s.attestationRoots = roots
+}
+
+// SetAppleAttestRoots sets the Apple App Attest roots on the simulator.
+func (s *EnrollmentSimulator) SetAppleAttestRoots(roots *x509.CertPool) {
+	s.appleAttestRoots = roots
+}
+
+// SetExpectedAppID sets the expected Apple App ID on the simulator.
+func (s *EnrollmentSimulator) SetExpectedAppID(appID string) {
+	s.expectedAppID = appID
+}
+
+// 1. CreateEnrollmentChallenge creates a short-lived nonce for QR pairing.
+func (s *EnrollmentSimulator) CreateEnrollmentChallenge(tenantID, inspectorID string) (*DeviceEnrollmentChallenge, error) {
+	return s.CreateEnrollmentChallengeWithIdentity(tenantID, inspectorID, "", "")
+}
+
+// CreateEnrollmentChallengeWithIdentity creates a challenge with explicit
+// organization and user identity. When orgID/userID are empty, they default
+// to the inspectorID (backward-compatible with existing callers).
+func (s *EnrollmentSimulator) CreateEnrollmentChallengeWithIdentity(tenantID, inspectorID, orgID, userID string) (*DeviceEnrollmentChallenge, error) {
+	if orgID == "" {
+		orgID = inspectorID
+	}
+	if userID == "" {
+		userID = inspectorID
+	}
+	nonceBytes := make([]byte, 32)
+	if _, err := rand.Read(nonceBytes); err != nil {
+		return nil, err
+	}
+	nonceHex := hex.EncodeToString(nonceBytes)
+	challengeID := fmt.Sprintf("chal_%s", nonceHex[:8])
+
+	challenge := DeviceEnrollmentChallenge{
+		ChallengeID:    challengeID,
+		TenantID:       tenantID,
+		InspectorID:    inspectorID,
+		OrganizationID: orgID,
+		UserID:         userID,
+		Nonce:          nonceHex,
+		ExpiresAt:      time.Now().Add(10 * time.Minute),
+		QRCodePayload:  fmt.Sprintf("integin://enroll?chal=%s&tenant=%s&nonce=%s", challengeID, tenantID, nonceHex),
+	}
+	s.challenges[challengeID] = challenge
+	return &challenge, nil
+}
+
+// 2. ProcessDeviceEnrollment verifies device signature and binds public key to inspector.
+func (s *EnrollmentSimulator) ProcessDeviceEnrollment(sub DeviceEnrollmentSubmission) (*DeviceTrustRecord, error) {
+	chal, exists := s.challenges[sub.ChallengeID]
+	if !exists {
+		return nil, errors.New("invalid or unknown challenge ID")
+	}
+	if time.Now().After(chal.ExpiresAt) {
+		return nil, errors.New("challenge expired")
+	}
+
+	devPubBytes, err := hex.DecodeString(sub.DevicePublicKey)
+	if err != nil || len(devPubBytes) != ed25519.PublicKeySize {
+		return nil, errors.New("invalid device public key format")
+	}
+
+	sigBytes, err := hex.DecodeString(sub.SignedNonce)
+	if err != nil {
+		return nil, errors.New("invalid signature encoding")
+	}
+
+	// Cryptographic verification: verify signed nonce with device public key
+	if !ed25519.Verify(devPubBytes, []byte(chal.Nonce), sigBytes) {
+		return nil, errors.New("cryptographic verification failed: device signature does not match nonce")
+	}
+
+	// Attestation claim: when present (non-zero KeyOrigin), validate it and
+	// enforce the default permissive policy. Strict policies are opt-in via
+	// VerifyClaim for callers that require hardware/biometric guarantees.
+	// When the claim is an Android STRONGBOX origin AND the device submitted
+	// a certificate chain, the chain must verify offline against the
+	// operator-configured roots or enrollment fails closed (no record is
+	// stored). The same applies to the Apple App Attest path: a SECURE_ENCLAVE
+	// origin that supplies an attestation object is verified offline against
+	// the configured App Attest roots and expected appID, or enrollment fails
+	// closed. Non-Android/non-Apple origins ignore ChainPEM/AppleAttestCBOR
+	// entirely.
+	var attestationVerified bool
+	if sub.Attestation.KeyOrigin != "" {
+		if err := VerifyClaim(sub.Attestation, AttestationPolicy{}); err != nil {
+			return nil, fmt.Errorf("attestation claim rejected: %w", err)
+		}
+		if sub.Attestation.KeyOrigin == KeyOriginStrongBox && len(sub.Attestation.ChainPEM) > 0 {
+			if _, err := verifyPEMChain(sub.Attestation.ChainPEM, s.attestationRoots, []byte(chal.Nonce)); err != nil {
+				return nil, fmt.Errorf("attestation chain rejected: %w", err)
+			}
+			attestationVerified = true
+		}
+		if sub.Attestation.KeyOrigin == KeyOriginSecureEnclave && len(sub.Attestation.AppleAttestCBOR) > 0 && s.expectedAppID != "" {
+			if _, err := VerifyAppleAttestation(sub.Attestation.AppleAttestCBOR, s.appleAttestRoots, []byte(chal.Nonce), s.expectedAppID); err != nil {
+				return nil, fmt.Errorf("apple attestation rejected: %w", err)
+			}
+			attestationVerified = true
+		}
+	}
+
+	// Register trusted device — device_id matches the field_app convention:
+	// "field-" + first 32 hex chars of SHA-256(public_key_bytes).
+	hash := sha256.Sum256(devPubBytes)
+	deviceID := fmt.Sprintf("field-%s", hex.EncodeToString(hash[:])[:32])
+	fipsCompliant := (sub.Attestation.KeyOrigin == KeyOriginStrongBox ||
+		sub.Attestation.KeyOrigin == KeyOriginSecureEnclave ||
+		sub.Attestation.KeyOrigin == KeyOriginTPM ||
+		sub.Attestation.KeyOrigin == KeyOriginYubiKey) && sub.Attestation.BiometricBound
+	fipsLevel := ""
+	if sub.Attestation.BiometricBound {
+		switch sub.Attestation.KeyOrigin {
+		case KeyOriginStrongBox, KeyOriginYubiKey:
+			fipsLevel = "FIPS_140_3_LEVEL_3"
+		case KeyOriginSecureEnclave, KeyOriginTPM:
+			fipsLevel = "FIPS_140_3_LEVEL_2"
+		}
+	}
+
+	record := DeviceTrustRecord{
+		DeviceID:                  deviceID,
+		TenantID:                  chal.TenantID,
+		OrganizationID:            chal.OrganizationID,
+		UserID:                    chal.UserID,
+		InspectorID:               sub.InspectorID,
+		DevicePublicKey:           sub.DevicePublicKey,
+		DeviceModel:               sub.DeviceModel,
+		IsActive:                  true,
+		EnrolledAt:                time.Now(),
+		LastSyncedAt:              time.Now(),
+		AttestationOrigin:         string(sub.Attestation.KeyOrigin),
+		AttestationBiometricBound: sub.Attestation.BiometricBound,
+		AttestationVerified:       attestationVerified,
+		FIPS140_3Compliant:        fipsCompliant,
+		FIPSLevel:                 fipsLevel,
+	}
+
+	s.deviceStore[deviceID] = record
+	delete(s.challenges, sub.ChallengeID) // single-use challenge consumption
+	return &record, nil
+}
+
+// RegisterCalibratedTool registers or updates a calibrated tool record for a tenant.
+func (s *EnrollmentSimulator) RegisterCalibratedTool(tool CalibratedToolRecord) error {
+	if err := tool.Validate(); err != nil {
+		return err
+	}
+	key := tool.TenantID + "|" + tool.ToolID
+	s.toolStore[key] = tool
+	return nil
+}
+
+// GetCalibratedTool retrieves a registered tool by tenant ID and tool ID.
+func (s *EnrollmentSimulator) GetCalibratedTool(tenantID, toolID string) (*CalibratedToolRecord, error) {
+	key := tenantID + "|" + toolID
+	tool, exists := s.toolStore[key]
+	if !exists {
+		return nil, fmt.Errorf("%w: %s for tenant %s", ErrToolNotFound, toolID, tenantID)
+	}
+	return &tool, nil
+}
+
+// ValidateToolsForReceipt validates that all cited tools exist and are valid under ISO 17020 §6.2
+// at the moment of inspection completion.
+func (s *EnrollmentSimulator) ValidateToolsForReceipt(tenantID string, toolIDs []string, at time.Time) error {
+	for _, toolID := range toolIDs {
+		tool, err := s.GetCalibratedTool(tenantID, toolID)
+		if err != nil {
+			return err
+		}
+		if err := tool.CanBeUsedForInspection(at); err != nil {
+			return fmt.Errorf("ISO 17020 §6.2 compliance check failed for tool %s: %w", toolID, err)
+		}
+	}
+	return nil
+}
+
+// 3. IssueWorkPackageManifest signs a work package bundle for the paired device.
+func (s *EnrollmentSimulator) IssueWorkPackageManifest(tenantID, workOrderID, deviceID, inspectorID string, checklistJSON string) (*WorkPackageManifest, error) {
+	return s.IssueWorkPackageManifestWithTools(tenantID, workOrderID, deviceID, inspectorID, checklistJSON, nil)
+}
+
+// IssueWorkPackageManifestWithTools signs a work package bundle specifying required calibrated tools.
+func (s *EnrollmentSimulator) IssueWorkPackageManifestWithTools(tenantID, workOrderID, deviceID, inspectorID string, checklistJSON string, requiredToolIDs []string) (*WorkPackageManifest, error) {
+	dev, exists := s.deviceStore[deviceID]
+	if !exists || !dev.IsActive {
+		return nil, errors.New("device not enrolled or inactive")
+	}
+	if dev.InspectorID != inspectorID {
+		return nil, errors.New("authority mismatch: device not bound to inspector")
+	}
+
+	// Package digest
+	hash := sha256.Sum256([]byte(checklistJSON))
+	packageHash := hex.EncodeToString(hash[:])
+
+	manifestID := fmt.Sprintf("man_%s", packageHash[:8])
+	now := time.Now()
+	validUntil := now.Add(24 * time.Hour)
+
+	// Server authority signs manifest
+	signPayload := fmt.Sprintf("%s|%s|%s|%s|%s", manifestID, tenantID, workOrderID, deviceID, packageHash)
+	sig := ed25519.Sign(s.serverPrivKey, []byte(signPayload))
+
+	manifest := WorkPackageManifest{
+		ManifestID:         manifestID,
+		TenantID:           tenantID,
+		WorkOrderID:        workOrderID,
+		AssignedDeviceID:   deviceID,
+		InspectorID:        inspectorID,
+		IssuedAt:           now,
+		ValidUntil:         validUntil,
+		PackageHash:        packageHash,
+		AuthoritySignature: hex.EncodeToString(sig),
+		RequiredToolIDs:    requiredToolIDs,
+	}
+	s.manifests[manifestID] = manifest
+	return &manifest, nil
+}
+
+// 4. VerifyOfflineReceipt verifies the sealed receipt submitted by the tablet.
+func (s *EnrollmentSimulator) VerifyOfflineReceipt(receipt SignedInspectionReceipt) (bool, error) {
+	manifest, exists := s.manifests[receipt.ManifestID]
+	if !exists {
+		return false, errors.New("unknown manifest ID")
+	}
+
+	dev, exists := s.deviceStore[manifest.AssignedDeviceID]
+	if !exists || !dev.IsActive {
+		return false, errors.New("device revoked or not active")
+	}
+
+	// Shared canonical receipt-signature verification (also used by the
+	// ingress guard): ReceiptID|ManifestID|AssetID|OverallResult|PayloadDigest.
+	if err := verifyReceiptSignature(receipt, dev.DevicePublicKey); err != nil {
+		return false, err
+	}
+
+	// ISO 17020 §6.2 Equipment Calibration Gating:
+	// Verify that any calibrated tools cited in the receipt were valid and unexpired at CompletedAt.
+	if len(receipt.CalibratedToolIDs) > 0 {
+		if err := s.ValidateToolsForReceipt(manifest.TenantID, receipt.CalibratedToolIDs, receipt.CompletedAt); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+// VerifyOfflineReceiptWithPolicy verifies a receipt exactly like
+// VerifyOfflineReceipt and then enforces the device attestation posture
+// recorded at enrollment against policy. The zero policy is permissive and
+// behaves identically to VerifyOfflineReceipt. On policy failure it returns
+// (false, one of the attestation sentinel errors).
+func (s *EnrollmentSimulator) VerifyOfflineReceiptWithPolicy(receipt SignedInspectionReceipt, policy AttestationPolicy) (bool, error) {
+	valid, err := s.VerifyOfflineReceipt(receipt)
+	if err != nil || !valid {
+		return false, err
+	}
+	if policy == (AttestationPolicy{}) {
+		return true, nil
+	}
+	manifest, exists := s.manifests[receipt.ManifestID]
+	if !exists {
+		return false, errors.New("unknown manifest ID")
+	}
+	dev, exists := s.deviceStore[manifest.AssignedDeviceID]
+	if !exists || !dev.IsActive {
+		return false, errors.New("device revoked or not active")
+	}
+	if err := CheckPosture(dev.AttestationOrigin, dev.AttestationBiometricBound, policy); err != nil {
+		return false, err
+	}
+	return true, nil
+}

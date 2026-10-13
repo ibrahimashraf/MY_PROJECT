@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integin.local/contracts/manifest_candidate_case_receipt_v1.schema.json",
+  "title": "INTEGIN Manifest Candidate Case Receipt v1",
+  "description": "A non-secret, evidence-only receipt for one isolated-pilot manifest candidate case. This schema deliberately excludes fixture paths, manifest bodies, proof bodies, signatures, public keys, private keys, tokens, database configuration, and customer data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "candidate_run_id",
+    "case",
+    "expected_outcome",
+    "status",
+    "generated_at"
+  ],
+  "properties": {
+    "contract_version": {"const": "1"},
+    "candidate_run_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Opaque run correlation identifier; must not encode a tenant, device, user, fixture path, or secret."
+    },
+    "case": {
+      "type": "string",
+      "enum": [
+        "field_binding",
+        "valid_proof",
+        "replay",
+        "signature_invalid",
+        "package_hash_invalid",
+        "expired",
+        "authority_mismatch",
+        "key_unknown"
+      ]
+    },
+    "expected_outcome": {
+      "type": "string",
+      "enum": [
+        "verified_cached",
+        "proof_valid",
+        "replay_rejected",
+        "signature_invalid",
+        "package_hash_invalid",
+        "expired",
+        "authority_mismatch",
+        "key_unknown"
+      ]
+    },
+    "observed_outcome": {
+      "type": "string",
+      "enum": [
+        "verified_cached",
+        "proof_valid",
+        "replay_rejected",
+        "signature_invalid",
+        "package_hash_invalid",
+        "expired",
+        "authority_mismatch",
+        "key_unknown"
+      ]
+    },
+    "status": {"type": "string", "enum": ["passed", "failed", "not_run"]},
+    "http_status": {"type": "integer", "minimum": 100, "maximum": 599},
+    "correlation_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Optional opaque request correlation identifier."
+    },
+    "manifest_id_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "Optional digest of a manifest identifier, never the identifier or manifest content."
+    },
+    "state_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after", "delta"],
+      "properties": {
+        "before": {"type": "integer", "minimum": 0},
+        "after": {"type": "integer", "minimum": 0},
+        "delta": {"type": "integer"}
+      }
+    },
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {"if": {"properties": {"case": {"const": "field_binding"}}}, "then": {"properties": {"expected_outcome": {"const": "verified_cached"}}}},
+    {"if": {"properties": {"case": {"const": "valid_proof"}}}, "then": {"properties": {"expected_outcome": {"const": "proof_valid"}}}},
+    {"if": {"properties": {"case": {"const": "replay"}}}, "then": {"properties": {"expected_outcome": {"const": "replay_rejected"}}}},
+    {"if": {"properties": {"case": {"const": "signature_invalid"}}}, "then": {"properties": {"expected_outcome": {"const": "signature_invalid"}}}},
+    {"if": {"properties": {"case": {"const": "package_hash_invalid"}}}, "then": {"properties": {"expected_outcome": {"const": "package_hash_invalid"}}}},
+    {"if": {"properties": {"case": {"const": "expired"}}}, "then": {"properties": {"expected_outcome": {"const": "expired"}}}},
+    {"if": {"properties": {"case": {"const": "authority_mismatch"}}}, "then": {"properties": {"expected_outcome": {"const": "authority_mismatch"}}}},
+    {"if": {"properties": {"case": {"const": "key_unknown"}}}, "then": {"properties": {"expected_outcome": {"const": "key_unknown"}}}},
+    {
+      "if": {"properties": {"status": {"enum": ["passed", "failed"]}}},
+      "then": {"required": ["observed_outcome"]},
+      "else": {"not": {"required": ["observed_outcome"]}}
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["passed", "failed"]}}},
+      "then": {"required": ["http_status"]},
+      "else": {"not": {"required": ["http_status"]}}
+    },
+    {"if": {"properties": {"case": {"const": "field_binding"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "verified_cached"}}}},
+    {"if": {"properties": {"case": {"const": "valid_proof"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "proof_valid"}}}},
+    {"if": {"properties": {"case": {"const": "replay"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "replay_rejected"}}}},
+    {"if": {"properties": {"case": {"const": "signature_invalid"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "signature_invalid"}}}},
+    {"if": {"properties": {"case": {"const": "package_hash_invalid"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "package_hash_invalid"}}}},
+    {"if": {"properties": {"case": {"const": "expired"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "expired"}}}},
+    {"if": {"properties": {"case": {"const": "authority_mismatch"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "authority_mismatch"}}}},
+    {"if": {"properties": {"case": {"const": "key_unknown"}, "status": {"const": "passed"}}}, "then": {"properties": {"observed_outcome": {"const": "key_unknown"}}}},
+    {
+      "if": {"properties": {"case": {"const": "valid_proof"}, "status": {"const": "passed"}}},
+      "then": {
+        "required": ["state_counts"],
+        "properties": {"state_counts": {"properties": {"delta": {"const": 1}}}}
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "case": {"enum": ["replay", "signature_invalid", "package_hash_invalid", "expired", "authority_mismatch", "key_unknown"]},
+          "status": {"const": "passed"}
+        }
+      },
+      "then": {
+        "required": ["state_counts"],
+        "properties": {"state_counts": {"properties": {"delta": {"const": 0}}}}
+      }
+    }
+  ]
+}

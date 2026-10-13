@@ -1,0 +1,17 @@
+{
+  "vector_set_version": 1,
+  "vector_id": "manifest-read-proof-valid-001",
+  "family": "work_package_manifest_read_proof",
+  "protocol_version": "device-proof/v1",
+  "purpose": "work_package_manifest.read",
+  "signature_algorithm": "Ed25519",
+  "request_id": "request-1",
+  "device_id": "device-1",
+  "authority_id": "authority-1",
+  "authority_epoch": 7,
+  "inspection_id": "inspection-1",
+  "issued_at": "2026-08-17T12:00:00Z",
+  "expires_at": "2026-08-17T12:05:00Z",
+  "key_id": "device-key-1",
+  "canonical_utf8": "device-proof/v1|work_package_manifest.read|request-1|device-1|authority-1|7|inspection-1|2026-08-17T12:00:00Z|2026-08-17T12:05:00Z|Ed25519|device-key-1"
+}

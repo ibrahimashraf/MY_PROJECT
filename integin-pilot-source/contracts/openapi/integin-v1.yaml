@@ -1,0 +1,267 @@
+openapi: 3.1.0
+info:
+  title: INTEGIN Server API
+  version: 1.0.0-draft.1
+  description: |
+    Versioned contract baseline for the INTEGIN server-authoritative field-sync and evidence flows.
+    This document distinguishes currently implemented pilot/acceptance behavior from planned production
+    enrollment. It does not make the local loopback provisioning bridge a production API.
+servers:
+  - url: http://127.0.0.1:18080
+    description: Isolated local pilot only
+  - url: http://127.0.0.1:8080
+    description: Local acceptance control only
+tags:
+  - name: System
+  - name: Field synchronization
+  - name: Evidence
+  - name: Planned production enrollment
+paths:
+  /healthz:
+    get:
+      tags: [System]
+      summary: Report process liveness
+      operationId: healthz
+      responses:
+        '200':
+          description: The process is running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      tags: [System]
+      summary: Report dependency readiness
+      operationId: readyz
+      responses:
+        '200':
+          description: PostgreSQL and configured evidence storage are ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyStatus'
+        '503':
+          description: One or more required dependencies are not ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /sync:
+    post:
+      tags: [Field synchronization]
+      summary: Submit an authority-bound signed field transaction batch
+      operationId: submitSync
+      description: |
+        The server independently validates device trust, authority scope/expiry/epoch, signature,
+        tenant context, idempotency, and workflow rules. A request can be transport-valid while
+        individual transactions are rejected or held. Advisory systems are never blocking inputs.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+      responses:
+        '200':
+          description: The batch was processed and each transaction has a receipt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: Device, signature, or authority validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: A replay, authority epoch mismatch, or conflicting transition was detected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /evidence/{evidenceId}:
+    put:
+      tags: [Evidence]
+      summary: Upload evidence bound to a validated authority and content digests
+      operationId: putEvidence
+      description: |
+        Evidence is stored through the server-authoritative evidence contract. Plaintext and ciphertext
+        digests are part of the verification record; raw evidence is not accepted through telemetry or
+        advisory services.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: evidenceId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Evidence storage and metadata validation completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceReceipt'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          description: Device or authority validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Evidence identifier or digest conflicts with an existing record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /v1/devices/enroll:
+    post:
+      tags: [Planned production enrollment]
+      summary: Request production device enrollment
+      operationId: requestProductionEnrollment
+      x-integin-status: planned-not-implemented
+      description: |
+        Planned production-only endpoint. It will bind an authenticated OIDC subject to a locally generated
+        Ed25519 public key through a server-issued single-use challenge and an approval workflow. It must
+        never accept a device private key. This path is not enabled by this draft.
+      responses:
+        '501':
+          description: Not implemented. See PRODUCTION_DEVICE_ENROLLMENT_SPEC.md.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      description: Client-supplied opaque correlation identifier. It must not contain a secret, token, signed payload, or personal profile.
+      schema:
+        type: string
+        maxLength: 128
+  responses:
+    InvalidRequest:
+      description: The request does not meet the API shape or validation contract.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+          const: integin
+    ReadyStatus:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+          const: ready
+        service:
+          type: string
+          const: integin
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        correlation_id:
+          type: string
+    AuthorityReference:
+      type: object
+      required: [authority_id, authority_epoch]
+      properties:
+        authority_id:
+          type: string
+        authority_epoch:
+          type: integer
+          minimum: 0
+    SignedTransaction:
+      type: object
+      required: [transaction_id, device_id, authority, payload, signature]
+      properties:
+        transaction_id:
+          type: string
+        device_id:
+          type: string
+        authority:
+          $ref: '#/components/schemas/AuthorityReference'
+        payload:
+          type: object
+          additionalProperties: true
+        signature:
+          type: string
+          description: Base64-encoded Ed25519 signature over the versioned canonical transaction bytes.
+    SyncRequest:
+      type: object
+      required: [transactions]
+      properties:
+        transactions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SignedTransaction'
+    TransactionReceipt:
+      type: object
+      required: [transaction_id, status]
+      properties:
+        transaction_id:
+          type: string
+        status:
+          type: string
+          enum: [APPLIED, DUPLICATE, HELD, REJECTED]
+        reason_code:
+          type: string
+        receipt_id:
+          type: string
+    SyncResponse:
+      type: object
+      required: [receipts]
+      properties:
+        receipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionReceipt'
+    EvidenceReceipt:
+      type: object
+      required: [evidence_id, status]
+      properties:
+        evidence_id:
+          type: string
+        status:
+          type: string
+          enum: [APPLIED, DUPLICATE]
+        plaintext_sha256:
+          type: string
+        ciphertext_sha256:
+          type: string
+        object_key:
+          type: string

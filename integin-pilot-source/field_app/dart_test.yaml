@@ -1,0 +1,7 @@
+# Serial `flutter test` was deterministic green at 143 tests.
+# At 198+ tests, the last file loaded occasionally OOMs the test VM isolate.
+# concurrency:1 + retry:1 covers most cases; raise timeout for widget tests
+# doing Ed25519 keygen or full-app pump under memory pressure.
+timeout: 300s
+concurrency: 1
+retry: 1

@@ -1,0 +1,4 @@
+# Synthetic placeholder PNGs are generated on demand — do not commit 6000 binaries.
+# Keep the gate (metadata.json, scripts, README) in history.
+*.png
+!*/.gitkeep

@@ -1,0 +1,150 @@
+import 'package:drift/drift.dart';
+
+import 'tables.dart';
+import 'platform_database_native.dart'
+    if (dart.library.js_interop) 'platform_database_web.dart';
+
+part 'app_database.g.dart';
+
+@DriftDatabase(tables: [OutboxRows])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase(super.e);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {},
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA journal_mode = WAL');
+          await customStatement('PRAGMA synchronous = FULL');
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
+      );
+
+  Future<void> insertOutboxEntry({
+    required String transactionId,
+    required String mutationJson,
+    required String state,
+    int attempts = 0,
+    String? lastError,
+    String? chainHash,
+    DateTime? acknowledgedAt,
+  }) async {
+    await into(outboxRows).insert(
+      OutboxRowsCompanion.insert(
+        transactionId: transactionId,
+        mutation: mutationJson,
+        state: state,
+        attempts: Value(attempts),
+        lastError: Value(lastError),
+        chainHash: Value(chainHash),
+        acknowledgedAt: Value(acknowledgedAt),
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+    await checkpoint();
+  }
+
+  // Both reads share one deterministic order (insertion time, then id).
+  // flushOutbox pairs per-entry outcomes with a separately fetched pending
+  // list by index, so the two reads must observe the same order.
+  Future<List<OutboxRow>> allOutboxEntries() =>
+      (select(outboxRows)
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.createdAt),
+              (t) => OrderingTerm(expression: t.transactionId),
+            ]))
+          .get();
+
+  Future<List<OutboxRow>> pendingOutboxEntries() =>
+      (select(outboxRows)
+            ..where((t) => t.state.isIn(['QUEUED', 'UPLOADING', 'HELD']))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.createdAt),
+              (t) => OrderingTerm(expression: t.transactionId),
+            ]))
+          .get();
+
+  /// Replaces the stored mutation bytes (plus seal and state) for one
+  /// transaction id. Used by identity reconciliation to re-bind an
+  /// unacknowledged entry to the current device identity. Acknowledged rows
+  /// are never touched: callers must filter to unacknowledged entries first.
+  Future<void> replaceOutboxMutation({
+    required String transactionId,
+    required String mutationJson,
+    required String? chainHash,
+    required String state,
+    required String? lastError,
+  }) async {
+    await (update(outboxRows)
+          ..where((t) => t.transactionId.equals(transactionId)))
+        .write(
+      OutboxRowsCompanion(
+        mutation: Value(mutationJson),
+        chainHash: Value(chainHash),
+        state: Value(state),
+        lastError: Value(lastError),
+      ),
+    );
+    await checkpoint();
+  }
+
+  Future<void> markOutboxEntry({
+    required String transactionId,
+    required String state,
+    required int attempts,
+    String? lastError,
+    DateTime? acknowledgedAt,
+  }) async {
+    await (update(outboxRows)
+          ..where((t) => t.transactionId.equals(transactionId)))
+        .write(
+      OutboxRowsCompanion(
+        state: Value(state),
+        attempts: Value(attempts + 1),
+        lastError: Value(lastError),
+        acknowledgedAt: Value(acknowledgedAt),
+      ),
+    );
+    await checkpoint();
+  }
+
+  /// Permanently deletes outbox rows whose state is in [states].
+  /// Returns the number of deleted rows.
+  Future<int> deleteOutboxEntriesByState(List<String> states) async {
+    final count = await (delete(outboxRows)
+          ..where((t) => t.state.isIn(states)))
+        .go();
+    await checkpoint();
+    return count;
+  }
+
+  /// Forces WAL frames into the main database file so outbox state survives
+  /// process death (force-stop / power-cut). Without this, entries reverted
+  /// to their last-checkpointed state on SIGKILL and resubmitted forever.
+  /// ponytail: full TRUNCATE checkpoint per write; batch it if write volume grows.
+  Future<void> checkpoint() async {
+    await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+  }
+
+  @override
+  Future<void> close() async {
+    await super.close();
+  }
+}
+
+Future<AppDatabase> openAppDatabase({
+  String? encryptionKey,
+  required Future<String?> Function(String key) readKey,
+  required Future<void> Function(String key, String value) writeKey,
+}) async {
+  final executor = await openPlatformExecutor(
+    encryptionKey: encryptionKey,
+    readKey: readKey,
+    writeKey: writeKey,
+  );
+  return AppDatabase(executor);
+}

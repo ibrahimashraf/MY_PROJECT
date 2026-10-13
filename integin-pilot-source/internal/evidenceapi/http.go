@@ -1,0 +1,219 @@
+package evidenceapi
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"strings"
+
+	"integin/internal/identity"
+	"integin/internal/oidcauth"
+	"integin/internal/shared/httpresponse"
+	"integin/internal/storage"
+	"integin/internal/workorderauth"
+)
+
+type TokenValidator interface {
+	Validate(context.Context, string) (oidcauth.Principal, error)
+}
+
+type Handler struct {
+	Store     storage.Store
+	Validator TokenValidator
+	Resolver  identity.Resolver
+}
+
+type request struct {
+	TenantID         string `json:"tenant_id"`
+	OrganizationID   string `json:"organization_id"`
+	EvidenceID       string `json:"evidence_id"`
+	InspectionID     string `json:"inspection_id"`
+	ContentType      string `json:"content_type"`
+	LegacySHA256     string `json:"sha256,omitempty"`
+	PlaintextSHA256  string `json:"plaintext_sha256"`
+	CiphertextSHA256 string `json:"ciphertext_sha256"`
+	Base64Blob       string `json:"base64_blob"`
+}
+
+type response struct {
+	Outcome        string `json:"outcome"`
+	EvidenceID     string `json:"evidence_id,omitempty"`
+	ObjectKey      string `json:"object_key,omitempty"`
+	Reason         string `json:"reason,omitempty"`
+	ContentHash    string `json:"sha256,omitempty"`
+	PlaintextHash  string `json:"plaintext_sha256,omitempty"`
+	CiphertextHash string `json:"ciphertext_sha256,omitempty"`
+}
+
+func (h Handler) ServeHTTP(writer http.ResponseWriter, requestHTTP *http.Request) {
+	writer.Header().Set("Deprecation", "true")
+	writer.Header().Set("Sunset", "2027-01-01T00:00:00Z")
+	if requestHTTP.Method != http.MethodPost {
+		writeJSON(writer, http.StatusMethodNotAllowed, response{Outcome: "REJECTED", Reason: "POST is required"})
+		return
+	}
+	if h.Validator == nil || h.Resolver == nil || h.Store == nil {
+		writeJSON(writer, http.StatusServiceUnavailable, response{Outcome: "REJECTED", Reason: "evidence store or identity service is unavailable"})
+		return
+	}
+	raw, ok := bearer(requestHTTP.Header.Get("Authorization"))
+	if !ok {
+		writeJSON(writer, http.StatusUnauthorized, response{Outcome: "REJECTED", Reason: "authentication_failed"})
+		return
+	}
+	principal, err := h.Validator.Validate(requestHTTP.Context(), raw)
+	if err != nil {
+		writeJSON(writer, http.StatusUnauthorized, response{Outcome: "REJECTED", Reason: "authentication_failed"})
+		return
+	}
+	membership, err := h.Resolver.Resolve(requestHTTP.Context(), identity.PrincipalKey{Issuer: principal.Issuer, Subject: principal.Subject})
+	if err != nil {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
+		return
+	}
+	actor, err := workorderauth.ActorFromMembership(membership)
+	if err != nil {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "authorization_failed"})
+		return
+	}
+	requestHTTP.Body = http.MaxBytesReader(writer, requestHTTP.Body, 25<<20)
+	var incoming request
+	decoder := json.NewDecoder(requestHTTP.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&incoming); err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "invalid JSON request"})
+		return
+	}
+	if err := validate(incoming); err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: err.Error()})
+		return
+	}
+	if isDangerousContentType(incoming.ContentType) {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "content type is not permitted"})
+		return
+	}
+	// D-02: Strict authority binding - if caller supplies tenant_id or organization_id, it must match authenticated actor
+	if incoming.TenantID != "" && incoming.TenantID != actor.TenantID {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "tenant scope mismatch"})
+		return
+	}
+	if incoming.OrganizationID != "" && incoming.OrganizationID != actor.OrganizationID {
+		writeJSON(writer, http.StatusForbidden, response{Outcome: "REJECTED", Reason: "organization scope mismatch"})
+		return
+	}
+	incoming.TenantID = actor.TenantID
+	incoming.OrganizationID = actor.OrganizationID
+	data, err := base64.StdEncoding.DecodeString(incoming.Base64Blob)
+	if err != nil {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "base64 blob is invalid"})
+		return
+	}
+	detectedType := http.DetectContentType(data)
+	if isDangerousContentType(detectedType) {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "REJECTED", Reason: "dangerous content detected"})
+		return
+	}
+	digest := sha256.Sum256(data)
+	actualCiphertextHash := hex.EncodeToString(digest[:])
+	expectedCiphertextHash := incoming.CiphertextSHA256
+	if expectedCiphertextHash == "" {
+		expectedCiphertextHash = incoming.LegacySHA256
+	}
+	if actualCiphertextHash != expectedCiphertextHash {
+		writeJSON(writer, http.StatusBadRequest, response{Outcome: "SECURITY_FAILURE", EvidenceID: incoming.EvidenceID, Reason: "ciphertext digest mismatch", ContentHash: actualCiphertextHash, CiphertextHash: actualCiphertextHash, PlaintextHash: incoming.PlaintextSHA256})
+		return
+	}
+	key := objectKey(incoming.TenantID, incoming.OrganizationID, incoming.EvidenceID)
+	if existing, getErr := h.Store.Get(requestHTTP.Context(), key); getErr == nil {
+		existingDigest := sha256.Sum256(existing.Data)
+		if hex.EncodeToString(existingDigest[:]) == actualCiphertextHash {
+			writeJSON(writer, http.StatusOK, response{Outcome: "DUPLICATE", EvidenceID: incoming.EvidenceID, ObjectKey: key, ContentHash: actualCiphertextHash, CiphertextHash: actualCiphertextHash, PlaintextHash: incoming.PlaintextSHA256})
+			return
+		}
+		writeJSON(writer, http.StatusConflict, response{Outcome: "CONFLICT", EvidenceID: incoming.EvidenceID, ObjectKey: key, Reason: "evidence id was reused with different content"})
+		return
+	}
+	if err := h.Store.Put(requestHTTP.Context(), storage.Object{
+		Key:         key,
+		ContentType: incoming.ContentType,
+		Data:        data,
+		Metadata: map[string]string{
+			"tenant_id":         incoming.TenantID,
+			"organization_id":   incoming.OrganizationID,
+			"inspection_id":     incoming.InspectionID,
+			"plaintext_sha256":  incoming.PlaintextSHA256,
+			"ciphertext_sha256": actualCiphertextHash,
+		},
+	}); err != nil {
+		writeJSON(writer, http.StatusServiceUnavailable, response{Outcome: "REJECTED", EvidenceID: incoming.EvidenceID, Reason: err.Error()})
+		return
+	}
+	writeJSON(writer, http.StatusOK, response{Outcome: "APPLIED", EvidenceID: incoming.EvidenceID, ObjectKey: key, ContentHash: actualCiphertextHash, CiphertextHash: actualCiphertextHash, PlaintextHash: incoming.PlaintextSHA256})
+}
+
+func validate(incoming request) error {
+	for name, value := range map[string]string{"tenant_id": incoming.TenantID, "organization_id": incoming.OrganizationID, "evidence_id": incoming.EvidenceID, "inspection_id": incoming.InspectionID, "content_type": incoming.ContentType, "base64_blob": incoming.Base64Blob} {
+		if strings.TrimSpace(value) == "" {
+			return errors.New(name + " is required")
+		}
+	}
+	if strings.TrimSpace(incoming.CiphertextSHA256) == "" && strings.TrimSpace(incoming.LegacySHA256) == "" {
+		return errors.New("ciphertext_sha256 is required")
+	}
+	if strings.ContainsAny(incoming.TenantID+incoming.OrganizationID+incoming.EvidenceID, "/\\") || strings.Contains(incoming.EvidenceID, "..") {
+		return errors.New("evidence identity contains an invalid path")
+	}
+	return nil
+}
+
+func objectKey(tenantID, organizationID, evidenceID string) string {
+	return tenantID + "/" + organizationID + "/evidence/" + evidenceID
+}
+
+func writeJSON(writer http.ResponseWriter, status int, payload response) {
+	httpresponse.JSON(writer, status, payload)
+}
+
+func bearer(value string) (string, bool) {
+	parts := strings.Fields(value)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", false
+	}
+	return parts[1], true
+}
+
+func isDangerousContentType(contentType string) bool {
+	ct := strings.ToLower(strings.TrimSpace(contentType))
+	if ct == "" {
+		return false
+	}
+	dangerous := []string{
+		"application/x-dosexec",
+		"application/x-executable",
+		"application/x-sharedlib",
+		"application/x-mach-binary",
+		"application/x-msdownload",
+		"application/x-bat",
+		"application/x-sh",
+		"application/javascript",
+		"text/javascript",
+		"application/x-javascript",
+		"text/html",
+		"application/xhtml+xml",
+	}
+	for _, d := range dangerous {
+		if strings.HasPrefix(ct, d) {
+			return true
+		}
+	}
+	return false
+}

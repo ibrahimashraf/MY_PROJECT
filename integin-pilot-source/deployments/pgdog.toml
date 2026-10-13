@@ -1,0 +1,16 @@
+[general]
+host = "0.0.0.0"
+port = 6432
+default_pool_size = 80
+
+[[databases]]
+name = "integin_migration_test"
+host = "172.17.0.2"
+port = 5432
+role = "primary"
+
+[[databases]]
+name = "integin_appliance"
+host = "appliance-postgres"
+port = 5432
+role = "primary"

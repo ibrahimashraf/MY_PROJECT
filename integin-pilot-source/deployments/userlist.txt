@@ -1,0 +1,2 @@
+"integin_owner" "integin_sovereign_db_secret"
+"postgres" "integin_sovereign_db_secret"

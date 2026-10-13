@@ -1,0 +1,52 @@
+{
+  "manifest_version": "1.0",
+  "export_id": "EXP-2026-08-21-001",
+  "tenant_id": "tenant-t1",
+  "organization_id": "org-intmec",
+  "created_at": "2026-08-21T09:30:15.123456789Z",
+  "exporter_identity": {
+    "user_id": "inspector-ahmed-01",
+    "role": "CERTIFIED_INSPECTOR",
+    "client_version": "field-app-1.4.0"
+  },
+  "procedure_version": "PROC-EXPORT-V1",
+  "evidence_items": [
+    {
+      "evidence_id": "EV-1002",
+      "object_key": "exports/tenant-t1/EV-1002.bin.enc",
+      "content_type": "application/octet-stream",
+      "captured_at": "2026-08-20T15:10:30Z",
+      "plaintext_sha256": "c783c5698ae7ac00da29d33b5a781649cb83c49629055ec7bece92389142a5c1",
+      "ciphertext_sha256": "f0c5af259eb78029b31d6555323535b8b5afb1e5a3eabf7e4658717cf6aa397c",
+      "byte_length": 8192,
+      "encryption_algorithm": "AES-256-GCM",
+      "authority_device_id": "device-tablet-7f3a9912"
+    },
+    {
+      "evidence_id": "EV-1001",
+      "object_key": "exports/tenant-t1/EV-1001.bin.enc",
+      "content_type": "application/octet-stream",
+      "captured_at": "2026-08-20T14:05:00.25Z",
+      "plaintext_sha256": "4f79a7778a9e0e7e145f4a5e4c52ed3e63aa19aac6b6ca62ae9170c7e7d5e950",
+      "ciphertext_sha256": "7ecf00110b5840e7f2f024397da0d75c802246514224faff4455c7547308e336",
+      "byte_length": 4096,
+      "encryption_algorithm": "AES-256-GCM",
+      "authority_device_id": "device-tablet-7f3a9912"
+    },
+    {
+      "evidence_id": "EV-1003",
+      "object_key": "exports/tenant-t1/EV-1003.bin.enc",
+      "content_type": "application/octet-stream",
+      "captured_at": "2026-08-20T15:11:00.5Z",
+      "plaintext_sha256": "f102a4fa7c6ad176343a43786c604f49db3750b62f469d3d4f1aeb8607244d06",
+      "ciphertext_sha256": "dfff795a6b8cdf421e2e0815987ba9eed246a3474ee26aeff7e70f0f2e5cc16b",
+      "byte_length": 2048,
+      "encryption_algorithm": "AES-256-GCM",
+      "authority_device_id": "device-tablet-7f3a9912"
+    }
+  ],
+  "object_count": 3,
+  "total_byte_length": 14336,
+  "manifest_sha256": "130123b986ab2447f88024099f82367d78ee41b558d1e59d6b14d0bd96eeecd2",
+  "export_signature": "LFgySY4uH8W0PR2NUK6vG9eiETGttWWO7z9OcIovD6xTpN04FpFXnoip6v6sR8RPCffP3kJBqqxNqRvuWNw0AQ"
+}

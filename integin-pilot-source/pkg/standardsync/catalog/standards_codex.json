@@ -1,0 +1,743 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "codex_version": "1.0.0",
+  "description": "INTEGIN Codex of Codified Engineering Standards Parameters, Formulas, and Statutory Gates",
+  "standards": [
+    {
+      "standard_id": "did:integin:standard:bs-7121-1-2016",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-1:2016",
+      "revision_year": 2016,
+      "title": "Code of practice for safe use of cranes - Part 1: General",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.1.lift_category_basic",
+          "name": "BS 7121-1 Basic Lift Criteria",
+          "clause": "4.3.2.2 & Table 2",
+          "target_asset": "CRANE_OPERATION",
+          "parameter_type": "CLASSIFICATION",
+          "description": "Known weight, central CoG, designated points, ground-to-ground clear sight, no fluids, no proximity hazards",
+          "formula": "load_complexity == 1 && env_complexity == 1",
+          "action_on_breach": "ESCALATE_TO_INTERMEDIATE",
+          "statutory_category": "BS7121_LIFT_CATEGORY"
+        },
+        {
+          "parameter_id": "bs7121.1.lift_category_intermediate",
+          "name": "BS 7121-1 Intermediate Lift Criteria",
+          "clause": "4.3.2.3 & Table 2",
+          "target_asset": "CRANE_OPERATION",
+          "parameter_type": "CLASSIFICATION",
+          "description": "Estimated weight/CoG, or lifting over obstructions without clear sight, or high sail area",
+          "formula": "load_complexity == 2 || env_complexity == 2",
+          "action_on_breach": "ESCALATE_TO_COMPLEX",
+          "statutory_category": "BS7121_LIFT_CATEGORY"
+        },
+        {
+          "parameter_id": "bs7121.1.lift_category_complex",
+          "name": "BS 7121-1 Complex Lift Criteria",
+          "clause": "4.3.2.4 & Table 2",
+          "target_asset": "CRANE_OPERATION",
+          "parameter_type": "CLASSIFICATION",
+          "description": "Multi-crane, person lifting, over water/rail, power lines proximity, or estimated weight without designated points",
+          "formula": "multiple_cranes || person_lifting || near_power_lines || over_water_rail || complexity >= 3",
+          "action_on_breach": "MANDATORY_AP_ON_SITE",
+          "statutory_category": "BS7121_LIFT_CATEGORY"
+        },
+        {
+          "parameter_id": "bs7121.1.wind_speed_operational_general",
+          "name": "BS 7121-1 General Operational Wind Speed Limit",
+          "clause": "15.2 & Annex D",
+          "target_asset": "CRANE_OPERATION",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 14.0,
+          "unit": "m/s",
+          "formula": "wind_speed_ms <= min(manufacturer_max, 14.0)",
+          "cel_expression": "wind_speed_ms <= 14.0",
+          "action_on_breach": "STOP_LIFT_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.1.wind_speed_sail_area",
+          "name": "BS 7121-1 Large Sail Area Wind Speed Limit",
+          "clause": "15.2.1 & Annex D",
+          "target_asset": "CRANE_OPERATION",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 9.8,
+          "unit": "m/s",
+          "formula": "sail_area_ratio > 1.0 m2/t -> wind_speed_ms <= 9.8",
+          "cel_expression": "sail_area_m2_per_t > 1.0 ? wind_speed_ms <= 9.8 : wind_speed_ms <= 14.0",
+          "action_on_breach": "STOP_LIFT_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.1.power_line_clearance_pylon",
+          "name": "BS 7121-1 Overhead Power Line Clearance (Metal Pylon)",
+          "clause": "8.5.1",
+          "target_asset": "SITE_PROXIMITY",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 15.0,
+          "unit": "m",
+          "formula": "clearance_distance_m >= 15.0",
+          "action_on_breach": "PROHIBIT_CRANE_OPERATION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.1.power_line_clearance_pole",
+          "name": "BS 7121-1 Overhead Power Line Clearance (Wood Pole)",
+          "clause": "8.5.1",
+          "target_asset": "SITE_PROXIMITY",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 9.0,
+          "unit": "m",
+          "formula": "clearance_distance_m >= 9.0",
+          "action_on_breach": "PROHIBIT_CRANE_OPERATION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.1.trapping_zone_clearance",
+          "name": "BS 7121-1 Anti-Trapping Minimum Clearance",
+          "clause": "8.5.1.3",
+          "target_asset": "CRANE_CLEARANCE",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.6,
+          "unit": "m",
+          "formula": "clearance_to_obstruction_m >= 0.60",
+          "action_on_breach": "PROHIBIT_SLEW_ZONE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.1.multi_crane_derate_2_cranes",
+          "name": "BS 7121-1 Multiple Lifting 2-Crane Capacity Factor",
+          "clause": "14.2.9",
+          "target_asset": "MULTI_CRANE_LIFT",
+          "parameter_type": "PROOF_LOAD_MULTIPLIER",
+          "numeric_value": 0.8,
+          "unit": "fraction",
+          "formula": "derated_capacity = rated_capacity * 0.80",
+          "cel_expression": "lift_load <= crane_capacity * 0.80",
+          "action_on_breach": "REJECT_LIFT_PLAN",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.1.multi_crane_derate_3_cranes",
+          "name": "BS 7121-1 Multiple Lifting 3+-Crane Capacity Factor",
+          "clause": "14.2.9",
+          "target_asset": "MULTI_CRANE_LIFT",
+          "parameter_type": "PROOF_LOAD_MULTIPLIER",
+          "numeric_value": 0.67,
+          "unit": "fraction",
+          "formula": "derated_capacity = rated_capacity * 0.67",
+          "cel_expression": "lift_load <= crane_capacity * 0.67",
+          "action_on_breach": "REJECT_LIFT_PLAN",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-2-1-2012",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-2-1:2012",
+      "revision_year": 2012,
+      "title": "Code of practice for safe use of cranes - Part 2-1: Inspection, maintenance & thorough examination - General",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.2.1.exam_interval_personnel",
+          "name": "Thorough Examination Interval - Lifting Persons",
+          "clause": "8.1 & LOLER Reg 9(3)(a)(i)",
+          "target_asset": "PERSONNEL_LIFTING_EQUIPMENT",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 6.0,
+          "unit": "months",
+          "formula": "months_since_last_exam <= 6",
+          "action_on_breach": "GROUND_EQUIPMENT_IMMEDIATE",
+          "statutory_category": "LOLER_STATUTORY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.1.exam_interval_accessories",
+          "name": "Thorough Examination Interval - Lifting Accessories",
+          "clause": "8.1 & LOLER Reg 9(3)(a)(ii)",
+          "target_asset": "LIFTING_TACKLE",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 6.0,
+          "unit": "months",
+          "formula": "months_since_last_exam <= 6",
+          "action_on_breach": "QUARANTINE_TACKLE_IMMEDIATE",
+          "statutory_category": "LOLER_STATUTORY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.1.exam_interval_goods_crane",
+          "name": "Thorough Examination Interval - Goods Cranes",
+          "clause": "8.1 & LOLER Reg 9(3)(a)(ii)",
+          "target_asset": "CRANE_MACHINE",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 12.0,
+          "unit": "months",
+          "formula": "months_since_last_exam <= 12",
+          "action_on_breach": "GROUND_EQUIPMENT_IMMEDIATE",
+          "statutory_category": "LOLER_STATUTORY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.1.major_review_interval_normal",
+          "name": "Major Review Interval - Normal Duty",
+          "clause": "8.10 & Annex C",
+          "target_asset": "CRANE_STRUCTURE",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 10.0,
+          "unit": "years",
+          "formula": "years_in_service <= 10",
+          "action_on_breach": "MANDATORY_ENGINEERING_REVIEW",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.1.major_review_interval_intensive",
+          "name": "Major Review Interval - Intensive / Arduous Duty",
+          "clause": "8.10 & Annex C",
+          "target_asset": "CRANE_STRUCTURE",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 5.0,
+          "unit": "years",
+          "formula": "years_in_service <= 5",
+          "action_on_breach": "MANDATORY_ENGINEERING_REVIEW",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-2-3-2012",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-2-3:2012",
+      "revision_year": 2012,
+      "title": "Code of practice for safe use of cranes - Part 2-3: Inspection & thorough examination - Mobile cranes",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.2.3.levelling_tolerance",
+          "name": "Mobile Crane Levelling Tolerance",
+          "clause": "9.4",
+          "target_asset": "MOBILE_CRANE",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.5,
+          "unit": "percent",
+          "tolerance_pct": 0.5,
+          "formula": "abs(chassis_slope_pct) <= 0.50",
+          "cel_expression": "abs(crane_slope_pct) <= 0.50",
+          "action_on_breach": "LOCKOUT_LIFTING_OPERATION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.3.supplementary_testing_interval",
+          "name": "Mobile Crane Supplementary Testing Interval",
+          "clause": "8.6 & 9.1",
+          "target_asset": "MOBILE_CRANE",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 4.0,
+          "unit": "years",
+          "formula": "years_since_supplementary_test <= 4",
+          "action_on_breach": "MANDATORY_SUPPLEMENTARY_TEST",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-2-4-2025",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-2-4:2025",
+      "revision_year": 2025,
+      "title": "Code of practice for safe use of cranes - Part 2-4: Inspection & thorough examination - Loader cranes",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.2.4.tilt_angle_maximum",
+          "name": "Loader Crane Maximum Chassis Tilt",
+          "clause": "Clause 14 / BS 7121-4",
+          "target_asset": "LOADER_CRANE",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 5.0,
+          "unit": "degrees",
+          "formula": "tilt_deg <= 5.0",
+          "action_on_breach": "STABILIZER_RELEVEL_REQUIRED",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.4.mewp_exam_interval",
+          "name": "Loader Crane MEWP / Basket Exam Interval",
+          "clause": "Clause 8 / LOLER Reg 9",
+          "target_asset": "LOADER_CRANE_MAN_BASKET",
+          "parameter_type": "INSPECTION_INTERVAL",
+          "numeric_value": 6.0,
+          "unit": "months",
+          "formula": "months_since_last_exam <= 6",
+          "action_on_breach": "PROHIBIT_MAN_BASKET_USE",
+          "statutory_category": "LOLER_STATUTORY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-2-7-2012",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-2-7:2012+A2:2022",
+      "revision_year": 2022,
+      "title": "Code of practice for safe use of cranes - Part 2-7: Overhead travelling cranes, portal cranes & hoists",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.2.7.static_brake_proof_multiplier",
+          "name": "Overhead Crane Static Brake Proof Load Multiplier",
+          "clause": "9.2.3",
+          "target_asset": "OVERHEAD_CRANE",
+          "parameter_type": "PROOF_LOAD_MULTIPLIER",
+          "numeric_value": 1.25,
+          "unit": "ratio",
+          "formula": "test_load == 1.25 * rated_capacity",
+          "action_on_breach": "PROOF_TEST_FAILURE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.7.dynamic_brake_proof_multiplier",
+          "name": "Overhead Crane Dynamic Brake Proof Load Multiplier",
+          "clause": "9.2.3",
+          "target_asset": "OVERHEAD_CRANE",
+          "parameter_type": "PROOF_LOAD_MULTIPLIER",
+          "numeric_value": 1.1,
+          "unit": "ratio",
+          "formula": "test_load == 1.10 * rated_capacity",
+          "action_on_breach": "PROOF_TEST_FAILURE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.2.7.overload_trip_limiter",
+          "name": "Overhead Crane Overload Limiter Cutoff",
+          "clause": "9.2.3",
+          "target_asset": "OVERHEAD_CRANE",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 1.1,
+          "unit": "ratio",
+          "formula": "trip_threshold <= 1.10 * rated_capacity",
+          "action_on_breach": "CALIBRATE_RCI_IMMEDIATE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-2-9-2013",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-2-9:2013",
+      "revision_year": 2013,
+      "title": "Code of practice for safe use of cranes - Part 2-9: Cargo handling & container cranes",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.2.9.twistlock_fatigue_cycles",
+          "name": "Container Crane Spreader Twistlock Fatigue Discard",
+          "clause": "Clause 8 & Annex A",
+          "target_asset": "CONTAINER_SPREADER_TWISTLOCK",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 250000.0,
+          "unit": "cycles",
+          "formula": "operational_cycles <= 250000",
+          "action_on_breach": "MANDATORY_DISCARD_TWISTLOCK",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.2.9.twistlock_neck_wear",
+          "name": "Container Spreader Twistlock Neck Wear Limit",
+          "clause": "Clause 8",
+          "target_asset": "CONTAINER_SPREADER_TWISTLOCK",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 2.0,
+          "unit": "mm",
+          "formula": "wear_measured_mm <= 2.0",
+          "action_on_breach": "MANDATORY_DISCARD_TWISTLOCK",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.2.9.gale_rail_clamps_wind_threshold",
+          "name": "Container Crane Gale Storm Rail Clamps Engagement",
+          "clause": "Clause 8 & Annex A",
+          "target_asset": "CONTAINER_CRANE_STORM_STOWAGE",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 20.0,
+          "unit": "m/s",
+          "formula": "wind_speed_ms >= 20.0 -> engage_rail_clamps()",
+          "action_on_breach": "MANDATORY_STORM_PINNING",
+          "statutory_category": "CAT_A_DANGEROUS"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-3-2019",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-3:2017+A1:2019",
+      "revision_year": 2019,
+      "title": "Code of practice for safe use of cranes - Part 3: Mobile cranes",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.3.outrigger_corner_reaction_factor",
+          "name": "Mobile Crane Corner Outrigger Reaction Fraction",
+          "clause": "Annex A & CIRIA C703",
+          "target_asset": "MOBILE_CRANE_OUTRIGGER",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.85,
+          "unit": "fraction",
+          "formula": "P_corner_max = 0.85 * total_mass_t",
+          "action_on_breach": "RECALCULATE_MAT_SIZE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.3.pick_and_carry_max_speed",
+          "name": "Pick-and-Carry Maximum Travel Speed",
+          "clause": "Clause 14",
+          "target_asset": "MOBILE_CRANE_PICK_AND_CARRY",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 0.4,
+          "unit": "m/s",
+          "formula": "travel_speed_ms <= 0.40",
+          "action_on_breach": "HALT_TRAVEL_MOTION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.3.pick_and_carry_max_ground_slope",
+          "name": "Pick-and-Carry Maximum Ground Slope",
+          "clause": "Clause 14",
+          "target_asset": "MOBILE_CRANE_PICK_AND_CARRY",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 1.0,
+          "unit": "degrees",
+          "formula": "ground_slope_deg <= 1.0",
+          "action_on_breach": "PROHIBIT_PICK_AND_CARRY",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-4-2010",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-4:2010",
+      "revision_year": 2010,
+      "title": "Code of practice for safe use of cranes - Part 4: Lorry loaders",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.4.chassis_tilt_limit",
+          "name": "Lorry Loader Maximum Allowable Tilt",
+          "clause": "Clause 12 & 14",
+          "target_asset": "LORRY_LOADER",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 3.0,
+          "unit": "degrees",
+          "tolerance_pct": 5.0,
+          "formula": "chassis_tilt_deg <= 3.0",
+          "action_on_breach": "RELEVEL_STABILIZERS",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-5-2019",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-5:2019",
+      "revision_year": 2019,
+      "title": "Code of practice for safe use of cranes - Part 5: Tower cranes",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.5.tower_in_service_wind_max",
+          "name": "Tower Crane In-Service Operational Wind Ceiling",
+          "clause": "Clause 8.3 & Annex B",
+          "target_asset": "TOWER_CRANE",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 15.0,
+          "unit": "m/s",
+          "formula": "wind_speed_ms <= 15.0",
+          "action_on_breach": "PARK_IN_FREE_SLEW",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.5.tower_climbing_wind_max",
+          "name": "Tower Crane Climbing & Jacking Wind Ceiling",
+          "clause": "Clause 7.1.5 & Clause 18",
+          "target_asset": "TOWER_CRANE_CLIMBING",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 10.0,
+          "unit": "m/s",
+          "formula": "wind_speed_ms <= 10.0",
+          "action_on_breach": "LOCKOUT_CLIMBING_OPERATION",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "bs7121.5.tower_anti_collision_clearance_horiz",
+          "name": "Tower Crane Anti-Collision Minimum Horizontal Clearance",
+          "clause": "Clause 3.15 & 8.5",
+          "target_asset": "TOWER_CRANE_INTERFERENCE",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 3.0,
+          "unit": "m",
+          "formula": "horiz_clearance_m >= 3.0",
+          "action_on_breach": "ACTUATE_ANTI_COLLISION_STOP",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.5.tower_anti_collision_clearance_vert",
+          "name": "Tower Crane Anti-Collision Minimum Vertical Clearance",
+          "clause": "Clause 3.15 & 8.5",
+          "target_asset": "TOWER_CRANE_INTERFERENCE",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 2.0,
+          "unit": "m",
+          "formula": "vert_clearance_m >= 2.0",
+          "action_on_breach": "ACTUATE_ANTI_COLLISION_STOP",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-13-2009",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-13:2009",
+      "revision_year": 2009,
+      "title": "Code of practice for safe use of cranes - Part 13: Hydraulic gantry lifting systems",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.13.differential_height_maximum",
+          "name": "Hydraulic Gantry Crosshead Differential Height Limit",
+          "clause": "Clause 13 & 14",
+          "target_asset": "HYDRAULIC_GANTRY_SYSTEM",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 25.0,
+          "unit": "mm",
+          "formula": "diff_height_mm <= min(25.0, 0.0025 * span_mm)",
+          "action_on_breach": "AUTO_SYNC_LOCKOUT",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.13.track_slope_longitudinal",
+          "name": "Hydraulic Gantry Track Maximum Slope",
+          "clause": "Clause 12.2",
+          "target_asset": "HYDRAULIC_GANTRY_TRACK",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.5,
+          "unit": "percent",
+          "formula": "track_slope_pct <= 0.50",
+          "action_on_breach": "PROHIBIT_GANTRY_TRAVEL",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.13.track_deflection_ratio",
+          "name": "Hydraulic Gantry Track Deflection Limit",
+          "clause": "Clause 12.3",
+          "target_asset": "HYDRAULIC_GANTRY_TRACK",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.001667,
+          "unit": "ratio",
+          "formula": "track_deflection_mm <= span_mm / 600.0",
+          "action_on_breach": "REINFORCE_TRACK_SUPPORT",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.13.track_bearing_pressure",
+          "name": "Hydraulic Gantry Track Ground Bearing Pressure",
+          "clause": "Clause 12.1",
+          "target_asset": "HYDRAULIC_GANTRY_TRACK",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 0.0,
+          "unit": "t/m2",
+          "formula": "bearing_pressure == vertical_load_t / bearing_area_m2",
+          "action_on_breach": "ENLARGE_TRACK_MAT_AREA",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:bs-7121-14-2005",
+      "standard_body": "BSI",
+      "standard_code": "BS 7121-14:2005",
+      "revision_year": 2005,
+      "title": "Code of practice for safe use of cranes - Part 14: Side-boom pipelayers",
+      "parameters": [
+        {
+          "parameter_id": "bs7121.14.tipping_stability_factor",
+          "name": "Pipelayer Rated SWL Stability Factor",
+          "clause": "4.7",
+          "target_asset": "SIDE_BOOM_PIPELAYER",
+          "parameter_type": "SAFETY_FACTOR_MIN",
+          "numeric_value": 0.714,
+          "unit": "ratio",
+          "formula": "rated_swl <= 0.714 * tipping_balance_load",
+          "action_on_breach": "DERATE_PIPELAYER_CHART",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.14.rope_safety_factor",
+          "name": "Pipelayer Wire Rope Design Safety Factor",
+          "clause": "4.8",
+          "target_asset": "SIDE_BOOM_PIPELAYER_ROPE",
+          "parameter_type": "SAFETY_FACTOR_MIN",
+          "numeric_value": 5.0,
+          "unit": "ratio",
+          "formula": "rope_mbl / line_pull >= 5.0",
+          "action_on_breach": "REPLACE_OR_DERATE_ROPE",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.14.winch_drum_minimum_wraps",
+          "name": "Pipelayer Winch Drum Minimum Dead Wraps",
+          "clause": "Clause 5",
+          "target_asset": "SIDE_BOOM_PIPELAYER_WINCH",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 3.0,
+          "unit": "wraps",
+          "formula": "drum_wraps_remaining >= 3",
+          "action_on_breach": "PROHIBIT_LOWERING_MOTION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "bs7121.14.lowering_in_cradle_load",
+          "name": "Pipelayer Continuous Lowering-in Cradle Load",
+          "clause": "Clause 10 & Annex E",
+          "target_asset": "SIDE_BOOM_PIPELAYER_CRADLE",
+          "parameter_type": "SAFETY_FACTOR_MIN",
+          "numeric_value": 1.0,
+          "unit": "tonnes",
+          "formula": "cradle_load_t == (pipe_unit_weight_kg_m * cradle_spacing_m * shock_factor) / 1000.0",
+          "action_on_breach": "REDUCE_CRADLE_SPACING",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:asme-b30.10-2024",
+      "standard_body": "ASME",
+      "standard_code": "ASME B30.10",
+      "revision_year": 2024,
+      "title": "Hooks",
+      "parameters": [
+        {
+          "parameter_id": "asme.b30.10.throat_stretch",
+          "name": "ASME B30.10 Hook Throat Opening Discard Threshold",
+          "clause": "10-1.10.4(b)",
+          "target_asset": "LIFTING_HOOK",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 0.05,
+          "unit": "fraction",
+          "tolerance_pct": 5.0,
+          "formula": "measured_throat > 1.05 * nominal_throat",
+          "cel_expression": "measured_throat_mm <= 1.05 * nominal_throat_mm",
+          "action_on_breach": "QUARANTINE_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "asme.b30.10.body_twist",
+          "name": "ASME B30.10 Hook Body Twist Discard Threshold",
+          "clause": "10-1.10.4(c)",
+          "target_asset": "LIFTING_HOOK",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 10.0,
+          "unit": "degrees",
+          "formula": "abs(twist_deg) > 10.0",
+          "cel_expression": "twist_deg <= 10.0 && twist_deg >= -10.0",
+          "action_on_breach": "QUARANTINE_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "asme.b30.10.saddle_wear",
+          "name": "ASME B30.10 Hook Saddle Wear Discard Threshold",
+          "clause": "10-1.10.4(d)",
+          "target_asset": "LIFTING_HOOK",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 0.1,
+          "unit": "fraction",
+          "tolerance_pct": 10.0,
+          "formula": "measured_saddle < 0.90 * nominal_saddle",
+          "cel_expression": "measured_saddle_mm >= 0.90 * nominal_saddle_mm",
+          "action_on_breach": "QUARANTINE_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:iso-5817-2023",
+      "standard_body": "ISO",
+      "standard_code": "ISO 5817:2023",
+      "revision_year": 2023,
+      "title": "Welding - Fusion-welded joints in steel, nickel, titanium - Quality levels for imperfections",
+      "parameters": [
+        {
+          "parameter_id": "iso.5817.level_b_undercut",
+          "name": "ISO 5817 Quality Level B Undercut Depth Limit",
+          "clause": "Table 1 No. 5011 / 5012",
+          "target_asset": "WELD_SEAM",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 0.5,
+          "unit": "mm",
+          "formula": "h <= min(0.05 * t, 0.50 mm)",
+          "action_on_breach": "REWORK_WELD_GRIND_REPAIR",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "iso.5817.level_b_porosity",
+          "name": "ISO 5817 Quality Level B Porosity Area Limit",
+          "clause": "Table 1 No. 2017",
+          "target_asset": "WELD_SEAM",
+          "parameter_type": "DISCARD_MAX",
+          "numeric_value": 1.0,
+          "unit": "percent",
+          "formula": "porosity_area_pct <= 1.0",
+          "action_on_breach": "EXCAVATE_AND_REWELD",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        }
+      ]
+    },
+    {
+      "standard_id": "did:integin:standard:osha-1926.251",
+      "standard_body": "OSHA",
+      "standard_code": "29 CFR 1926.251",
+      "revision_year": 2020,
+      "title": "Rigging Equipment for Material Handling",
+      "parameters": [
+        {
+          "parameter_id": "osha.1926.251.wire_rope_safety_factor",
+          "name": "OSHA Wire Rope Sling Minimum Safety Factor",
+          "clause": "1926.251(c)(1)",
+          "target_asset": "WIRE_ROPE_SLING",
+          "parameter_type": "SAFETY_FACTOR_MIN",
+          "numeric_value": 5.0,
+          "unit": "ratio",
+          "formula": "mbl / working_load >= 5.0",
+          "action_on_breach": "PROHIBIT_RIGGING_CONFIGURATION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "osha.1926.251.chain_safety_factor",
+          "name": "OSHA Alloy Steel Chain Sling Minimum Safety Factor",
+          "clause": "1926.251(b)(1)",
+          "target_asset": "ALLOY_CHAIN_SLING",
+          "parameter_type": "SAFETY_FACTOR_MIN",
+          "numeric_value": 4.0,
+          "unit": "ratio",
+          "formula": "mbl / working_load >= 4.0",
+          "action_on_breach": "PROHIBIT_RIGGING_CONFIGURATION",
+          "statutory_category": "STATUTORY_SAFETY_GATE"
+        },
+        {
+          "parameter_id": "osha.1926.251.critical_sling_angle",
+          "name": "OSHA Rigging Critical Sling Angle Minimum",
+          "clause": "1926.251(c)(5)",
+          "target_asset": "RIGGING_SLING",
+          "parameter_type": "GEOMETRIC_RATIO",
+          "numeric_value": 30.0,
+          "unit": "degrees",
+          "formula": "horizontal_angle_deg >= 30.0",
+          "cel_expression": "horizontal_angle_deg >= 30.0",
+          "action_on_breach": "PROHIBIT_RIGGING_CONFIGURATION",
+          "statutory_category": "CAT_A_DANGEROUS"
+        },
+        {
+          "parameter_id": "osha.1926.251.synthetic_temp_limit",
+          "name": "OSHA Synthetic Sling Maximum Temperature",
+          "clause": "1926.251(e)(6)",
+          "target_asset": "SYNTHETIC_WEB_SLING",
+          "parameter_type": "ENVIRONMENTAL_MAX",
+          "numeric_value": 180.0,
+          "unit": "degF",
+          "formula": "temp_deg_f <= 180.0",
+          "action_on_breach": "REMOVE_FROM_SERVICE_IMMEDIATE",
+          "statutory_category": "CAT_A_DANGEROUS"
+        }
+      ]
+    }
+  ]
+}

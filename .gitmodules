@@ -1,10 +1,6 @@
 [submodule "tools/code-review-graph"]
 	path = tools/code-review-graph
 	url = https://github.com/tirth8205/code-review-graph.git
-[submodule "integin-pilot-source"]
-	path = integin-pilot-source
-	url = https://github.com/ibrahimashraf/MY_PROJECT.git
-	branch = pilot-source
 [submodule ".agents/skills/archify"]
 	path = .agents/skills/archify
 	url = https://github.com/tt-a1i/archify.git

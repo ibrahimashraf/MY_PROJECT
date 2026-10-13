@@ -1,0 +1,823 @@
+import 'dart:math';
+
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
+import '../advisory/pilot_advisory_client.dart';
+import '../assurance/rule_evaluator.dart';
+import '../domain/inspection_draft.dart';
+import '../workpackages/package_compatibility.dart';
+import '../domain/models.dart';
+import '../outbox/merkle_hash_chain.dart';
+import '../outbox/outbox.dart';
+import '../security/transaction_signer.dart';
+import '../sync/event_stream_client.dart';
+import '../sync/sync_client.dart';
+import '../sync/sync_guard.dart';
+import '../sync/tus_client.dart';
+import '../sync/http_sync_transport.dart';
+import '../security/endpoint_guard.dart';
+import '../security/inspection_submission_service.dart';
+import '../security/submission_seal.dart';
+
+class FieldAppController extends ChangeNotifier {
+  FieldAppController({
+    required this.context,
+    required this.deviceId,
+    required this.userId,
+    required this.deviceState,
+    required this.authority,
+    this.outboxStore,
+    this.deviceSigner,
+    this.deviceKeyId,
+    this.syncClient,
+    this.eventStreamClient,
+    this.advisoryClient,
+    this.tusClient,
+    this.submissionService,
+    this.trace,
+  }) {
+    _initStream();
+  }
+
+  final TenantContext context;
+  final String deviceId;
+  final String userId;
+  final DeviceTrustState deviceState;
+  final OfflineAuthority authority;
+  final OutboxStore? outboxStore;
+  final DeviceSigner? deviceSigner;
+  final String? deviceKeyId;
+  final SyncClient? syncClient;
+  final EventStreamClient? eventStreamClient;
+  final TusClient? tusClient;
+  final InspectionSubmissionService? submissionService;
+
+  /// Present only in the isolated pilot build; advisory data has no authority.
+  final PilotAdvisoryClient? advisoryClient;
+
+  /// Optional pilot diagnostic sink. It records only outcome classes and counts.
+  final void Function(String)? trace;
+  final List<OfflineMutation> _outbox = [];
+  final List<StationEvent> recentEvents = [];
+  InspectionDraft? activeDraft;
+  ConnectivityState connectivity = ConnectivityState.offline;
+  DateTime? lastSuccessfulSync;
+  String? lastError;
+  PilotAdvisoryResult? advisoryResult;
+  String? advisoryError;
+  bool advisoryLoading = false;
+  OutboxSummary outboxSummary = const OutboxSummary();
+  int _sequence = 0;
+  int _lastAcceptedSequence = 0;
+
+  List<OfflineMutation> get outbox => List.unmodifiable(_outbox);
+  int get queuedCount => outboxSummary.pendingCount;
+  int get failedCount => outboxSummary.failureCount;
+  bool get isSyncConfigured => syncClient != null;
+
+  Future<void> restoreOutbox() async {
+    if (outboxStore == null) return;
+    final entries = await outboxStore!.pending();
+    outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());
+    trace?.call(
+        'restore-reason-class-${_diagnosticReasonClass(await outboxStore!.all())}');
+    _outbox
+      ..clear()
+      ..addAll(entries.map((entry) => entry.mutation));
+    for (final mutation in _outbox) {
+      if (mutation.sequenceNumber > _sequence) {
+        _sequence = mutation.sequenceNumber;
+      }
+    }
+    for (final entry in await outboxStore!.all()) {
+      if ((entry.state == OutboxState.applied ||
+              entry.state == OutboxState.duplicate) &&
+          entry.mutation.sequenceNumber > _lastAcceptedSequence) {
+        _lastAcceptedSequence = entry.mutation.sequenceNumber;
+      }
+    }
+    notifyListeners();
+  }
+
+  /// Re-binds every unacknowledged outbox entry to the current device identity.
+  ///
+  /// Authority packages rotate on every fresh provision (new id, ~30 minute
+  /// lifetime). Entries queued under a previous device id or authority fail
+  /// [SyncGuard] locally and would otherwise rest in terminal failure states
+  /// forever — the inspector's work silently lost until a cache clear wipes
+  /// it. Reconciliation re-sequences them contiguously from
+  /// [_lastAcceptedSequence], re-signs with the current [deviceSigner],
+  /// re-seals the tamper-evident chain in stored order, and returns them to
+  /// `queued` so the next flush can deliver them. Transaction ids are stable
+  /// across the migration, so server replays stay idempotent (applied becomes
+  /// a harmless duplicate). Returns the number of migrated entries.
+  Future<int> reconcileOutboxIdentities() async {
+    final store = outboxStore;
+    final signer = deviceSigner;
+    final effectiveKeyId = deviceKeyId ?? signer?.keyId;
+    if (store == null ||
+        signer == null ||
+        effectiveKeyId == null ||
+        effectiveKeyId.isEmpty) {
+      return 0;
+    }
+    final entries = await store.all();
+    final ordered = entries.toList()
+      ..sort((a, b) {
+        final byTime =
+            a.mutation.capturedAt.compareTo(b.mutation.capturedAt);
+        if (byTime != 0) {
+          return byTime;
+        }
+        return a.mutation.sequenceNumber.compareTo(b.mutation.sequenceNumber);
+      });
+    final chain = CryptographicMerkleHashChain();
+    var cursor = _lastAcceptedSequence;
+    var migrated = 0;
+    for (final entry in ordered) {
+      final mutation = entry.mutation;
+      if (entry.state.isAcknowledged) {
+        chain.seal(mutation);
+        if (mutation.sequenceNumber > _lastAcceptedSequence) {
+          _lastAcceptedSequence = mutation.sequenceNumber;
+        }
+        continue;
+      }
+      if (entry.state == OutboxState.abandoned) {
+        continue;
+      }
+      if (mutation.context.tenantId != context.tenantId ||
+          mutation.context.organizationId != context.organizationId) {
+        chain.seal(mutation);
+        continue;
+      }
+      if (mutation.userId != userId) {
+        // Never re-attribute another inspector's work to the current user:
+        // submitting it under a different identity would falsify the
+        // recorded-by chain. Such entries stay put for operator review.
+        chain.seal(mutation);
+        continue;
+      }
+      final expectedSequence = cursor + 1;
+      final isCurrent = mutation.deviceId == deviceId &&
+          mutation.userId == userId &&
+          mutation.authorityId == authority.id &&
+          mutation.authorityEpoch == authority.epoch &&
+          mutation.sequenceNumber == expectedSequence;
+      if (isCurrent) {
+        chain.seal(mutation);
+        cursor = expectedSequence;
+        continue;
+      }
+      cursor = expectedSequence;
+      String signature;
+      try {
+        signature = await signer.signV1(
+          transactionId: mutation.transactionId,
+          tenantId: context.tenantId,
+          organizationId: context.organizationId,
+          environment: context.environment,
+          deviceId: deviceId,
+          userId: userId,
+          sequenceNumber: cursor,
+          operation: mutation.operation,
+          entityId: mutation.entityId,
+          payloadHash: mutation.payloadHash,
+          authorityId: authority.id,
+          authorityEpoch: authority.epoch,
+          capturedAt: mutation.capturedAt,
+          keyId: effectiveKeyId,
+        );
+      } catch (error) {
+        // Fail closed mid-migration: already-replaced entries are durable and
+        // the remainder retry on the next launch. Never strand startup here.
+        lastError = 'Identity reconciliation paused: $error';
+        notifyListeners();
+        break;
+      }
+      final rebound = OfflineMutation(
+        transactionId: mutation.transactionId,
+        context: mutation.context,
+        deviceId: deviceId,
+        userId: userId,
+        sequenceNumber: cursor,
+        operation: mutation.operation,
+        entityId: mutation.entityId,
+        payload: mutation.payload,
+        capturedAt: mutation.capturedAt,
+        authorityId: authority.id,
+        authorityEpoch: authority.epoch,
+        signatureAlgorithm: 'Ed25519',
+        keyId: effectiveKeyId,
+        signature: signature,
+      );
+      final replacement = OutboxEntry(
+        mutation: rebound,
+        chainHash: chain.seal(rebound),
+      )
+        ..attempts = entry.attempts
+        ..lastError =
+            'Re-bound to current device identity; previously: ${entry.lastError ?? 'pending'}.';
+      await store.replace(replacement);
+      migrated += 1;
+    }
+    if (migrated > 0) {
+      _sequence = cursor;
+      final pending = await store.pending();
+      _outbox
+        ..clear()
+        ..addAll(pending.map((entry) => entry.mutation));
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      trace?.call('reconcile-migrated-$migrated');
+      notifyListeners();
+    }
+    return migrated;
+  }
+
+  /// Resets all rejected, failed, or held mutations back to the queued state
+  /// so the inspector can retry syncing without losing captured field evidence.
+  Future<int> retryFailedOutbox() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final allEntries = await store.all();
+    var resetCount = 0;
+    for (final entry in allEntries) {
+      if (entry.state == OutboxState.held ||
+          entry.state == OutboxState.rejected ||
+          entry.state == OutboxState.conflict ||
+          entry.state == OutboxState.securityFailure) {
+        entry.attempts = 0;
+        await store.mark(entry, OutboxState.queued, error: null);
+        resetCount++;
+      }
+    }
+    // Reconcile and re-sign all entries so sequence contiguity is guaranteed
+    await reconcileOutboxIdentities();
+    final pending = await store.pending();
+    _outbox
+      ..clear()
+      ..addAll(pending.map((e) => e.mutation));
+    outboxSummary = OutboxSummary.fromEntries(await store.all());
+    lastError = null;
+    connectivity = ConnectivityState.degraded;
+    notifyListeners();
+    return resetCount;
+  }
+
+  /// Removes permanently rejected or conflict mutations from the store
+  /// by marking them abandoned without corrupting the sequence watermarks.
+  Future<int> clearFailures() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final allEntries = await store.all();
+    var clearedCount = 0;
+    for (final entry in allEntries) {
+      if (entry.state.isFailure) {
+        await store.mark(entry, OutboxState.abandoned, error: 'Cleared by operator');
+        clearedCount++;
+      }
+    }
+    if (clearedCount > 0) {
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      lastError = null;
+      if (connectivity == ConnectivityState.blocked) {
+        connectivity = ConnectivityState.online;
+      }
+      notifyListeners();
+    }
+    return clearedCount;
+  }
+
+  /// Permanently deletes applied, duplicate, and abandoned entries from
+  /// the outbox store. These are fully processed and safe to purge.
+  Future<int> clearApplied() async {
+    final store = outboxStore;
+    if (store == null) return 0;
+    final removed = await store.removeWhere(
+      (entry) => entry.state.isAcknowledged || entry.state.isAbandoned,
+    );
+    if (removed > 0) {
+      outboxSummary = OutboxSummary.fromEntries(await store.all());
+      notifyListeners();
+    }
+    return removed;
+  }
+
+  /// Unseals an outbox entry back into an active draft so the operator can
+  /// edit values, notes, or photo attachments before re-signing and re-queuing.
+  Future<bool> editOutboxEntry(OutboxEntry entry, InspectionWorkPack workPack) async {
+    final store = outboxStore;
+    if (store == null) return false;
+
+    final draft = InspectionDraft(
+      context: context,
+      workPack: workPack,
+      recordedBy: entry.mutation.userId,
+      createdAt: entry.mutation.capturedAt,
+    )
+      ..unsealedFromTxId = entry.mutation.transactionId
+      ..unsealedSequenceNumber = entry.mutation.sequenceNumber;
+
+    final payload = entry.mutation.payload;
+    if (payload['notes'] is String) {
+      draft.notes = payload['notes'] as String;
+    }
+    if (payload['findings'] is List) {
+      for (final f in payload['findings'] as List) {
+        if (f is Map<String, Object?>) {
+          final itemId = f['item_id'] as String? ?? '';
+          if (itemId.isNotEmpty) {
+            draft.findings[itemId] = FindingDraft(
+              id: f['id'] as String? ?? '',
+              inspectionId: f['inspection_id'] as String? ?? workPack.inspectionId,
+              assetId: f['asset_id'] as String? ?? '',
+              sectionId: f['section_id'] as String? ?? '',
+              itemId: itemId,
+              itemPrompt: f['item_prompt'] as String? ?? '',
+              response: f['response'] as String? ?? '',
+              recordedBy: f['recorded_by'] as String? ?? userId,
+              recordedAt: DateTime.tryParse(f['recorded_at'] as String? ?? '') ?? DateTime.now().toUtc(),
+              notes: f['notes'] as String?,
+            );
+          }
+        }
+      }
+    }
+
+    // Mark previous entry abandoned so it is replaced when re-queued
+    await store.mark(entry, OutboxState.abandoned, error: 'Unsealed for operator edit');
+    activeDraft = draft;
+    lastError = null;
+
+    final pending = await store.pending();
+    _outbox
+      ..clear()
+      ..addAll(pending.map((e) => e.mutation));
+    outboxSummary = OutboxSummary.fromEntries(await store.all());
+    notifyListeners();
+    return true;
+  }
+
+  bool get canWorkOffline =>
+      deviceState == DeviceTrustState.trusted &&
+      authority.deviceId == deviceId &&
+      authority.userId == userId &&
+      authority.context.tenantId == context.tenantId &&
+      authority.context.organizationId == context.organizationId &&
+      authority.capabilities.contains('inspection.perform') &&
+      authority.isValidAt(DateTime.now().toUtc());
+
+  void beginInspection(InspectionWorkPack workPack) {
+    if (!canWorkOffline) {
+      lastError = 'Offline authority is missing, expired, or not trusted.';
+      notifyListeners();
+      return;
+    }
+    activeDraft = InspectionDraft(
+      context: context,
+      workPack: workPack,
+      recordedBy: userId,
+      createdAt: DateTime.now().toUtc(),
+    );
+    lastError = null;
+    notifyListeners();
+  }
+
+  void recordResponse({
+    required ChecklistItem item,
+    required String response,
+    String? note,
+    Severity? severity,
+  }) {
+    activeDraft?.recordResponse(
+      item: item,
+      response: response,
+      note: note,
+      severity: severity,
+    );
+    notifyListeners();
+  }
+
+  void recordEvaluationOutcome(EvaluationOutcome outcome) {
+    activeDraft?.evaluationOutcome = outcome;
+    notifyListeners();
+  }
+
+  Future<bool> submitLive({String? notes, PackageCompatibilityDecision? packageCompatibility}) async {
+    if (submissionService == null || syncClient == null) return false;
+    final draft = activeDraft;
+    if (draft == null) {
+      lastError = 'Open an assigned inspection before submitting.';
+      notifyListeners();
+      return false;
+    }
+    if (packageCompatibility != null && !packageCompatibility.allowsAuthoritativeSync) {
+      lastError = packageCompatibility.userMessage;
+      notifyListeners();
+      return false;
+    }
+    final completeness = draft.validateLocally();
+    if (!completeness.isComplete) {
+      if (completeness.calibrationError != null) {
+        lastError = completeness.calibrationError;
+      } else {
+        lastError = 'Complete every required checklist item before queuing.';
+      }
+      notifyListeners();
+      return false;
+    }
+    draft.notes = notes;
+    draft.status = InspectionStatus.completed;
+    
+    final payload = draft.toPayload();
+    final dataBytes = Uint8List.fromList(utf8.encode(jsonEncode(payload)));
+    
+    Uint8List appSig = Uint8List(0);
+    if (deviceSigner != null) {
+      try {
+        appSig = await deviceSigner!.signRawBytes(dataBytes);
+      } catch (_) {
+        lastError =
+            'Device signing key unavailable; inspection was not submitted.';
+        notifyListeners();
+        return false;
+      }
+    }
+
+    final keyId = deviceKeyId;
+    if (keyId == null || keyId.isEmpty) {
+      lastError = 'Device key not provisioned; inspection was not submitted.';
+      notifyListeners();
+      return false;
+    }
+
+    final seal = SubmissionSealPayload(
+      deviceKeyDID: keyId,
+      tokenID: authority.id,
+      leaseEpoch: authority.epoch,
+      dataPayload: dataBytes,
+      appEd25519Sig: appSig,
+    );
+
+    try {
+      final endpoint = (syncClient!.transport as HttpSyncTransport).endpoint;
+      final result = await submissionService!.submitInspection(
+        payload: seal,
+        deviceKeyDID: keyId,
+        endpoint: endpoint,
+        tokenID: authority.id,
+        leaseEpoch: authority.epoch,
+        appEd25519Sig: appSig,
+        httpClient: null,
+        allowLoopbackHttp: isLoopbackUri(endpoint),
+      );
+
+      if (result.status == SubmissionTransportStatus.accepted) {
+        activeDraft = null;
+        lastError = null;
+        notifyListeners();
+        return true;
+      } else if (result.status == SubmissionTransportStatus.awaitingReconciliation) {
+        lastError = 'Awaiting Server Reconciliation';
+        notifyListeners();
+        return true;
+      } else {
+        lastError = result.serverMessage ?? 'Submission rejected';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      lastError = 'Live submission failed: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Formats a completed custody handover into inspection notes and submits
+  /// it, falling back to the offline queue when live submission fails or the
+  /// device is offline. Extracted from the handover widget so the
+  /// submit-or-queue policy lives with the controller, not the view.
+  Future<void> completeHandover(Map<String, dynamic> handoverData) async {
+    final notes = [
+      if (handoverData['releasing_party'] != null)
+        'Releasing: ${handoverData['releasing_party']}',
+      if (handoverData['accepting_party'] != null)
+        'Accepting: ${handoverData['accepting_party']}',
+      if (handoverData['site_notes'] != null &&
+          (handoverData['site_notes'] as String).isNotEmpty)
+        handoverData['site_notes'],
+    ].join(' | ');
+    if (connectivity == ConnectivityState.online) {
+      final ok = await submitLive(notes: notes);
+      if (!ok) {
+        await queueForSync(notes: notes);
+      }
+    } else {
+      await queueForSync(notes: notes);
+    }
+  }
+
+  Future<bool> queueForSync(
+      {String? notes,
+      PackageCompatibilityDecision? packageCompatibility}) async {
+    final draft = activeDraft;
+    if (draft == null) {
+      lastError = 'Open an assigned inspection before submitting.';
+      notifyListeners();
+      return false;
+    }
+    if (packageCompatibility != null &&
+        !packageCompatibility.allowsAuthoritativeSync) {
+      lastError = packageCompatibility.userMessage;
+      notifyListeners();
+      return false;
+    }
+    final completeness = draft.validateLocally();
+    if (!completeness.isComplete) {
+      if (completeness.calibrationError != null) {
+        lastError = completeness.calibrationError;
+      } else {
+        lastError = 'Complete every required checklist item before queuing.';
+      }
+      notifyListeners();
+      return false;
+    }
+    draft.notes = notes;
+    draft.status = InspectionStatus.completed;
+    final String transactionId;
+    final int sequence;
+    final bool isUnsealedReplacement = draft.unsealedFromTxId != null;
+    if (isUnsealedReplacement) {
+      transactionId = draft.unsealedFromTxId!;
+      sequence = draft.unsealedSequenceNumber ?? (_sequence + 1);
+    } else {
+      _sequence += 1;
+      sequence = _sequence;
+      transactionId = _transactionId();
+    }
+    final payload = draft.toPayload();
+    final capturedAt = DateTime.now().toUtc();
+    final hashOnly = OfflineMutation(
+      transactionId: 'hash-only',
+      context: context,
+      deviceId: deviceId,
+      userId: userId,
+      sequenceNumber: sequence,
+      operation: 'hash-only',
+      entityId: draft.workPack.inspectionId,
+      payload: payload,
+      capturedAt: capturedAt,
+      authorityId: authority.id,
+      authorityEpoch: authority.epoch,
+      signature: '',
+    );
+    // SECURITY: a device-bound signer is mandatory for every submitted transaction.
+    // There is deliberately no static local-key fallback; enrollment must supply this signer.
+    final signer = deviceSigner;
+    if (signer == null) {
+      throw StateError(
+          'Device signer unavailable; device enrollment is required before submission.');
+    }
+    final signature = await signer.signV1(
+      transactionId: transactionId,
+      tenantId: context.tenantId,
+      organizationId: context.organizationId,
+      environment: context.environment,
+      deviceId: deviceId,
+      userId: userId,
+      sequenceNumber: sequence,
+      operation: 'InspectionSubmitted',
+      entityId: draft.workPack.inspectionId,
+      payloadHash: hashOnly.payloadHash,
+      authorityId: authority.id,
+      authorityEpoch: authority.epoch,
+      capturedAt: capturedAt,
+      keyId: deviceKeyId ??
+          (throw StateError('device key id is required for Ed25519 signing')),
+    );
+    final mutation = OfflineMutation(
+      transactionId: transactionId,
+      context: context,
+      deviceId: deviceId,
+      userId: userId,
+      sequenceNumber: sequence,
+      operation: 'InspectionSubmitted',
+      entityId: draft.workPack.inspectionId,
+      payload: payload,
+      capturedAt: capturedAt,
+      authorityId: authority.id,
+      authorityEpoch: authority.epoch,
+      signatureAlgorithm: deviceSigner == null ? 'HMAC-SHA256' : 'Ed25519',
+      keyId: deviceKeyId,
+      signature: signature,
+    );
+    if (outboxStore != null) {
+      final entry = OutboxEntry(mutation: mutation)..state = OutboxState.queued;
+      if (isUnsealedReplacement) {
+        await outboxStore!.replace(entry);
+      } else {
+        await outboxStore!.append(entry);
+      }
+      final pending = await outboxStore!.pending();
+      _outbox
+        ..clear()
+        ..addAll(pending.map((e) => e.mutation));
+      outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());
+    } else {
+      if (isUnsealedReplacement) {
+        final idx = _outbox.indexWhere((m) => m.transactionId == transactionId);
+        if (idx >= 0) {
+          _outbox[idx] = mutation;
+        } else {
+          _outbox.add(mutation);
+        }
+      } else {
+        _outbox.add(mutation);
+      }
+    }
+    activeDraft = null;
+    lastError = null;
+    notifyListeners();
+    return true;
+  }
+
+  Future<List<SyncOutcome>> flushOutbox({DateTime? at}) async {
+    if (syncClient == null || outboxStore == null) {
+      lastError = 'Live sync is not configured for this field session.';
+      notifyListeners();
+      return const [];
+    }
+    connectivity = ConnectivityState.syncing;
+    lastError = null;
+    notifyListeners();
+    final outcomes = await syncClient!.flush(
+      guard: SyncGuard(
+        context: context,
+        deviceId: deviceId,
+        userId: userId,
+        deviceState: deviceState,
+        authority: authority,
+        lastSequence: _lastAcceptedSequence,
+      ),
+      at: at,
+    );
+    // Re-derive from stored states rather than pairing outcomes to a
+    // separately fetched pending list by index: store ordering across two
+    // reads is not a contract any caller should rely on.
+    for (final entry in await outboxStore!.all()) {
+      if ((entry.state == OutboxState.applied ||
+              entry.state == OutboxState.duplicate) &&
+          entry.mutation.sequenceNumber > _lastAcceptedSequence) {
+        _lastAcceptedSequence = entry.mutation.sequenceNumber;
+      }
+    }
+    outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());
+    trace?.call(
+        'sync-outcomes-${outcomes.map((outcome) => outcome.name).join('-')}');
+    trace?.call(
+      'sync-summary-pending-${outboxSummary.pendingCount}-failures-${outboxSummary.failureCount}',
+    );
+    trace?.call(
+        'sync-reason-class-${_diagnosticReasonClass(await outboxStore!.all())}');
+    if (outcomes.any((outcome) =>
+        outcome == SyncOutcome.securityFailure ||
+        outcome == SyncOutcome.rejected)) {
+      connectivity = ConnectivityState.blocked;
+      lastError = 'One or more queued changes require operator review.';
+    } else if (outcomes.any((outcome) =>
+        outcome == SyncOutcome.queued ||
+        outcome == SyncOutcome.held ||
+        outcome == SyncOutcome.conflict)) {
+      connectivity = ConnectivityState.degraded;
+    } else {
+      connectivity = ConnectivityState.online;
+      if (outcomes.any((outcome) =>
+          outcome == SyncOutcome.applied || outcome == SyncOutcome.duplicate)) {
+        lastSuccessfulSync = DateTime.now().toUtc();
+      }
+    }
+    notifyListeners();
+    return outcomes;
+  }
+
+  bool get hasAuthoritativeOutcome =>
+      outboxSummary.applied > 0 || outboxSummary.duplicate > 0;
+
+  /// Replays the exact accepted transaction through the server idempotency path.
+  Future<void> replayLatestAuthoritative() async {
+    if (syncClient == null || outboxStore == null) {
+      lastError = 'Replay is unavailable for this field session.';
+      notifyListeners();
+      return;
+    }
+    final entries = await outboxStore!.all();
+    OutboxEntry? entry;
+    for (final candidate in entries.reversed) {
+      if (candidate.state == OutboxState.applied ||
+          candidate.state == OutboxState.duplicate) {
+        entry = candidate;
+        break;
+      }
+    }
+    if (entry == null) {
+      lastError = 'No authoritative transaction is available for replay.';
+      notifyListeners();
+      return;
+    }
+    connectivity = ConnectivityState.syncing;
+    lastError = null;
+    notifyListeners();
+    final outcome = await syncClient!.replay(entry);
+    outboxSummary = OutboxSummary.fromEntries(await outboxStore!.all());
+    if (outcome == SyncOutcome.applied || outcome == SyncOutcome.duplicate) {
+      connectivity = ConnectivityState.online;
+      lastSuccessfulSync = DateTime.now().toUtc();
+    } else if (outcome == SyncOutcome.rejected ||
+        outcome == SyncOutcome.securityFailure) {
+      connectivity = ConnectivityState.blocked;
+      lastError = 'Replay requires operator review.';
+    } else {
+      connectivity = ConnectivityState.degraded;
+    }
+    trace?.call('pilot-replay-outcome-${outcome.name}');
+    notifyListeners();
+  }
+
+  /// Requests a monitoring signal only; it never mutates primary field state.
+  Future<void> requestPilotAdvisory(String inspectionId) async {
+    final client = advisoryClient;
+    if (client == null) {
+      advisoryError = 'Pilot advisory service is not configured.';
+      notifyListeners();
+      return;
+    }
+    advisoryLoading = true;
+    advisoryError = null;
+    notifyListeners();
+    try {
+      advisoryResult = await client.requestMonitoring(
+        tenantId: context.tenantId,
+        inspectionId: inspectionId,
+        evidenceRefs: const [],
+      );
+      trace?.call('pilot-advisory-nonblocking');
+    } catch (_) {
+      advisoryError =
+          'Pilot advisory request is unavailable; primary work remains unchanged.';
+    } finally {
+      advisoryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Maps a whitelisted pilot error category without exposing diagnostic text.
+  String _diagnosticReasonClass(Iterable<OutboxEntry> entries) {
+    final reasons =
+        entries.map((entry) => entry.lastError?.toLowerCase() ?? '').join(' ');
+    for (final marker in const [
+      'sequence',
+      'authority',
+      'signature',
+      'device',
+      'tenant',
+      'organization',
+      'environment',
+      'payload',
+      'transport',
+      'http'
+    ]) {
+      if (reasons.contains(marker)) return marker;
+    }
+    return reasons.isEmpty ? 'none' : 'other';
+  }
+
+  void _initStream() {
+    if (eventStreamClient == null) return;
+    eventStreamClient!.events.listen((event) {
+      recentEvents.insert(0, event);
+      if (recentEvents.length > 20) {
+        recentEvents.removeLast();
+      }
+      notifyListeners();
+    }, onError: (_) {
+      // Stream error does not break local app operation
+    });
+    eventStreamClient!.connect().catchError((_) {
+      // Offline fallback: ignore stream connection failure
+    });
+  }
+
+  @override
+  void dispose() {
+    outboxStore?.close();
+    eventStreamClient?.dispose();
+    super.dispose();
+  }
+
+  final _secureRandom = Random.secure();
+
+  String _transactionId() =>
+      'tx-${DateTime.now().microsecondsSinceEpoch}-${_secureRandom.nextInt(9999)}';
+}
+

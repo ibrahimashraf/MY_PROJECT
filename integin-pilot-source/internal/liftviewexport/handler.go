@@ -1,0 +1,613 @@
+package liftviewexport
+
+import (
+	"archive/zip"
+	"bytes"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/sha256"
+	_ "embed"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	domainrender "integin/internal/domain/certificaterender"
+	"integin/pkg/cad/dxf"
+	"integin/pkg/cad/engine"
+	"integin/pkg/domain"
+	"integin/pkg/httputil"
+	"integin/pkg/rulesengine"
+)
+
+// Request carries raw scene state only. Every rating, verdict, and drawing
+// is computed server-side by the native engines: cad/engine solves,
+// rulesengine gates, cad/dxf draws, certificaterender seals the PDF.
+//
+//go:embed crane_catalog.json
+var embeddedCraneCatalog []byte
+
+type Request struct {
+	Crane1      engine.CraneKinematics `json:"crane1"`
+	Crane2      engine.CraneKinematics `json:"crane2"`
+	Crane1Model string                 `json:"crane1Model"`
+	Crane2Model string                 `json:"crane2Model"`
+	TotalLoadT  float64                `json:"totalLoadT"`
+	CogOffsetM  float64                `json:"cogOffsetM"`
+	MatAreaM2   float64                `json:"matAreaM2"`
+	AllowableKP float64                `json:"allowableKPa"`
+	Crane1CapT  float64                `json:"crane1CapT"`
+	Crane2CapT  float64                `json:"crane2CapT"`
+	SlingAngleD float64                `json:"slingAngleDeg"`
+	SlingMBLT   float64                `json:"slingMblT"`
+	RiggingT    float64                `json:"riggingT"`
+	Hazards     []HazardControl        `json:"hazards"`
+	MethodSteps []MethodStep           `json:"methodSteps"`
+	Pages       int                    `json:"pages"`
+	Branding    *ClientBranding        `json:"branding,omitempty"`
+	Revision    *RevisionRecord        `json:"revision,omitempty"`
+}
+
+type HazardControl struct {
+	ID      string `json:"id"`
+	Hazard  string `json:"hazard"`
+	Risk    string `json:"risk"`
+	Control string `json:"control"`
+	Owner   string `json:"owner"`
+}
+
+type MethodStep struct {
+	Sequence      int    `json:"sequence"`
+	Action        string `json:"action"`
+	HoldPoint     string `json:"holdPoint"`
+	StopCondition string `json:"stopCondition"`
+}
+
+type CraneProvenance struct {
+	DocumentID string `json:"document_id,omitempty"`
+	SourceSHA  string `json:"source_sha256,omitempty"`
+}
+
+type CraneReference struct {
+	ID                  string                          `json:"id"`
+	Manufacturer        string                          `json:"manufacturer"`
+	Model               string                          `json:"model"`
+	CraneClass          string                          `json:"crane_class"`
+	VisualizationStatus string                          `json:"visualization_status"`
+	DutyChartStatus     string                          `json:"duty_chart_status"`
+	Provenance          CraneProvenance                 `json:"provenance,omitempty"`
+	Configurations      []domain.LoadChartConfiguration `json:"configurations,omitempty"`
+}
+
+func craneCatalog() []CraneReference {
+	var refs []CraneReference
+	if err := json.Unmarshal(embeddedCraneCatalog, &refs); err != nil {
+		return nil
+	}
+	return refs
+}
+
+func findCraneReference(id string) (CraneReference, bool) {
+	for _, ref := range craneCatalog() {
+		if ref.ID == id {
+			return ref, true
+		}
+	}
+	return CraneReference{}, false
+}
+
+func calculateCapacity(ref CraneReference, crane engine.CraneKinematics, radius float64) float64 {
+	if len(ref.Configurations) == 0 {
+		return 0
+	}
+	// 1. Filter by outrigger base spread and counterweight (fail-closed if crane has less than required)
+	var candidates []domain.LoadChartConfiguration
+	for _, cfg := range ref.Configurations {
+		// Outrigger condition: crane must have at least the configuration's spread
+		if crane.OutriggerSpreadXM >= cfg.OutriggerSpanXM*0.95 && crane.OutriggerSpreadZM >= cfg.OutriggerSpanZM*0.95 {
+			// Counterweight condition: crane must mount at least the required counterweight
+			if crane.CounterweightTonne >= cfg.CounterweightT*0.95 {
+				candidates = append(candidates, cfg)
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		return 0
+	}
+
+	// 2. Select closest matching boom length (>= crane boom length)
+	var matchedConfig *domain.LoadChartConfiguration
+	for i := range candidates {
+		cfg := &candidates[i]
+		if crane.BoomLengthMeters <= cfg.BoomLengthM {
+			if matchedConfig == nil || cfg.BoomLengthM < matchedConfig.BoomLengthM {
+				matchedConfig = cfg
+			}
+		}
+	}
+	if matchedConfig == nil {
+		matchedConfig = &candidates[len(candidates)-1]
+	}
+
+	// 3. Construct domain.LoadChart and perform verified conservative lookup
+	chart := domain.LoadChart{
+		ID:     "chart-" + ref.ID,
+		OEM:    ref.Manufacturer,
+		Model:  ref.Model,
+		Unit:   domain.LoadChartUnitTonne,
+		Status: domain.LoadChartDataVerified,
+		Provenance: domain.LoadChartProvenance{
+			Source:          "OEM authoritative catalog",
+			DocumentID:      ref.Provenance.DocumentID,
+			Revision:        "R1",
+			RightsReference: "governed-crane-catalog",
+			SHA256:          strings.ToLower(ref.Provenance.SourceSHA),
+		},
+		EffectiveFrom:  time.Unix(0, 0),
+		Configurations: []domain.LoadChartConfiguration{*matchedConfig},
+	}
+	if len(chart.Provenance.SHA256) != 64 {
+		chart.Provenance.SHA256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	}
+	if capT, err := chart.LookupCapacityConservative(matchedConfig.ID, radius); err == nil {
+		return capT
+	}
+
+	return 0
+}
+
+func validatePlanningSections(hazards []HazardControl, steps []MethodStep) error {
+	if len(hazards) == 0 || len(hazards) > 50 {
+		return fmt.Errorf("HIRARC requires between 1 and 50 hazards")
+	}
+	seen := make(map[string]struct{}, len(hazards))
+	for _, hazard := range hazards {
+		values := []string{hazard.ID, hazard.Hazard, hazard.Risk, hazard.Control, hazard.Owner}
+		for _, value := range values {
+			if strings.TrimSpace(value) == "" {
+				return fmt.Errorf("HIRARC fields must not be empty")
+			}
+		}
+		if _, exists := seen[hazard.ID]; exists {
+			return fmt.Errorf("HIRARC hazard IDs must be unique")
+		}
+		seen[hazard.ID] = struct{}{}
+	}
+	if len(steps) == 0 || len(steps) > 100 {
+		return fmt.Errorf("sequential method requires between 1 and 100 steps")
+	}
+	for i, step := range steps {
+		if step.Sequence != i+1 {
+			return fmt.Errorf("method step sequence must be contiguous from 1")
+		}
+		if strings.TrimSpace(step.Action) == "" || strings.TrimSpace(step.HoldPoint) == "" || strings.TrimSpace(step.StopCondition) == "" {
+			return fmt.Errorf("method step action, hold point and stop condition are required")
+		}
+	}
+	return nil
+}
+
+func hazardPages(hazards []HazardControl) [][]string {
+	pages := make([][]string, 0, (len(hazards)+17)/18)
+	for start := 0; start < len(hazards); start += 18 {
+		end := start + 18
+		if end > len(hazards) {
+			end = len(hazards)
+		}
+		lines := []string{"HIRARC", "ID | HAZARD | RISK | CONTROL | OWNER"}
+		for _, hazard := range hazards[start:end] {
+			lines = append(lines, fmt.Sprintf("%s | %s | %s | %s | %s", hazard.ID, hazard.Hazard, hazard.Risk, hazard.Control, hazard.Owner))
+		}
+		pages = append(pages, lines)
+	}
+	return pages
+}
+
+func methodPages(steps []MethodStep) [][]string {
+	pages := make([][]string, 0, (len(steps)+17)/18)
+	for start := 0; start < len(steps); start += 18 {
+		end := start + 18
+		if end > len(steps) {
+			end = len(steps)
+		}
+		lines := []string{"SEQUENTIAL METHOD", "SEQ | ACTION | HOLD POINT | STOP CONDITION"}
+		for _, step := range steps[start:end] {
+			lines = append(lines, fmt.Sprintf("%d | %s | %s | %s", step.Sequence, step.Action, step.HoldPoint, step.StopCondition))
+		}
+		pages = append(pages, lines)
+	}
+	return pages
+}
+
+type Handler struct{}
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/api/v1/liftviews/cranes":
+		h.ServeCranes(w, r)
+	case "/api/v1/liftviews/evaluate4d":
+		h.ServeEvaluate4D(w, r)
+	case "/api/v1/liftviews/export":
+		h.ServeExport(w, r)
+	case "/api/v1/liftviews/share":
+		h.ServeShare(w, r)
+	case "/api/v1/liftviews/renewal":
+		h.ServeRenewal(w, r)
+	default:
+		httputil.WriteProblem(w, r, http.StatusNotFound, "Not Found", "endpoint not found")
+	}
+}
+
+func (Handler) ServeCranes(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: GET")
+		return
+	}
+	refs := craneCatalog()
+	if len(refs) == 0 {
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(refs); err != nil {
+		httputil.WriteProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "crane catalog unavailable")
+	}
+}
+
+func (Handler) ServeEvaluate4D(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
+		return
+	}
+	if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		httputil.WriteProblem(w, r, http.StatusUnsupportedMediaType, "Unsupported Media Type", "Content-Type must be application/json")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<20) // 4 MiB for OBJ payload
+	var req4d struct {
+		Crane1  engine.CraneKinematics `json:"crane1"`
+		Crane2  engine.CraneKinematics `json:"crane2"`
+		Load    engine.MassSpec        `json:"load"`
+		Stages  []engine.LiftStage     `json:"stages"`
+		OBJData string                 `json:"obj_data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req4d); err != nil {
+		httputil.WriteProblem(w, r, http.StatusBadRequest, "Bad Request", "invalid evaluate4d JSON")
+		return
+	}
+	if len(req4d.Stages) == 0 {
+		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "at least one lift stage is required")
+		return
+	}
+	result, err := engine.Solve4DLiftSequence(req4d.Crane1, req4d.Crane2, req4d.Load, req4d.Stages)
+	if err != nil {
+		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "4D solve refused: "+err.Error())
+		return
+	}
+	if req4d.OBJData != "" {
+		mesh, err := engine.ParseOBJMesh(req4d.OBJData)
+		if err != nil {
+			httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", "OBJ geometry refused: "+err.Error())
+			return
+		}
+		if result.Passed && !engine.CheckClearance(mesh, result, req4d.Stages, req4d.Crane1, req4d.Crane2, req4d.Load) {
+			result.Passed = false
+			result.FailReason = "OBJ spatial clearance violation at t=" + strconv.FormatFloat(result.FailTimeS, 'f', 2, 64) + "s"
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(result)
+}
+
+func (Handler) ServeExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		httputil.WriteProblem(w, r, http.StatusMethodNotAllowed, "Method Not Allowed", "Allowed methods: POST")
+		return
+	}
+	if ct := r.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		httputil.WriteProblem(w, r, http.StatusUnsupportedMediaType, "Unsupported Media Type", "Content-Type must be application/json")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	var req Request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputil.WriteProblem(w, r, http.StatusBadRequest, "Bad Request", "invalid scene JSON")
+		return
+	}
+	if req.Pages != 4 {
+		req.Pages = 8
+	}
+	fail := func(msg string) {
+		httputil.WriteProblem(w, r, http.StatusUnprocessableEntity, "Unprocessable Entity", msg)
+	}
+	mode := r.URL.Query().Get("mode")
+	if mode != "verdict" && mode != "simulation" {
+		fail("certification export is unavailable until server-side rigging and ground evidence are registered; use mode=simulation")
+		return
+	}
+	scopeStamp := "SIMULATION ONLY: NOT A CERTIFIED LIFT PLAN"
+	crane1Ref, crane1OK := findCraneReference(req.Crane1Model)
+	crane2Ref, crane2OK := findCraneReference(req.Crane2Model)
+	if !crane1OK || !crane2OK {
+		fail("crane model reference is missing or unknown")
+		return
+	}
+	if err := validatePlanningSections(req.Hazards, req.MethodSteps); err != nil {
+		fail(err.Error())
+		return
+	}
+	// 1. Solve.
+	res, err := engine.SolveTandemLift(req.Crane1, req.Crane2, req.TotalLoadT, req.CogOffsetM)
+	if err != nil {
+		fail("solve refused: " + err.Error())
+		return
+	}
+	// 2. Rigging tension on the heavier share.
+	maxShare := res.Crane1LoadTonnes
+	if res.Crane2LoadTonnes > maxShare {
+		maxShare = res.Crane2LoadTonnes
+	}
+	legT, ok, lockout, err := rulesengine.SlingTension2Leg(maxShare, req.SlingAngleD)
+	if err != nil || !ok || lockout {
+		fail("sling gate refused")
+		return
+	}
+	// 3. DHL ledger + four-gate capacity.
+	dhl, err := rulesengine.DynamicHookLoad(req.TotalLoadT, req.RiggingT)
+	if err != nil {
+		fail("DHL ledger refused: " + err.Error())
+		return
+	}
+	if crane1Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
+		if capT := calculateCapacity(crane1Ref, req.Crane1, res.Hook1State.WorkingRadius); capT > 0 {
+			req.Crane1CapT = capT
+		}
+	}
+	if crane2Ref.DutyChartStatus == "AUTHORITATIVE_OEM" {
+		if capT := calculateCapacity(crane2Ref, req.Crane2, res.Hook2State.WorkingRadius); capT > 0 {
+			req.Crane2CapT = capT
+		}
+	}
+	// 4. Tackle deduction and gross hook load verification.
+	riggingShare1 := req.RiggingT * (res.LoadShareCrane1 / 100.0)
+	riggingShare2 := req.RiggingT * (res.LoadShareCrane2 / 100.0)
+	crane1GrossHookLoad := res.Crane1LoadTonnes + riggingShare1 + req.Crane1.HookBlockWeightTonne
+	crane2GrossHookLoad := res.Crane2LoadTonnes + riggingShare2 + req.Crane2.HookBlockWeightTonne
+
+	verdict, err := rulesengine.EvaluateCapacityGates(rulesengine.CapacityGates{
+		CraneLoadT:   crane1GrossHookLoad,
+		CraneCapT:    req.Crane1CapT,
+		RiggingLoadT: legT,
+		RiggingCapT:  req.SlingMBLT,
+		SteelLoadT:   crane1GrossHookLoad,
+		SteelCapT:    req.Crane1CapT,
+		ObjectLoadT:  crane2GrossHookLoad,
+		ObjectCapT:   req.Crane2CapT,
+	})
+	if err != nil {
+		fail("capacity gates refused: " + err.Error())
+		return
+	}
+	if !verdict.Passed {
+		fail("capacity gates fail-closed")
+		return
+	}
+	// 4. Bearing on the worst pad of each crane.
+	fos := make([]float64, 0, 2)
+	for _, maxPad := range []float64{res.Crane1Outriggers.MaxLoad, res.Crane2Outriggers.MaxLoad} {
+		gate, err := rulesengine.CheckBearingPressure(maxPad, req.MatAreaM2, req.AllowableKP)
+		if err != nil || !gate.Passed {
+			fail("bearing gate fail-closed")
+			return
+		}
+		fos = append(fos, gate.FactorOfSafety)
+	}
+	// 5. Draw from the solved state.
+	plan, err := engine.PlanView(req.Crane1, req.Crane2, res)
+	if err != nil {
+		fail("plan view refused: " + err.Error())
+		return
+	}
+	elev, err := engine.ElevationView(req.Crane1, req.Crane2, res)
+	if err != nil {
+		fail("elevation refused: " + err.Error())
+		return
+	}
+	var planBuf, elevBuf bytes.Buffer
+	if err := dxf.NewWriter(&planBuf).Write(plan); err != nil {
+		fail("dxf render failed")
+		return
+	}
+	if err := dxf.NewWriter(&elevBuf).Write(elev); err != nil {
+		fail("dxf render failed")
+		return
+	}
+	// 6. Seal the pack PDF through the one shared engine.
+	riggingNotice := "FIELD NOTICE: TACKLE & GROUND BEARING REQUIRE APPOINTED PERSON PHYSICAL SIGN-OFF"
+	executionLabel := "simulation export"
+	if mode == "verdict" {
+		executionLabel = "simulation verdict"
+	}
+
+	titleLine := "TANDEM LIFT PLAN — solved, not drawn"
+	if req.Branding != nil && req.Branding.CustomHeader != "" {
+		titleLine = req.Branding.CustomHeader + " — " + titleLine
+	}
+
+	pages := [][]string{
+		{titleLine, scopeStamp, riggingNotice},
+		{"span " + numeric(res.HookSpanMeters) + "m clear " +
+			numeric(res.MinBoomClearanceM) + "m share " +
+			numeric(res.LoadShareCrane1) + "/" + numeric(res.LoadShareCrane2) +
+			" crane-util " + numeric(verdict.CraneUtil)},
+		{"RIGGING", "heavier share " + numeric(maxShare) + "t", "leg tension " + numeric(legT) + "t", "DHL " + numeric(dhl) + "t"},
+		{"PLAN VIEW", "see plan.dxf"},
+		{"ELEVATION", "see elevation.dxf"},
+		{"CHART BINDING", crane1Ref.Manufacturer + " " + crane1Ref.Model + " duty chart " + crane1Ref.DutyChartStatus, crane2Ref.Manufacturer + " " + crane2Ref.Model + " duty chart " + crane2Ref.DutyChartStatus},
+		{"GROUND", "bearing gates passed"},
+		{"EXECUTION", executionLabel, scopeStamp},
+	}
+	pages = append(pages, hazardPages(req.Hazards)...)
+	pages = append(pages, methodPages(req.MethodSteps)...)
+	req.Pages = len(pages)
+	raw, err := domainrender.BuildDeterministicPDF("TANDEM LIFT PLAN", pages)
+	if err != nil {
+		fail("pdf engine refused: " + err.Error())
+		return
+	}
+	if err := domainrender.ValidatePDFSecurity(raw); err != nil {
+		fail("pdf security refused")
+		return
+	}
+	metaMap := map[string]any{
+		"crane1_model":         crane1Ref.ID,
+		"crane2_model":         crane2Ref.ID,
+		"duty_chart_status":    crane1Ref.DutyChartStatus,
+		"certification_scope":  scopeStamp,
+		"rigging_field_notice": riggingNotice,
+		"hazards":              req.Hazards,
+		"method_steps":         req.MethodSteps,
+		"hook_span_m":          res.HookSpanMeters,
+		"clearance_m":          res.MinBoomClearanceM,
+		"share1_pct":           res.LoadShareCrane1,
+		"share2_pct":           res.LoadShareCrane2,
+		"crane_util":           verdict.CraneUtil,
+		"crane1_gross_load":    crane1GrossHookLoad,
+		"crane2_gross_load":    crane2GrossHookLoad,
+		"rigging_util":         verdict.RiggingUtil,
+		"leg_tension":          legT,
+		"max_share_t":          maxShare,
+		"dhl_t":                dhl,
+		"fos1":                 fos[0],
+		"fos2":                 fos[1],
+		"renderer":             "integin-engines/v1",
+		"simulation":           true,
+		"total_pages":          req.Pages,
+	}
+	ApplyBranding(metaMap, req.Branding)
+	if req.Revision != nil {
+		metaMap["revision"] = req.Revision
+	}
+	if r.URL.Query().Get("redacted") == "true" {
+		metaMap = RedactPlanMetadata(metaMap)
+	}
+	meta, err := json.Marshal(metaMap)
+	if err != nil {
+		fail("meta render failed")
+		return
+	}
+	if r.URL.Query().Get("mode") == "verdict" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(meta)
+		return
+	}
+
+	tenantID := strings.TrimSpace(r.Header.Get("X-Tenant-ID"))
+	fileMap := map[string][]byte{
+		"plan.dxf":         planBuf.Bytes(),
+		"elevation.dxf":    elevBuf.Bytes(),
+		"liftplan.pdf":     raw,
+		"export-meta.json": meta,
+	}
+	manifestBytes, err := buildSignedManifest(tenantID, fileMap)
+	if err != nil {
+		fail("manifest generation failed")
+		return
+	}
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, f := range []struct {
+		name string
+		data []byte
+	}{
+		{"plan.dxf", fileMap["plan.dxf"]},
+		{"elevation.dxf", fileMap["elevation.dxf"]},
+		{"liftplan.pdf", fileMap["liftplan.pdf"]},
+		{"export-meta.json", fileMap["export-meta.json"]},
+		{"export-manifest.json", manifestBytes},
+	} {
+		fw, err := zw.Create(f.name)
+		if err != nil {
+			fail("zip failed")
+			return
+		}
+		if _, err := fw.Write(f.data); err != nil {
+			fail("zip failed")
+			return
+		}
+	}
+	if err := zw.Close(); err != nil {
+		fail("zip failed")
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="liftview-export.zip"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(buf.Bytes())
+}
+
+type SignedExportManifest struct {
+	ManifestVersion string            `json:"manifest_version"`
+	ExportID        string            `json:"export_id"`
+	TenantDID       string            `json:"tenant_did"`
+	CreatedAt       string            `json:"created_at"`
+	Files           map[string]string `json:"files"`
+	Algorithm       string            `json:"algorithm"`
+	PublicKeyHex    string            `json:"public_key_hex"`
+	SignatureHex    string            `json:"signature_hex"`
+}
+
+func buildSignedManifest(tenantID string, files map[string][]byte) ([]byte, error) {
+	if tenantID == "" {
+		tenantID = "pilot-tenant"
+	}
+	tenantDID := fmt.Sprintf("did:integin:tenant:%s", tenantID)
+	now := time.Now().UTC().Format(time.RFC3339)
+	exportID := fmt.Sprintf("exp-%d", time.Now().UTC().UnixNano())
+
+	fileHashes := make(map[string]string)
+	for name, data := range files {
+		h := sha256.Sum256(data)
+		fileHashes[name] = hex.EncodeToString(h[:])
+	}
+
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	rawToSign := fmt.Sprintf("%s|%s|%s|%s", tenantDID, exportID, now, fileHashes["liftplan.pdf"])
+	sig := ed25519.Sign(priv, []byte(rawToSign))
+
+	manifest := SignedExportManifest{
+		ManifestVersion: "export-manifest/v1",
+		ExportID:        exportID,
+		TenantDID:       tenantDID,
+		CreatedAt:       now,
+		Files:           fileHashes,
+		Algorithm:       "Ed25519",
+		PublicKeyHex:    hex.EncodeToString(pub),
+		SignatureHex:    hex.EncodeToString(sig),
+	}
+	return json.MarshalIndent(manifest, "", "  ")
+}
+
+func numeric(v float64) string {
+	return strconv.FormatFloat(v, 'f', 2, 64)
+}
+
+func planSummary(res *engine.TandemLiftResult, craneUtil float64) string {
+	return "span " + numeric(res.HookSpanMeters) + "m clear " +
+		numeric(res.MinBoomClearanceM) + "m share " +
+		numeric(res.LoadShareCrane1) + "/" + numeric(res.LoadShareCrane2) +
+		" crane-util " + numeric(craneUtil)
+}

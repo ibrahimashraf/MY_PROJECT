@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: INTEGIN Enforcement API
+  version: "1.0"
+  description: |
+    Canonical API contract for INTEGIN field-device synchronization. All endpoints
+    use bearer token authentication and JSON request/response bodies. Domain
+    field names mirror the Go domain models in pkg/ and internal/domain/.
+servers:
+  - url: https://api.integin.local/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: sync
+    description: Push local mutation batches and reconcile device state.
+  - name: evidence
+    description: Ingest evidence records and metadata.
+  - name: devices
+    description: Device proof-of-possession enrollment.
+  - name: auth
+    description: Session challenge and token exchange.
+paths:
+  /api/v1/sync:
+    post:
+      operationId: pushSyncBatch
+      summary: Push local mutation batches
+      description: |
+        Uploads a locally-applied mutation batch for reconciliation. The batch is
+        anchored to a device authority epoch and a monotonic sequence number.
+      tags: [sync]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncBatchRequest"
+      responses:
+        "200":
+          description: Batch accepted and applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncBatchResponse"
+        "400":
+          description: Payload violates the SyncBatchRequest schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Sequence or authority epoch conflict; batch rejected.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/evidence:
+    post:
+      operationId: ingestEvidence
+      summary: Ingest evidence record and metadata
+      description: |
+        Registers one evidence object (encrypted bytes referenced by object_key)
+        with its capture metadata and integrity digests.
+      tags: [evidence]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvidenceIngestRequest"
+      responses:
+        "201":
+          description: Evidence record created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceIngestResponse"
+        "400":
+          description: Payload violates the EvidenceIngestRequest schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Tenant not permitted to write evidence.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/devices/enroll:
+    post:
+      operationId: enrollDevice
+      summary: Device proof-of-possession enrollment
+      description: |
+        Enrolls a field device by proving possession of its ed25519 private key
+        over the server-issued nonce. Mirrors
+        internal/domain/device_trust.EnrollmentRequest.
+      tags: [devices]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentRequest"
+      responses:
+        "200":
+          description: Device enrolled and trusted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollmentResponse"
+        "400":
+          description: Payload violates the EnrollmentRequest schema or proof of possession failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/session:
+    post:
+      operationId: createSession
+      summary: Session challenge and token exchange
+      description: |
+        Client signs the server-issued session challenge with its device key and
+        exchanges it for a bearer token. Mirrors internal/domain/sync.DeviceProof.
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRequest"
+      responses:
+        "200":
+          description: Token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          description: Challenge signature did not verify.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Device not authorized for session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Uniform error envelope returned by all endpoints.
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Human-readable reason.
+        code:
+          type: integer
+          format: int32
+          description: HTTP status code echoed for convenience.
+        detail:
+          type: string
+          description: Optional field-level detail.
+    SyncBatchRequest:
+      type: object
+      description: A locally-applied mutation batch awaiting server reconciliation.
+      required:
+        - batch_id
+        - tenant_id
+        - organization_id
+        - device_id
+        - authority_id
+        - authority_epoch
+        - sequence
+        - mutations
+        - signature
+      properties:
+        batch_id:
+          type: string
+          description: Client-generated unique batch identifier.
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        device_id:
+          type: string
+          description: Field device that applied the batch locally.
+        authority_id:
+          type: string
+        authority_epoch:
+          type: integer
+          format: int64
+          description: Authority epoch the device synchronized against.
+        sequence:
+          type: integer
+          format: int64
+          description: Monotonic per-device batch sequence.
+        mutations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncMutation"
+        signature:
+          type: string
+          description: Base64 ed25519 signature over the canonical batch payload.
+    SyncMutation:
+      type: object
+      description: One entity mutation inside a sync batch.
+      required: [mutation_id, entity_type, entity_id, operation, payload, at, version]
+      properties:
+        mutation_id:
+          type: string
+        entity_type:
+          type: string
+          description: Domain entity, e.g. inspection_item, workorder.
+        entity_id:
+          type: string
+        operation:
+          type: string
+          enum: [create, update, delete]
+        payload:
+          type: object
+          additionalProperties: true
+        at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+          description: Optimistic concurrency version of the mutated entity.
+    SyncBatchResponse:
+      type: object
+      description: Server acknowledgment for an accepted sync batch.
+      required: [batch_id, applied, rejected, conflict]
+      properties:
+        batch_id:
+          type: string
+        applied:
+          type: integer
+          format: int64
+          description: Mutations applied by the server.
+        rejected:
+          type: integer
+          format: int64
+          description: Mutations rejected by server-side policy.
+        conflict:
+          type: boolean
+          description: True when the batch was not applied (409 alternative).
+    EvidenceIngestRequest:
+      type: object
+      description: Evidence object and metadata for one captured record.
+      required:
+        - evidence_id
+        - tenant_id
+        - organization_id
+        - inspection_id
+        - object_key
+        - content_type
+        - captured_at
+        - plaintext_sha256
+        - ciphertext_sha256
+        - byte_length
+        - encryption_algorithm
+        - device_id
+        - authority_id
+        - authority_epoch
+        - signature
+      properties:
+        evidence_id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        inspection_id:
+          type: string
+        object_key:
+          type: string
+          description: Storage key of the encrypted object.
+        content_type:
+          type: string
+        captured_at:
+          type: string
+          format: date-time
+        plaintext_sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: SHA-256 of the plaintext evidence bytes.
+        ciphertext_sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+          description: SHA-256 of the encrypted evidence bytes at rest.
+        byte_length:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Encrypted byte length of the object.
+        encryption_algorithm:
+          type: string
+          enum: [AES-256-GCM]
+        device_id:
+          type: string
+        authority_id:
+          type: string
+        authority_epoch:
+          type: integer
+          format: int64
+        signature:
+          type: string
+          description: Base64 ed25519 signature over the canonical evidence record.
+    EvidenceIngestResponse:
+      type: object
+      description: Confirmation of evidence ingestion.
+      required: [evidence_id, status, object_key]
+      properties:
+        evidence_id:
+          type: string
+        status:
+          type: string
+          enum: [created, duplicate]
+        object_key:
+          type: string
+    EnrollmentRequest:
+      type: object
+      description: Device proof-of-possession enrollment payload.
+      required:
+        - request_id
+        - tenant_id
+        - organization_id
+        - user_id
+        - device_id
+        - public_key
+        - nonce
+        - signature
+        - requested_at
+      properties:
+        request_id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        user_id:
+          type: string
+          description: Operator claiming the device.
+        device_id:
+          type: string
+        public_key:
+          type: string
+          description: Hex or base64 ed25519 public key.
+        nonce:
+          type: string
+          description: Server-issued nonce that the signature covers.
+        signature:
+          type: string
+          description: Proof-of-possession signature over the nonce.
+        requested_at:
+          type: string
+          format: date-time
+        attestation:
+          $ref: "#/components/schemas/Attestation"
+    Attestation:
+      type: object
+      description: Hardware attestation bundle, when available.
+      required: [type, issuer, receipt]
+      properties:
+        type:
+          type: string
+          enum: [hardware_key, platform, none]
+        issuer:
+          type: string
+        receipt:
+          type: string
+          description: Attestation receipt or quote.
+    EnrollmentResponse:
+      type: object
+      description: Result of a device enrollment attempt.
+      required: [request_id, device_id, status, authority_epoch]
+      properties:
+        request_id:
+          type: string
+        device_id:
+          type: string
+        status:
+          type: string
+          enum: [approved, pending]
+        authority_epoch:
+          type: integer
+          format: int64
+          description: Authority epoch assigned to the device.
+    SessionRequest:
+      type: object
+      description: Session challenge and signed challenge exchange.
+      required: [session_id, device_id, authority_id, challenge, signature, requested_at]
+      properties:
+        session_id:
+          type: string
+          description: Challenge session identifier.
+        device_id:
+          type: string
+        authority_id:
+          type: string
+        challenge:
+          type: string
+          description: Server-issued challenge string.
+        signature:
+          type: string
+          description: Base64 ed25519 signature over the challenge.
+        requested_at:
+          type: string
+          format: date-time
+    SessionResponse:
+      type: object
+      description: Token issued in exchange for a valid challenge signature.
+      required: [session_id, token, token_type, expires_at]
+      properties:
+        session_id:
+          type: string
+        token:
+          type: string
+          description: Bearer token to use on subsequent requests.
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_at:
+          type: string
+          format: date-time

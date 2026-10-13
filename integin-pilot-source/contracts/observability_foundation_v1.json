@@ -1,0 +1,47 @@
+{
+  "contract_version": "observability-foundation/v1",
+  "status": "governance-only-no-telemetry-deployed",
+  "authority_boundary": "Observability is diagnostic evidence only. It must not mutate workflow, authorization, tenant, device, or certificate state.",
+  "resource_attributes": ["service.name", "service.version", "deployment.environment"],
+  "metric_contract": {
+    "allowed_dimensions": ["service", "environment", "route_template", "method", "http_status_code", "operation", "outcome", "dependency", "error_class"],
+    "prohibited_dimensions": ["tenant_id", "organization_id", "user_id", "device_id", "authority_id", "resource_id", "evidence_id", "object_key", "payload_hash", "request_id", "exception_message"],
+    "metric_names": [
+      "integin_http_server_requests_total",
+      "integin_http_server_request_duration_seconds",
+      "integin_sync_transactions_total",
+      "integin_evidence_operations_total",
+      "integin_authority_validation_total",
+      "integin_dependency_health",
+      "integin_telemetry_dropped_total"
+    ]
+  },
+  "trace_contract": {
+    "allowed_attributes": ["service.name", "service.version", "deployment.environment", "http.route", "http.request.method", "http.response.status_code", "integin.operation", "integin.outcome", "error.type"],
+    "prohibited_attributes": ["http.request.body", "http.response.body", "db.statement", "db.connection_string", "enduser.id", "integin.tenant_id", "integin.organization_id", "integin.user_id", "integin.device_id", "integin.evidence_bytes", "integin.object_key", "integin.payload", "integin.token", "exception.message"],
+    "sampling_rule": "OWNER_DEFINED_WITH_DOCUMENTED_RATIONALE"
+  },
+  "log_contract": {
+    "required_fields": ["timestamp_utc", "severity", "event_name", "service", "environment", "operation", "outcome", "error_class", "trace_id"],
+    "optional_allowlisted_fields": ["route_template", "http_status_code", "dependency", "retry_count", "latency_bucket"],
+    "prohibited_fields": ["authorization", "cookie", "set_cookie", "token", "jwt", "secret", "password", "private_key", "access_key", "connection_string", "database_url", "request_body", "response_body", "payload", "evidence_bytes", "evidence_content", "object_key", "tenant_id", "organization_id", "user_id", "device_id", "raw_exception_message"]
+  },
+  "minimum_alerts": [
+    "integin_service_health_or_readiness_unavailable",
+    "integin_http_server_error_ratio_elevated",
+    "integin_sync_rejection_or_retry_spike",
+    "integin_evidence_persistence_failure",
+    "integin_authority_validation_failure_spike",
+    "integin_dependency_health_degraded",
+    "integin_telemetry_drop_or_pipeline_silence"
+  ],
+  "alert_configuration_rule": "Thresholds, windows, notification targets, suppression, and escalation ownership are environment-owner configuration; they must not be inferred by this contract.",
+  "implementation_prerequisites": [
+    "approved collector/exporter topology",
+    "secret-safe transport and workload policy",
+    "data-retention and access-control decision",
+    "sampling and cost rationale",
+    "negative tests proving prohibited data is not emitted",
+    "pilot-only verification before any acceptance or production change"
+  ]
+}

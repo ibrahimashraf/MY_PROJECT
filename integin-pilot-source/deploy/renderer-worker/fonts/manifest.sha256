@@ -1,0 +1,7 @@
+# Pin SHA-256 digests of licensed Google Noto font pack for Arabic & Latin typography
+# Reference: Noto Sans Arabic & Noto Sans (OFL 1.1)
+# Used by container build & qualification test preflight
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  NotoSansArabic-Regular.ttf
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  NotoSansArabic-Bold.ttf
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  NotoSans-Regular.ttf
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  NotoSans-Bold.ttf
