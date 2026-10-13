@@ -83,3 +83,5 @@ agent/
 # ==============================================================================
 .opencode/
 .planning/
+pipeline_output/
+tessdata_best/
