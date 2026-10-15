@@ -8,11 +8,11 @@ import (
 const GravityMPS2 = 9.80665
 
 // Point3D Vector Arithmetic Extensions
-func (p Point3D) Add(o Point3D) Point3D      { return Point3D{X: p.X + o.X, Y: p.Y + o.Y, Z: p.Z + o.Z} }
-func (p Point3D) Sub(o Point3D) Point3D      { return Point3D{X: p.X - o.X, Y: p.Y - o.Y, Z: p.Z - o.Z} }
-func (p Point3D) Scale(s float64) Point3D   { return Point3D{X: p.X * s, Y: p.Y * s, Z: p.Z * s} }
-func (p Point3D) Dot(o Point3D) float64     { return p.X*o.X + p.Y*o.Y + p.Z*o.Z }
-func (p Point3D) Norm() float64             { return math.Sqrt(p.Dot(p)) }
+func (p Point3D) Add(o Point3D) Point3D   { return Point3D{X: p.X + o.X, Y: p.Y + o.Y, Z: p.Z + o.Z} }
+func (p Point3D) Sub(o Point3D) Point3D   { return Point3D{X: p.X - o.X, Y: p.Y - o.Y, Z: p.Z - o.Z} }
+func (p Point3D) Scale(s float64) Point3D { return Point3D{X: p.X * s, Y: p.Y * s, Z: p.Z * s} }
+func (p Point3D) Dot(o Point3D) float64   { return p.X*o.X + p.Y*o.Y + p.Z*o.Z }
+func (p Point3D) Norm() float64           { return math.Sqrt(p.Dot(p)) }
 func (p Point3D) Cross(o Point3D) Point3D {
 	return Point3D{
 		X: p.Y*o.Z - p.Z*o.Y,
@@ -30,20 +30,20 @@ func (p Point3D) Unit() Point3D {
 
 // PadeyeSpec holds complete geometry and material properties for DNV-ST-N001 structural evaluation.
 type PadeyeSpec struct {
-	PadeyeID              string   `json:"padeye_id"`
-	Position              Point3D  `json:"position_m"`
-	InPlaneAzimuthDeg     float64  `json:"in_plane_azimuth_deg"`
-	MainPlateThicknessMM  float64  `json:"main_plate_thickness_mm"`
-	CheekPlateThicknessMM float64  `json:"cheek_plate_thickness_mm"`
-	CheekOuterDiameterMM  float64  `json:"cheek_outer_diameter_mm"`
-	CheekFilletLegMM      float64  `json:"cheek_fillet_weld_leg_mm"`
-	OuterRadiusMM         float64  `json:"outer_radius_mm"`
-	PinHoleDiameterMM     float64  `json:"pin_hole_diameter_mm"`
-	BaseWidthMM           float64  `json:"base_width_mm"`
-	HoleHeightFromBaseMM  float64  `json:"hole_height_from_base_mm"`
-	BaseWeldThroatMM      float64  `json:"base_weld_throat_mm"`
-	YieldStrengthMPa      float64  `json:"yield_strength_mpa"`
-	UltimateStrengthMPa   float64  `json:"ultimate_strength_mpa"`
+	PadeyeID              string  `json:"padeye_id"`
+	Position              Point3D `json:"position_m"`
+	InPlaneAzimuthDeg     float64 `json:"in_plane_azimuth_deg"`
+	MainPlateThicknessMM  float64 `json:"main_plate_thickness_mm"`
+	CheekPlateThicknessMM float64 `json:"cheek_plate_thickness_mm"`
+	CheekOuterDiameterMM  float64 `json:"cheek_outer_diameter_mm"`
+	CheekFilletLegMM      float64 `json:"cheek_fillet_weld_leg_mm"`
+	OuterRadiusMM         float64 `json:"outer_radius_mm"`
+	PinHoleDiameterMM     float64 `json:"pin_hole_diameter_mm"`
+	BaseWidthMM           float64 `json:"base_width_mm"`
+	HoleHeightFromBaseMM  float64 `json:"hole_height_from_base_mm"`
+	BaseWeldThroatMM      float64 `json:"base_weld_throat_mm"`
+	YieldStrengthMPa      float64 `json:"yield_strength_mpa"`
+	UltimateStrengthMPa   float64 `json:"ultimate_strength_mpa"`
 }
 
 // ShackleSpec defines shackle dimensions and load capacity.

@@ -9,8 +9,8 @@ import (
 
 // RatingEntry specifies capacity for a discrete radius.
 type RatingEntry struct {
-	RadiusM       float64 `json:"radius_m"`
-	CapacityT     float64 `json:"capacity_t"`
+	RadiusM   float64 `json:"radius_m"`
+	CapacityT float64 `json:"capacity_t"`
 }
 
 // BoomConfiguration holds capacity table for a discrete boom length.

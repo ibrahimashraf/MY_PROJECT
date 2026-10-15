@@ -17,10 +17,10 @@ func RegisterDefaultCommands(d *Dispatcher) {
 	// 1. Asset Custody Transfer Command: "passport.custody.transfer"
 	d.Register("passport.custody.transfer", func(ctx context.Context, cmd Command) (json.RawMessage, error) {
 		var req struct {
-			AssetDID         string `json:"asset_did"`
+			AssetDID          string `json:"asset_did"`
 			RecipientTenantID string `json:"recipient_tenant_id"`
-			CountryCodeISO2  string `json:"country_code_iso2"`
-			AuthorizedBy     string `json:"authorized_by"`
+			CountryCodeISO2   string `json:"country_code_iso2"`
+			AuthorizedBy      string `json:"authorized_by"`
 		}
 		if err := json.Unmarshal(cmd.Payload, &req); err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrInvalidParams, err)
@@ -73,7 +73,7 @@ func RegisterDefaultCommands(d *Dispatcher) {
 	// 3. Evidence Export Trigger: "evidence.export.package"
 	d.Register("evidence.export.package", func(ctx context.Context, cmd Command) (json.RawMessage, error) {
 		var req struct {
-			ExportID   string   `json:"export_id"`
+			ExportID    string   `json:"export_id"`
 			EvidenceIDs []string `json:"evidence_ids"`
 		}
 		if err := json.Unmarshal(cmd.Payload, &req); err != nil {

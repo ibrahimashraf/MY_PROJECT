@@ -134,15 +134,15 @@ func Test3DRiggingSymmetric4Leg(t *testing.T) {
 
 func TestPadeyePinTooLargeRejected(t *testing.T) {
 	padeye := PadeyeSpec{
-		PadeyeID:              "PE-FAIL",
-		Position:              Point3D{X: 0, Y: 0, Z: 0},
-		MainPlateThicknessMM:  25,
-		PinHoleDiameterMM:     35.0, // Smaller than pin
-		BaseWidthMM:           150,
-		HoleHeightFromBaseMM:  120,
-		OuterRadiusMM:         70,
-		YieldStrengthMPa:      355,
-		UltimateStrengthMPa:   490,
+		PadeyeID:             "PE-FAIL",
+		Position:             Point3D{X: 0, Y: 0, Z: 0},
+		MainPlateThicknessMM: 25,
+		PinHoleDiameterMM:    35.0, // Smaller than pin
+		BaseWidthMM:          150,
+		HoleHeightFromBaseMM: 120,
+		OuterRadiusMM:        70,
+		YieldStrengthMPa:     355,
+		UltimateStrengthMPa:  490,
 	}
 	shackle := ShackleSpec{
 		ModelName:        "Large Shackle",

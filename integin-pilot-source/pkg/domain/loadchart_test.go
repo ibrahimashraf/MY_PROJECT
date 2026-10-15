@@ -265,4 +265,3 @@ func TestLoadChartRejectsMonotonicityViolation(t *testing.T) {
 		t.Fatalf("expected ErrLoadChartMonotonicityViolation, got: %v", err)
 	}
 }
-

@@ -189,12 +189,12 @@ func BS5975MatStructuralCheck(padLoadT, matLenM, matWidthM, padLenM, matThicknes
 
 // BoussinesqSubsurfaceResult records stress attenuation at depth z and radial distance r.
 type BoussinesqSubsurfaceResult struct {
-	PadLoadT          float64 `json:"pad_load_t"`
-	DepthM            float64 `json:"depth_m"`
-	RadialDistanceM   float64 `json:"radial_distance_m"`
-	InducedStressKPa  float64 `json:"induced_stress_kpa"`
+	PadLoadT           float64 `json:"pad_load_t"`
+	DepthM             float64 `json:"depth_m"`
+	RadialDistanceM    float64 `json:"radial_distance_m"`
+	InducedStressKPa   float64 `json:"induced_stress_kpa"`
 	AllowableStressKPa float64 `json:"allowable_stress_kpa"`
-	Passed            bool    `json:"passed"`
+	Passed             bool    `json:"passed"`
 }
 
 // BoussinesqSubsurfaceStress calculates vertical induced stress sigma_z at depth z (m)
@@ -231,12 +231,11 @@ func BoussinesqSubsurfaceStress(padLoadT, depthM, radialDistM, allowableStressKP
 	sigmaZ := (3.0 * pKN / (2.0 * math.Pi * z2)) * term5_2
 
 	return BoussinesqSubsurfaceResult{
-		PadLoadT:          padLoadT,
-		DepthM:            depthM,
-		RadialDistanceM:   radialDistM,
-		InducedStressKPa:  sigmaZ,
+		PadLoadT:           padLoadT,
+		DepthM:             depthM,
+		RadialDistanceM:    radialDistM,
+		InducedStressKPa:   sigmaZ,
 		AllowableStressKPa: allowableStressKPa,
-		Passed:            sigmaZ <= allowableStressKPa,
+		Passed:             sigmaZ <= allowableStressKPa,
 	}, nil
 }
-

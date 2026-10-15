@@ -63,7 +63,7 @@ type RatedCell struct {
 // CraneConfig holds crane-level metadata for a single load chart configuration.
 type CraneConfig struct {
 	CraneModel          string              `json:"crane_model"`
-	CapacityType        string              `json:"capacity_type"`         // "gross" or "net"
+	CapacityType        string              `json:"capacity_type"` // "gross" or "net"
 	InterpolationPolicy InterpolationPolicy `json:"interpolation_policy"`
 	CounterweightKg     float64             `json:"counterweight_kg"`
 	OutriggerLengthM    float64             `json:"outrigger_length_m"`
@@ -100,27 +100,27 @@ type LiftPlan3DInput struct {
 	HoistRopeMassPerMeter float64 `json:"hoist_rope_mass_per_m_kg"` // per single part, per metre
 	ReevingPartsOfLine    int     `json:"reeving_parts_of_line"`
 	SingleLinePullLimitKg float64 `json:"single_line_pull_limit_kg"`
-	DynamicAmplification  float64 `json:"dynamic_amplification_factor"` // >= 1.0; 1.0 onshore, 1.15–1.30 offshore
+	DynamicAmplification  float64 `json:"dynamic_amplification_factor"`  // >= 1.0; 1.0 onshore, 1.15–1.30 offshore
 	MaxAllowedUtilization float64 `json:"max_allowed_utilization_ratio"` // 0.85 ASME 85%, 1.0 ASME 100%
 }
 
 // LiftEvalResult is the complete deterministic output from Evaluate3DLift.
 type LiftEvalResult struct {
-	IsSafeToLift           bool     `json:"is_safe_to_lift"`
-	GeometricRadiusM       float64  `json:"geometric_radius_m"`
-	EffectiveLoadedRadiusM float64  `json:"effective_loaded_radius_m"`
-	BoomAngleDeg           float64  `json:"boom_angle_deg"`
-	BoomTipElevationZM     float64  `json:"boom_tip_elevation_z_m"`
-	AvailableHeadroomM     float64  `json:"available_headroom_m"`
+	IsSafeToLift           bool    `json:"is_safe_to_lift"`
+	GeometricRadiusM       float64 `json:"geometric_radius_m"`
+	EffectiveLoadedRadiusM float64 `json:"effective_loaded_radius_m"`
+	BoomAngleDeg           float64 `json:"boom_angle_deg"`
+	BoomTipElevationZM     float64 `json:"boom_tip_elevation_z_m"`
+	AvailableHeadroomM     float64 `json:"available_headroom_m"`
 
-	ChartGrossCapacityKg    float64  `json:"chart_gross_capacity_kg"`
-	ReevingCapacityKg       float64  `json:"reeving_capacity_kg"`
-	GoverningCapacityKg     float64  `json:"governing_capacity_kg"`
-	TotalRiggingDeductionKg float64  `json:"total_rigging_deduction_kg"`
-	NetAvailableCapacityKg  float64  `json:"net_available_capacity_kg"`
-	TotalGrossHookLoadKg    float64  `json:"total_gross_hook_load_kg"`
-	UtilizationRatio        float64  `json:"utilization_ratio"`
-	UtilizationPercent      float64  `json:"utilization_percent"`
+	ChartGrossCapacityKg    float64 `json:"chart_gross_capacity_kg"`
+	ReevingCapacityKg       float64 `json:"reeving_capacity_kg"`
+	GoverningCapacityKg     float64 `json:"governing_capacity_kg"`
+	TotalRiggingDeductionKg float64 `json:"total_rigging_deduction_kg"`
+	NetAvailableCapacityKg  float64 `json:"net_available_capacity_kg"`
+	TotalGrossHookLoadKg    float64 `json:"total_gross_hook_load_kg"`
+	UtilizationRatio        float64 `json:"utilization_ratio"`
+	UtilizationPercent      float64 `json:"utilization_percent"`
 
 	GoverningLimitType   FailureMode `json:"governing_limit_type"`
 	InterpolationApplied string      `json:"interpolation_applied"`
@@ -318,10 +318,10 @@ func Evaluate3DLift(in LiftPlan3DInput) (*LiftEvalResult, error) {
 
 	// 5. Hoist reeving capacity and single-line pull limit.
 	res.ReevingCapacityKg = float64(in.ReevingPartsOfLine) * in.SingleLinePullLimitKg
-	if upperCell != nil && upperCell.MinReeving != nil && in.ReevingPartsOfLine < *upperCell.MinReeving {
+	if upperCell != nil && upperCell.MinReevingParts != nil && in.ReevingPartsOfLine < *upperCell.MinReevingParts {
 		res.SafetyViolations = append(res.SafetyViolations,
 			fmt.Sprintf("Insufficient reeving: %d parts rigged, chart requires min %d parts",
-				in.ReevingPartsOfLine, *upperCell.MinReeving))
+				in.ReevingPartsOfLine, *upperCell.MinReevingParts))
 	}
 
 	res.GoverningCapacityKg = res.ChartGrossCapacityKg
