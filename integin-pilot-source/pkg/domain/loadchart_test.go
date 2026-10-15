@@ -250,3 +250,19 @@ func TestLoadChartLookupCapacityConservativeAndLinear(t *testing.T) {
 		t.Fatalf("linear above max: want ErrLoadChartRadiusOutOfRange, got %v", err)
 	}
 }
+
+func TestLoadChartRejectsMonotonicityViolation(t *testing.T) {
+	chart := validLoadChart()
+	// Corrupt chart: capacity jumps from 80t at 6m to 95t at 9m (physics violation)
+	chart.Configurations[0].Points = []LoadChartPoint{
+		{RadiusM: 3, CapacityT: 120},
+		{RadiusM: 6, CapacityT: 80},
+		{RadiusM: 9, CapacityT: 95}, // VIOLATION: > 80t
+	}
+
+	err := chart.Validate()
+	if !errors.Is(err, ErrLoadChartMonotonicityViolation) {
+		t.Fatalf("expected ErrLoadChartMonotonicityViolation, got: %v", err)
+	}
+}
+

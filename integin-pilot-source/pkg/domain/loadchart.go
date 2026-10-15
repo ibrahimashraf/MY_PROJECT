@@ -38,6 +38,7 @@ var (
 	ErrLoadChartPointsRequired         = errors.New("load chart points are required")
 	ErrLoadChartPointValues            = errors.New("load chart point values are invalid")
 	ErrLoadChartPointOrder             = errors.New("load chart points are not strictly ordered by radius")
+	ErrLoadChartMonotonicityViolation  = errors.New("load chart violates physical monotonicity: capacity increased with larger radius")
 	ErrLoadChartNotVerified            = errors.New("load chart is not verified for authoritative use")
 	ErrLoadChartConfigurationNotFound  = errors.New("load chart configuration was not found")
 	ErrLoadChartPointNotFound          = errors.New("load chart point was not found")
@@ -268,6 +269,7 @@ func validateLoadChartConfiguration(config LoadChartConfiguration) error {
 		return fmt.Errorf("%w: configuration %q", ErrLoadChartPointsRequired, config.ID)
 	}
 	previousRadius := math.Inf(-1)
+	previousCapacity := math.Inf(1)
 	for _, point := range config.Points {
 		if !finitePositive(point.RadiusM) || !finitePositive(point.CapacityT) {
 			return fmt.Errorf("%w: configuration %q", ErrLoadChartPointValues, config.ID)
@@ -278,7 +280,13 @@ func validateLoadChartConfiguration(config LoadChartConfiguration) error {
 		if point.RadiusM <= previousRadius {
 			return fmt.Errorf("%w: configuration %q", ErrLoadChartPointOrder, config.ID)
 		}
+		// Physics Law: Crane capacity cannot increase as the working radius extends
+		if point.CapacityT > previousCapacity {
+			return fmt.Errorf("%w: config %q: capacity %gt at radius %gm exceeds %gt at %gm",
+				ErrLoadChartMonotonicityViolation, config.ID, point.CapacityT, point.RadiusM, previousCapacity, previousRadius)
+		}
 		previousRadius = point.RadiusM
+		previousCapacity = point.CapacityT
 	}
 	return nil
 }
