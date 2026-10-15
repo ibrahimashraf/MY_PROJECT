@@ -29,9 +29,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Dart lives in the integri-pilot-source submodule; the workflow must
-          # materialise it or there is nothing to analyse.
-          submodules: true
+          # submodules: false deliberately. Dart is tracked directly at
+          # integin-pilot-source/field_app since the submodule was flattened
+          # (0e3e24d), so nothing needs materialising. Fetching submodules here
+          # only pulled .agents/skills/* and failed the job when the pinned
+          # archify commit was not published upstream.
+          submodules: false
 
       - uses: subosito/flutter-action@v2
         with:
