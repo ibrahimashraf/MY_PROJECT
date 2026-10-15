@@ -42,10 +42,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Initialize Integin Submodule
-        run: |
-          git submodule update --init integin-pilot-source
-
       - name: Setup Go Runtime
         uses: actions/setup-go@v5
         with:
